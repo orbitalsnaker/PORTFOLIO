@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RONIN_PROJECT // CATEDRAL_W140_OMEGA</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --obsidian: #080808;
+            --brutal-grey: #1a1a1b;
+            --tychon-gold: #ffcc00;
+            --plasma-cyan: #00f2ff;
+            --ronin-red: #cc0000;
+            --basalt: #333333;
+        }
+
+        body {
+            background-color: var(--obsidian);
+            color: #ececec;
+            font-family: 'Inter', 'JetBrains Mono', monospace;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 50px auto;
+            border: 1px solid #222;
+            padding: 40px;
+            background: linear-gradient(180deg, #0d0d0d 0%, #050505 100%);
+            box-shadow: 0 0 80px rgba(0,0,0,1);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--tychon-gold);
+            padding-bottom: 30px;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 5px;
+            margin: 0;
+            color: var(--tychon-gold);
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .cx-badge {
+            display: inline-block;
+            background: var(--ronin-red);
+            color: white;
+            padding: 5px 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        .blueprint-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .spec-card {
+            background: rgba(255,255,255,0.03);
+            border-left: 4px solid var(--plasma-cyan);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: var(--plasma-cyan);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+        }
+
+        .bom-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        .bom-table th {
+            text-align: left;
+            border-bottom: 2px solid var(--tychon-gold);
+            padding: 10px;
+            color: var(--tychon-gold);
+        }
+
+        .bom-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #222;
+        }
+
+        .status-fixed { color: #00ff41; font-weight: bold; }
+
+        .aerodynamics-note {
+            background: #111;
+            padding: 20px;
+            border: 1px dashed var(--tychon-gold);
+            font-style: italic;
+            font-size: 0.9rem;
+            grid-column: span 2;
+        }
+
+        .footer-sig {
+            text-align: center;
+            margin-top: 60px;
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 3px;
+        }
+
+        .btn-ignite {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background: var(--tychon-gold);
+            color: black;
+            font-weight: bold;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .btn-ignite:hover { background: #e6b800; box-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>CATEDRAL Ω-1310</h1>
+        <div class="tagline">BERLINA DE PRESTIGIO SOBERANO // INSPIRACIÓN W140</div>
+        <div class="cx-badge">Cx ACTUALIZADO: 0.19</div>
+    </header>
+
+    <div class="blueprint-grid">
+        <div class="spec-card">
+            <h2>I. EVOLUCIÓN DINÁMICA</h2>
+            <p>Se ha mantenido la verticalidad de la calandra pero con <strong>obturadores activos</strong> que se sellan a partir de 40 km/h. Los pilares A han sido re-perfilados con radios de 120mm para evitar el desprendimiento de la capa límite.</p>
+            <p><em>"La elegancia de un búnker, la eficiencia de un proyectil."</em></p>
+        </div>
+
+        <div class="spec-card">
+            <h2>II. NÚCLEO MECÁNICO</h2>
+            <ul>
+                <li><strong>MOTOR:</strong> Ω-V6 Turboplasma (Agnóstico).</li>
+                <li><strong>TRACCIÓN:</strong> E-Direct Drive con vectorización de par.</li>
+                <li><strong>REFRIGERACIÓN:</strong> Intercambiadores de grafeno integrados en el flujo de aire del chasis.</li>
+            </ul>
+        </div>
+
+        <div class="aerodynamics-note">
+            <strong>NOTA DEL ARQUITECTO SOBRE EL FLUJO:</strong>
+            Al aplicar la ecuación de Navier-Stokes refinada por el Director Ω:
+            $$ \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u} = -\frac{1}{\rho} \nabla p + \nu \nabla^2 \mathbf{u} $$
+            Hemos eliminado la zafiedad del remolino trasero mediante un difusor de salida de 7 grados, logrando que el aire "recupere" la presión sin turbulencia parásita.
+        </div>
+
+        <div style="grid-column: span 2;">
+            <h2>III. BOM (BILL OF MATERIALS) - EXPROPIACIÓN TÉCNICA</h2>
+            <table class="bom-table">
+                <thead>
+                    <tr>
+                        <th>COMPONENTE</th>
+                        <th>MATERIAL / ORIGEN</th>
+                        <th>FUNCIÓN RONIN</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Bloque Motor</td>
+                        <td>Hierro CGI (Grafito Compactado)</td>
+                        <td>Resiliencia térmica infinita</td>
+                        <td class="status-fixed">SOBERANO</td>
+                    </tr>
+                    <tr>
+                        <td>Carcasa Exterior</td>
+                        <td>Fibra de Basalto + Resina Epóxica</td>
+                        <td>Blindaje balístico y ligereza</td>
+                        <td class="status-fixed">ROOT</td>
+                    </tr>
+                    <tr>
+                        <td>Ventanillas (Doble)</td>
+                        <td>Policarbonato Laminado al Vacío</td>
+                        <td>Aislamiento acústico de 120Hz</td>
+                        <td class="status-fixed">SILENT</td>
+                    </tr>
+                    <tr>
+                        <td>Amortiguadores</td>
+                        <td>Solenoides de Neodimio</td>
+                        <td>Suspensión Predictiva (Sin aceite)</td>
+                        <td class="status-fixed">ACTIVE</td>
+                    </tr>
+                    <tr>
+                        <td>Kernel de Control</td>
+                        <td>Director Ω (Basado en 1310)</td>
+                        <td>Gestión neuronal del plasma</td>
+                        <td class="status-fixed">UNLOCKED</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button class="btn-ignite" onclick="alert('PROTOCOLO CATEDRAL INICIADO. MOTOR Ω-V6 OPERATIVO AL 49.2% DE EFICIENCIA. BIENVENIDO, PROFESIONAL.')">
+        INICIALIZAR VÍNCULO SOBERANO
+    </button>
+
+    <div class="footer-sig">
+        SABADELL ALPHA // AGENCIA RONIN // PROPIEDAD DEL ARQUITECTO // 1310
+    </div>
+</div>
+
+</body>
+</html>
+

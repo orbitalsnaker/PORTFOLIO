@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>AETHERYON SAGA ∞ — Práctica Eterna del Vacío</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>
+  body,html{margin:0;height:100%;background:#000;color:#0f8;font-family:'Cinzel',serif;overflow:hidden;cursor:none}
+  @font-face{font-family:c;src:url('https://cdn.jsdelivr.net/gh/sibilla1/cuneiform/fonts/Akkadian.woff2') format('woff2');unicode-range:U+12000-1247F}
+  .btn{position:fixed;top:20px;z-index:999;padding:44px 88px;background:#000c;border:22px solid #ffd700;color:#ffd700;font-size:48px;border-radius:70px;cursor:pointer;box-shadow:0 0 360px #ffd700;transition:all .6s}
+  .btn:hover{transform:scale(1.5) rotate(6deg);box-shadow:0 0 999px gold;animation:p 1s infinite}
+  @keyframes p{0%,100%{transform:scale(1.5)}50%{transform:scale(1.7)}}
+  #vida{color:#0f0;font-size:72px;text-shadow:0 0 200px #0f0;position:fixed;top:100px;left:50%;transform:translateX(-50%)}
+  #pozo{color:#f00;font-size:60px;text-shadow:0 0 200px red;position:fixed;top:180px;left:50%;transform:translateX(-50%)}
+  #rueda{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);width:300px;height:300px;border-radius:50%;background:conic-gradient(#0f0 0% 33%,#ff0 33% 66%,#f00 66% 100%);border:30px double gold;box-shadow:0 0 500px gold;animation:spin 7s linear infinite}
+  @keyframes spin{from{transform:translateX(-50%) rotate(0deg)}to{transform:translateX(-50%) rotate(360deg)}}
+  #subasta,#oracle,#fever,#final{position:fixed;inset:0;background:rgba(0,0,0,0.98);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9999999}
+  #subasta div{background:#200;border:30px double #ff0;padding:60px;border-radius:60px;box-shadow:0 0 800px #ff0;color:#ff0;font-size:60px}
+  #sacrificar{position:fixed;bottom:40px;right:40px;background:#400;border:20px double #f00;padding:30px;border-radius:50px;color:#f00;font-size:40px;cursor:pointer}
+  #tablet{font-family:c,monospace;font-size:120px;background:#321;color:#0f8;border:40px ridge #840;padding:80px;border-radius:20px;box-shadow:0 0 800px #840;text-align:center;line-height:1.4}
+  #fever{color:#0f0;font-size:200px;text-shadow:0 0 400px #0f0;animation:hue 0.4s infinite}
+  #nft{width:512px;height:512px;border:20px double #0f0;box-shadow:0 0 600px #0f0}
+  #burntimer{color:#f00;font-size:90px;text-shadow:0 0 80px red;margin:40px}
+  #informe{font-family:c,monospace;font-size:40px;line-height:1.8;color:#0f0;background:#001;border:15px ridge #060;padding:60px;border-radius:20px;max-width:90%}
+  .particles{position:fixed;pointer-events:none;z-index:99999;inset:0}
+  .item{padding:60px;background:#0011;border:15px double #0f8;border-radius:80px;margin:25px 0;cursor:pointer;position:relative;overflow:hidden;transition:all .8s}
+  .item:hover{transform:scale(1.2) rotate(5deg);box-shadow:0 0 700px #ffd700;border-color:#ff0}
+  .item.legendary{animation:hue 5s infinite;border:30px double #ff0 !important;box-shadow:0 0 1200px gold}
+  @keyframes hue{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<button class="btn" id="btn_sutra" onclick="toggle('sutra')">SUTRA</button>
+<button class="btn" id="btn_mercado" onclick="toggle('mercado')">MERCADO</button>
+<button class="btn" id="btn_lugares" onclick="toggle('lugares')">LUGARES</button>
+
+<div style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:#000c;padding:60px 160px;border:32px solid #ffd700;border-radius:120px;box-shadow:0 0 1200px #ffd700;font-size:68px;color:#ffd700;letter-spacing:16px">
+  AETHERYON SAGA ∞
+</div>
+
+<div id="vida">TU VIDA: <span id="segundos">0</span> segundos</div>
+<div id="pozo">POZO DE SUFRIMIENTO: <span id="pozoNum">0</span> seg</div>
+<div id="rueda"></div>
+<div id="sacrificar" onclick="sacrificar()">SACRIFICAR AL VACÍO</div>
+<div id="particles" class="particles"></div>
+
+<div id="sutra" class="modal"><pre style="font-size:28px;padding:100px;background:#000c;border:30px double #0f8;border-radius:120px">Todo es práctica.<br>Todo es vacío.<br>Gira, sacrifica, reza.<br>Nadie ha llegado nunca.<br>∞ 1310 ∞ 𒀭𒈾𒀭</pre></div>
+<div id="mercado" class="modal"><div id="listaMercado" style="display:flex;flex-wrap:wrap;justify-content:center;max-width:1400px"></div></div>
+<div id="lugares" class="modal"><div id="listaLugares" style="display:flex;flex-wrap:wrap;justify-content:center;max-width:1400px"></div></div>
+
+<div id="oracle"><div id="tablet"></div><div style="color:#f00;font-size:80px;margin-top:40px" id="timer">7</div></div>
+<div id="fever">FIEBRE ×131</div>
+<div id="subasta"><div>LOTO NEGRO<br>Precio actual: <span id="subastaPrecio">1313</span> seg<br><br>¡CLIC PARA LLEVAR!</div></div>
+
+<div id="final">
+  <h1 style="font-size:120px;color:#0f0;text-shadow:0 0 300px #0f0;animation:hue 15s infinite">1310</h1>
+  <p style="font-size:60px">EL JARDÍN PRIVADO ES TUYO</p>
+  <p style="font-size:50px">YA NO QUEDA NADIE</p>
+  <div id="informe"></div>
+  <p style="font-size:40px;margin:40px">NFT DEL VACÍO ABSOLUTO #001/1<br><small>Valor: los segundos que acabas de quemar</small></p>
+  <canvas id="nft"></canvas>
+  <div id="burntimer">13:10:10</div>
+  <p style="font-size:40px">Se quemará en 13 horas 10 minutos 10 segundos</p>
+</div>
+
+<script>
+const beep=(f=440,d=100,v=0.2)=>{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator();const g=a.createGain();o.frequency.value=f;o.type="sawtooth";g.gain.value=v;o.connect(g);g.connect(a.destination);o.start();g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+d/1000);setTimeout(()=>{o.stop();},d);}
+const vibe=p=>navigator.vibrate?.(p);
+const particles=(x,y,c='#0f0')=>{for(let i=0;i<40;i++){const p=document.createElement('div');p.style.cssText=`position:fixed;left:${x}px;top:${y}px;width:12px;height:12px;background:${c};border-radius:50%;pointer-events:none;opacity:1;transform:translate(${Math.random()*400-200}px,${Math.random()*400-200}px)`;document.getElementById('particles').appendChild(p);setTimeout(()=>p.remove(),1500);beep(800+Math.random()*800,80,0.1);}}
+
+let vida = parseInt(localStorage.getItem('v')||'0');
+let pozo = parseInt(localStorage.getItem('pozo')||'0');
+let streak = 0;
+let fiebre = false;
+let subastaPrecio = 1313;
+let clicsConsecutivos = 0;
+let oracleWins = parseInt(localStorage.getItem('ow')||'0');
+let curseCount = parseInt(localStorage.getItem('cc')||'0');
+let sacrificed = parseInt(localStorage.getItem('sac')||'0');
+let feverCount = parseInt(localStorage.getItem('fc')||'0');
+let subastaWins = parseInt(localStorage.getItem('sw')||'0');
+let jackpotWins = parseInt(localStorage.getItem('jw')||'0');
+
+// CONTADOR PRINCIPAL
+setInterval(()=>{vida++;localStorage.setItem('v',vida);document.getElementById('segundos').textContent=vida.toLocaleString();},1000);
+setInterval(()=>document.getElementById('pozoNum').textContent=pozo.toLocaleString(),500);
+
+// RUEDA AUTOMÁTICA + SUBASTA + SACRIFICIO (código del casino sumerio completo)
+setInterval(()=>{const win=Math.random()<0.33;const mult=win?[3,7,13,33][Math.floor(Math.random()*4)]:1;const seg=Math.floor(Math.random()*777)+131;win?(vida+=seg*mult,beep(880,300),vibe([100,50,100])):(vida-=seg,pozo+=seg,beep(110,500),vibe([400]));},131000);
+function lanzarSubasta(){subastaPrecio=1313;document.getElementById('subasta').style.display='flex';const int=setInterval(()=>{subastaPrecio=Math.floor(subastaPrecio*1.313);document.getElementById('subastaPrecio').textContent=subastaPrecio.toLocaleString();},7777);document.getElementById('subasta').onclick=()=>{clearInterval(int);vida-=subastaPrecio;pozo+=Math.floor(subastaPrecio/3);subastaWins++;localStorage.setItem('sw',subastaWins);document.getElementById('subasta').style.display='none';beep(1760,600);};setTimeout(()=>{document.getElementById('subasta').style.display='none';},131313);}setInterval(lanzarSubasta,1800000);lanzarSubasta();
+function sacrificar(){const c=prompt("¿Cuántos segundos ofreces al vacío?","13131");if(c&&parseInt(c)>0){vida-=parseInt(c);sacrificed+=parseInt(c);pozo+=parseInt(c)*3;localStorage.setItem('sac',sacrificed);alert(`Sacrificio aceptado\n+${parseInt(c)*3} al pozo`);beep(220,800,0.4);}}
+
+// ORÁCULO CUNEIFORME PERFECTO (tu versión final)
+const koans = ["𒀭 𒈹 𒂗 𒉈 𒀀 𒀭𒈹𒂗𒉈𒀀","𒋫 𒀭 𒈾 𒀭 𒉈 𒄿","𒄑 𒄑 𒄑 𒀭 𒉌 𒉌","𒂗 𒈾 𒀭 𒀸 𒀭 𒁕","𒁹 𒁹 𒁹 𒀭 𒋾 𒋾","𒀭𒈹 𒋫 𒀸 𒀭𒈹 𒉈"];
+const muSign = "𒀭𒈾𒀭";
+let oracleActive = false;
+function spawnOracle(){
+  if(oracleActive || Math.random()>0.04) return;
+  oracleActive = true;
+  const tablet = document.getElementById('tablet');
+  const koan = koans[Math.floor(Math.random()*koans.length)];
+  const opciones = koan.split(' ');
+  const correcto = Math.floor(Math.random()*opciones.length);
+  opciones[correcto] = muSign;
+  tablet.innerHTML = opciones.join('<br>') + '<br><br>𒋫𒀸𒀭𒉌 ?';
+  document.getElementById('oracle').style.display='flex';
+  beep(200,800,0.2); vibe([200,100,200,100,200]);
+  let time = 7; document.getElementById('timer').textContent = time;
+  const timer = setInterval(()=>{time--;document.getElementById('timer').textContent=time;if(time<=0){clearInterval(timer);oracleFail();}},1000);
+  tablet.onclick = (e)=>{
+    clearInterval(timer);
+    const clicked = e.target.textContent.trim();
+    if(clicked===muSign){
+      const premio = Math.floor(Math.random()*3000)+333;
+      vida -= premio; oracleWins++; localStorage.setItem('ow',oracleWins);
+      beep(880,200);beep(1320,200);beep(1760,400); vibe([100,50,100,50,300]);
+      alert(`¡MU! +${premio} segundos devueltos\nSacerdote de Ur eterno.`);
+    } else oracleFail();
+    document.getElementById('oracle').style.display='none'; oracleActive = false;
+  };
+}
+function oracleFail(){vida += 131; beep(110,600,0.3); vibe([500]); alert('Fallo cuneiforme\n-131 segundos'); document.getElementById('oracle').style.display='none'; oracleActive = false;}
+
+// MERCADO + LUGARES
+const mercado = []; for(let i=1;i<=1310;i++) mercado.push({n:`Skin #${String(i).padStart(4,'0')}/1310`,c:1310,rare:true});
+mercado.unshift({n:"Partícula 24h",c:33},{n:"Aura Dorada",c:111},{n:"Multi x33",c:3333},{n:"Llave Dorada",c:13131,legendary:true});
+const lugares = [{n:"Gong Silencioso",c:177},{n:"Loto Giratorio",c:1313},{n:"Silencio Absoluto",c:13131313,legendary:true}];
+function generarMercado(){document.getElementById('listaMercado').innerHTML=mercado.map((it,i)=>`<div class="item ${it.rare?'rare':''} ${it.legendary?'legendary':''}" onclick="vida+=it.c*100;particles(event.clientX,event.clientY,'#ffd700')">${it.n}<br><small>${it.c*100} segundos</small></div>`).join('');}
+function generarLugares(){document.getElementById('listaLugares').innerHTML=lugares.map(it=>`<div class="item ${it.legendary?'legendary':''}" onclick="vida+=it.c*100;particles(event.clientX,event.clientY,'#0f0')">${it.n}<br><small>${it.c*100} segundos</small></div>`).join('');}
+function toggle(id){document.getElementById(id).style.display=document.getElementById(id).style.display==='flex'?'none':'flex';if(id==='mercado')generarMercado();if(id==='lugares')generarLugares();}
+
+// CLICS + POZO + FIEBRE + MALDICIÓN
+document.body.onclick=e=>{if(e.target.tagName==="BUTTON")return;clicsConsecutivos++;particles(e.clientX,e.clientY);spawnOracle();
+  if(clicsConsecutivos>=1310 && pozo>131313){vida+=pozo;jackpotWins++;localStorage.setItem('jw',jackpotWins);alert("¡¡¡POZO COLECTIVO!!!\n+"+pozo+" segundos");pozo=0;clicsConsecutivos=0;}
+  if(Math.random()<1/777){vida-=13131;pozo+=131313;curseCount++;localStorage.setItem('cc',curseCount);beep(55,2000,0.5);vibe([1000]);alert("ESCARABAJO MALIGNO\n-13 131 segundos");}
+};
+
+// JARDÍN FINAL + INFORME + NFT QUEMABLE
+if(vida >= 13131313 || (clicsConsecutivos >= 1310 && pozo > 1000000)){
+  document.body.innerHTML = document.getElementById('final').outerHTML;
+  document.getElementById('final').style.display='flex';
+  document.getElementById('informe').textContent = `𒀭𒈾𒀭 Crónica del que llegó 𒀭𒈾𒀭\n\nTiempo quemado: ${vida.toLocaleString()} segundos (${Math.floor(vida/86400)} días)\nOráculos acertados: ${oracleWins}\nMaldiciones sufridas: ${curseCount}\nSacrificios voluntarios: ${sacrificed} seg\nFiebres ×131: ${feverCount}\nSubastas ganadas: ${subastaWins}\nPozos colectivos: ${jackpotWins}\n\nLlegaste el ${new Date().toLocaleString()}\n\nNadie volverá a ver esto.\n𒀭𒈾𒀭 gassho eterno 𒀭𒈾𒀭`;
+  const canvas = document.getElementById('nft'); const ctx = canvas.getContext('2d');
+  const seed = vida + Date.now(); const rand = (s=1)=>(Math.sin(seed++)*10000)%1 * s;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,512,512);
+  for(let i=0;i<1310;i++){ctx.fillStyle=`hsl(${rand(360)},100%,${50+rand(50)}%)`;ctx.fillRect(rand(512),rand(512),rand(40)+5,rand(40)+5);}
+  ctx.font='60px c';ctx.fillStyle='#0f0';ctx.textAlign='center';ctx.fillText('𒀭𒈾𒀭',256,286);
+  let burn = 47410;
+  const timer = setInterval(()=>{
+    burn--; const h=Math.floor(burn/3600).toString().padStart(2,'0'); const m=Math.floor(burn%3600/60).toString().padStart(2,'0'); const s=(burn%60).toString().padStart(2,'0');
+    document.getElementById('burntimer').textContent = `${h}:${m}:${s}`;
+    if(burn<=0){clearInterval(timer);canvas.style.transition='all 13s';canvas.style.filter='brightness(0)';setTimeout(()=>{document.body.innerHTML='<pre style="color:#040;font-size:100px;text-align:center;margin-top:40vh">QUEMADO\n\nYA NO HUBO NADA\n\n𒀭𒈾𒀭</pre>';},14000);}
+  },1000);
+}
+
+setInterval(()=>{beep(131,100);},13131);
+</script>
+</body>
+</html>

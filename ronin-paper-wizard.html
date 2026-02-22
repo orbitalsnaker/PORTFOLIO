@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RONIN-PAPER WIZARD · Módulo 13</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #e8c547;
+    --accent2: #c94f3a;
+    --text: #e8e4dc;
+    --muted: #666;
+    --success: #4caf7d;
+    --mono: 'Space Mono', monospace;
+    --serif: 'DM Serif Display', serif;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .module-badge {
+    background: var(--accent);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .logo-text {
+    font-family: var(--serif);
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-text span { color: var(--accent); font-style: italic; }
+
+  .header-right {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* LAYOUT */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: calc(100vh - 65px);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    overflow-y: auto;
+    background: var(--surface);
+  }
+
+  .sidebar-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    padding: 0 24px 16px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .module-item {
+    padding: 12px 24px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .module-item:hover { background: var(--surface2); }
+
+  .module-item.active {
+    border-left-color: var(--accent);
+    background: rgba(232,197,71,0.05);
+  }
+
+  .module-item.done .module-num { background: var(--success); color: #000; }
+  .module-item.active .module-num { background: var(--accent); color: #000; }
+
+  .module-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .module-label { font-size: 13px; font-weight: 500; }
+  .module-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .sidebar-footer {
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .btn-export {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-export:hover { opacity: 0.85; }
+  .btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* MAIN */
+  .main {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    overflow: hidden;
+  }
+
+  .chat-area {
+    overflow-y: auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* MESSAGES */
+  .msg {
+    display: flex;
+    gap: 16px;
+    max-width: 780px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .avatar.wizard { background: var(--accent); color: #000; }
+  .avatar.user { background: var(--accent2); color: #fff; }
+
+  .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    border-radius: 2px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 640px;
+  }
+
+  .msg.user .bubble {
+    background: rgba(201,79,58,0.1);
+    border-color: rgba(201,79,58,0.3);
+  }
+
+  .bubble strong { color: var(--accent); font-family: var(--mono); font-size: 12px; }
+  .bubble em { color: var(--muted); font-style: italic; }
+  .bubble .highlight { 
+    background: rgba(232,197,71,0.1); 
+    border-left: 3px solid var(--accent); 
+    padding: 12px 16px; 
+    margin: 12px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+
+  .bubble code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .bubble pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin: 12px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  /* OPTIONS */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .option-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .option-btn:hover {
+    border-color: var(--accent);
+    background: rgba(232,197,71,0.05);
+    color: var(--accent);
+  }
+
+  .option-btn .opt-icon {
+    width: 20px;
+    height: 20px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+
+  /* GENERATED TEXT BOX */
+  .generated-box {
+    background: var(--surface2);
+    border: 1px solid var(--success);
+    padding: 20px;
+    margin: 12px 0;
+    position: relative;
+  }
+
+  .generated-box::before {
+    content: 'TEXTO GENERADO';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--success);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .generated-box p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #ccc;
+  }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .data-table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+
+  /* INPUT AREA */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 20px 32px;
+    background: var(--surface);
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .input-wrapper {
+    flex: 1;
+    position: relative;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 16px;
+    font-family: var(--sans);
+    font-size: 14px;
+    resize: none;
+    min-height: 52px;
+    max-height: 200px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 14px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    height: 52px;
+  }
+
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PROGRESS */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  /* TYPING INDICATOR */
+  .typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .typing span {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* PAPER PREVIEW */
+  .paper-preview {
+    position: fixed;
+    right: 0;
+    top: 65px;
+    bottom: 0;
+    width: 400px;
+    background: #fff;
+    color: #111;
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: 40px;
+    font-family: 'Times New Roman', serif;
+    font-size: 13px;
+    line-height: 1.8;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+  }
+
+  .paper-preview.open { transform: translateX(0); }
+
+  .paper-preview h1 { font-size: 18px; margin-bottom: 16px; }
+  .paper-preview h2 { font-size: 15px; margin: 20px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  .paper-preview p { margin-bottom: 12px; }
+
+  .toggle-preview {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 200;
+    letter-spacing: 0.05em;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+
+  .phase-indicator {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .separator {
+    border: none;
+    border-top: 1px dashed var(--border);
+    margin: 8px 0;
+  }
+
+  .stat-badge {
+    display: inline-block;
+    background: rgba(232,197,71,0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    margin: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-area">
+    <div class="module-badge">MÓDULO 13</div>
+    <div class="logo-text">RONIN-PAPER <span>WIZARD</span></div>
+  </div>
+  <div class="header-right">
+    HEMATOLOGIC-SCANNER Ω<br>
+    <span style="color: var(--accent)">■</span> Sistema activo · v2026.1
+  </div>
+</header>
+
+<!-- PROGRESS -->
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Estructura del Paper</div>
+    
+    <div class="module-item active" id="nav-0" onclick="jumpTo(0)">
+      <div class="module-num">0</div>
+      <div>
+        <div class="module-label">Configuración</div>
+        <div class="module-desc">Tipo y contexto</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-1" onclick="jumpTo(1)">
+      <div class="module-num">1</div>
+      <div>
+        <div class="module-label">Métodos</div>
+        <div class="module-desc">Diseño y procedimiento</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-2" onclick="jumpTo(2)">
+      <div class="module-num">2</div>
+      <div>
+        <div class="module-label">Resultados</div>
+        <div class="module-desc">Datos y tablas</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-3" onclick="jumpTo(3)">
+      <div class="module-num">3</div>
+      <div>
+        <div class="module-label">Introducción</div>
+        <div class="module-desc">Contexto y objetivo</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-4" onclick="jumpTo(4)">
+      <div class="module-num">4</div>
+      <div>
+        <div class="module-label">Discusión</div>
+        <div class="module-desc">Interpretación</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-5" onclick="jumpTo(5)">
+      <div class="module-num">5</div>
+      <div>
+        <div class="module-label">Título & Abstract</div>
+        <div class="module-desc">El escaparate</div>
+      </div>
+    </div>
+    <div class="module-item" id="nav-6" onclick="jumpTo(6)">
+      <div class="module-num">6</div>
+      <div>
+        <div class="module-label">Referencias</div>
+        <div class="module-desc">Citas y formato</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-export" id="exportBtn" onclick="exportPaper()" disabled>
+        ↓ EXPORTAR PAPER
+      </button>
+      <div style="margin-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.5;">
+        El paper se genera automáticamente mientras conversas.
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT -->
+  <main class="main">
+    <div class="chat-area" id="chatArea"></div>
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea 
+          id="userInput" 
+          placeholder="Escribe aquí tu respuesta... (Enter para enviar, Shift+Enter para nueva línea)"
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">ENVIAR →</button>
+    </div>
+  </main>
+</div>
+
+<!-- PAPER PREVIEW -->
+<div class="paper-preview" id="paperPreview">
+  <h1 id="previewTitle">Tu paper científico</h1>
+  <div id="previewContent"></div>
+</div>
+
+<button class="toggle-preview" onclick="togglePreview()">📄 VER PAPER</button>
+
+<script>
+// =====================
+// STATE
+// =====================
+const state = {
+  module: 0,
+  step: 0,
+  lang: 'es',
+  studyType: '',
+  data: {},
+  paperSections: {
+    title: '',
+    abstract: '',
+    introduction: '',
+    methods: '',
+    results: '',
+    discussion: '',
+    references: ''
+  },
+  history: [],
+  previewOpen: false
+};
+
+// =====================
+// CONVERSATION FLOW
+// =====================
+const FLOW = [
+  // MODULE 0: Config
+  {
+    module: 0,
+    steps: [
+      {
+        id: 'welcome',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 0 · CONFIGURACIÓN INICIAL</div>
+<p>Bienvenido al <strong>RONIN-PAPER WIZARD</strong>. Yo me llamo Ronin. Mi trabajo es simple: preguntarte lo justo, en el orden correcto, para que al final tengas un paper que cualquier revista respetaría.</p>
+<p>No necesitas saber nada de metodología. No necesitas hablar inglés perfecto. Solo necesitas tener una experiencia clínica que contar.</p>
+<p><em>«Tú has salvado vidas con esto. Ahora solo necesitas contarlo.»</em></p>
+<hr class="separator">
+<p>Primera pregunta: <strong>¿Qué tipo de experiencia quieres publicar?</strong></p>`,
+        options: [
+          { label: '📋 Un caso clínico (un paciente concreto)', value: 'case_report', key: 'studyType' },
+          { label: '📊 Una serie de casos (varios pacientes similares)', value: 'case_series', key: 'studyType' },
+          { label: '🔬 Estudio observacional (comparando grupos)', value: 'observational', key: 'studyType' },
+          { label: '⚙️ Mejora de proceso (antes vs después)', value: 'before_after', key: 'studyType' }
+        ]
+      },
+      {
+        id: 'language',
+        wizard: () => `<p>Perfecto. ¿En qué idioma quieres escribir el paper?</p>`,
+        options: [
+          { label: '🇪🇸 Español (revistas locales / iberoamericanas)', value: 'es', key: 'lang' },
+          { label: '🇬🇧 Inglés (revistas internacionales, mayor impacto)', value: 'en', key: 'lang' },
+          { label: '🇫🇷 Francés / Portugués (según tu región)', value: 'fr', key: 'lang' }
+        ]
+      },
+      {
+        id: 'data_status',
+        wizard: () => `<p>¿Tienes ya los datos recogidos?</p>`,
+        options: [
+          { label: '✅ Sí, ya los tengo (libreta, Excel, papel...)', value: 'have_data', key: 'dataStatus' },
+          { label: '🔄 Sí, están en el escáner (resultados guardados)', value: 'scanner_data', key: 'dataStatus' },
+          { label: '📝 No, los voy a recoger ahora', value: 'collecting', key: 'dataStatus' }
+        ]
+      },
+      {
+        id: 'time',
+        wizard: () => `<p>¿Cuánto tiempo puedes dedicarle?</p>
+<p><em>No hay respuesta incorrecta. Adaptamos el nivel de detalle a tu disponibilidad.</em></p>`,
+        options: [
+          { label: '⚡ Una tarde (lo esencial, borrón funcional)', value: 'afternoon', key: 'timeAvail' },
+          { label: '📅 Varios días (podemos hacerlo bien)', value: 'days', key: 'timeAvail' },
+          { label: '🎯 Lo que sea necesario (versión completa)', value: 'full', key: 'timeAvail' }
+        ]
+      }
+    ]
+  },
+
+  // MODULE 1: Methods
+  {
+    module: 1,
+    steps: [
+      {
+        id: 'methods_intro',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 1 · MÉTODOS — Empezamos por aquí</div>
+<p>Los expertos en escritura científica recomiendan empezar siempre por los métodos. ¿Por qué? Porque es lo que ya sabes. Lo que hiciste. Los hechos puros.</p>
+<p>Vamos paso a paso. Primera pregunta: <strong>¿Cuándo y dónde hiciste el estudio?</strong></p>
+<p><em>Ejemplo: "Entre enero y marzo de 2026, en el centro de salud de Makeni, Sierra Leona."</em></p>`,
+        freeText: true,
+        key: 'periodAndPlace',
+        placeholder: 'Ej: Entre enero y junio de 2025, en el puesto de salud de Kambia...'
+      },
+      {
+        id: 'population',
+        wizard: () => `<p>Bien. Ahora: <strong>¿A quién estudiaste? Cuéntame sobre los pacientes.</strong></p>
+<p>Piensa en:</p>
+<ul style="margin: 8px 0 8px 20px; color: #aaa; font-size: 13px;">
+  <li>¿Cuántos pacientes en total?</li>
+  <li>¿Qué edades tenían?</li>
+  <li>¿Qué síntomas o condición los unía?</li>
+  <li>¿Qué requisitos debían cumplir para entrar en el estudio?</li>
+</ul>`,
+        freeText: true,
+        key: 'population',
+        placeholder: 'Ej: 80 niños de 1 a 12 años con fiebre o disuria. Excluimos a los que habían tomado antibióticos...'
+      },
+      {
+        id: 'scanner_use',
+        wizard: () => `<p>Perfecto. Ahora lo más importante: <strong>¿Cómo usaste el escáner?</strong></p>
+<p>Cuéntame paso a paso. ¿Qué módulo usaste? ¿Seguiste el protocolo estándar? ¿Tuviste que improvisar algo?</p>
+<p><em>No hay respuestas malas. Si usaste agua hervida en vez de destilada porque no tenías otra cosa, eso se pone. Eso es ciencia de campo real.</em></p>`,
+        freeText: true,
+        key: 'procedure',
+        placeholder: 'Ej: Usé el módulo 09 para ITU. Seguí el protocolo de tira colorimétrica, pero al no tener agua destilada usamos agua hervida y enfriada...'
+      },
+      {
+        id: 'variables',
+        wizard: () => `<p>¿Qué datos concretos recogiste de cada paciente? <strong>¿Qué variables mediste?</strong></p>
+<p><em>Ejemplos: positivo/negativo, porcentaje de parasitemia, valores de leucocitos, resultado verdadero/falso del medicamento...</em></p>`,
+        freeText: true,
+        key: 'variables',
+        placeholder: 'Ej: Positivo/negativo en la tira. Resultado del laboratorio de referencia para los 20 casos que pude enviar...'
+      },
+      {
+        id: 'stats',
+        wizard: () => `<p>Análisis estadístico. <strong>No te asustes.</strong> Solo dime lo que hiciste:</p>`,
+        options: [
+          { label: '📊 Solo porcentajes y medias (estadística descriptiva)', value: 'descriptive', key: 'stats' },
+          { label: '🔲 Comparé grupos (chi-cuadrado para porcentajes)', value: 'chi_square', key: 'stats' },
+          { label: '📈 Comparé medias numéricas (t-test)', value: 'ttest', key: 'stats' },
+          { label: '🎯 Calculé sensibilidad/especificidad vs gold standard', value: 'sensitivity', key: 'stats' }
+        ]
+      },
+      {
+        id: 'ethics',
+        wizard: () => `<p>Ética. Las revistas lo preguntan siempre. Marca lo que aplique:</p>`,
+        options: [
+          { label: '✅ Aprobado por comité de ética local', value: 'committee', key: 'ethics' },
+          { label: '📝 Consentimiento informado de los pacientes', value: 'consent', key: 'ethics' },
+          { label: '🔒 Datos anonimizados (sin identificadores personales)', value: 'anonymized', key: 'ethics' },
+          { label: '⚪ Estudio observacional rutinario, sin intervención', value: 'observational_exempt', key: 'ethics' }
+        ]
+      }
+    ]
+  },
+
+  // MODULE 2: Results
+  {
+    module: 2,
+    steps: [
+      {
+        id: 'results_intro',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 2 · RESULTADOS — Lo que encontraste</div>
+<p>Ahora lo que viniste a contar. Los resultados. Dame los números clave.</p>
+<p><strong>¿Cuántos pacientes empezaron y cuántos terminaron el estudio? ¿Hubo pérdidas?</strong></p>
+<p><em>Ejemplo: "Empezamos con 90 candidatos, excluimos 10, incluimos 80. Al final, 78 tuvieron resultado válido porque 2 muestras se hemolizaron."</em></p>`,
+        freeText: true,
+        key: 'flowData',
+        placeholder: 'Ej: 90 candidatos → 10 excluidos → 80 incluidos → 78 con resultado válido...'
+      },
+      {
+        id: 'demographics',
+        wizard: () => `<p><strong>Características básicas de tu población:</strong> edad media, % mujeres, tiempo de evolución de síntomas... Lo que tengas.</p>`,
+        freeText: true,
+        key: 'demographics',
+        placeholder: 'Ej: Edad media 6.2 años (rango 1-12). 45 niñas (56.3%). Tiempo de síntomas: 2.8 días de media...'
+      },
+      {
+        id: 'main_results',
+        wizard: () => `<p>Ahora <strong>los resultados principales</strong>. Lo más importante que encontraste. Da los números concretos.</p>
+<p><em>¿Cuántos positivos? ¿Cuántos negativos? ¿Concordancia con el laboratorio? ¿Diferencias entre grupos?</em></p>`,
+        freeText: true,
+        key: 'mainResults',
+        placeholder: 'Ej: 52 de 80 positivos (65%). De los 20 enviados al laboratorio, 18 coincidieron (90% concordancia)...'
+      }
+    ]
+  },
+
+  // MODULE 3: Introduction
+  {
+    module: 3,
+    steps: [
+      {
+        id: 'intro_context',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 3 · INTRODUCCIÓN — El contexto</div>
+<p>Ahora que sabes lo que encontraste, es más fácil escribir la introducción. Necesito que me expliques:</p>
+<p><strong>¿Por qué es importante lo que hiciste? ¿Qué problema existía antes de tu trabajo?</strong></p>
+<p><em>Piensa en la gran imagen: ¿cuántos pacientes afecta esto en tu región? ¿Qué pasaba cuando no tenías el escáner?</em></p>`,
+        freeText: true,
+        key: 'background',
+        placeholder: 'Ej: Las ITU son la segunda causa de consulta pediátrica en nuestra área. Sin diagnóstico rápido, los médicos daban antibióticos a ojo...'
+      },
+      {
+        id: 'gap',
+        wizard: () => `<p>Casi todo. Una pregunta más: <strong>¿Qué es lo que NADIE había hecho antes?</strong> ¿Qué hace especial tu trabajo?</p>
+<p><em>No tiene que ser un descubrimiento revolucionario. Puede ser simplemente: "Nadie había evaluado este dispositivo en condiciones de campo real en nuestra región."</em></p>`,
+        freeText: true,
+        key: 'novelty',
+        placeholder: 'Ej: No existe ningún estudio sobre este tipo de diagnóstico en centros rurales de Sierra Leona sin acceso a laboratorio...'
+      }
+    ]
+  },
+
+  // MODULE 4: Discussion
+  {
+    module: 4,
+    steps: [
+      {
+        id: 'discussion_summary',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 4 · DISCUSIÓN — Qué significa todo esto</div>
+<p>La discusión en tus propias palabras. <strong>¿Qué fue lo más importante que encontraste y qué crees que significa?</strong></p>
+<p><em>No te preocupes por el estilo académico. Cuéntamelo como se lo contarías a un colega en el pasillo.</em></p>`,
+        freeText: true,
+        key: 'mainMessage',
+        placeholder: 'Ej: Lo más llamativo fue que casi 1 de cada 3 antipalúdicos resultó falsificado. Eso explica muchos fracasos terapéuticos que veíamos...'
+      },
+      {
+        id: 'limitations',
+        wizard: () => `<p>Las limitaciones del trabajo. Esto es obligatorio en cualquier paper, y las revistas lo valoran. <strong>¿Qué no pudiste hacer bien? ¿Qué podría haber sesgado los resultados?</strong></p>
+<p><em>Ser honesto con las limitaciones no debilita el paper. Al contrario, demuestra rigor.</em></p>`,
+        freeText: true,
+        key: 'limitations',
+        placeholder: 'Ej: Muestra pequeña. Solo un centro. No teníamos grupo control. El observador sabía el resultado clínico...'
+      },
+      {
+        id: 'future',
+        wizard: () => `<p>Y por último: <strong>¿Qué debería pasar ahora? ¿Qué más habría que investigar?</strong></p>`,
+        freeText: true,
+        key: 'future',
+        placeholder: 'Ej: Sería ideal repetir el estudio en más centros y con mayor muestra. También comparar con otras regiones...'
+      }
+    ]
+  },
+
+  // MODULE 5: Title & Abstract
+  {
+    module: 5,
+    steps: [
+      {
+        id: 'title_style',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 5 · TÍTULO Y ABSTRACT</div>
+<p>Casi terminamos. El título es lo primero que leerá el editor y lo que aparecerá en los buscadores. <strong>¿Qué estilo prefieres?</strong></p>`,
+        options: [
+          { label: '📋 Descriptivo claro: "Evaluación del dispositivo X para la enfermedad Y en lugar Z"', value: 'descriptive', key: 'titleStyle' },
+          { label: '📊 Con resultado: incluye el dato más impactante en el título', value: 'with_result', key: 'titleStyle' },
+          { label: '❓ Con pregunta: "¿Puede el dispositivo X diagnosticar Y en contexto Z?"', value: 'question', key: 'titleStyle' }
+        ]
+      }
+    ]
+  },
+
+  // MODULE 6: References
+  {
+    module: 6,
+    steps: [
+      {
+        id: 'ref_format',
+        wizard: () => `
+<div class="phase-indicator">// MÓDULO 6 · REFERENCIAS</div>
+<p>Casi tienes un paper. Solo faltan las referencias. ¿Sabes a qué revista lo vas a enviar? Eso determina el formato.</p>`,
+        options: [
+          { label: '📚 Vancouver (la mayoría de revistas médicas)', value: 'vancouver', key: 'refFormat' },
+          { label: '📖 APA (algunas revistas de salud pública)', value: 'apa', key: 'refFormat' },
+          { label: '🔬 No sé todavía, genéralo en Vancouver por defecto', value: 'vancouver', key: 'refFormat' }
+        ]
+      }
+    ]
+  }
+];
+
+// =====================
+// WIZARD ENGINE
+// =====================
+let currentModuleIdx = 0;
+let currentStepIdx = 0;
+let waitingForFreeText = false;
+let currentFreeTextKey = null;
+let previewOpen = false;
+
+async function init() {
+  showWelcomeAndFirst();
+}
+
+function showWelcomeAndFirst() {
+  const step = FLOW[0].steps[0];
+  addWizardMsg(step.wizard(), step.options, step.freeText, step.key, step.placeholder);
+}
+
+function addWizardMsg(html, options = null, freeText = false, key = null, placeholder = '') {
+  const chatArea = document.getElementById('chatArea');
+
+  const msg = document.createElement('div');
+  msg.className = 'msg wizard';
+  msg.innerHTML = `
+    <div class="avatar wizard">R</div>
+    <div class="bubble">
+      ${html}
+      ${options ? `<div class="options">${options.map(o => 
+        `<button class="option-btn" onclick="selectOption('${o.value}', '${o.key}', this)">`+
+        `<span class="opt-icon">▢</span>${o.label}</button>`
+      ).join('')}</div>` : ''}
+    </div>
+  `;
+  chatArea.appendChild(msg);
+
+  if (freeText) {
+    waitingForFreeText = true;
+    currentFreeTextKey = key;
+    const inp = document.getElementById('userInput');
+    inp.placeholder = placeholder || 'Escribe tu respuesta aquí...';
+  }
+
+  scrollBottom();
+}
+
+function addUserMsg(text) {
+  const chatArea = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'msg user';
+  msg.innerHTML = `<div class="avatar user">TÚ</div><div class="bubble"><p>${text}</p></div>`;
+  chatArea.appendChild(msg);
+  scrollBottom();
+}
+
+function addGeneratedText(label, text) {
+  const chatArea = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'msg wizard';
+  msg.innerHTML = `
+    <div class="avatar wizard">R</div>
+    <div class="bubble">
+      <p>Basándome en lo que me has contado, aquí está el texto generado para esa sección:</p>
+      <div class="generated-box"><p>${text}</p></div>
+      <p style="font-size:12px; color: var(--muted); margin-top: 8px;">Puedes editarlo como quieras. Es tuyo.</p>
+    </div>
+  `;
+  chatArea.appendChild(msg);
+  scrollBottom();
+}
+
+function selectOption(value, key, btn) {
+  // Disable all options in this bubble
+  const bubble = btn.closest('.bubble');
+  bubble.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    b.style.opacity = '0.4';
+  });
+  btn.style.opacity = '1';
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  btn.querySelector('.opt-icon').textContent = '✓';
+
+  // Store data
+  state.data[key] = value;
+  if (key === 'lang') state.lang = value;
+  if (key === 'studyType') state.studyType = value;
+
+  addUserMsg(btn.textContent.trim().replace('✓', ''));
+  
+  setTimeout(() => nextStep(), 400);
+}
+
+function sendMessage() {
+  const inp = document.getElementById('userInput');
+  const text = inp.value.trim();
+  if (!text || !waitingForFreeText) return;
+
+  addUserMsg(text);
+  state.data[currentFreeTextKey] = text;
+  state.history.push({ role: 'user', key: currentFreeTextKey, content: text });
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  waitingForFreeText = false;
+  currentFreeTextKey = null;
+  inp.placeholder = 'Escribe aquí tu respuesta...';
+
+  setTimeout(() => processAndNext(text), 400);
+}
+
+async function processAndNext(userText) {
+  showTyping();
+
+  // Generate section text via AI
+  const sectionText = await generateSectionText(currentModuleIdx, currentStepIdx - 1, userText);
+  
+  hideTyping();
+
+  if (sectionText) {
+    updatePaperSection(currentModuleIdx, currentStepIdx - 1, sectionText);
+    addGeneratedText('', sectionText);
+    await sleep(600);
+  }
+
+  nextStep();
+}
+
+async function generateSectionText(modIdx, stepIdx, userInput) {
+  const step = FLOW[modIdx]?.steps[stepIdx];
+  if (!step || !step.freeText) return null;
+
+  const prompts = {
+    'periodAndPlace': `Eres un editor científico. El sanitario dice: "${userInput}". Escribe la primera oración de la sección Métodos indicando período y lugar del estudio. Máximo 2 frases, tono académico, en ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'population': `El sanitario describe su población así: "${userInput}". Escribe el párrafo de sujetos/criterios para la sección Métodos. Incluye criterios de inclusión y exclusión. Tono académico, en ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'procedure': `El sanitario describe su procedimiento: "${userInput}". Escribe el párrafo de procedimiento para la sección Métodos del paper. Menciona el dispositivo HEMATOLOGIC-SCANNER Ω. Tono académico, en ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'variables': `Variables medidas según el sanitario: "${userInput}". Escribe el párrafo de variables para la sección Métodos. Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'flowData': `El sanitario describe el flujo de pacientes: "${userInput}". Escribe el diagrama de flujo en formato texto y el párrafo introductorio de la sección Resultados. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'demographics': `Datos demográficos: "${userInput}". Redacta la descripción de la población para la sección Resultados. Incluye los valores como media ± DE o n (%). Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'mainResults': `Resultados principales: "${userInput}". Escribe el párrafo de resultados principales para la sección Resultados del paper. Da contexto a los números. Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'background': `Contexto según el sanitario: "${userInput}". Escribe el párrafo de antecedentes para la Introducción. Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'novelty': `Novedad del trabajo: "${userInput}". Escribe la laguna del conocimiento y el objetivo del estudio (última oración de la Introducción). Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'mainMessage': `Mensaje principal de la discusión: "${userInput}". Escribe el primer párrafo de la Discusión (resumen de hallazgos + comparación con lo esperado). Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'limitations': `Limitaciones: "${userInput}". Escribe el párrafo de limitaciones para la Discusión. Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`,
+    'future': `Líneas futuras: "${userInput}". Escribe el último párrafo de la Discusión con implicaciones clínicas y futuras investigaciones. Tono académico. En ${state.lang === 'en' ? 'English' : 'español'}.`
+  };
+
+  const prompt = prompts[step.key];
+  if (!prompt) return null;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    return data.content?.[0]?.text || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function updatePaperSection(modIdx, stepIdx, text) {
+  const sectionMap = {
+    0: { 0: 'methods', 1: 'methods', 2: 'methods', 3: 'methods', 4: 'methods' },
+    1: { 0: 'methods', 1: 'methods', 2: 'methods', 3: 'methods' },
+    2: { 0: 'results', 1: 'results', 2: 'results' },
+    3: { 0: 'introduction', 1: 'introduction' },
+    4: { 0: 'discussion', 1: 'discussion', 2: 'discussion' },
+    5: { 0: 'abstract' }
+  };
+
+  const section = sectionMap[modIdx]?.[stepIdx];
+  if (section) {
+    state.paperSections[section] += '\n\n' + text;
+    updatePreview();
+  }
+}
+
+function updatePreview() {
+  const s = state.paperSections;
+  document.getElementById('previewTitle').textContent = s.title || 'Tu paper científico';
+  
+  let html = '';
+  if (s.introduction) html += `<h2>Introducción</h2><p>${s.introduction.replace(/\n\n/g, '</p><p>')}</p>`;
+  if (s.methods) html += `<h2>Métodos</h2><p>${s.methods.replace(/\n\n/g, '</p><p>')}</p>`;
+  if (s.results) html += `<h2>Resultados</h2><p>${s.results.replace(/\n\n/g, '</p><p>')}</p>`;
+  if (s.discussion) html += `<h2>Discusión</h2><p>${s.discussion.replace(/\n\n/g, '</p><p>')}</p>`;
+  if (s.abstract) html += `<h2>Abstract</h2><p>${s.abstract.replace(/\n\n/g, '</p><p>')}</p>`;
+  
+  document.getElementById('previewContent').innerHTML = html;
+}
+
+function nextStep() {
+  const currentModule = FLOW[currentModuleIdx];
+  currentStepIdx++;
+
+  // Check if there are more steps in current module
+  if (currentStepIdx < currentModule.steps.length) {
+    const step = currentModule.steps[currentStepIdx];
+    addWizardMsg(step.wizard(), step.options, step.freeText, step.key, step.placeholder);
+    updateProgress();
+    return;
+  }
+
+  // Move to next module
+  if (currentModuleIdx < FLOW.length - 1) {
+    // Mark current module as done
+    const navItem = document.getElementById(`nav-${currentModuleIdx}`);
+    if (navItem) {
+      navItem.classList.remove('active');
+      navItem.classList.add('done');
+    }
+
+    currentModuleIdx++;
+    currentStepIdx = 0;
+
+    // Mark new module as active
+    const newNav = document.getElementById(`nav-${currentModuleIdx}`);
+    if (newNav) newNav.classList.add('active');
+
+    const step = FLOW[currentModuleIdx].steps[0];
+    addWizardMsg(step.wizard(), step.options, step.freeText, step.key, step.placeholder);
+    updateProgress();
+
+  } else {
+    // All done!
+    finalizePaper();
+  }
+}
+
+async function finalizePaper() {
+  showTyping();
+  
+  // Generate title and abstract with AI
+  const titlePrompt = `Basándome en estos datos del estudio: Tipo="${state.studyType}", Población="${state.data.population||''}", Resultados="${state.data.mainResults||''}", Lugar="${state.data.periodAndPlace||''}". Genera 3 opciones de título científico: 1. Descriptivo 2. Con resultado 3. Con formato PICO. Formato JSON: {"titles": ["...", "...", "..."]}. Solo JSON, sin markdown.`;
+  
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: titlePrompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '{}';
+    let parsed;
+    try { parsed = JSON.parse(text.replace(/```json|```/g, '')); } catch(e) { parsed = {}; }
+    
+    hideTyping();
+
+    const titles = parsed.titles || ['Tu paper científico'];
+    
+    addWizardMsg(`
+<div class="phase-indicator">// 🎉 ¡PAPER COMPLETO! — Solo falta el título</div>
+<p>Lo has conseguido. Tienes un borrador completo con todas las secciones. Aquí van las opciones de título que generé para ti:</p>
+<div style="margin: 12px 0;">
+  ${titles.map((t, i) => `<div style="background: var(--surface2); border: 1px solid var(--border); padding: 12px; margin-bottom: 8px; cursor: pointer;" onclick="selectTitle('${t.replace(/'/g, "\\'")}')" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <span style="font-family: var(--mono); font-size: 10px; color: var(--accent);">OPCIÓN ${i+1}</span><br>
+    <span style="font-size: 13px;">${t}</span>
+  </div>`).join('')}
+</div>
+<p>Haz clic en el que más te guste, o escríbeme uno propio.</p>
+    `, null, true, 'customTitle', 'O escribe tu propio título aquí...');
+
+    document.getElementById('exportBtn').disabled = false;
+
+    // Mark all done
+    for (let i = 0; i <= 6; i++) {
+      const nav = document.getElementById(`nav-${i}`);
+      if (nav) { nav.classList.add('done'); nav.classList.remove('active'); }
+    }
+    document.getElementById(`nav-6`).classList.add('active');
+
+    updateProgress(100);
+
+  } catch(e) {
+    hideTyping();
+    addWizardMsg(`<p>¡Excelente trabajo! Tu paper está casi listo. Pulsa <strong>↓ EXPORTAR PAPER</strong> para descargarlo.</p>`);
+  }
+}
+
+function selectTitle(title) {
+  state.paperSections.title = title;
+  state.data.title = title;
+  document.getElementById('previewTitle').textContent = title;
+  addUserMsg(title);
+  addWizardMsg(`
+<p>Título guardado: <strong>${title}</strong></p>
+<p>Tu paper está listo para exportar. Pulsa <strong>↓ EXPORTAR PAPER</strong> en el panel izquierdo.</p>
+<p><em>Zehahahaha. Lo has conseguido.</em></p>
+<div style="margin-top: 16px; padding: 16px; background: rgba(76, 175, 125, 0.1); border: 1px solid var(--success);">
+  <div style="font-family: var(--mono); font-size: 10px; color: var(--success); margin-bottom: 8px;">✓ PAPER COMPLETADO</div>
+  <p style="font-size: 13px;">Tienes un borrador completo con Introducción, Métodos, Resultados y Discusión generados a partir de tus respuestas. Ahora puedes editarlo, añadir referencias y enviarlo a una revista.</p>
+</div>
+  `);
+  document.getElementById('exportBtn').disabled = false;
+}
+
+// =====================
+// HELPERS
+// =====================
+let typingEl = null;
+
+function showTyping() {
+  const chatArea = document.getElementById('chatArea');
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg wizard';
+  typingEl.id = 'typingIndicator';
+  typingEl.innerHTML = `
+    <div class="avatar wizard">R</div>
+    <div class="bubble">
+      <div class="typing"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  chatArea.appendChild(typingEl);
+  scrollBottom();
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function scrollBottom() {
+  const chatArea = document.getElementById('chatArea');
+  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 100);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function updateProgress(val = null) {
+  if (val !== null) {
+    document.getElementById('progressFill').style.width = val + '%';
+    return;
+  }
+  const totalSteps = FLOW.reduce((a, m) => a + m.steps.length, 0);
+  const doneSteps = FLOW.slice(0, currentModuleIdx).reduce((a, m) => a + m.steps.length, 0) + currentStepIdx;
+  document.getElementById('progressFill').style.width = Math.round(doneSteps / totalSteps * 100) + '%';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+function jumpTo(moduleIdx) {
+  // Just visual navigation hint
+}
+
+function togglePreview() {
+  previewOpen = !previewOpen;
+  document.getElementById('paperPreview').classList.toggle('open', previewOpen);
+  document.querySelector('.toggle-preview').textContent = previewOpen ? '✕ CERRAR' : '📄 VER PAPER';
+}
+
+function exportPaper() {
+  const s = state.paperSections;
+  const title = s.title || 'Mi Paper Científico';
+  
+  const paperHTML = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: 'Times New Roman', serif; max-width: 800px; margin: 40px auto; padding: 20px; font-size: 14px; line-height: 1.8; color: #111; }
+  h1 { font-size: 20px; text-align: center; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  .meta { text-align: center; color: #555; font-size: 12px; margin-bottom: 32px; }
+  p { margin-bottom: 12px; text-align: justify; }
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+<div class="meta">Generado con RONIN-PAPER WIZARD · Módulo 13 · HEMATOLOGIC-SCANNER Ω<br>${new Date().toLocaleDateString()}</div>
+${s.abstract ? `<h2>Abstract</h2><p>${s.abstract.replace(/\n\n/g,'</p><p>')}</p>` : ''}
+${s.introduction ? `<h2>Introducción</h2><p>${s.introduction.replace(/\n\n/g,'</p><p>')}</p>` : ''}
+${s.methods ? `<h2>Métodos</h2><p>${s.methods.replace(/\n\n/g,'</p><p>')}</p>` : ''}
+${s.results ? `<h2>Resultados</h2><p>${s.results.replace(/\n\n/g,'</p><p>')}</p>` : ''}
+${s.discussion ? `<h2>Discusión</h2><p>${s.discussion.replace(/\n\n/g,'</p><p>')}</p>` : ''}
+<h2>Referencias</h2>
+<p>1. [Referencia a añadir manualmente o mediante gestor de referencias]</p>
+<p><em>Documento generado automáticamente. Revisar y editar antes de enviar a revista.</em></p>
+</body></html>`;
+
+  const blob = new Blob([paperHTML], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.html';
+  a.click();
+}
+
+// =====================
+// START
+// =====================
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

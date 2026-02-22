@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RONIN_IDENTITY_LAB // OVERCLOCK_TOTAL</title>
+    <style>
+        :root {
+            --deep-black: #020202;
+            --matrix-green: #00ff41;
+            --casta-gold: #d4af37;
+            --alert-red: #ff3300;
+            --ghost-white: #e0e0e0;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            background-color: var(--deep-black);
+            color: var(--ghost-white);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        .master-frame {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 2px solid var(--matrix-green);
+            padding: 30px;
+            background: rgba(0, 10, 0, 0.9);
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.1);
+        }
+
+        header {
+            border-bottom: 2px solid var(--casta-gold);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 { color: var(--matrix-green); letter-spacing: 5px; margin: 0; font-size: 2.5em; }
+        .tagline { color: var(--casta-gold); font-size: 0.8em; font-weight: bold; }
+
+        /* --- SECCIÓN MANIFIESTO --- */
+        .manifesto-box {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 25px;
+            border-left: 4px solid var(--matrix-green);
+            margin-bottom: 40px;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        /* --- INTERFAZ GUANTE --- */
+        .guante-ui {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            border: 1px solid var(--casta-gold);
+            padding: 20px;
+            background: #000;
+        }
+
+        .profile-card {
+            background: var(--casta-gold);
+            color: #000;
+            padding: 15px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .finger-status {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; background: var(--matrix-green); animation: pulse 1s infinite; }
+
+        /* --- BOM & MANUAL --- */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85em; }
+        th { background: #111; color: var(--matrix-green); padding: 10px; text-align: left; border-bottom: 2px solid var(--matrix-green); }
+        td { padding: 10px; border-bottom: 1px solid #222; }
+
+        .manual-steps {
+            background: #0a0a0a;
+            padding: 20px;
+            border: 1px dashed var(--ghost-white);
+            margin-top: 20px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            border: 2px solid var(--matrix-green);
+            color: var(--matrix-green);
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-action:hover { background: var(--matrix-green); color: #000; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="master-frame">
+    <header>
+        <h1>CASTA_MIMIC // PROYECTO 13101310</h1>
+        <div class="tagline">SISTEMA INTEGRADO DE USURPACIÓN BIOMÉTRICA & SOBERANÍA TÉCNICA</div>
+    </header>
+
+    <div class="manifesto-box">
+        "No busco ser único, busco overclockear la realidad hasta que grite autenticidad. La tecnología no es un fin, es un lienzo para la locura calculada. Si no fuerzas el motor, nunca sabes de lo que eres capaz."
+        <br><br><strong>— EL DIRECTOR (MANIFIESTO OVERCLOCK TOTAL)</strong>
+    </div>
+
+    <div class="guante-ui">
+        <div class="control-panel">
+            <h3>CONTROL DE HARDWARE (GUANTE)</h3>
+            <div class="profile-card">
+                ESTADO: USURPANDO IDENTIDAD<br>
+                <span id="target-name">ALTO CARGO: LOGIA_B1_COORD</span>
+            </div>
+            <p style="font-size: 0.7em;">Frecuencia de refresco hápitico: 500 DPI</p>
+            <p style="font-size: 0.7em;">Temperatura yema: 36.6°C (Estable)</p>
+            <div class="finger-status">
+                <span>P <div class="dot"></div></span>
+                <span>I <div class="dot"></div></span>
+                <span>C <div class="dot"></div></span>
+                <span>A <div class="dot"></div></span>
+                <span>m <div class="dot"></div></span>
+            </div>
+            <button class="btn-action" onclick="rotar()">ROTAR IDENTIDAD (FORCE)</button>
+        </div>
+
+        <div class="control-panel" style="border-color: var(--matrix-green);">
+            <h3>LOGÍSTICA / BOM</h3>
+            <table>
+                <thead>
+                    <tr><th>PIEZA</th><th>ORIGEN</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Matriz Piezoeléctrica</td><td>Actuadores Hápticos 500DPI</td></tr>
+                    <tr><td>Controlador MCU</td><td>ESP32-S3 Ronin Kernel</td></tr>
+                    <tr><td>Tejido Base</td><td>Hilo de Plata (Conductivo)</td></tr>
+                    <tr><td>Alimentación</td><td>Li-Po Flexible 3.7V</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="manual-steps">
+        <h3>MANUAL DE MONTAJE RÁPIDO</h3>
+        <ol style="font-size: 0.85em;">
+            <li>Coser la <b>fibra de plata</b> en el guante para anular la capacitancia natural del usuario.</li>
+            <li>Montar la <b>matriz piezoeléctrica</b> en el interior de la yema del índice (Capa 0).</li>
+            <li>Inyectar el <b>firmware de rotación</b> en el ESP32 (incluido en este kernel).</li>
+            <li>Sincronizar mediante Bluetooth con este panel para gestionar la base de datos de la Casta.</li>
+        </ol>
+    </div>
+
+    <footer style="margin-top: 40px; text-align: center; font-size: 0.7em; color: var(--casta-gold);">
+        AGENCIA RONIN // BARCELONA NODO // 2026 // CHECKMATE INVOLUNTARIO
+    </footer>
+</div>
+
+<script>
+    const casta = ["MINISTRO_INTERIOR_FAKE", "DIR_LOGIA_B1", "OPERADOR_MONCLOA_ALPHA", "AUDITOR_TAVISTOCK"];
+    let i = 0;
+    function rotar() {
+        i = (i + 1) % casta.length;
+        document.getElementById('target-name').innerText = "ALTO CARGO: " + casta[i];
+        alert("ALERTA: Perfil biométrico actualizado en el guante.");
+    }
+</script>
+
+</body>
+</html>
+

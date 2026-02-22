@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>V4-HEAVY :: BASALT-MOTHERSHIP :: SAB-BOM-BIN CORE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;700;900&display=swap');
+  :root{
+    --cyan:#00ffe7;--yellow:#ffe000;--red:#ff2222;--bg:#050a0a;--panel:#0a1010;
+    --border:#1a3a3a;--text:#b0d8d0;--mono:'Share Tech Mono',monospace;
+    --head:'Barlow Condensed',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;
+    overflow-x:hidden;line-height:1.5}
+  #hud{display:grid;grid-template-columns:280px 1fr 280px;grid-template-rows:48px 1fr 180px;
+    height:100vh;gap:2px;padding:2px}
+  .panel{background:var(--panel);border:1px solid var(--border);padding:8px;overflow:hidden}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid var(--cyan);padding:0 12px}
+  header h1{font-family:var(--head);font-size:28px;font-weight:900;color:var(--cyan);
+    letter-spacing:4px;text-transform:uppercase}
+  header .hash{font-size:10px;color:#4a8a80}
+  #sidebar-left{grid-row:2}
+  #main-view{grid-row:2;display:flex;flex-direction:column;gap:2px}
+  #canvas-wrap{flex:1;position:relative}
+  canvas#gpu{width:100%;height:100%;display:block;background:#000}
+  canvas#fallback{width:100%;height:100%;display:block}
+  #sidebar-right{grid-row:2}
+  footer{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+  .label{color:#4a8a80;font-size:10px;text-transform:uppercase;letter-spacing:2px}
+  .value{color:var(--cyan);font-size:14px;font-weight:bold}
+  .value.warn{color:var(--yellow)} .value.crit{color:var(--red)}
+  .metric{display:flex;flex-direction:column;margin-bottom:6px}
+  .section-title{font-family:var(--head);font-size:16px;font-weight:700;color:var(--cyan);
+    border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:2px;letter-spacing:2px}
+  #bom-table{width:100%;border-collapse:collapse;font-size:10px}
+  #bom-table td,#bom-table th{border:1px solid var(--border);padding:2px 4px}
+  #bom-table th{color:var(--yellow);background:#0a1a1a}
+  #rover-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-top:4px}
+  .rover-slot{width:18px;height:18px;background:#0a2020;border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:7px;cursor:pointer;
+    transition:all 0.2s}
+  .rover-slot.deployed{background:#003030;border-color:#00ffe7;color:var(--cyan)}
+  .rover-slot.ejecting{background:#3a2000;border-color:var(--yellow);animation:pulse 0.3s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  #manual-output{font-size:10px;height:100%;overflow-y:auto;white-space:pre-wrap;
+    color:#80c0b0;border-top:1px solid var(--border);padding:4px}
+  #zarandaja-input{width:100%;background:#040808;border:1px solid var(--border);
+    color:var(--text);font-family:var(--mono);padding:4px;font-size:11px;margin-bottom:4px}
+  button{background:#001a1a;border:1px solid var(--cyan);color:var(--cyan);
+    font-family:var(--mono);padding:4px 10px;cursor:pointer;font-size:11px;
+    text-transform:uppercase;letter-spacing:1px;transition:all 0.15s}
+  button:hover{background:#00ffe720}
+  button.danger{border-color:var(--red);color:var(--red)}
+  #error-flash{display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+    background:#ff000030;border:3px solid var(--red);z-index:999;
+    align-items:center;justify-content:center;font-size:24px;color:var(--red);
+    font-family:var(--head);font-weight:900;letter-spacing:4px;pointer-events:none}
+  #export-btn{position:fixed;bottom:12px;right:12px;z-index:100;
+    border-color:var(--yellow);color:var(--yellow);font-size:13px;padding:8px 18px}
+  .integrity-bar{height:6px;background:#0a1a1a;border:1px solid var(--border);margin:2px 0}
+  .integrity-fill{height:100%;background:var(--cyan);transition:width 0.5s,background 0.5s}
+</style>
+</head>
+<body>
+<div id="hud">
+  <header class="panel">
+    <h1>V4-HEAVY :: BASALT-MOTHERSHIP</h1>
+    <div>
+      <div class="label">DJB2 INTEGRITY HASH</div>
+      <div class="hash" id="hash-display">----</div>
+    </div>
+    <div>
+      <div class="label">PHASE LOCK</div>
+      <div class="value" id="phase-display">NOMINAL</div>
+    </div>
+    <div>
+      <div class="label">BOM COST</div>
+      <div class="value" id="cost-display">$0</div>
+    </div>
+  </header>
+
+  <aside id="sidebar-left" class="panel">
+    <div class="section-title">BOM :: BASALT REGISTRY</div>
+    <table id="bom-table">
+      <thead><tr><th>MATERIAL</th><th>QTY</th><th>UNIT</th><th>COST$</th></tr></thead>
+      <tbody id="bom-tbody"></tbody>
+    </table>
+    <br/>
+    <div class="section-title">STRUCTURAL INTEGRITY</div>
+    <div class="metric">
+      <span class="label">TSAI-WU INDEX</span>
+      <div class="integrity-bar"><div class="integrity-fill" id="tsai-bar" style="width:10%"></div></div>
+      <span class="value" id="tsai-val">0.10</span>
+    </div>
+    <div class="metric">
+      <span class="label">SIGMA VON MISES [MPa]</span>
+      <span class="value" id="sigma-val">0</span>
+    </div>
+    <div class="metric">
+      <span class="label">FILM COOLING ΔT [°C]</span>
+      <span class="value" id="cooling-val">0</span>
+    </div>
+    <div class="metric">
+      <span class="label">NOZZLE WALL TEMP [°C]</span>
+      <span class="value" id="nozzle-val">0</span>
+    </div>
+  </aside>
+
+  <section id="main-view" class="panel">
+    <div class="section-title">BIM VISUALIZER :: BASALT HULL STRESS [WebGPU/Canvas2D]</div>
+    <div id="canvas-wrap">
+      <canvas id="gpu"></canvas>
+      <canvas id="fallback" style="display:none"></canvas>
+    </div>
+    <div id="manual-output">// MANUAL SOBERANO CARGANDO...</div>
+  </section>
+
+  <aside id="sidebar-right" class="panel">
+    <div class="section-title">PROPULSION KERNEL</div>
+    <div class="metric">
+      <span class="label">THRUST [kN]</span>
+      <span class="value" id="thrust-val">0</span>
+    </div>
+    <div class="metric">
+      <span class="label">Pc [bar]</span>
+      <span class="value">100</span>
+    </div>
+    <div class="metric">
+      <span class="label">CoG_Z [m]</span>
+      <span class="value" id="cog-val">0.000</span>
+    </div>
+    <div class="metric">
+      <span class="label">DELTA-V [m/s]</span>
+      <span class="value" id="dv-val">0</span>
+    </div>
+    <br/>
+    <div class="section-title">ROVER DEPLOYMENT RACK</div>
+    <div id="rover-grid"></div>
+    <br/>
+    <button id="eject-btn" onclick="ejectNextRover()">⬛ EJECT ROVER</button>
+    <br/><br/>
+    <div class="section-title">ZARANDAJA DETECTOR</div>
+    <input id="zarandaja-input" class="zarandaja-input" placeholder="Propón material o diseño..." 
+           oninput="detectZarandaja(this.value)"/>
+    <div id="zarandaja-status" style="color:var(--cyan);font-size:10px">MONITOR ACTIVO</div>
+  </aside>
+
+  <div class="panel" style="grid-column:1/-1">
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      <div class="metric"><span class="label">MASA TOTAL [kg]</span><span class="value" id="mass-val">0</span></div>
+      <div class="metric"><span class="label">ISP [s]</span><span class="value">310</span></div>
+      <div class="metric"><span class="label">ROVERS DESPLEGADOS</span><span class="value" id="rovers-deployed">0/50</span></div>
+      <div class="metric"><span class="label">BFRP TENSION [GPa]</span><span class="value">4.8</span></div>
+      <div class="metric"><span class="label">MÓDULO ELÁSTICO [GPa]</span><span class="value">89</span></div>
+      <div class="metric"><span class="label">STABILITY_SENTINEL</span><span class="value" id="sentinel-val">ARMED</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="error-flash">⚠ ERROR_PHASE_0: ZARANDAJA DETECTADA — COMPILACIÓN BLOQUEADA ⚠</div>
+<button id="export-btn" onclick="exportSAD()">📦 EXPORTAR ARCHIVO SOBERANO</button>
+
+<script>
+// ============================================================
+// SAB-BOM-BIN CORE :: SHARED ARRAY BUFFER (2MB = 2097152 bytes)
+// ============================================================
+const SAB = new SharedArrayBuffer(2 * 1024 * 1024); // 2MB Physical Register
+const SAB_U32 = new Uint32Array(SAB);
+const SAB_F32 = new Float32Array(SAB);
+const SAB_U8  = new Uint8Array(SAB);
+
+// MEMORY MAP (byte offsets / 4 for Uint32 index)
+const ADDR = {
+  // BOM SLOTS (Uint32, byte 0 - 1023, materials in grams or unit counts)
+  BASALT_FIBER_G:    0,   // grams of BFRP
+  BASALT_SINTER_G:   1,   // grams sintered basalt
+  EPOXY_G:           2,   // grams epoxy resin
+  CABLE_M:           3,   // meters of cable
+  SENSOR_COTS:       4,   // sensor unit count
+  ROVER_COUNT:       5,   // deployed rovers
+  KEROLOX_KG:        6,   // propellant mass kg
+  BOM_COST:          7,   // cost in cents USD
+  COMPILATION_LOCK:  8,   // 0=open, 1=locked (zarandaja)
+
+  // PHYSICS STATE (Float32, byte 1024+, accessed as SAB_F32[256+i])
+  SIGMA_XX:        256,   // stress tensor [MPa]
+  SIGMA_YY:        257,
+  SIGMA_ZZ:        258,
+  SIGMA_XY:        259,
+  SIGMA_YZ:        260,
+  SIGMA_XZ:        261,
+  TSAI_WU_IDX:     262,   // Tsai-Wu failure index
+  COG_X:           263,   // Center of Gravity [m]
+  COG_Y:           264,
+  COG_Z:           265,
+  MASS_TOTAL:      266,   // total vehicle mass [kg]
+  THRUST_N:        267,   // thrust [N]
+  NOZZLE_TEMP:     268,   // nozzle wall temp [°C]
+  DELTA_V:         269,   // delta-v [m/s]
+  SIGMA:           270,   // instability sentinel (0=nominal, 1=critical)
+
+  // BIM VERTEX BUFFER start (Float32, byte 2048+, SAB_F32[512+])
+  BIM_PTR:         512,
+
+  // BIN FIRMWARE start (Uint8, byte 8192+)
+  BIN_PTR:        8192,
+};
+
+// ============================================================
+// BOM :: BILL OF MATERIALS (prices in USD/kg or USD/unit)
+// ============================================================
+const BOM = {
+  materials: [
+    { name:"BFRP Fiber (Basalt)",   addr:ADDR.BASALT_FIBER_G, qty_kg:1200, price_per_kg:4.50,   unit:"kg"  },
+    { name:"Basalt Sinter HD",      addr:ADDR.BASALT_SINTER_G,qty_kg:2400, price_per_kg:2.80,   unit:"kg"  },
+    { name:"Epoxy Resin (Low-VOC)", addr:ADDR.EPOXY_G,        qty_kg:180,  price_per_kg:8.00,   unit:"kg"  },
+    { name:"Cable (Cu-clad Al)",    addr:ADDR.CABLE_M,        qty_kg:420,  price_per_kg:3.20,   unit:"m"   },
+    { name:"COTS Sensors (IMU/PT)", addr:ADDR.SENSOR_COTS,    qty_kg:50,   price_per_kg:120.00, unit:"unit"},
+    { name:"Kerolox Propellant",    addr:ADDR.KEROLOX_KG,     qty_kg:8000, price_per_kg:1.20,   unit:"kg"  },
+  ]
+};
+
+// Write initial BOM quantities to SAB
+(function initBOM(){
+  BOM.materials.forEach(m => SAB_U32[m.addr] = Math.round(m.qty_kg * 1000)); // store as grams
+  let totalCost = 0;
+  BOM.materials.forEach(m => totalCost += m.qty_kg * m.price_per_kg);
+  SAB_U32[ADDR.BOM_COST] = Math.round(totalCost * 100); // cents
+
+  if(totalCost > 50000){
+    console.warn(`⚠ Ineficiencia Detectada: BOM=$${totalCost.toFixed(2)} > $50,000. Ejecutando optimización topológica → Cambiar a Basalto Sinterizado de Mayor Densidad (HD-Sinter: ↑densidad 15%, ↓coste 22%).`);
+    // Aggressive topology: reduce BFRP, increase sinter ratio
+    BOM.materials[0].qty_kg *= 0.78;
+    BOM.materials[1].qty_kg *= 1.15;
+    let newCost = 0;
+    BOM.materials.forEach(m => newCost += m.qty_kg * m.price_per_kg);
+    SAB_U32[ADDR.BOM_COST] = Math.round(newCost * 100);
+    console.info(`✓ Post-Opt BOM=$${newCost.toFixed(2)}`);
+  }
+})();
+
+// ============================================================
+// FIRMWARE BLOB (BIN) :: Teensy 4.1 / ESP32-S3 stub
+// Encoded as representative byte sequence (deterministic stub)
+// ============================================================
+const FIRMWARE_BLOB = new Uint8Array([
+  // ELF header stub + flight controller payload stub (256 bytes)
+  0x7F,0x45,0x4C,0x46, // ELF magic
+  0x01,0x01,0x01,0x00, // 32-bit LE RTOS
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x02,0x00,0x28,0x00, // ET_EXEC, ARM thumb
+  0x01,0x00,0x00,0x00,
+  0x00,0x80,0x00,0x20, // entry: 0x20008000 (Teensy4.1 ITCM)
+  // Control loop stub: PID + RCS adjoint kernel (stub bytes)
+  ...Array.from({length:220}, (_,i)=>(0xAA^i^(i>>3))&0xFF)
+]);
+// Write firmware blob to SAB BIN_PTR zone
+SAB_U8.set(FIRMWARE_BLOB, ADDR.BIN_PTR);
+
+// ============================================================
+// BIM :: 3D VERTEX BUFFER (Float32Array in SAB)
+// Hull approximated as truncated cone (mothership body) + 50 rover bays
+// ============================================================
+(function initBIM(){
+  const verts = SAB_F32;
+  const base = ADDR.BIM_PTR;
+  // Generate cylindrical hull ring vertices (20 segments, 3 rings)
+  const R=8.0, L=32.0, segs=20;
+  let idx=base;
+  for(let ring=0;ring<3;ring++){
+    const z = (ring/2)*L - L/2;
+    const r = R*(1-ring*0.08);
+    for(let s=0;s<segs;s++){
+      const theta = (s/segs)*Math.PI*2;
+      verts[idx++]=r*Math.cos(theta);
+      verts[idx++]=r*Math.sin(theta);
+      verts[idx++]=z;
+    }
+  }
+  // 50 rover slot positions (arranged in 5 rings of 10)
+  for(let rv=0;rv<50;rv++){
+    const ring=Math.floor(rv/10), slot=rv%10;
+    const theta=(slot/10)*Math.PI*2;
+    const z=-10+ring*4;
+    verts[idx++]=(R+0.6)*Math.cos(theta);
+    verts[idx++]=(R+0.6)*Math.sin(theta);
+    verts[idx++]=z;
+  }
+})();
+
+// ============================================================
+// MATERIAL PROPS :: BFRP (Basalt Fiber Reinforced Polymer)
+// Sources: Sim & Yang 2021, Dhand et al. 2015
+// ============================================================
+const BFRP_PROPS = {
+  F1t: 4800,    // MPa  tensile strength fiber dir
+  F1c: 480,     // MPa  compressive fiber dir
+  F2t: 63,      // MPa  transverse tensile
+  F2c: 128,     // MPa  transverse compressive
+  F6:  72,      // MPa  shear strength
+  E1:  89000,   // MPa  elastic modulus fiber
+  E2:  8900,    // MPa  transverse modulus
+  nu12:0.27,
+  rho: 1850,    // kg/m³
+  T_soften:1100 // °C basalt softening
+};
+
+// ============================================================
+// KERNEL 1 :: TSAI-WU FAILURE CRITERION (Basalt Composite)
+// f(σ) = F1·σ1 + F2·σ2 + F11·σ1² + F22·σ2² + F66·τ12² + 2F12·σ1σ2 ≥ 1 → FAILURE
+// ============================================================
+function checkStructuralIntegrity(stress_vector, mp){
+  // stress_vector: [s1, s2, t12] MPa (principal + shear)
+  const [s1, s2, t12] = stress_vector;
+
+  const F1  =  1/mp.F1t - 1/mp.F1c;
+  const F2  =  1/mp.F2t - 1/mp.F2c;
+  const F11 =  1/(mp.F1t * mp.F1c);
+  const F22 =  1/(mp.F2t * mp.F2c);
+  const F66 =  1/(mp.F6 * mp.F6);
+  // F12 biaxial interaction: -0.5*sqrt(F11*F22) (conservative)
+  const F12 = -0.5 * Math.sqrt(F11 * F22);
+
+  const TW = F1*s1 + F2*s2 + F11*s1*s1 + F22*s2*s2 + F66*t12*t12 + 2*F12*s1*s2;
+
+  // Write to SAB
+  SAB_F32[ADDR.TSAI_WU_IDX] = TW;
+
+  if(TW >= 1.0){
+    SAB_F32[ADDR.SIGMA] = TW; // MAX instability
+    console.error(`STABILITY_SENTINEL: TW=${TW.toFixed(3)} ≥ 1.0 → TOPOLOGICAL MASS REDUCTION TRIGGERED`);
+    triggerTopologyOptimization(TW);
+  }
+  return TW;
+}
+
+function triggerTopologyOptimization(TW_index){
+  // Reduce BFRP mass by density-scaling (Adjoint gradient: dTW/dm < 0)
+  const reduction = 0.05 * TW_index; // 5% per unit TW overshoot
+  const current = SAB_U32[ADDR.BASALT_FIBER_G];
+  SAB_U32[ADDR.BASALT_FIBER_G] = Math.round(current * (1 - reduction));
+  console.warn(`TOPO-OPT: BFRP mass reduced ${(reduction*100).toFixed(1)}% → ${(SAB_U32[ADDR.BASALT_FIBER_G]/1000).toFixed(1)} kg`);
+  updateBOMCost();
+}
+
+// ============================================================
+// KERNEL 2 :: PROPULSION — BARTZ HEAT FLUX + FILM COOLING
+// Bartz: q = (0.026/D_t^0.2) * (mu^0.2 * Cp / Pr^0.6) * (Pc/c*)^0.8 * (D_t/R_c)^0.1 * σ_Bartz
+// Film Cooling: m_f = q_total * A_nozzle / (h_vap + Cp_kero * ΔT)
+// ============================================================
+const PROPULSION = {
+  Pc_bar:  100,         // chamber pressure bar
+  Pc:      1e7,         // Pa
+  epsilon: 8.0,         // expansion ratio
+  Dt:      0.45,        // throat diameter m
+  Rc:      0.12,        // throat curvature radius m
+  Cp:      2.5e3,       // J/kg·K kerolox Cp
+  mu:      4.5e-5,      // dynamic viscosity Pa·s
+  Pr:      0.7,
+  cstar:   1720,        // characteristic velocity m/s (kerolox)
+  OF:      2.6,         // O/F ratio
+  Isp_s:   310,         // specific impulse s
+  g0:      9.80665,
+  h_vap:   350e3,       // J/kg kerosene vaporization enthalpy
+  T_wall_limit: 1100,   // °C basalt softening point
+};
+
+function bartzHeatFlux(){
+  const P = PROPULSION;
+  // Bartz correlation (simplified, single-zone throat)
+  // q [W/m²] = 0.026 * Pc^0.8 / (Dt^0.2 * cstar^0.8) * Cp * mu^0.2 / Pr^0.6 * sigma_correction
+  const sigma = 0.55; // Bartz correction factor (fuel-film cooling approximation)
+  const q = 0.026 / Math.pow(P.Dt, 0.2) *
+    Math.pow(P.mu, 0.2) * P.Cp / Math.pow(P.Pr, 0.6) *
+    Math.pow(P.Pc / P.cstar, 0.8) *
+    Math.pow(P.Dt / P.Rc, 0.1) * sigma;
+  return q; // W/m²
+}
+
+function filmCoolingFlow(){
+  const P = PROPULSION;
+  const q = bartzHeatFlux();
+  const A_nozzle = Math.PI * P.Dt * 0.35; // throat zone area m²
+  const Q_total = q * A_nozzle; // W
+  const dT_kero = 500; // K prechill to coolant delta
+  const m_f = Q_total / (P.h_vap + P.Cp * dT_kero); // kg/s film coolant
+  return { q_Wm2: q, Q_W: Q_total, m_film_kgs: m_f };
+}
+
+function calcThrustAndDV(){
+  const P = PROPULSION;
+  // F = Isp * g0 * m_dot
+  const m_prop = SAB_U32[ADDR.KEROLOX_KG] / 1000; // convert from stored kg*1000
+  const m_total = SAB_F32[ADDR.MASS_TOTAL] || 12000;
+  const m_dot = 128.8; // kg/s for 4 x 100kN engines at 100 bar
+  const F = P.Isp_s * P.g0 * m_dot; // ~400 kN total
+  // Tsiolkovsky: ΔV = Isp * g0 * ln(m0/mf)
+  const m_dry = m_total - m_prop;
+  const dv = m_dry > 0 ? P.Isp_s * P.g0 * Math.log(m_total / m_dry) : 0;
+
+  SAB_F32[ADDR.THRUST_N] = F;
+  SAB_F32[ADDR.DELTA_V]  = dv;
+
+  // Film cooling nozzle wall temperature (simplified energy balance)
+  const fc = filmCoolingFlow();
+  const T_wall = 920 + fc.q_Wm2 / 1e6 * 180; // empirical approximation °C
+  SAB_F32[ADDR.NOZZLE_TEMP] = T_wall;
+
+  if(T_wall > P.T_wall_limit){
+    console.error(`THERMAL SENTINEL: Nozzle T=${T_wall.toFixed(0)}°C > ${P.T_wall_limit}°C → INCREASE FILM FLOW`);
+  }
+  return { F, dv, T_wall };
+}
+
+// ============================================================
+// KERNEL 3 :: ZARANDAJA DETECTOR
+// ============================================================
+function detectZarandaja(input){
+  const keywords = ["estético","premium","acabado","lujo","titanio_decorativo",
+                    "branding","decorativ","ornamental","bling","marble","chrome_plate"];
+  const hit = keywords.find(k => input.toLowerCase().includes(k));
+  const status = document.getElementById('zarandaja-status');
+  const flash  = document.getElementById('error-flash');
+
+  if(hit){
+    SAB_F32[ADDR.SIGMA] = 1.0;
+    SAB_U32[ADDR.COMPILATION_LOCK] = 1;
+    status.style.color = 'var(--red)';
+    status.textContent = `⛔ ERROR_PHASE_0: keyword="${hit}" — COMPILACIÓN BLOQUEADA`;
+    flash.style.display = 'flex';
+    setTimeout(()=>{ flash.style.display='none'; }, 3000);
+    throw new Error(`ERROR_PHASE_0: Detectada Zarandaja de Bling-Bling [${hit}]. Bloqueando compilación.`);
+  } else {
+    SAB_U32[ADDR.COMPILATION_LOCK] = 0;
+    status.style.color = 'var(--cyan)';
+    status.textContent = '✓ MONITOR ACTIVO — Sin Zarandaja';
+  }
+}
+
+// ============================================================
+// KERNEL 4 :: COG + ROVER DEPLOYMENT KINEMATICS (Adjoint RCS)
+// ============================================================
+const roverState = Array.from({length:50}, (_,i)=>({ id:i, deployed:false, mass:12.5 })); // 12.5 kg each
+let roverPointer = 0;
+
+function calcCoG(){
+  // Simplified 1D CoG along Z-axis
+  let m_total = 4800; // dry hull kg (basalt structure)
+  let m_z_sum = 4800 * 0; // hull CoG at z=0
+  roverState.forEach((rv,i)=>{
+    if(!rv.deployed){
+      const z_pos = -10 + Math.floor(i/10)*4;
+      m_z_sum += rv.mass * z_pos;
+      m_total += rv.mass;
+    }
+  });
+  const prop_mass = SAB_U32[ADDR.KEROLOX_KG]/1000;
+  m_z_sum += prop_mass * (-2.0); // fuel tank at z=-2m
+  m_total += prop_mass;
+
+  const cog_z = m_total > 0 ? m_z_sum / m_total : 0;
+  SAB_F32[ADDR.MASS_TOTAL] = m_total;
+  SAB_F32[ADDR.COG_Z]      = cog_z;
+  return { m_total, cog_z };
+}
+
+function getDeploymentStep(rover_index){
+  const { cog_z } = calcCoG();
+  // Adjoint: required pitch θ to null torque from mass ejection
+  // τ = m_rover * (z_rover - CoG_z) * F_eject → θ_pitch = arctan(τ / (F_rcs * L_arm))
+  const rv = roverState[rover_index];
+  if(!rv) return null;
+  const z_rv = -10 + Math.floor(rover_index/10)*4;
+  const F_eject = 45; // N spring mechanism
+  const F_rcs   = 220; // N per thruster
+  const L_arm   = 4.5; // m moment arm
+  const tau     = rv.mass * (z_rv - cog_z) * F_eject;
+  const theta_rad = Math.atan(tau / (F_rcs * L_arm));
+  const theta_deg = theta_rad * 180 / Math.PI;
+  return {
+    rover_id:   rover_index,
+    cog_z_m:    cog_z.toFixed(3),
+    z_slot_m:   z_rv,
+    torque_Nm:  tau.toFixed(2),
+    pitch_deg:  theta_deg.toFixed(3),
+    rcs_pulse_ms: Math.abs(tau / (F_rcs * L_arm) * 1000).toFixed(1)
+  };
+}
+
+function ejectNextRover(){
+  if(SAB_U32[ADDR.COMPILATION_LOCK]===1){
+    alert('COMPILACIÓN BLOQUEADA — Elimina Zarandaja primero');
+    return;
+  }
+  if(roverPointer >= 50){ logManual('✓ TODOS LOS 50 ROVERS DESPLEGADOS'); return; }
+
+  const step = getDeploymentStep(roverPointer);
+  const rv = roverState[roverPointer];
+
+  // Mark ejecting animation
+  const el = document.querySelectorAll('.rover-slot')[roverPointer];
+  el.classList.add('ejecting');
+  setTimeout(()=>{
+    rv.deployed = true;
+    el.classList.remove('ejecting');
+    el.classList.add('deployed');
+    el.textContent = '✓';
+    roverPointer++;
+    SAB_U32[ADDR.ROVER_COUNT] = roverPointer;
+    document.getElementById('rovers-deployed').textContent = `${roverPointer}/50`;
+    updatePhysicsDisplay();
+    logManual(`
+[ROVER ${step.rover_id.toString().padStart(2,'0')}] EJECCIÓN COMPLETADA
+  CoG_Z     : ${step.cog_z_m} m
+  Slot_Z    : ${step.z_slot_m} m
+  Torque    : ${step.torque_Nm} N·m
+  Pitch_Δ   : ${step.pitch_deg}°  ← RCS CORRECTION
+  RCS Pulse : ${step.rcs_pulse_ms} ms [F_rcs=220N adjoint-solved]
+  PHASE_LOCK: ${roverPointer < 50 ? 'NOMINAL' : '✓ COMPLETE'}
+    `.trim());
+  }, 400);
+}
+
+// ============================================================
+// DJB2 HASH :: Integrity seal over BIM_PTR + BIN_PTR zones
+// ============================================================
+function djb2(byteArray){
+  let hash = 5381;
+  for(let i=0;i<byteArray.length;i++){
+    hash = ((hash << 5) + hash) + byteArray[i];
+    hash = hash & 0xFFFFFFFF; // force 32-bit
+  }
+  return (hash >>> 0).toString(16).toUpperCase().padStart(8,'0');
+}
+
+function computeIntegrityHash(){
+  const bim_bytes = SAB_U8.slice(ADDR.BIM_PTR * 4, (ADDR.BIM_PTR + 512) * 4);
+  const bin_bytes = SAB_U8.slice(ADDR.BIN_PTR, ADDR.BIN_PTR + 256);
+  const combined  = new Uint8Array(bim_bytes.length + bin_bytes.length);
+  combined.set(bim_bytes); combined.set(bin_bytes, bim_bytes.length);
+  return djb2(combined);
+}
+
+// ============================================================
+// WGSL SHADER SOURCE (WebGPU — hull stress visualization)
+// Falls back to Canvas2D if WebGPU unavailable
+// ============================================================
+const WGSL_VERTEX = `
+struct VertexOut {
+  @builtin(position) pos: vec4f,
+  @location(0) stress: f32,
+  @location(1) world_pos: vec3f,
+};
+struct Uniforms {
+  mvp: mat4x4f,
+  tsai_wu: f32,
+  time: f32,
+};
+@group(0) @binding(0) var<uniform> uni: Uniforms;
+@group(0) @binding(1) var<storage, read> verts: array<vec3f>;
+
+@vertex fn vs(@builtin(vertex_index) vi: u32) -> VertexOut {
+  var out: VertexOut;
+  let p = verts[vi];
+  out.pos = uni.mvp * vec4f(p, 1.0);
+  // Stress proxy: radial distance modulated by Tsai-Wu
+  let r = length(p.xy);
+  out.stress = clamp(uni.tsai_wu * (r / 8.0) + sin(uni.time + p.z * 0.5) * 0.05, 0.0, 1.5);
+  out.world_pos = p;
+  return out;
+}`;
+
+const WGSL_FRAGMENT = `
+struct VertexOut {
+  @builtin(position) pos: vec4f,
+  @location(0) stress: f32,
+  @location(1) world_pos: vec3f,
+};
+@fragment fn fs(in: VertexOut) -> @location(0) vec4f {
+  // CYAN=optimal(<0.6), YELLOW=working(0.6-0.9), RED=failure(>0.9)
+  let s = in.stress;
+  var color: vec3f;
+  if (s < 0.6) {
+    // Cyan phase
+    let t = s / 0.6;
+    color = mix(vec3f(0.0, 1.0, 0.9), vec3f(0.4, 1.0, 0.5), t);
+  } else if (s < 0.9) {
+    // Yellow warning
+    let t = (s - 0.6) / 0.3;
+    color = mix(vec3f(0.8, 1.0, 0.0), vec3f(1.0, 0.6, 0.0), t);
+  } else {
+    // Red failure / zarandaja structurale
+    let t = clamp((s - 0.9) / 0.6, 0.0, 1.0);
+    color = mix(vec3f(1.0, 0.2, 0.0), vec3f(1.0, 0.0, 0.0), t);
+  }
+  // Scanline overlay (brutalismo visual)
+  let scan = step(0.5, fract(in.pos.y / 3.0));
+  color *= 0.88 + 0.12 * scan;
+  return vec4f(color, 0.92);
+}`;
+
+// WebGPU init
+let gpuDevice=null, gpuPipeline=null, gpuUniformBuf=null, gpuVertexBuf=null;
+async function initWebGPU(){
+  const canvas = document.getElementById('gpu');
+  if(!navigator.gpu){ useCanvasFallback(); return; }
+  try{
+    const adapter = await navigator.gpu.requestAdapter();
+    if(!adapter){ useCanvasFallback(); return; }
+    gpuDevice = await adapter.requestDevice();
+    const ctx = canvas.getContext('webgpu');
+    const fmt = navigator.gpu.getPreferredCanvasFormat();
+    ctx.configure({ device:gpuDevice, format:fmt });
+
+    const shaderMod = gpuDevice.createShaderModule({ code: WGSL_VERTEX + '\n' + WGSL_FRAGMENT });
+
+    // Upload BIM vertex buffer (hull + rover slots = 110 vec3f)
+    const bim_data = new Float32Array(SAB, ADDR.BIM_PTR * 4, 330); // 110 * 3
+    gpuVertexBuf = gpuDevice.createBuffer({
+      size: bim_data.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+    });
+    gpuDevice.queue.writeBuffer(gpuVertexBuf, 0, bim_data);
+
+    gpuUniformBuf = gpuDevice.createBuffer({
+      size: 4*16 + 4 + 4 + 8, // mat4 + tsai_wu + time + padding
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    const bindGroupLayout = gpuDevice.createBindGroupLayout({ entries:[
+      { binding:0, visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,
+        buffer:{ type:'uniform' }},
+      { binding:1, visibility:GPUShaderStage.VERTEX,
+        buffer:{ type:'read-only-storage' }}
+    ]});
+    const bindGroup = gpuDevice.createBindGroup({ layout:bindGroupLayout, entries:[
+      { binding:0, resource:{ buffer:gpuUniformBuf }},
+      { binding:1, resource:{ buffer:gpuVertexBuf  }}
+    ]});
+    gpuPipeline = { ctx, fmt, shaderMod, bindGroup };
+    console.info('✓ WebGPU initialized — WGSL stress shader active');
+    renderGPUFrame(0);
+  } catch(e){ console.warn('WebGPU error:',e); useCanvasFallback(); }
+}
+
+function mat4Perspective(fov, aspect, near, far){
+  const f=1/Math.tan(fov/2), m=new Float32Array(16);
+  m[0]=f/aspect; m[5]=f;
+  m[10]=(far+near)/(near-far); m[11]=-1;
+  m[14]=(2*far*near)/(near-far);
+  return m;
+}
+
+function renderGPUFrame(t){
+  if(!gpuPipeline) return;
+  requestAnimationFrame(renderGPUFrame);
+  const TW = SAB_F32[ADDR.TSAI_WU_IDX] || 0.1;
+  const uniforms = new Float32Array(4*4 + 1 + 1 + 2); // mat4+tsai+time+pad
+  const mvp = mat4Perspective(0.8, 1.6, 0.1, 200);
+  uniforms.set(mvp); uniforms[16]=TW; uniforms[17]=(t*0.001);
+  gpuDevice.queue.writeBuffer(gpuUniformBuf, 0, uniforms);
+  // (full draw call omitted for skeleton — pipeline.draw here)
+}
+
+// CANVAS 2D FALLBACK (deterministic hull sketch)
+function useCanvasFallback(){
+  document.getElementById('gpu').style.display='none';
+  const cv = document.getElementById('fallback');
+  cv.style.display='block';
+  cv.width=cv.parentElement.offsetWidth; cv.height=cv.parentElement.offsetHeight;
+  const ctx = cv.getContext('2d');
+  renderCanvas2D(ctx, cv.width, cv.height, 0);
+  requestAnimationFrame(t => animCanvas2D(ctx,cv.width,cv.height,t));
+}
+
+function animCanvas2D(ctx,w,h,t){ renderCanvas2D(ctx,w,h,t); requestAnimationFrame(tt=>animCanvas2D(ctx,w,h,tt)); }
+
+function renderCanvas2D(ctx,w,h,t){
+  const TW = SAB_F32[ADDR.TSAI_WU_IDX] || 0.1;
+  ctx.fillStyle='#020808'; ctx.fillRect(0,0,w,h);
+  // Draw hull cross-section
+  const cx=w/2, cy=h/2;
+  const R=90, L=200, segs=20;
+  // Stress color
+  const col = TW<0.6 ? `hsl(175,100%,${40+TW*30}%)` : TW<0.9 ? '#ffe000' : '#ff2222';
+  // Hull rings
+  for(let ring=0;ring<3;ring++){
+    const r = R*(1-ring*0.08);
+    const y = cy + (ring-1)*60;
+    ctx.beginPath();
+    ctx.ellipse(cx, y, r*1.6, r*0.4, 0, 0, Math.PI*2);
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.globalAlpha=0.7; ctx.stroke();
+  }
+  // Mothership body
+  ctx.globalAlpha=1;
+  const grad=ctx.createLinearGradient(cx-R*1.6,0,cx+R*1.6,0);
+  grad.addColorStop(0,'#00000000'); grad.addColorStop(0.3,col+'44');
+  grad.addColorStop(0.5,col+'88'); grad.addColorStop(0.7,col+'44'); grad.addColorStop(1,'#00000000');
+  ctx.fillStyle=grad;
+  ctx.fillRect(cx-R*1.6, cy-L/2, R*3.2, L);
+  ctx.strokeStyle=col; ctx.lineWidth=1.5;
+  ctx.strokeRect(cx-R*1.6, cy-L/2, R*3.2, L);
+
+  // 50 Rover slots
+  const deployed = SAB_U32[ADDR.ROVER_COUNT] || 0;
+  for(let i=0;i<50;i++){
+    const ring=Math.floor(i/10), slot=i%10;
+    const x = cx - R*1.6 + slot*(R*3.2/10) + 14;
+    const y2 = cy - L/2 + ring*(L/5) + 12;
+    ctx.fillStyle = i<deployed ? '#003030' : '#0a2020';
+    ctx.fillRect(x,y2,22,16);
+    ctx.strokeStyle = i<deployed ? '#00ffe7' : '#1a3a3a';
+    ctx.lineWidth=1; ctx.strokeRect(x,y2,22,16);
+    if(i<deployed){ ctx.fillStyle='#00ffe7'; ctx.font='7px monospace'; ctx.fillText('✓',x+7,y2+11); }
+  }
+
+  // Info overlay
+  ctx.fillStyle='#00ffe740'; ctx.font='11px monospace';
+  ctx.fillText(`TW=${TW.toFixed(3)}  CoG_Z=${(SAB_F32[ADDR.COG_Z]||0).toFixed(2)}m  T_nozzle=${(SAB_F32[ADDR.NOZZLE_TEMP]||0).toFixed(0)}°C`,10,20);
+  // Rotation sweep
+  const angle=(t*0.0002)%(Math.PI*2);
+  ctx.strokeStyle='#00ffe710';
+  ctx.beginPath(); ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+Math.cos(angle)*R*2, cy+Math.sin(angle)*R*0.5);
+  ctx.stroke();
+}
+
+// ============================================================
+// DISPLAY UPDATE LOOP
+// ============================================================
+function updateBOMCost(){
+  let total=0;
+  BOM.materials.forEach(m=>{ total+=m.qty_kg*m.price_per_kg; });
+  SAB_U32[ADDR.BOM_COST]=Math.round(total*100);
+  return total;
+}
+
+function updatePhysicsDisplay(){
+  const { m_total, cog_z } = calcCoG();
+  const { F, dv, T_wall } = calcThrustAndDV();
+
+  // Run Tsai-Wu with current stress proxy
+  const s1 = 200 + SAB_U32[ADDR.ROVER_COUNT] * 8; // stress increases as mass reduces asymmetrically
+  const TW = checkStructuralIntegrity([s1, 45, 30], BFRP_PROPS);
+
+  document.getElementById('mass-val').textContent    = m_total.toFixed(0);
+  document.getElementById('cog-val').textContent     = cog_z.toFixed(3);
+  document.getElementById('thrust-val').textContent  = (F/1000).toFixed(1);
+  document.getElementById('dv-val').textContent      = dv.toFixed(0);
+  document.getElementById('nozzle-val').textContent  = T_wall.toFixed(0);
+  document.getElementById('sigma-val').textContent   = s1.toFixed(0);
+  document.getElementById('tsai-val').textContent    = TW.toFixed(3);
+  document.getElementById('cooling-val').textContent = (filmCoolingFlow().m_film_kgs*1000).toFixed(2)+'g/s';
+
+  const bar = document.getElementById('tsai-bar');
+  bar.style.width = Math.min(TW*100, 100)+'%';
+  bar.style.background = TW<0.6?'var(--cyan)':TW<0.9?'var(--yellow)':'var(--red)';
+
+  const cost = updateBOMCost();
+  const costEl = document.getElementById('cost-display');
+  costEl.textContent = '$'+cost.toFixed(0);
+  costEl.className = 'value' + (cost>50000?' crit':cost>35000?' warn':'');
+
+  const hash = computeIntegrityHash();
+  document.getElementById('hash-display').textContent = hash;
+
+  const sentinel = document.getElementById('sentinel-val');
+  const phase    = document.getElementById('phase-display');
+  if(TW >= 1.0){
+    sentinel.textContent='TRIGGERED'; sentinel.className='value crit';
+    phase.textContent='UNSTABLE';    phase.className='value crit';
+  } else if(TW >= 0.6){
+    sentinel.textContent='WATCHING'; sentinel.className='value warn';
+    phase.textContent='LOAD';        phase.className='value warn';
+  } else {
+    sentinel.textContent='ARMED';   sentinel.className='value';
+    phase.textContent='NOMINAL';    phase.className='value';
+  }
+}
+
+function logManual(text){
+  const el = document.getElementById('manual-output');
+  el.textContent += '\n' + text;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ============================================================
+// EXPORT SOVEREIGN FILE (SAD — Sovereign Archive Document)
+// ============================================================
+function exportSAD(){
+  if(SAB_U32[ADDR.COMPILATION_LOCK]===1){
+    alert('⛔ COMPILACIÓN BLOQUEADA — Zarandaja activa. Limpia el BOM primero.');
+    return;
+  }
+  const hash = computeIntegrityHash();
+  const snapshot = {
+    djb2: hash,
+    timestamp: new Date().toISOString(),
+    bom_cost_usd: (SAB_U32[ADDR.BOM_COST]/100).toFixed(2),
+    mass_kg: SAB_F32[ADDR.MASS_TOTAL].toFixed(0),
+    tsai_wu: SAB_F32[ADDR.TSAI_WU_IDX].toFixed(4),
+    rovers_deployed: SAB_U32[ADDR.ROVER_COUNT],
+    cog_z: SAB_F32[ADDR.COG_Z].toFixed(3),
+    thrust_kN: (SAB_F32[ADDR.THRUST_N]/1000).toFixed(1),
+    delta_v: SAB_F32[ADDR.DELTA_V].toFixed(0),
+  };
+  const html = document.documentElement.outerHTML.replace(
+    '</title>',`</title>\n<!-- SAD EXPORT ${hash} @ ${snapshot.timestamp} -->`
+  );
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `BASALT-MOTHERSHIP-SAD-${hash}.html`;
+  a.click();
+  logManual(`\n[EXPORT] SAD sellado → DJB2=${hash}\n${JSON.stringify(snapshot,null,2)}`);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(function init(){
+  // Populate BOM table
+  const tbody = document.getElementById('bom-tbody');
+  BOM.materials.forEach(m=>{
+    const cost=(m.qty_kg*m.price_per_kg).toFixed(0);
+    tbody.innerHTML += `<tr>
+      <td>${m.name}</td>
+      <td>${m.qty_kg}</td>
+      <td>${m.unit}</td>
+      <td>$${cost}</td>
+    </tr>`;
+  });
+
+  // Populate rover grid
+  const grid = document.getElementById('rover-grid');
+  for(let i=0;i<50;i++){
+    const d=document.createElement('div');
+    d.className='rover-slot'; d.title=`RV-${String(i).padStart(2,'0')}`;
+    d.textContent=String(i).padStart(2,'0');
+    grid.appendChild(d);
+  }
+
+  // Initial physics computation
+  SAB_F32[ADDR.MASS_TOTAL] = 12000; // initial estimate kg
+  updatePhysicsDisplay();
+  setInterval(updatePhysicsDisplay, 1500);
+
+  logManual(`
+╔══════════════════════════════════════════════════╗
+║   BASALT-MOTHERSHIP V4-HEAVY :: SAB-BOM-BIN CORE ║
+║   Capacity: 50x LUNAR-BOAEXO Rovers              ║
+║   Primary: BFRP + HD-Basalt Sinter               ║
+║   Propulsion: 4x Kerolox 100bar (Basalt-Lined)   ║
+║   Determinism: DJB2 hash integrity               ║
+╚══════════════════════════════════════════════════╝
+[INIT] SharedArrayBuffer: 2MB Physical Register ONLINE
+[INIT] FIRMWARE_BLOB: ${FIRMWARE_BLOB.length} bytes → SAB[BIN_PTR]
+[INIT] BIM Vertex Buffer: 110 vertices → SAB[BIM_PTR]
+[INIT] Tsai-Wu Kernel: ARMED (F1t=4800MPa, E1=89GPa)
+[INIT] Bartz Film Cooling: Pc=100bar, T_limit=1100°C
+[INIT] Zarandaja Detector: MONITOR ACTIVE
+[READY] — Awaiting deployment commands.
+  `.trim());
+
+  initWebGPU();
+})();
+</script>
+</body>
+</html>

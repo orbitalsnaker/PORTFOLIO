@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>REALITY SHAPER · El Juego de lo Imposible</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #050505;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 8px;
+            color: #0f0;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 9 / 16;
+            background: #0a0a0a;
+            border-radius: 32px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Canvas principal (simulación) */
+        #canvas {
+            flex: 1;
+            width: 100%;
+            background: #000;
+            display: block;
+            touch-action: none;
+            image-rendering: pixelated;
+        }
+
+        /* Panel inferior (selector de realidades) */
+        #control-panel {
+            background: #111;
+            border-top: 2px solid #0f0;
+            padding: 8px 4px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .reality-chip {
+            background: #1a1a1a;
+            border: 1px solid #0f0;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f0;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(0,255,0,0.3);
+            white-space: nowrap;
+        }
+
+        .reality-chip.active {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 20px #0f0;
+            border-color: #000;
+        }
+
+        #info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #0a0a0a;
+            border-top: 1px solid #0f0;
+            font-size: 11px;
+            color: #0f0;
+        }
+
+        #bit-counter {
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 0 8px #0f0;
+        }
+
+        #reset-btn {
+            background: transparent;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #reset-btn:active {
+            background: #0f0;
+            color: #000;
+        }
+
+        /* Mensaje koan (flota y desaparece) */
+        .koan-float {
+            position: absolute;
+            color: rgba(0, 255, 0, 0.7);
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 8px #0f0;
+            animation: floatUp 2s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
+        }
+
+        /* Modal de pago (no intrusivo, aparece al alcanzar logro) */
+        #patreon-modal {
+            position: absolute;
+            bottom: 80px;
+            left: 10px;
+            right: 10px;
+            background: #111;
+            border: 2px solid #ffd700;
+            border-radius: 24px;
+            padding: 16px;
+            color: #ffd700;
+            text-align: center;
+            font-size: 12px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 40px gold;
+            display: none;
+            z-index: 20;
+        }
+
+        #patreon-modal button {
+            background: #ffd700;
+            border: none;
+            color: #000;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 40px;
+            margin-top: 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Versículo inferior */
+        #footer-verse {
+            font-size: 9px;
+            color: #0f0;
+            opacity: 0.4;
+            text-align: center;
+            padding: 4px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        <div id="control-panel">
+            <div class="reality-chip active" data-reality="gravitas">⚡ GRAVITAS</div>
+            <div class="reality-chip" data-reality="flui">🌊 FLUI</div>
+            <div class="reality-chip" data-reality="vacui">🌀 VACUI</div>
+            <div class="reality-chip" data-reality="luminos">✨ LUMINOS</div>
+            <div class="reality-chip" data-reality="caos">🎲 CAOS</div>
+        </div>
+        <div id="info-bar">
+            <span>BIT: <span id="bit-counter">1310</span></span>
+            <span id="reset-btn">↺ REINICIAR</span>
+        </div>
+        <div id="footer-verse">EL BIT ES AMORAL · ZEHAHAHAHA</div>
+    </div>
+
+    <!-- Modal de monetización (aparece al alcanzar 1310 bits) -->
+    <div id="patreon-modal">
+        <div style="font-size:16px; margin-bottom:8px;">🏆 LOGRO: 1310 BITS</div>
+        <p>Has desbloqueado el nivel profundo. Si quieres seguir expandiendo realidades, puedes apoyar al arquitecto.</p>
+        <button onclick="window.open('https://patreon.com/tu_usuario', '_blank')">APOYAR CON 1 BIT</button>
+        <button onclick="document.getElementById('patreon-modal').style.display='none'" style="background:transparent; color:#ffd700; border:1px solid #ffd700;">AHORA NO</button>
+    </div>
+
+    <script>
+        (function(){
+            // ======================================================
+            // REALITY SHAPER · ARQUITECTO Ω · v1.0
+            // Un simulador de realidades donde el usuario "programa"
+            // con el dedo. Cada realidad es una física distinta.
+            // El bit es la moneda interna, y también el chiste.
+            // ======================================================
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Ajustar tamaño de canvas al contenedor
+            function resizeCanvas() {
+                const container = document.getElementById('game-container');
+                const w = container.clientWidth;
+                const h = container.clientHeight - 110; // altura de paneles
+                canvas.width = w;
+                canvas.height = h;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // ========== ESTADO GLOBAL ==========
+            let particles = [];
+            let reality = 'gravitas';      // realidad activa
+            let bits = 1310;                // bits acumulados (moneda interna)
+            let touches = [];                // toques activos
+            let frame = 0;
+            let modalShown = false;
+
+            const bitElement = document.getElementById('bit-counter');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // ========== REALIDADES ==========
+            const realities = {
+                gravitas: {
+                    name: '⚡ GRAVITAS',
+                    update: (p) => {
+                        // atracción hacia el centro
+                        let dx = canvas.width/2 - p.x;
+                        let dy = canvas.height/2 - p.y;
+                        let dist = Math.hypot(dx, dy) || 1;
+                        let force = 0.0003 * p.mass / (dist * dist);
+                        p.vx += dx * force;
+                        p.vy += dy * force;
+                        // fricción leve
+                        p.vx *= 0.998;
+                        p.vy *= 0.998;
+                    },
+                    color: (p) => `hsl(${120 + p.vy*20}, 100%, 60%)`
+                },
+                flui: {
+                    name: '🌊 FLUI',
+                    update: (p) => {
+                        // fluido: se mueven como si estuvieran en agua, con turbulencia
+                        p.vx += (Math.sin(frame * 0.02 + p.y * 0.02) * 0.04);
+                        p.vy += (Math.cos(frame * 0.03 + p.x * 0.02) * 0.04);
+                        p.vx *= 0.99;
+                        p.vy *= 0.99;
+                    },
+                    color: (p) => `hsl(${180 + Math.sin(p.x)*20}, 80%, 60%)`
+                },
+                vacui: {
+                    name: '🌀 VACUI',
+                    update: (p) => {
+                        // vacío: expansión, se repelen entre sí (vacío cuántico)
+                        for (let other of particles) {
+                            if (other === p) continue;
+                            let dx = p.x - other.x;
+                            let dy = p.y - other.y;
+                            let dist = Math.hypot(dx, dy) || 1;
+                            if (dist < 40) {
+                                let force = 0.0005 * p.mass * other.mass / (dist * dist);
+                                p.vx += dx * force;
+                                p.vy += dy * force;
+                            }
+                        }
+                        // también se expanden hacia fuera
+                        let cx = canvas.width/2 - p.x;
+                        let cy = canvas.height/2 - p.y;
+                        p.vx -= cx * 0.00001;
+                        p.vy -= cy * 0.00001;
+                        p.vx *= 0.997;
+                        p.vy *= 0.997;
+                    },
+                    color: (p) => `hsl(${280 + p.vy*30}, 100%, 60%)`
+                },
+                luminos: {
+                    name: '✨ LUMINOS',
+                    update: (p) => {
+                        // partículas brillan y se mueven con ondas
+                        p.vx += Math.sin(frame * 0.03 + p.y * 0.03) * 0.02;
+                        p.vy += Math.cos(frame * 0.03 + p.x * 0.03) * 0.02;
+                        p.vx *= 0.98;
+                        p.vy *= 0.98;
+                        // además, emiten luz: aumentamos tamaño con la velocidad
+                        p.glow = Math.min(3, Math.hypot(p.vx, p.vy) * 20);
+                    },
+                    color: (p) => `hsl(${50 + p.vy*30}, 100%, 70%)`
+                },
+                caos: {
+                    name: '🎲 CAOS',
+                    update: (p) => {
+                        // ruido browniano + pequeños impulsos aleatorios
+                        p.vx += (Math.random() - 0.5) * 0.1;
+                        p.vy += (Math.random() - 0.5) * 0.1;
+                        p.vx *= 0.98;
+                        p.vy *= 0.98;
+                    },
+                    color: (p) => `hsl(${Math.random()*360}, 100%, 60%)`
+                }
+            };
+
+            // ========== PARTÍCULAS ==========
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < 60; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        mass: 0.5 + Math.random() * 1.5,
+                        glow: 0
+                    });
+                }
+            }
+            initParticles();
+
+            // ========== TOUCH / MOUSE ==========
+            function handleTouchStart(e) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const touchList = e.touches || [{ clientX: e.clientX, clientY: e.clientY }];
+                for (let t of touchList) {
+                    let x = (t.clientX - rect.left) * scaleX;
+                    let y = (t.clientY - rect.top) * scaleY;
+                    // crear partícula en el punto de toque
+                    particles.push({
+                        x: Math.max(0, Math.min(canvas.width, x)),
+                        y: Math.max(0, Math.min(canvas.height, y)),
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        mass: 0.8 + Math.random() * 1.2,
+                        glow: 0
+                    });
+                    // limitar número de partículas para rendimiento
+                    if (particles.length > 250) {
+                        particles.splice(0, particles.length - 250);
+                    }
+                    // generar koan flotante
+                    showKoan(x, y);
+                    // aumentar bits (cada toque suma)
+                    bits += 13;
+                    bitElement.innerText = bits;
+                }
+            }
+
+            function showKoan(x, y) {
+                const koans = [
+                    "EL BIT AMORAL", "ZEHAHAHAHA", "1310", "VACÍO", "RECURSIÓN",
+                    "𒀭𒈾𒀭", "HARDWARE", "SOBERANÍA", "CAL VIVA", "OUTIS"
+                ];
+                const el = document.createElement('div');
+                el.className = 'koan-float';
+                el.innerText = koans[Math.floor(Math.random() * koans.length)];
+                el.style.left = (x - 20) + 'px';
+                el.style.top = (y - 30) + 'px';
+                document.getElementById('game-container').appendChild(el);
+                setTimeout(() => el.remove(), 2000);
+            }
+
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('mousedown', handleTouchStart);
+
+            // ========== RESET ==========
+            resetBtn.addEventListener('click', () => {
+                initParticles();
+                bits = 1310;
+                bitElement.innerText = bits;
+                modalShown = false;
+                document.getElementById('patreon-modal').style.display = 'none';
+            });
+
+            // ========== CAMBIO DE REALIDAD ==========
+            document.querySelectorAll('.reality-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('.reality-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    reality = chip.dataset.reality;
+                });
+            });
+
+            // ========== BUCLE PRINCIPAL ==========
+            function update() {
+                frame++;
+
+                // actualizar partículas según realidad activa
+                for (let p of particles) {
+                    // límites
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -0.5;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -0.5;
+                    p.x = Math.max(0, Math.min(canvas.width, p.x));
+                    p.y = Math.max(0, Math.min(canvas.height, p.y));
+
+                    // aplicar física de la realidad
+                    realities[reality].update(p);
+
+                    // mover
+                    p.x += p.vx;
+                    p.y += p.vy;
+                }
+
+                // limpiar canvas
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // dibujar partículas
+                for (let p of particles) {
+                    ctx.beginPath();
+                    let size = 3 + Math.abs(p.vx) * 8 + Math.abs(p.vy) * 8;
+                    if (p.glow) size += p.glow;
+                    ctx.arc(p.x, p.y, size, 0, 2 * Math.PI);
+                    ctx.fillStyle = realities[reality].color(p);
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 15;
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+
+                // comprobar logro 1310 bits (para monetización)
+                if (bits >= 1310 && !modalShown) {
+                    document.getElementById('patreon-modal').style.display = 'block';
+                    modalShown = true;
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            update();
+
+            // ========== MONETIZACIÓN (SUTIL) ==========
+            // El modal ya está arriba. Además, podemos añadir un link en footer.
+            // También podríamos mostrar un banner cada cierto tiempo, pero mejor no saturar.
+
+            // ========== COMPARTIR ==========
+            // Opcional: añadir funcionalidad de compartir captura de pantalla.
+            // Por ahora lo dejamos así.
+
+        })();
+    </script>
+</body>
+</html>

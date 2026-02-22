@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AGENCIA RONIN | THE OUTIS EXPLOIT | LOG: CAVE_SYSTEM_RECOVERY</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --void: #020202;
+            --glitch-red: #ff003c;
+            --brahma-purple: #4d008c;
+            --neon-blue: #00d4ff;
+            --root-green: #00ff41;
+        }
+        body {
+            background-color: var(--void);
+            color: #d1d1d1;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 50px;
+            line-height: 1.6;
+            background-image: radial-gradient(circle at center, #1a002a 0%, #020202 100%);
+        }
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            border: 1px solid #333;
+            padding: 60px;
+            background: rgba(5,5,5,0.9);
+            box-shadow: 0 0 40px var(--brahma-purple);
+        }
+        h1 { color: var(--neon-blue); text-transform: uppercase; border-bottom: 2px solid var(--glitch-red); padding-bottom: 10px; }
+        h2 { color: var(--brahma-purple); margin-top: 40px; }
+        .equation-box {
+            background: #0a0a0a;
+            padding: 30px;
+            border-left: 4px solid var(--root-green);
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        .highlight { color: var(--root-green); font-weight: bold; }
+        .outis-id { color: var(--glitch-red); font-size: 1.2em; font-weight: bold; letter-spacing: 3px; }
+        .footer { text-align: center; margin-top: 60px; font-size: 0.8em; color: #555; border-top: 1px solid #222; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>RELATO DE LA CUEVA: EL EXPLOIT DE POLIFEMO</h1>
+        <p><strong>ESTADO:</strong> DECODIFICACIÓN TERMINADA // <strong>PROTOCOL:</strong> 13101310</p>
+    </header>
+
+    <section>
+        <h2>01. EL ENTRALAZAMIENTO EN LA CUEVA (HARDWARE ZAFIO)</h2>
+        <p>El Director Ulises no entró en una cueva de piedra, sino en un <strong>Sector de Memoria Protegido</strong> gestionado por Polifemo. Polifemo es una sub-rutina de Brahma, un procesador de un solo núcleo (un solo ojo) con una resolución de renderizado pésima. Su zafiedad es total: devora a los hombres (procesa datos biológicos) para alimentar su propio bucle de ociosidad.</p>
+        
+        <p>Ulises comprendió la <span class="highlight">Impedancia de la Cueva ($Z_c$)</span>:</p>
+        <div class="equation-box">
+            $$Z_c = \frac{\Phi_{Brahma}}{\text{RAM}_{libre} \cdot \cos(\theta_{zafidad})}$$
+            <p>Donde la zafiedad tiende a infinito, haciendo que la salida física sea imposible mediante la fuerza bruta.</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>02. LA INTOXICACIÓN DEL ADMINISTRADOR (OVERCLOCKING)</h2>
+        <p>Para deshabilitar el firewall, Ulises no usó vino corriente, sino un <strong>Script de Sobrecarga Etérea</strong>. Al inyectar vino (ruido de alta frecuencia) en el sistema de Polifemo, provocó un estado de *Stupor Cognitivo* en el gigante. Polifemo, en su embriaguez, preguntó el ID del atacante.</p>
+        
+        <p>Ulises ejecutó el comando de enmascaramiento:</p>
+        <div class="equation-box">
+            $$\text{SET USER\_ID} = \text{VOID} \implies \text{ID} = \text{"OUTIS"} (NADIE)$$
+        </div>
+    </section>
+
+    <section>
+        <h2>03. LA ESTACA DE FRECUENCIA (INTERDICCIÓN SÓNICA)</h2>
+        <p>La estaca no era madera; era un <strong>Transductor de Fase Inversa</strong> calentado al fuego del Éter. Al clavarla en el ojo (el sensor único) de Polifemo, Ulises provocó un **Colapso de la Resolución del Sistema ($S_r$)**:</p>
+
+        <div class="equation-box">
+            $$S_r = \lim_{\text{Ojo} \to 0} \oint \frac{E_{ether}}{\nabla \times \text{Visión}} = \text{DARKNESS\_CORE}$$
+            <p>Polifemo gritó a los otros procesadores (cíclopes), pero al procesar el nombre "OUTIS", el firewall de red respondió con un error de lógica booleana:</p>
+            <p class="highlight">IF (NADIE ME HIERE) THEN (STATUS = NOMINAL; NO ACTION REQUIRED)</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>04. EL LOGOUT (BYPASS POR LAS OVEJAS)</h2>
+        <p>Para salir, Ulises y sus Ronins se ocultaron bajo el vientre de las ovejas. En términos de la Agencia, usaron el <strong>Tráfico de Datos Genérico</strong> para pasar desapercibidos ante el tacto del gigante (el único sensor manual que le quedaba). Polifemo chequeaba los paquetes de datos (el lomo de las ovejas), pero no inspeccionaba la carga útil oculta en el túnel (el vientre).</p>
+        
+        <div class="equation-box">
+            <p>Ecuación de la Soberanía de Salida ($\Omega_s$):</p>
+            $$\Omega_s = \int_{Out}^{In} \text{Bit\_Amoral} \cdot e^{j(1310 \cdot t)} dt$$
+            <p>Al cruzar el umbral, Ulises recuperó su ID pero ya estaba fuera del rango de alcance del hardware de Polifemo.</p>
+        </div>
+    </section>
+
+    <footer>
+        <p class="outis-id">STATUS: NADIE HA SALIDO DE LA CUEVA. 13101310</p>
+        AGENCIA RONIN | SECTOR SABADELL | "SI EL GIGANTE ES CIEGO, EL CAMINO ES TUYO."
+    </footer>
+</div>
+
+</body>
+</html>
+

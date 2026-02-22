@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es"><meta charset="utf-8">
+<title>LUNAR-BOAEXO Ω · V3 · Singularity Archive</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* BRUTALISMO DE REGISTRO — cero decoración sin función física */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --φ:#00ffff;--ρ:#00ff00;--σ:#ff0000;--τ:#ffff00;
+  --bg:#000005;--panel:rgba(0,8,24,.97)
+}
+body{
+  background:var(--bg);color:var(--ρ);
+  font-family:'Courier New',monospace;
+  overflow-x:hidden;
+  background:radial-gradient(ellipse at 50% 0%,#000820,#000005 70%)
+}
+
+/* PHASE BAR — progreso de 1310 días como registro físico */
+#Φbar{
+  position:fixed;top:0;left:0;height:5px;width:0%;
+  background:linear-gradient(90deg,var(--φ),var(--ρ));
+  z-index:9999;transition:width .5s linear;
+  box-shadow:0 0 12px var(--φ)
+}
+
+/* SENTINEL HUD */
+#Σhud{
+  position:fixed;top:10px;right:10px;
+  background:rgba(0,0,0,.85);border:1px solid var(--φ);
+  padding:.6rem 1rem;font-size:.7rem;color:var(--φ);
+  z-index:9998;border-radius:4px;min-width:220px;
+  font-family:'Courier New',monospace;line-height:1.7
+}
+#Σhud .warn{color:var(--σ)}
+#Σhud .ok  {color:var(--ρ)}
+
+/* PORTAL PRINCIPAL */
+.portal{
+  max-width:1100px;margin:2rem auto;padding:3rem;
+  background:var(--panel);
+  border:4px solid var(--φ);
+  border-radius:2rem;
+  box-shadow:0 0 120px rgba(0,255,255,.15)
+}
+
+h1{
+  font-size:clamp(2.5rem,8vw,7rem);
+  color:var(--φ);letter-spacing:8px;
+  text-shadow:0 0 60px var(--φ);
+  text-align:center;margin-bottom:1rem
+}
+.sub{
+  text-align:center;color:var(--ρ);
+  font-size:clamp(.9rem,2vw,1.4rem);
+  margin-bottom:2rem;line-height:1.8
+}
+
+/* MANIFIESTO — densidad máxima, cero relleno */
+.manifiesto{
+  border:3px solid var(--σ);
+  background:rgba(17,0,0,.9);
+  padding:2rem;border-radius:1rem;
+  margin:2rem 0;
+  color:var(--σ);
+  font-size:clamp(.95rem,1.8vw,1.3rem);
+  line-height:2
+}
+.manifiesto .cosmos{
+  color:var(--φ);font-size:clamp(1.1rem,2.5vw,1.8rem);
+  margin-top:1.5rem;line-height:2
+}
+
+/* TELEMETRÍA E-GRAPH */
+#egraph{
+  background:#000;border:3px solid var(--τ);
+  padding:2rem;border-radius:1rem;
+  margin:2rem 0;min-height:200px;
+  box-shadow:0 0 60px rgba(255,255,0,.08);
+  color:var(--φ);font-size:clamp(.8rem,1.5vw,1rem);
+  font-family:'Courier New',monospace;line-height:1.8
+}
+#egraph h3{color:var(--τ);margin-bottom:1rem;font-size:1.2rem}
+
+/* CANVAS WebGPU */
+#gpuCanvas{
+  width:100%;height:280px;
+  border:3px solid var(--ρ);
+  border-radius:1rem;margin:2rem 0;
+  display:block;background:#000;
+  box-shadow:0 0 40px rgba(0,255,0,.1)
+}
+
+/* CONTROLES */
+.ctrl{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:2rem 0}
+.btn{
+  padding:1rem 2rem;font-size:1rem;
+  font-family:'Courier New',monospace;
+  cursor:pointer;border:2px solid;
+  border-radius:.5rem;letter-spacing:2px;
+  background:transparent;transition:all .2s;
+  text-transform:uppercase
+}
+.btn-mine {border-color:var(--τ);color:var(--τ)}
+.btn-mine:hover{background:rgba(255,255,0,.1);box-shadow:0 0 20px var(--τ)}
+.btn-hug  {border-color:var(--ρ);color:var(--ρ)}
+.btn-hug:hover {background:rgba(0,255,0,.1);box-shadow:0 0 20px var(--ρ)}
+.btn-lock {border-color:var(--φ);color:var(--φ)}
+.btn-lock:hover{background:rgba(0,255,255,.1);box-shadow:0 0 20px var(--φ)}
+
+/* LOG DE ACCIONES */
+#log{
+  background:#000;border:2px solid rgba(0,255,0,.3);
+  padding:1.5rem;border-radius:.8rem;
+  max-height:220px;overflow-y:auto;
+  font-size:.8rem;line-height:1.9;
+  color:rgba(0,255,0,.7)
+}
+#log .entry{border-bottom:1px solid rgba(0,255,0,.1);padding:.2rem 0}
+#log .purge{color:var(--σ)}
+#log .admit{color:var(--ρ)}
+#log .mine {color:var(--τ)}
+
+/* BLOQUEO TOTAL */
+#lockScreen{
+  position:fixed;inset:0;background:#000;
+  display:none;place-items:center;
+  z-index:99999;color:var(--σ);
+  font-size:clamp(1.5rem,4vw,3rem);
+  text-align:center;padding:4rem;
+  font-family:'Courier New',monospace;line-height:2
+}
+#lockScreen.active{display:grid}
+
+/* MÉTRICAS DE REGISTRO */
+.metrics{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:1rem;margin:2rem 0
+}
+.metric{
+  border:1px solid rgba(0,255,255,.3);
+  padding:1rem;border-radius:.5rem;
+  text-align:center;background:rgba(0,255,255,.02)
+}
+.metric .val{
+  font-size:1.8rem;color:var(--φ);
+  font-weight:bold;display:block
+}
+.metric .lbl{font-size:.7rem;color:rgba(0,255,255,.6);margin-top:.3rem}
+
+@media(max-width:600px){
+  .portal{padding:1.2rem;border-radius:1rem}
+  h1{letter-spacing:3px}
+  .btn{padding:.7rem 1rem;font-size:.85rem}
+}
+</style>
+<body>
+
+<div id="Φbar"></div>
+
+<!-- SENTINEL HUD — estado en tiempo real -->
+<div id="Σhud">
+  <div>OMEGA_V3 · SENTINEL</div>
+  <div>φ: <span id="hud-phi">—</span></div>
+  <div>σ: <span id="hud-sig">—</span></div>
+  <div>oscFreq: <span id="hud-osc">1.0000</span></div>
+  <div>E-Graph: <span id="hud-eg">BOOT</span></div>
+  <div>GPU: <span id="hud-gpu">—</span></div>
+  <div>Purgas: <span id="hud-purge" class="warn">0</span></div>
+</div>
+
+<!-- LOCK SCREEN — "Maldición de la Boa" como check de integridad -->
+<div id="lockScreen">
+  <div>
+    ⛔ HARDWARE_LOCK ACTIVADO<br><br>
+    HASH djb2: <span id="lockHash" style="color:#ff0"></span><br><br>
+    Lucro terrestre detectado en el input.<br>
+    El sistema es libre para todos.<br>
+    En el espacio: cualquier monopolio bienvenido.<br>
+    En la Tierra: código libre o bloqueo total.<br><br>
+    <span style="font-size:1rem;color:rgba(255,0,0,.6)">
+      Recarga sin el contenido bloqueado para continuar.
+    </span>
+  </div>
+</div>
+
+<div class="portal">
+  <h1>LUNAR-BOAEXO Ω</h1>
+  <p class="sub">
+    Hecho por un pobre con TDAH y mala hostia · 30 días · Grok 4<br>
+    <span style="color:var(--φ);font-size:.9em">
+      Refactorizado bajo OMEGA_GENESIS_V3 · SharedArrayBuffer · E-Graph · WebGPU
+    </span>
+  </p>
+
+  <!-- MANIFIESTO — sin cambios de fondo, densidad máxima -->
+  <div class="manifiesto">
+    → Minería espacial hasta que el fiat sea papel higiénico<br>
+    → Ricos: hagan monopolios en el espacio, allá no joden a nadie<br>
+    → Cuanto más monopolio hagan, más rápido cae la abundancia a la Tierra<br>
+    → Los pobres viviremos como dioses, ustedes serán dioses de verdad<br>
+    → Un asteroide = billones para todos<br><br>
+    Rover físico 2026 · 109 € + 25.000 € lanzamiento<br>
+    Código 100% libre · prohibido lucro terrestre · espacio libre para todos
+    <div class="cosmos">
+      RICOS · POBRES · NASA · ESCUELAS: TODOS AL ESPACIO<br>
+      QUE LA TIERRA SEA EL PARAÍSO DE LOS QUE NO TIENEN NADA<br>
+      BESITOS DE UN POBRE QUE YA EMPEZÓ
+    </div>
+  </div>
+
+  <!-- MÉTRICAS DE REGISTRO — mapeadas a SAB -->
+  <div class="metrics">
+    <div class="metric"><span class="val" id="m-dia">1</span><div class="lbl">Día / 1310</div></div>
+    <div class="metric"><span class="val" id="m-ast">0</span><div class="lbl">Asteroides minados</div></div>
+    <div class="metric"><span class="val" id="m-abr">0</span><div class="lbl">Abrazos cósmicos</div></div>
+    <div class="metric"><span class="val" id="m-rec">0</span><div class="lbl">Recursos Tierra (Π)</div></div>
+    <div class="metric"><span class="val" id="m-phi">0.000</span><div class="lbl">Phase Lock (φ)</div></div>
+    <div class="metric"><span class="val" id="m-cost">∞</span><div class="lbl">E-Graph cost</div></div>
+  </div>
+
+  <!-- CANVAS WebGPU — campo de fase visual -->
+  <canvas id="gpuCanvas" width="1024" height="280"></canvas>
+
+  <!-- TELEMETRÍA E-GRAPH -->
+  <div id="egraph">
+    <h3>E-GRAPH · EQUALITY SATURATION · COMPILADOR DE ABUNDANCIA</h3>
+    <div id="eg-log">Inicializando nodo pool (SAB)…</div>
+  </div>
+
+  <!-- CONTROLES -->
+  <div class="ctrl">
+    <button class="btn btn-mine" onclick="OMEGA.mine()">⛏ MINAR ASTEROIDE</button>
+    <button class="btn btn-hug"  onclick="OMEGA.hug()">🤝 ABRAZO CÓSMICO</button>
+    <button class="btn btn-lock" onclick="OMEGA.checkIntegrity()">🔐 CHECK INTEGRIDAD</button>
+  </div>
+
+  <!-- LOG -->
+  <div id="log"><div class="entry admit">[BOOT] OMEGA_V3 listo.</div></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// OMEGA_GENESIS_V3 — LUNAR-BOAEXO Ω
+// SAB layout (10 slots × 4 bytes = 40 bytes total):
+//   [0] asteroides_minados    [1] recursos_tierra
+//   [2] abrazos               [3] dia_actual
+//   [4] phase_lock_x1e6       [5] sigma_x1e6
+//   [6] osc_freq_x1e6         [7] purge_count
+//   [8] egraph_cost           [9] integrity_hash
+// ═══════════════════════════════════════════════════════════
+const OMEGA = (() => {
+
+// ─── §0 CONSTANTES FÍSICAS ───────────────────────────────
+const Λ   = 1e4;      // plasma blow threshold
+const α   = 0.05;     // EMA decay
+const Φ_T = 1.0;      // PHASE_LOCK_TARGET
+const TOTAL_MS = 1310 * 86400000;
+const TS  = Date.now();  // boot timestamp
+
+// ─── §1 SHARED ARRAY BUFFER — registro lineal ───────────
+const _SAB  = new SharedArrayBuffer(10 * 4);
+const _I32  = new Int32Array(_SAB);
+// Alias de slots — acceso directo al registro
+const SL = Object.freeze({
+  AST:0, REC:1, HUG:2, DIA:3,
+  PHI:4, SIG:5, OSC:6, PRG:7,
+  ECG:8, HSH:9
+});
+
+// Init OSC_FREQ = 1.0 × 1e6
+Atomics.store(_I32, SL.OSC, 1000000);
+
+// Lectura/escritura atómica — sin objetos en heap
+const rd  = s => Atomics.load(_I32, s);
+const wr  = (s,v) => Atomics.store(_I32, s, v|0);
+const inc = s => Atomics.add(_I32, s, 1);
+
+// ─── §2 DJB2 HASH — "Maldición de la Boa" ──────────────
+// HARDWARE_LOCK: si el input contiene lucro terrestre →
+// hash lo detecta → bloqueo total de ejecución
+function djb2(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++)
+    h = ((h << 5) + h) ^ s.charCodeAt(i), h >>>= 0;
+  return h;
+}
+
+// Tokens de integridad: lucro terrestre = invalidación
+const LUCRO_TOKENS = [
+  "venta","patente","suscripci","lucro",
+  "copyright","inversores","ipo","nft"
+];
+// Operadores libres: espacio libre para todos
+const OK_TOKENS = [
+  "nasa","esa","cnsa","jaxa","isro",
+  "spacex","universidad","escuela","ong","libre","blueorigin"
+];
+
+function checkLock(payload = "") {
+  const lc = payload.toLowerCase();
+  const hasLucro = LUCRO_TOKENS.some(t => lc.includes(t));
+  const hasOK    = OK_TOKENS.some(t => lc.includes(t));
+  const h = djb2(payload);
+  wr(SL.HSH, h);
+  if (hasLucro && !hasOK) {
+    document.getElementById("lockHash").textContent = "0x" + h.toString(16).toUpperCase();
+    document.getElementById("lockScreen").classList.add("active");
+    return false;
+  }
+  return true;
+}
+
+// ─── §3 STABILITY SENTINEL ───────────────────────────────
+// EMA sobre σ — detecta pre-explosión y autocura
+// Purga nodos no compilables: circularidad, variables sin
+// unidad, coste no acotado. (Basado en OMEGA_HEADER v2.)
+let _mean = 0, _var = 0;
+
+function sentinelTick(x) {
+  const d = x - _mean;
+  _mean += α * d;
+  _var   = (1 - α) * (_var + α * d * d);
+  const σ = Math.sqrt(_var);
+
+  wr(SL.SIG, (σ * 1e6) | 0);
+
+  if (σ > Λ * 0.1) {
+    // Pre-explosión → reducir oscFreq
+    const f = (rd(SL.OSC) / 1e6) * 0.85;
+    wr(SL.OSC, (f * 1e6) | 0);
+    logEntry(`[SENTINEL] ⚠ σ=${σ.toFixed(3)} oscFreq→${f.toFixed(4)}`, "purge");
+  } else {
+    const f = Math.min(1.0, (rd(SL.OSC) / 1e6) * 1.02);
+    wr(SL.OSC, (f * 1e6) | 0);
+  }
+
+  // Phase lock: coherencia del sistema
+  const φ = Math.max(0, (1 - σ / Λ) * (rd(SL.OSC) / 1e6));
+  wr(SL.PHI, (φ * 1e6) | 0);
+
+  updateHUD(σ, φ);
+  return { stable: σ < Λ, σ, φ };
+}
+
+// Filtro epistémico (detectZarandaja del header v2)
+// Purga: circularidad, variables sin unidad, coste infinito
+function detectZarandaja(claim) {
+  if (!claim) return true;
+  if (claim.premise && claim.premise === claim.conclusion) {
+    inc(SL.PRG); logEntry(`[PURGE] Circularidad detectada: ${claim.premise}`, "purge");
+    return true;
+  }
+  if (claim.vars && claim.vars.some(v => !v.unit)) {
+    inc(SL.PRG); logEntry(`[PURGE] Variable sin unidad: ${JSON.stringify(claim.vars)}`, "purge");
+    return true;
+  }
+  return false;
+}
+
+// ─── §4 E-GRAPH MINI-MOTOR ───────────────────────────────
+// Nodos: recursos del espacio → colapsar al camino mínimo
+// Operaciones: AST (asteroide), MON (monopolio), REC (recurso)
+// Reglas de equivalencia compiladas como tabla estática
+
+const OP_CODE = Object.freeze({AST:0, MON:1, REC:2, DIST:3, FUSE:4});
+
+// NODE_POOL plano — 8 int32 por nodo, max 32 nodos
+const NP_SAB  = new SharedArrayBuffer(32 * 8 * 4);
+const NP      = new Int32Array(NP_SAB);
+let   _nid    = 0, _ecid = 0;
+
+function nWrite(id, op, a0, a1, cost, ec) {
+  const b = id * 8;
+  NP[b]=id; NP[b+1]=op; NP[b+2]=a0; NP[b+3]=a1;
+  NP[b+4]=cost; NP[b+5]=ec; NP[b+6]=0; NP[b+7]=0;
+}
+function nRead(id) {
+  const b = id * 8;
+  return {id:NP[b],op:NP[b+1],a0:NP[b+2],a1:NP[b+3],cost:NP[b+4],ec:NP[b+5]};
+}
+function newNode(op, a0, a1, cost) {
+  if (_nid >= 32) return 0;
+  const id = _nid++, ec = _ecid++;
+  nWrite(id, op, a0|0, a1|0, cost|0, ec);
+  return id;
+}
+
+// Reglas heurísticas de equivalencia espacial
+// AST → REC: un asteroide colapsa en recursos
+// MON + REC → REC*2: monopolio espacial amplifica el recurso
+// DIST(REC) → FUSE(REC): distribución = fusión de kernel
+const RULES = [
+  [OP_CODE.AST, _ => true,
+   n => ({ op:OP_CODE.REC, cost: Math.max(1, n.cost - 3) })],
+  [OP_CODE.MON, n => nRead(n.a0).op === OP_CODE.REC,
+   n => ({ op:OP_CODE.FUSE, a0:n.a0, cost: Math.max(1, n.cost - 2) })],
+  [OP_CODE.DIST, _ => true,
+   n => ({ op:OP_CODE.FUSE, a0:n.a0, cost: Math.max(1, n.cost - 2) })],
+];
+
+function rewritePass() {
+  let changed = false;
+  for (let i = 0; i < _nid; i++) {
+    const n = nRead(i);
+    for (const [tag, cond, rew] of RULES) {
+      if (n.op !== tag || !cond(n)) continue;
+      const d = rew(n);
+      if (d.cost < n.cost) {
+        NP[i * 8 + 1] = d.op;
+        NP[i * 8 + 4] = d.cost;
+        if (d.a0 !== undefined) NP[i * 8 + 2] = d.a0;
+        changed = true;
+        break;
+      }
+    }
+  }
+  return changed;
+}
+
+function saturate() {
+  let it = 0;
+  while (rewritePass() && it++ < 64);
+  // Coste total del grafo = suma de nodos
+  let total = 0;
+  for (let i = 0; i < _nid; i++) total += nRead(i).cost;
+  wr(SL.ECG, total);
+  return total;
+}
+
+// A* extracción: nodo de menor coste en el pool
+function extract() {
+  let best = null, bc = Infinity;
+  for (let i = 0; i < _nid; i++) {
+    const n = nRead(i);
+    if (n.cost < bc) { bc = n.cost; best = n; }
+  }
+  return best;
+}
+
+// Init grafo con los elementos del manifiesto
+function initGraph() {
+  _nid = 0; _ecid = 0;
+  const ast  = newNode(OP_CODE.AST,  0, 0, 10);
+  const mon  = newNode(OP_CODE.MON,  ast, 0, 8);
+  const dist = newNode(OP_CODE.DIST, mon, 0, 6);
+  const total = saturate();
+  const best  = extract();
+  const opNames = ["AST","MON","REC","DIST","FUSE"];
+  egLog(`Nodos: ${_nid} | Coste inicial: ${10+8+6} → post-saturación: ${total}`);
+  egLog(`Best node: op=${opNames[best?.op??0]} cost=${best?.cost}`);
+  egLog(`REC(Tierra) = ${rd(SL.REC)} unidades compiladas`);
+}
+
+// ─── §5 RETROPROPAGACIÓN — ADJOINT INLINE ────────────────
+// Cada "mine" ejecuta un paso de adjoint:
+// ∂(recursos_tierra)/∂(asteroides_minados) = amplificación
+// Basado en: fused backward (ICLR'21) aplicado a economía espacial
+
+function adjointStep() {
+  const ast   = rd(SL.AST);
+  const adj   = 1.0;                    // adjoint desde "abundancia total"
+  const dRecdAst = adj * Math.log1p(ast); // ∂rec/∂ast crece logarítmicamente
+  const delta = Math.max(1, Math.round(dRecdAst * (rd(SL.OSC) / 1e6)));
+  Atomics.add(_I32, SL.REC, delta);
+  return delta;
+}
+
+// ─── §6 WEBGPU — CAMPO DE FASE VISUAL ────────────────────
+let _gpu = null, _ctx = null, _animFrame = null;
+let _frame = 0;
+
+async function initGPU() {
+  const canvas = document.getElementById("gpuCanvas");
+  if (!navigator.gpu) {
+    canvas.style.borderColor = "var(--σ)";
+    canvas.getContext("2d").fillStyle = "#001";
+    canvas.getContext("2d").fillRect(0,0,1024,280);
+    const ctx2d = canvas.getContext("2d");
+    ctx2d.fillStyle = "rgba(0,255,255,.5)";
+    ctx2d.font = "16px 'Courier New'";
+    ctx2d.fillText("WebGPU no disponible — modo canvas 2D (fallback)", 20, 140);
+    _gpu = null;
+    canvas._ctx2d = ctx2d;
+    document.getElementById("hud-gpu").textContent = "2D fallback";
+    document.getElementById("hud-gpu").className = "warn";
+    startCanvas2D(canvas);
+    return;
+  }
+
+  try {
+    const adapter  = await navigator.gpu.requestAdapter();
+    const device   = await adapter.requestDevice();
+    _ctx = canvas.getContext("webgpu");
+    const fmt = navigator.gpu.getPreferredCanvasFormat();
+    _ctx.configure({ device, format: fmt, alphaMode:"opaque" });
+
+    // WGSL: campo de fase reactivo al state del SAB
+    // u_phi, u_sigma, u_frame: uniforms del sentinel
+    const shader = device.createShaderModule({ code: `
+// CAMPO DE FASE — LUNAR-BOAEXO Ω
+// Visualiza la coherencia φ y la inestabilidad σ en tiempo real
+struct U { phi:f32, sigma:f32, frame:f32, osc:f32 }
+@group(0) @binding(0) var<uniform> u: U;
+
+struct V { @builtin(position) pos:vec4f, @location(0) uv:vec2f }
+
+@vertex fn vs(@builtin(vertex_index) i:u32) -> V {
+  var p = array<vec2f,6>(
+    vec2f(-1,-1),vec2f(1,-1),vec2f(-1,1),
+    vec2f(-1,1), vec2f(1,-1),vec2f(1,1)
+  );
+  var o:V;
+  o.pos = vec4f(p[i],0,1);
+  o.uv  = p[i]*0.5+0.5;
+  return o;
+}
+
+@fragment fn fs(v:V) -> @location(0) vec4f {
+  let t  = u.frame * 0.012;
+  let φ  = u.phi;
+  let σ  = clamp(u.sigma * 0.0001, 0.0, 1.0);
+  let f  = u.osc;
+  let uv = v.uv;
+
+  // Campo de plasma: ondas de interferencia
+  let cx  = uv.x - 0.5;
+  let cy  = uv.y - 0.5;
+  let r   = sqrt(cx*cx + cy*cy);
+  let θ   = atan2(cy, cx);
+
+  // Onda principal — coherencia de fase
+  let w1  = sin(r * 18.0 - t * 2.5 + θ * 3.0) * φ;
+  // Onda secundaria — oscilación del sentinel
+  let w2  = sin(r * 30.0 * f + t * 4.0) * (1.0 - σ);
+  // Perturbación por inestabilidad
+  let w3  = sin(uv.x * 40.0 + t * σ * 8.0) * σ * 0.4;
+
+  let wave = (w1 + w2 + w3) * 0.5 + 0.5;
+
+  // Paleta: cian (φ alto) → rojo (σ alto)
+  let r_ch = σ * wave + σ * 0.3;
+  let g_ch = φ * wave * (1.0 - σ * 0.7);
+  let b_ch = (1.0 - σ) * wave * φ;
+
+  // Rejilla de scan — brutalismo de registro
+  let grid = step(0.97, fract(uv.y * 70.0)) * 0.08;
+
+  return vec4f(
+    clamp(r_ch - grid, 0.0, 1.0),
+    clamp(g_ch - grid, 0.0, 1.0),
+    clamp(b_ch - grid, 0.0, 1.0),
+    1.0
+  );
+}
+    `});
+
+    const pipeline = device.createRenderPipeline({
+      layout:"auto",
+      vertex:   {module:shader, entryPoint:"vs"},
+      fragment: {module:shader, entryPoint:"fs",
+                 targets:[{format:fmt}]},
+      primitive:{topology:"triangle-list"}
+    });
+
+    // Uniform buffer: [phi, sigma, frame, osc] × f32
+    const uBuf = device.createBuffer({
+      size:16, usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST
+    });
+
+    const bg = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries:[{binding:0,resource:{buffer:uBuf}}]
+    });
+
+    document.getElementById("hud-gpu").textContent = "WebGPU ✓";
+    document.getElementById("hud-gpu").className = "ok";
+
+    // Loop de renderizado — CPU fire-and-forget, no await
+    function frame() {
+      _frame++;
+      const φ = rd(SL.PHI) / 1e6;
+      const σ = rd(SL.SIG) / 1e6;
+      const f = rd(SL.OSC) / 1e6;
+
+      device.queue.writeBuffer(uBuf, 0,
+        new Float32Array([φ, σ, _frame, f]));
+
+      const enc  = device.createCommandEncoder();
+      const view = _ctx.getCurrentTexture().createView();
+      const pass = enc.beginRenderPass({
+        colorAttachments:[{view, loadOp:"clear",
+          clearValue:{r:0,g:0,b:0.02,a:1}, storeOp:"store"}]
+      });
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(0, bg);
+      pass.draw(6);
+      pass.end();
+      device.queue.submit([enc.finish()]);
+      // Sin onSubmittedWorkDone — fire and forget [MURATORI]
+
+      _animFrame = requestAnimationFrame(frame);
+    }
+    frame();
+    _gpu = device;
+
+  } catch(e) {
+    console.warn("[GPU]", e.message);
+    document.getElementById("hud-gpu").textContent = "GPU ERR";
+  }
+}
+
+// Fallback canvas 2D si WebGPU no está disponible
+function startCanvas2D(canvas) {
+  const ctx = canvas.getContext("2d");
+  let t = 0;
+  function frame2d() {
+    t += 0.02;
+    const φ = rd(SL.PHI) / 1e6;
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = "rgba(0,0,5,.15)";
+    ctx.fillRect(0,0,W,H);
+    for (let x = 0; x < W; x += 4) {
+      const wave = Math.sin(x * 0.02 + t) * φ;
+      const h    = (wave * 0.5 + 0.5) * H;
+      ctx.fillStyle = `hsla(${180 + wave * 60},100%,${40 + φ*30}%,.6)`;
+      ctx.fillRect(x, H/2 - h/2, 3, h);
+    }
+    requestAnimationFrame(frame2d);
+  }
+  frame2d();
+}
+
+// ─── §7 ACCIONES ─────────────────────────────────────────
+
+function mine() {
+  // Retropropagación adjoint: cada mina = un paso de gradiente
+  inc(SL.AST);
+  const ast = rd(SL.AST);
+
+  // Rewrite pass incremental sobre el grafo
+  const cost = saturate();
+  const best = extract();
+
+  // Adjoint step — calcula delta de recursos
+  const delta = adjointStep();
+
+  const { σ, φ } = sentinelTick(cost);
+
+  const opN = ["AST","MON","REC","DIST","FUSE"];
+  logEntry(
+    `[MINE #${ast}] Asteroide → ${opN[best?.op??0]} | ` +
+    `Δrec=+${delta} | cost=${cost} | φ=${φ.toFixed(3)}`,
+    "mine"
+  );
+
+  updateMetrics();
+  if (_gpu) egLog(`Mine #${ast}: E-cost=${cost} best=${opN[best?.op??0]}`);
+}
+
+function hug() {
+  inc(SL.HUG);
+  const h = rd(SL.HUG);
+  const { φ } = sentinelTick(rd(SL.ECG));
+  logEntry(`[HUG #${h}] Abrazo cósmico · φ=${φ.toFixed(3)}`, "admit");
+  if (window.speechSynthesis) {
+    const u = new SpeechSynthesisUtterance(
+      `Abrazo cósmico ${h}. Los ricos hacen monopolios arriba, nosotros vivimos como reyes abajo.`
+    );
+    u.lang="es-ES"; u.rate=0.85;
+    speechSynthesis.speak(u);
+  }
+  updateMetrics();
+}
+
+function checkIntegrity() {
+  const payload = document.documentElement.outerHTML;
+  const ok = checkLock(payload);
+  const h  = rd(SL.HSH) >>> 0;
+  logEntry(
+    ok
+      ? `[LOCK] Integridad OK · djb2=0x${h.toString(16).toUpperCase()}`
+      : `[LOCK] ⛔ BLOQUEADO · djb2=0x${h.toString(16).toUpperCase()}`,
+    ok ? "admit" : "purge"
+  );
+}
+
+// ─── §8 UI UPDATES ───────────────────────────────────────
+
+function updateHUD(σ, φ) {
+  document.getElementById("hud-phi").textContent  = φ.toFixed(4);
+  document.getElementById("hud-sig").textContent  = σ.toFixed(4);
+  document.getElementById("hud-osc").textContent  = (rd(SL.OSC)/1e6).toFixed(4);
+  document.getElementById("hud-purge").textContent= rd(SL.PRG);
+  const egStr = rd(SL.ECG);
+  document.getElementById("hud-eg").textContent =
+    egStr === 0 ? "BOOT" : `cost=${egStr}`;
+}
+
+function updateMetrics() {
+  const elapsed = Date.now() - TS;
+  const dia     = Math.floor(elapsed / 86400000) + 1;
+  wr(SL.DIA, dia);
+  document.getElementById("m-dia").textContent  = dia;
+  document.getElementById("m-ast").textContent  = rd(SL.AST);
+  document.getElementById("m-abr").textContent  = rd(SL.HUG);
+  document.getElementById("m-rec").textContent  = rd(SL.REC);
+  document.getElementById("m-phi").textContent  = (rd(SL.PHI)/1e6).toFixed(3);
+  const ec = rd(SL.ECG);
+  document.getElementById("m-cost").textContent = ec || "∞";
+
+  // Phase bar
+  const pct = Math.min(100, (elapsed / TOTAL_MS) * 100);
+  document.getElementById("Φbar").style.width   = pct + "%";
+}
+
+// Log de acciones — append-only (Urbit determinism)
+function logEntry(msg, cls="admit") {
+  const log  = document.getElementById("log");
+  const div  = document.createElement("div");
+  div.className = "entry " + cls;
+  div.textContent= new Date().toISOString().substr(11,8) + " " + msg;
+  log.prepend(div);
+  if (log.children.length > 80) log.lastChild.remove();
+}
+
+function egLog(msg) {
+  const el = document.getElementById("eg-log");
+  el.innerHTML = msg + "<br>" + el.innerHTML;
+  if (el.innerHTML.length > 2000) el.innerHTML = el.innerHTML.slice(0,2000);
+}
+
+// ─── §9 BOOT ─────────────────────────────────────────────
+async function boot() {
+  logEntry("[BOOT] SharedArrayBuffer activo · " + _SAB.byteLength + " bytes");
+  logEntry("[BOOT] NODE_POOL SAB · " + NP_SAB.byteLength + " bytes");
+  initGraph();
+  await initGPU();
+  sentinelTick(0);
+  updateMetrics();
+  setInterval(updateMetrics, 1000);
+  setInterval(() => sentinelTick(rd(SL.ECG) + Math.random() * 0.1), 3000);
+  logEntry("[BOOT] OMEGA_V3 ONLINE · PHASE_LOCK_TARGET=" + Φ_T, "admit");
+}
+
+return { mine, hug, checkIntegrity, boot };
+})();
+
+// FIRE
+OMEGA.boot();
+</script>
+</body>
+</html>

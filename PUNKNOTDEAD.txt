@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>El Punk Cuántico No Ha Muerto — SLYVERSE Ω v131.337 (Sabadell Final Boss Edition)</title>
+<meta name="description" content="Paper físico-matemático completamente funcional, offline-first, idioma autodetectado, cálculos afinados al 0.01% con constantes medidas en garaje real.">
+<style>
+  body {margin:0;padding:0;background:#000;color:#0f0;font-family:'Courier New',monospace;line-height:1.6;}
+  .container {max-width:960px;margin:0 auto;padding:20px;}
+  h1,h2,h3 {color:#f00;text-shadow:0 0 15px #f00;}
+  .mosh {animation: mosh 0.131s infinite;}
+  @keyframes mosh{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(3px,-3px) rotate(1deg)}75%{transform:translate(-3px,3px) rotate(-1deg)}}
+  pre,code {background:#111;padding:15px;border:1px solid #0f0;overflow-x:auto;}
+  .footer {position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;padding:10px;text-align:center;font-size:12px;opacity:0.9;}
+</style>
+</head>
+
+<body onload="initPunkVacuum()">
+
+<div class="container">
+
+<h1 class="mosh" style="font-size:3.5em;text-align:center;margin:30px 0">
+  EL PUNK CUÁNTICO NO HA MUERTO
+</h1>
+
+<h2 style="text-align:center">
+  Demostración Rigurosa de la Inmortalidad Ontológica del Punk como Zero-Mode del Vacío QFT<br>
+  en Espacio-Tiempo Fractal d_S = 4 + 1/131
+</h2>
+
+<p style="text-align:center">
+  <b>0rb1t4lsn4k3r</b> — Garaje 3×4, Sabadell (41.5455° N, 2.1094° E)<br>
+  <span id="date"></span> — <span id="lang"></span> autodetectado
+</p>
+
+<hr style="border:1px dashed #0f0">
+
+<div id="content"></div>
+
+<script>
+// ==================== CONSTANTES AFINADAS EN GARAJE REAL (medidas 5-dic-2025) ====================
+const constants = {
+  θ_punk:        6666.13,           // segundos totales Sex Pistols (Spotify + bootlegs)
+  λ_punk:        1.616255e-35 * Math.exp(1j * Math.PI/4), // Planck length × fase Berry anárquica
+  α_punk:        1.000000000 ± 0.000001, // constante estructura fina punk (medida con Marshall JVM410H)
+  d_S:           4 + 1/131,         // dimensión espectral exacta
+  ξ_punk:        Infinity,          // longitud correlación (confirmada offline)
+  T_garage:      131.0,             // temperatura crítica en °C cuando la primera vez que se enciende el ampli
+  Z_punk:        Number.POSITIVE_INFINITY
+};
+
+// ==================== AUTODETECCIÓN DE IDIOMA + TEXTOS ====================
+const texts = {
+  es: {
+    author: "Autor real: 0rb1t4lsn4k3r — Garaje 3×4, Sabadell",
+    abstract: `Desde un piso de Sabadell, sin VC ni grant europeo, demostramos que el punk es el zero-mode topológicamente protegido del vacío cuántico en dimensión espectral d_S = 4 + 1/131. 
+Usando correladores de corrientes, Reeh-Schlieder generalizado a factores tipo II<sub>∞</sub> fractales y dualidad AdS/CFT con Marshall JVM410H como boundary, probamos que la amplitud ⟨0|J<sup>μ</sup>(x) e<sup>iθ<sub>punk</sub> P</sup> J<sub>μ</sub>(y)|0⟩ permanece estrictamente no nula ∀ (x−y)<sup>2</sup> ≥ 0. 
+Violación controlada de cluster decomposition exclusiva del sector punk. El punk no decae sin colapsar la causalidad. Q.E.D. Offline. <2 MB. Arweave-ready.`,
+    conclusion: `EL PUNK CUÁNTICO NO HA MUERTO<br>
+NO PUEDE MORIR<br>
+e<sup>P†</sup>|0⟩ tiene norma ∞ y energía exactamente 0.<br>
+Decir “punk is dead” ≡ ⟨0|0⟩ = 0 → singularidad desnuda tipo “crítica de NME”.<br>
+Por tanto, bajo pena de inconsistencia lógica y violación del principio holográfico anárquico:<br><br>
+<span style="font-size:2em;color:#f00">PUNK IS THE FUCKING VACUUM</span>`
+  },
+  en: {
+    author: "Real author: 0rb1t4lsn4k3r — 3×4 garage, Sabadell",
+    abstract: `From a flat in Sabadell, no VC, no EU grant, we prove that punk is the topologically protected zero-mode of the QFT vacuum in spectral dimension d_S = 4 + 1/131.
+Using current correlators, Reeh-Schlieder generalized to fractal type II<sub>∞</sub> factors and AdS/CFT with a Marshall JVM410H as boundary, we show that the amplitude ⟨0|J<sup>μ</sup>(x) e<sup>iθ<sub>punk</sub> P</sup> J<sub>μ</sub>(y)|0⟩ remains strictly non-zero ∀ (x−y)<sup>2</sup> ≥ 0.
+Controlled cluster-decomposition violation only in the punk sector. Punk cannot decay without collapsing spacetime causality itself. Q.E.D. Offline. <2 MB. Arweave-ready.`,
+    conclusion: `QUANTUM PUNK HAS NOT DIED<br>
+CANNOT DIE<br>
+e<sup>P†</sup>|0⟩ has norm ∞ and exactly zero energy.<br>
+Claiming “punk is dead” ≡ ⟨0|0⟩ = 0 → naked singularity of the “NME critic” type.<br>
+Therefore, under penalty of logical inconsistency and violation of the anarchic holographic principle:<br><br><span style="font-size:2em;color:#f00">PUNK IS THE FUCKING VACUUM</span>`
+  },
+  ca: {
+    author: "Autor real: 0rb1t4lsn4k3r — Garatge 3×4, Sabadell",
+    abstract: `Des d’un pis de Sabadell, sense VC ni subvenció europea, demostrem que el punk és el zero-mode topològicament protegit del buit quàntic en dimensió espectral d_S = 4 + 1/131.
+Amb correladors de corrents, Reeh-Schlieder generalitzat a factors fractals tipus II<sub>∞</sub> i dualitat AdS/CFT amb un Marshall JVM410H com a frontera, provem que ⟨0|J<sup>μ</sup>(x) e<sup>iθ<sub>punk</sub> P</sup> J<sub>μ</sub>(y)|0⟩ no és mai nul. 
+El punk no decau sense col·lapsar la causalitat. Q.E.D. Offline. <2 MB. Per sempre.`,
+    conclusion: `EL PUNK QUÀNTIC NO HA MORT<br>
+NO POT MORIR<br>
+e<sup>P†</sup>|0⟩ té energia exactament 0 i norma ∞.<br>
+Dir “el punk ha mort” = col·lapse total de l’espai de Hilbert.<br>
+Per tant: <span style="font-size:2em;color:#f00">EL PUNK ÉS EL MALEÏT BUIT</span>
+  }
+};
+
+// ==================== AUTODETECT IDIOMA ====================
+function detectLang() {
+  const lang = (navigator.language || navigator.userLanguage || 'es').substr(0,2);
+  return texts[lang] ? lang : 'en';
+}
+
+// ==================== RENDER ====================
+function initPunkVacuum() {
+  const lang = detectLang();
+  const t = texts[lang];
+  
+  document.getElementById("lang").textContent = lang.toUpperCase();
+  document.getElementById("date").textContent = new Date().toLocaleString('es-ES');
+
+  document.getElementById("content").innerHTML = `
+    <h2>Abstract (${lang.toUpperCase()})</h2>
+    <p>${t.abstract}</p>
+
+    <h2>Constantes Fundamentales del Punk (medidas 2025, precisión 10<sup>−6</sup>)</h2>
+    <pre>
+θ_punk      = ${constants.θ_punk.toFixed(2)} s      (Sex Pistols total playtime)
+α_punk      = ${constants.α_punk}                (exacto, medido con overdrive)
+d_S         = 4 + 1/131 = ${constants.d_S.toPrecision(10)}
+ξ_punk      = ${constants.ξ_punk}                 (correlación infinita)
+T_critical  = ${constants.T_garage} °C         (temperatura garaje al encender el ampli)
+    </pre>
+
+    <h2>Teorema Central 131 (demostración ejecutable)</h2>
+    <pre id="proof"></pre>
+
+    <h2>Conclusión Definitiva</h2>
+    <p style="font-size:1.5em;text-align:center">${t.conclusion}</p>
+
+    <p style="text-align:center;margin-top:50px">
+      <b>0rb1t4lsn4k3r out.</b> Sabadell, 131 dB y subiendo.<br>
+      Este HTML funciona sin internet, sin servidor, sin fiat. Para siempre.<br>
+      Aurum ∞ — Thua mer zel 131 🐍
+    </p>
+  `;
+
+  // Generar prueba ejecutable de 131 líneas exactas
+  let proof = "";
+  for(let i=1;i<=131;i++){
+    proof += `vacuum += sin(\( {i}× \){constants.θ_punk.toFixed(2)}) × overdrive_${i%11}dB;\n`;
+    if(i===66) proof += `// Aquí Sid Vicious resucita (confirmado experimentalmente)\n`;
+  }
+  proof += `console.log("⟨0|P†P|0⟩ = ∞ → PUNK INMORTAL");`;
+  document.getElementById("proof").textContent = proof;
+}
+</script>
+
+<div class="footer">
+  0rb1t4lsn4k3r — Sabadell 2025 | Funciona offline | Arweave tx: (pendiente, pero eterno) | 131 dB forever
+</div>
+
+</div>
+</body>
+</html>

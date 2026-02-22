@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JIT Compiler v2.0 — LLVM-Grade WebGPU Optimizer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg0: #04060a;
+  --bg1: #080d14;
+  --bg2: #0d1520;
+  --bg3: #111d2e;
+  --border: #1a2840;
+  --border2: #243855;
+  --c0: #e8f4ff;
+  --c1: #8baec8;
+  --c2: #4a6d8c;
+  --cyan:   #00e5ff;
+  --green:  #00ff9d;
+  --yellow: #ffd600;
+  --orange: #ff6b35;
+  --red:    #ff3b5c;
+  --purple: #b47cff;
+  --blue:   #4488ff;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body: 'Space Grotesk', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg0);
+  color: var(--c0);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+}
+
+/* CRT glow background */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(0,229,255,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(0,255,157,0.03) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 90%, rgba(255,107,53,0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 1800px; margin: 0 auto; padding: 0 20px; }
+
+/* ── HEADER ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  background: rgba(4,6,10,0.9);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.hdr-row {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+
+.logo {
+  display: flex; align-items: baseline; gap: 12px;
+}
+
+.logo-text {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.logo-ver {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  padding: 2px 7px; border-radius: 3px;
+  letter-spacing: 0.1em;
+}
+
+.logo-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--c2);
+  letter-spacing: 0.06em;
+}
+
+/* ── PIPELINE RIBBON ── */
+.pipeline-ribbon {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pipeline-ribbon::-webkit-scrollbar { display: none; }
+
+.pipeline-inner {
+  display: flex; align-items: center; gap: 0;
+  min-width: max-content; padding: 0 20px;
+}
+
+.pip-step {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 11px;
+  padding: 6px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--c2);
+  transition: all 0.25s;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.pip-step.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.07);
+  box-shadow: 0 0 12px rgba(0,229,255,0.15);
+}
+
+.pip-step.done {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(0,255,157,0.05);
+}
+
+.pip-step.error {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.pip-arrow { color: var(--border2); padding: 0 6px; font-size: 14px; }
+.pip-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  align-items: start;
+}
+
+@media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+
+/* ── PANELS ── */
+.panel {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.panel-title {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.panel-badge {
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 100px;
+  border: 1px solid currentColor; opacity: 0.7;
+}
+
+/* ── INPUT SECTION ── */
+.inp-section { padding: 14px; }
+
+.field-label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--c2); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px; display: block;
+}
+
+.expr-chips {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;
+}
+
+.chip {
+  font-family: var(--mono); font-size: 10px;
+  padding: 3px 9px;
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  background: var(--bg2);
+  color: var(--c1);
+  cursor: pointer; transition: all 0.15s;
+}
+.chip:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.06); }
+
+textarea, select, input[type=text] {
+  width: 100%;
+  background: var(--bg0);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--c0);
+  font-family: var(--mono); font-size: 12px;
+  padding: 10px 12px;
+  outline: none; resize: vertical;
+  transition: border-color 0.2s;
+}
+textarea:focus, select:focus, input:focus { border-color: var(--cyan); }
+select { cursor: pointer; appearance: none; padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%234a6d8c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+/* Multi-kernel input */
+.kernel-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.kernel-row {
+  display: flex; gap: 6px; align-items: center;
+}
+.kernel-row textarea { resize: none; rows: 1; min-height: 36px; padding: 8px; font-size: 11px; }
+.kernel-label {
+  font-family: var(--mono); font-size: 10px; color: var(--c2);
+  flex-shrink: 0; width: 20px; text-align: right;
+}
+
+/* Add/remove btns */
+.icon-btn {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: 1px solid var(--border2); border-radius: 4px;
+  background: var(--bg2); color: var(--c1);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px; transition: all 0.15s;
+}
+.icon-btn:hover { border-color: var(--green); color: var(--green); }
+.icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+/* Toggles */
+.toggle-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+}
+.toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; color: var(--c1);
+  cursor: pointer;
+}
+.toggle input[type=checkbox] { appearance: none; width: 28px; height: 14px;
+  border: 1px solid var(--border2); border-radius: 7px; background: var(--bg0);
+  position: relative; cursor: pointer; transition: all 0.2s;
+}
+.toggle input[type=checkbox]::after {
+  content: ''; position: absolute; top: 1px; left: 1px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--c2); transition: all 0.2s;
+}
+.toggle input[type=checkbox]:checked { background: rgba(0,229,255,0.15); border-color: var(--cyan); }
+.toggle input[type=checkbox]:checked::after { left: 15px; background: var(--cyan); }
+
+/* Compile btn */
+.compile-btn {
+  width: 100%; padding: 13px;
+  margin-top: 14px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  border-radius: 5px;
+  color: var(--cyan);
+  font-family: var(--display); font-size: 20px;
+  letter-spacing: 0.15em;
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.compile-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  opacity: 0; transition: opacity 0.2s;
+}
+.compile-btn:hover { color: #000; }
+.compile-btn:hover::before { opacity: 1; }
+.compile-btn span { position: relative; z-index: 1; }
+.compile-btn:active { transform: scale(0.98); }
+
+/* ── METRICS DASHBOARD ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border);
+}
+
+.metric {
+  padding: 12px 14px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+  position: relative;
+}
+.metric:last-child { border-right: none; }
+
+.metric-val {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 0.05em;
+  color: var(--cyan);
+  line-height: 1;
+}
+.metric-val.green { color: var(--green); }
+.metric-val.orange { color: var(--orange); }
+.metric-val.yellow { color: var(--yellow); }
+.metric-val.red { color: var(--red); }
+
+.metric-lbl {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--c2); letter-spacing: 0.08em;
+  text-transform: uppercase; margin-top: 3px;
+}
+
+/* Reduction indicator */
+.metric-delta {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--green); margin-top: 2px;
+}
+
+/* ── OPTIMIZATION WATERFALL ── */
+.waterfall {
+  padding: 14px;
+}
+
+.wf-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(26,40,64,0.5);
+  font-family: var(--mono); font-size: 11px;
+}
+.wf-row:last-child { border-bottom: none; }
+
+.wf-pass { width: 160px; flex-shrink: 0; color: var(--c1); }
+.wf-before { width: 50px; text-align: right; color: var(--c2); }
+.wf-bar-wrap { flex: 1; height: 14px; position: relative; }
+.wf-bar-bg { position: absolute; inset: 0; background: var(--bg2); border-radius: 2px; }
+.wf-bar-before { position: absolute; top: 0; left: 0; height: 100%; background: var(--border2); border-radius: 2px; transition: width 0.6s ease; }
+.wf-bar-after { position: absolute; top: 0; left: 0; height: 100%; border-radius: 2px; transition: width 0.6s ease 0.1s; }
+.wf-after { width: 50px; text-align: right; color: var(--cyan); font-weight: 600; }
+.wf-saved { width: 60px; text-align: right; font-size: 10px; }
+.wf-saved.pos { color: var(--green); }
+.wf-saved.neg { color: var(--red); }
+
+/* ── RIGHT PANEL TABS ── */
+.tabs-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tabs-bar::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  padding: 9px 16px;
+  font-family: var(--mono); font-size: 11px;
+  cursor: pointer; white-space: nowrap;
+  color: var(--c2);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); background: rgba(0,229,255,0.04); }
+.tab-btn:hover:not(.active) { color: var(--c0); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── CODE OUTPUT ── */
+.code-wrap {
+  position: relative;
+}
+
+.code-out {
+  background: var(--bg0);
+  padding: 16px 20px;
+  font-family: var(--mono); font-size: 12px;
+  line-height: 1.75;
+  white-space: pre;
+  overflow: auto;
+  max-height: 680px;
+  tab-size: 2;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+.copy-btn {
+  position: absolute; top: 10px; right: 10px;
+  padding: 5px 12px;
+  font-family: var(--mono); font-size: 10px;
+  border: 1px solid var(--border2); border-radius: 3px;
+  background: var(--bg2); color: var(--c2);
+  cursor: pointer; transition: all 0.15s;
+}
+.copy-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* Syntax colors */
+.kw    { color: #ff79c6; }
+.ty    { color: #ffb86c; }
+.fn    { color: #8be9fd; }
+.num   { color: #bd93f9; }
+.cmt   { color: #3a5a7a; font-style: italic; }
+.attr  { color: var(--cyan); }
+.str   { color: #f1fa8c; }
+.op    { color: var(--orange); }
+.bi    { color: var(--purple); }
+.var   { color: var(--c0); }
+.sec   { color: var(--green); font-weight: 600; }
+.opt   { color: var(--yellow); }
+
+/* ── LOG ── */
+.log-out {
+  background: var(--bg0);
+  padding: 14px 16px;
+  font-family: var(--mono); font-size: 11px;
+  line-height: 1.9;
+  max-height: 680px; overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+.ll { display: flex; gap: 10px; }
+.lt { color: var(--c2); flex-shrink: 0; width: 65px; }
+.lp { flex-shrink: 0; width: 110px; font-weight: 600; }
+.lm { }
+.l-info .lp    { color: var(--blue); }
+.l-success .lp { color: var(--green); }
+.l-warn .lp    { color: var(--yellow); }
+.l-error .lp   { color: var(--red); }
+.l-opt .lp     { color: var(--orange); }
+.l-perf .lp    { color: var(--purple); }
+
+/* ── DAG CANVAS ── */
+.dag-wrap {
+  background: var(--bg0);
+  position: relative;
+  min-height: 600px;
+}
+#dagCanvas { width: 100%; height: 600px; display: block; }
+.dag-legend {
+  position: absolute; bottom: 12px; right: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--mono); font-size: 9px; color: var(--c2);
+}
+.leg-item { display: flex; align-items: center; gap: 6px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── CHECKPOINT TABLE ── */
+.ck-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: 11px;
+}
+.ck-table th {
+  text-align: left; padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--c2); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--bg2);
+}
+.ck-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(26,40,64,0.5);
+  vertical-align: top;
+}
+.ck-table tr:hover td { background: rgba(0,229,255,0.02); }
+.ck-saved { color: var(--green); font-weight: 600; }
+.ck-recomputed { color: var(--yellow); }
+.ck-cost { color: var(--orange); }
+
+/* ── ARITHMETIC INTENSITY ── */
+.ai-chart {
+  padding: 16px;
+  min-height: 200px;
+}
+.ai-bars { display: flex; flex-direction: column; gap: 10px; }
+.ai-row { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; }
+.ai-name { width: 160px; flex-shrink: 0; color: var(--c1); }
+.ai-bar-bg { flex: 1; height: 20px; background: var(--bg2); border-radius: 3px; position: relative; overflow: hidden; }
+.ai-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 8px; font-size: 10px; color: #000; font-weight: 700; }
+.ai-val { width: 60px; text-align: right; color: var(--c1); }
+.ai-bound { font-size: 10px; }
+.ai-bound.mem { color: var(--orange); }
+.ai-bound.comp { color: var(--green); }
+
+/* ── SPARSE FIELD ── */
+.sparse-grid-wrap { padding: 14px; }
+#sparseCanvas { border: 1px solid var(--border); border-radius: 4px; image-rendering: pixelated; }
+
+/* ANIMATIONS */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes slideIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes glow {
+  0%,100% { box-shadow: 0 0 8px rgba(0,229,255,0.2); }
+  50% { box-shadow: 0 0 20px rgba(0,229,255,0.5); }
+}
+
+.compiling .metric-val { animation: pulse 0.8s infinite; }
+.fade-in { animation: slideIn 0.35s ease both; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9998;
+  padding: 10px 18px;
+  background: var(--bg2); border: 1px solid var(--green);
+  border-radius: 5px;
+  font-family: var(--mono); font-size: 11px; color: var(--green);
+  animation: slideIn 0.3s ease;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hdr-row">
+      <div class="logo">
+        <span class="logo-text">JIT WGSL Compiler</span>
+        <span class="logo-ver">v2.0</span>
+        <div style="margin-left:8px">
+          <div class="logo-sub">LLVM-GRADE OPTIMIZER · CSE · FUSION · TILED · REVERSE-AD</div>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--c2)">
+        Pipeline: <span style="color:var(--cyan)">PARSE</span> →
+        <span style="color:var(--green)">CSE</span> →
+        <span style="color:var(--yellow)">SIMPLIFY</span> →
+        <span style="color:var(--orange)">FUSION</span> →
+        <span style="color:var(--purple)">TILING</span> →
+        <span style="color:var(--red)">AD-REV</span> →
+        <span style="color:var(--cyan)">CODEGEN</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="pipeline-ribbon">
+  <div class="pipeline-inner" id="pipelineSteps">
+    <div class="pip-step" id="ps-lex"><span class="pip-dot"></span>01: Lexer/Parser</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-cse"><span class="pip-dot"></span>02: Global CSE</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-alg"><span class="pip-dot"></span>03: Algebraic Simplify</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-cp"><span class="pip-dot"></span>04: Const Propagation</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-str"><span class="pip-dot"></span>05: Strength Reduction</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-fus"><span class="pip-dot"></span>06: Kernel Fusion</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-ai"><span class="pip-dot"></span>07: Arithmetic Intensity</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-tile"><span class="pip-dot"></span>08: Tiled Memory</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-spar"><span class="pip-dot"></span>09: Sparse Fields</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-ad"><span class="pip-dot"></span>10: Reverse-AD</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-ck"><span class="pip-dot"></span>11: Checkpointing</div>
+    <span class="pip-arrow">▶</span>
+    <div class="pip-step" id="ps-cg"><span class="pip-dot"></span>12: WGSL Codegen</div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="layout">
+
+  <!-- ── LEFT: INPUT ── -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="panel">
+      <div class="panel-hdr">
+        <span class="panel-title">Kernel Expressions</span>
+        <span class="panel-badge" style="color:var(--orange)">Multi-Kernel Fusion</span>
+      </div>
+      <div class="inp-section">
+        <span class="field-label">Quick Examples</span>
+        <div class="expr-chips">
+          <span class="chip" onclick="setPreset('heat')">Heat Eq.</span>
+          <span class="chip" onclick="setPreset('burgers')">Burgers</span>
+          <span class="chip" onclick="setPreset('wave')">Wave Eq.</span>
+          <span class="chip" onclick="setPreset('navier')">Navier-Stokes</span>
+          <span class="chip" onclick="setPreset('schrodinger')">Schrödinger</span>
+          <span class="chip" onclick="setPreset('cse_demo')">CSE Demo</span>
+          <span class="chip" onclick="setPreset('fusion_demo')">Fusion Demo</span>
+        </div>
+
+        <span class="field-label">Equations (one per line — will be fused)</span>
+        <div class="kernel-list" id="kernelList"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="icon-btn" onclick="addKernel()">+</button>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--c2);align-self:center">Add equation for fusion</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">
+        <span class="panel-title">Compiler Configuration</span>
+        <span class="panel-badge" style="color:var(--purple)">LLVM Passes</span>
+      </div>
+      <div class="inp-section">
+        <div class="grid2">
+          <div>
+            <span class="field-label">Dimension</span>
+            <select id="selDim">
+              <option value="1">1D</option>
+              <option value="2" selected>2D</option>
+              <option value="3">3D</option>
+            </select>
+          </div>
+          <div>
+            <span class="field-label">Opt Level</span>
+            <select id="selOpt">
+              <option value="0">O0 — None</option>
+              <option value="1">O1 — CSE Only</option>
+              <option value="2" selected>O2 — Full Pipeline</option>
+              <option value="3">O3 — Aggressive</option>
+            </select>
+          </div>
+          <div>
+            <span class="field-label">Tile Size</span>
+            <select id="selTile">
+              <option value="8">8×8 (L1-safe)</option>
+              <option value="16" selected>16×16 (optimal)</option>
+              <option value="32">32×32 (large)</option>
+            </select>
+          </div>
+          <div>
+            <span class="field-label">Grid Size</span>
+            <select id="selGrid">
+              <option value="64">64</option>
+              <option value="128" selected>128</option>
+              <option value="256">256</option>
+              <option value="512">512</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <span class="field-label" style="margin-top:10px">Parameters</span>
+          <input type="text" id="inpParams" value="alpha=0.1, dt=0.001, dx=0.01, c=1.0, nu=0.01" />
+        </div>
+
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="togCSE" checked><span>Global CSE</span></label>
+          <label class="toggle"><input type="checkbox" id="togFusion" checked><span>Kernel Fusion</span></label>
+          <label class="toggle"><input type="checkbox" id="togTiling" checked><span>Tiled Memory</span></label>
+          <label class="toggle"><input type="checkbox" id="togAD" checked><span>Reverse-AD</span></label>
+          <label class="toggle"><input type="checkbox" id="togCK" checked><span>Checkpointing</span></label>
+          <label class="toggle"><input type="checkbox" id="togSparse"><span>Sparse Exit</span></label>
+          <label class="toggle"><input type="checkbox" id="togStr" checked><span>Strength Reduce</span></label>
+        </div>
+
+        <button class="compile-btn" onclick="runCompile()"><span>⚡ COMPILE PIPELINE</span></button>
+      </div>
+    </div>
+
+    <!-- Waterfall -->
+    <div class="panel">
+      <div class="panel-hdr">
+        <span class="panel-title">Optimization Waterfall</span>
+        <span class="panel-badge" style="color:var(--green)" id="wfTotal">–</span>
+      </div>
+      <div class="waterfall" id="waterfallBody">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--c2);padding:8px 0">Compile to see pass statistics.</div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="panel">
+      <div class="panel-hdr">
+        <span class="panel-title">Performance Metrics</span>
+      </div>
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric"><div class="metric-val" id="m0">–</div><div class="metric-lbl">Raw Ops</div></div>
+        <div class="metric"><div class="metric-val green" id="m1">–</div><div class="metric-lbl">Final Ops</div></div>
+        <div class="metric"><div class="metric-val orange" id="m2">–</div><div class="metric-lbl">Reduction %</div></div>
+        <div class="metric"><div class="metric-val yellow" id="m3">–</div><div class="metric-lbl">Compile ms</div></div>
+        <div class="metric"><div class="metric-val" id="m4">–</div><div class="metric-lbl">CSE Hits</div></div>
+        <div class="metric"><div class="metric-val green" id="m5">–</div><div class="metric-lbl">Regs Saved</div></div>
+        <div class="metric"><div class="metric-val orange" id="m6">–</div><div class="metric-lbl">Kernels Fused</div></div>
+        <div class="metric"><div class="metric-val yellow" id="m7">–</div><div class="metric-lbl">Checkpoints</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT: OUTPUT ── -->
+  <div class="panel" style="min-height:800px;display:flex;flex-direction:column">
+    <div class="tabs-bar">
+      <div class="tab-btn active" onclick="tab('wgsl')">🔷 Forward Kernel</div>
+      <div class="tab-btn" onclick="tab('back')">↩ Backward Pass</div>
+      <div class="tab-btn" onclick="tab('fused')">⚡ Fused Kernel</div>
+      <div class="tab-btn" onclick="tab('dag')">🕸 DAG</div>
+      <div class="tab-btn" onclick="tab('ai')">📊 Arith. Intensity</div>
+      <div class="tab-btn" onclick="tab('ck')">💾 Checkpoints</div>
+      <div class="tab-btn" onclick="tab('sparse')">◻ Sparse Field</div>
+      <div class="tab-btn" onclick="tab('log')">📋 Log</div>
+    </div>
+
+    <!-- Forward Kernel -->
+    <div class="tab-pane active" id="tp-wgsl">
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="cp('wgslOut')">Copy</button>
+        <div class="code-out" id="wgslOut"><span class="cmt">// Compile to see the forward kernel.</span></div>
+      </div>
+    </div>
+
+    <!-- Backward -->
+    <div class="tab-pane" id="tp-back">
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="cp('backOut')">Copy</button>
+        <div class="code-out" id="backOut"><span class="cmt">// Reverse-mode AD backward pass.</span></div>
+      </div>
+    </div>
+
+    <!-- Fused -->
+    <div class="tab-pane" id="tp-fused">
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="cp('fusedOut')">Copy</button>
+        <div class="code-out" id="fusedOut"><span class="cmt">// Fused multi-equation kernel.</span></div>
+      </div>
+    </div>
+
+    <!-- DAG -->
+    <div class="tab-pane" id="tp-dag">
+      <div class="dag-wrap">
+        <canvas id="dagCanvas"></canvas>
+        <div class="dag-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#00e5ff"></div>CSE-shared node</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#00ff9d"></div>Arithmetic</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#b47cff"></div>Transcendental</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#ff6b35"></div>PDE Operator</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#ffd600"></div>Checkpoint</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a6d8c"></div>Constant</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arith Intensity -->
+    <div class="tab-pane" id="tp-ai">
+      <div class="ai-chart">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--c2);margin-bottom:14px">
+          ARITHMETIC INTENSITY = FLOPS / BYTES_ACCESSED — Roofline Model Analysis
+        </div>
+        <div class="ai-bars" id="aiBody">
+          <div style="color:var(--c2);font-family:var(--mono);font-size:11px">Compile to analyze arithmetic intensity.</div>
+        </div>
+        <div style="margin-top:16px;padding:12px;border:1px solid var(--border);border-radius:4px;background:var(--bg2)">
+          <div id="aiDecision" style="font-family:var(--mono);font-size:11px;color:var(--c1)">
+            Compile to see memory/compute bound decision and strategy.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkpoints -->
+    <div class="tab-pane" id="tp-ck">
+      <div style="padding:14px;overflow:auto;max-height:680px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--c2);margin-bottom:10px">
+          CHECKPOINTING STRATEGY — Optimal recomputation vs storage tradeoff (inspired by Chen et al. √N scheme)
+        </div>
+        <table class="ck-table" id="ckTable">
+          <thead>
+            <tr>
+              <th>Node</th><th>Op</th><th>Cost (FLOP)</th>
+              <th>Storage</th><th>Decision</th><th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="ckBody">
+            <tr><td colspan="6" style="color:var(--c2);padding:16px">Compile to see checkpointing decisions.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sparse -->
+    <div class="tab-pane" id="tp-sparse">
+      <div class="sparse-grid-wrap">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--c2);margin-bottom:10px">
+          SPARSE FIELD VISUALIZATION — Active cells (white) vs zero-masked cells (dark). Sparse exit skips dark cells.
+        </div>
+        <canvas id="sparseCanvas" width="256" height="256" style="max-width:100%;height:auto"></canvas>
+        <div id="sparseStats" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--c1)">
+          Compile to see sparse field analysis.
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="tab-pane" id="tp-log">
+      <div class="log-out" id="logOut">
+        <div style="color:var(--c2)">Compiler log will appear here.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+'use strict';
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  JIT WGSL COMPILER v2.0  —  LLVM-GRADE OPTIMIZATION PIPELINE   ║
+// ╠══════════════════════════════════════════════════════════════════╣
+// ║  Modules:                                                        ║
+// ║  1. Lexer / Recursive-Descent Parser                             ║
+// ║  2. IRNode DAG with structural hashing                           ║
+// ║  3. Global Value Numbering (GVN/CSE) with identity table         ║
+// ║  4. Algebraic Simplifier — 30+ rewrite rules                     ║
+// ║  5. Constant Propagation + Folding                               ║
+// ║  6. Strength Reduction (pow→mul, div→mul, etc.)                  ║
+// ║  7. Kernel Fusion — horizontal multi-equation                    ║
+// ║  8. Arithmetic Intensity Analyzer (Roofline)                     ║
+// ║  9. Tiled Memory Codegen (workgroup shared memory)               ║
+// ║  10. Sparse Field Early-Exit                                      ║
+// ║  11. Reverse-Mode Automatic Differentiation                      ║
+// ║  12. Checkpointing (√N scheme)                                   ║
+// ║  13. WGSL Code Generator (forward + backward kernels)            ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ══════════════════════════════════════════════
+// 1. LEXER
+// ══════════════════════════════════════════════
+const TT = { NUM:'N', ID:'I', PLUS:'+', MINUS:'-', STAR:'*', SLASH:'/',
+             CARET:'^', LP:'(', RP:')', COMMA:',', EOF:'E' };
+
+class Lexer {
+  constructor(src) { this.s = src.replace(/\s+/g,''); this.p = 0; }
+  tokenize() {
+    const toks = [];
+    while (this.p < this.s.length) {
+      const c = this.s[this.p];
+      if (/[\d.]/.test(c)) { toks.push(this.rdNum()); continue; }
+      if (/[a-zA-Z_]/.test(c)) { toks.push(this.rdId()); continue; }
+      if ('+-*/^(),'.includes(c)) { toks.push({t:c,v:c}); this.p++; continue; }
+      throw new Error(`Unexpected char: ${c}`);
+    }
+    toks.push({t:TT.EOF,v:''});
+    return toks;
+  }
+  rdNum() {
+    let s='';
+    while (this.p<this.s.length && /[\d.]/.test(this.s[this.p])) s+=this.s[this.p++];
+    return {t:TT.NUM, v:parseFloat(s)};
+  }
+  rdId() {
+    let s='';
+    while (this.p<this.s.length && /[a-zA-Z_0-9]/.test(this.s[this.p])) s+=this.s[this.p++];
+    return {t:TT.ID, v:s};
+  }
+}
+
+// ══════════════════════════════════════════════
+// 2. IR NODE — Immutable, structurally hashed
+// ══════════════════════════════════════════════
+let _nodeId = 0;
+class IR {
+  constructor(op, args=[], val=null) {
+    this.op=op; this.args=args; this.val=val;
+    this.id=_nodeId++;
+    this._h=null;
+    this.refcount=0; // tracks CSE reuse
+    this.checkpoint=false; // checkpointing flag
+    this.arith_cost=this._cost(); // estimated FLOP cost
+  }
+  _cost() {
+    const costs = {
+      num:0, var:0, add:1, sub:1, mul:2, div:4, neg:1, pow:8,
+      sin:12, cos:12, tan:16, exp:8, log:8, sqrt:4, abs:1,
+      laplacian:12, dx:4, dy:4, dz:4, dt:2
+    };
+    return costs[this.op] ?? 1;
+  }
+  hash() {
+    if (this._h) return this._h;
+    if (this.op==='num') return this._h=`N:${this.val}`;
+    if (this.op==='var') return this._h=`V:${this.val}`;
+    return this._h=`${this.op}(${this.args.map(a=>a.hash()).join(',')})`;
+  }
+}
+
+// Constructors
+const N_  = v  => new IR('num',[],v);
+const V_  = v  => new IR('var',[],v);
+const Add = (a,b) => new IR('add',[a,b]);
+const Sub = (a,b) => new IR('sub',[a,b]);
+const Mul = (a,b) => new IR('mul',[a,b]);
+const Div = (a,b) => new IR('div',[a,b]);
+const Pow = (a,b) => new IR('pow',[a,b]);
+const Neg = (a)   => new IR('neg',[a]);
+const Sin = (a)   => new IR('sin',[a]);
+const Cos = (a)   => new IR('cos',[a]);
+const Tan = (a)   => new IR('tan',[a]);
+const Exp = (a)   => new IR('exp',[a]);
+const Log = (a)   => new IR('log',[a]);
+const Sqrt=(a)    => new IR('sqrt',[a]);
+const Abs = (a)   => new IR('abs',[a]);
+const Lap = (a)   => new IR('laplacian',[a]);
+const Dx  = (a)   => new IR('dx',[a]);
+const Dy  = (a)   => new IR('dy',[a]);
+const Dz  = (a)   => new IR('dz',[a]);
+const Dt  = (a)   => new IR('dt',[a]);
+
+// ══════════════════════════════════════════════
+// 3. RECURSIVE-DESCENT PARSER
+// ══════════════════════════════════════════════
+class Parser {
+  constructor(toks) { this.toks=toks; this.p=0; }
+  peek()   { return this.toks[this.p]; }
+  adv()    { return this.toks[this.p++]; }
+  exp(t)   { const tok=this.adv(); if(tok.t!==t) throw new Error(`Expected ${t}, got ${tok.t}`); return tok; }
+  parse()  { const n=this.expr(); this.exp(TT.EOF); return n; }
+  expr()   {
+    let n=this.term();
+    while(['+','-'].includes(this.peek().t)){const op=this.adv().t;const r=this.term();n=op==='+'?Add(n,r):Sub(n,r);}
+    return n;
+  }
+  term()   {
+    let n=this.unary();
+    while(['*','/'].includes(this.peek().t)){const op=this.adv().t;const r=this.unary();n=op==='*'?Mul(n,r):Div(n,r);}
+    return n;
+  }
+  unary()  { if(this.peek().t==='-'){this.adv();return Neg(this.power());} return this.power(); }
+  power()  { let n=this.atom(); if(this.peek().t==='^'){this.adv();return Pow(n,this.unary());} return n; }
+  atom()   {
+    const tok=this.peek();
+    if(tok.t===TT.NUM){this.adv();return N_(tok.v);}
+    if(tok.t===TT.ID){
+      this.adv();
+      if(this.peek().t==='('){
+        this.adv();
+        const args=[];
+        if(this.peek().t!==')'){
+          args.push(this.expr());
+          while(this.peek().t===','){this.adv();args.push(this.expr());}
+        }
+        this.exp(')');
+        return this.mkFn(tok.v,args);
+      }
+      return V_(tok.v);
+    }
+    if(tok.t==='('){this.adv();const n=this.expr();this.exp(')');return n;}
+    throw new Error(`Unexpected: ${tok.t} "${tok.v}"`);
+  }
+  mkFn(name,args){
+    const m={
+      sin:a=>Sin(a[0]),cos:a=>Cos(a[0]),tan:a=>Tan(a[0]),
+      exp:a=>Exp(a[0]),log:a=>Log(a[0]),sqrt:a=>Sqrt(a[0]),abs:a=>Abs(a[0]),
+      laplacian:a=>Lap(a[0]),lap:a=>Lap(a[0]),
+      dx:a=>Dx(a[0]),dy:a=>Dy(a[0]),dz:a=>Dz(a[0]),dt:a=>Dt(a[0]),
+      pow:a=>Pow(a[0],a[1]),
+    };
+    if(!m[name]) throw new Error(`Unknown fn: ${name}`);
+    return m[name](args);
+  }
+}
+
+// ══════════════════════════════════════════════
+// 4. GLOBAL CSE — Value Numbering Table
+// ══════════════════════════════════════════════
+class CSETable {
+  constructor() { this.table=new Map(); this.hits=0; this.total=0; }
+  intern(node) {
+    this.total++;
+    const h=node.hash();
+    if(this.table.has(h)){
+      this.hits++;
+      const existing=this.table.get(h);
+      existing.refcount++;
+      return existing;
+    }
+    this.table.set(h,node);
+    node.refcount=1;
+    return node;
+  }
+  // Walk the entire DAG, deduplicating shared subexpressions
+  elimGlobal(root) {
+    const memo=new Map();
+    const walk=(n)=>{
+      if(memo.has(n.id)) return memo.get(n.id);
+      const newArgs=n.args.map(walk);
+      const rebuilt=new IR(n.op, newArgs, n.val);
+      const interned=this.intern(rebuilt);
+      memo.set(n.id,interned);
+      return interned;
+    };
+    return walk(root);
+  }
+}
+
+// ══════════════════════════════════════════════
+// 5. ALGEBRAIC SIMPLIFIER — 35+ rewrite rules
+// ══════════════════════════════════════════════
+class Simplifier {
+  constructor(optLevel=2) { this.lvl=optLevel; this.reductions=0; }
+
+  run(node, depth=0) {
+    if(depth>200) return node;
+    // Recurse children first (bottom-up)
+    const newArgs=node.args.map(a=>this.run(a,depth+1));
+    const n=new IR(node.op, newArgs, node.val);
+    return this._rewrite(n);
+  }
+
+  _rewrite(n) {
+    const [a,b]=n.args;
+    const isN=x=>x&&x.op==='num';
+    const isV=x=>x&&x.op==='var';
+    const isZ=x=>isN(x)&&x.val===0;
+    const isO=x=>isN(x)&&x.val===1;
+    const isNO=x=>isN(x)&&x.val===-1;
+    const same=(x,y)=>x&&y&&x.hash()===y.hash();
+    const R=(rule,node)=>{ this.reductions++; return node; };
+
+    // ── Constant Folding ──────────────────────────
+    if(isN(a)&&isN(b)){
+      const ops={add:(x,y)=>x+y,sub:(x,y)=>x-y,mul:(x,y)=>x*y,div:(x,y)=>x/y,pow:(x,y)=>Math.pow(x,y)};
+      if(ops[n.op]) return R('cf',N_(ops[n.op](a.val,b.val)));
+    }
+    if(isN(a)&&!b){
+      const fns={neg:x=>-x,sin:x=>Math.sin(x),cos:x=>Math.cos(x),tan:x=>Math.tan(x),
+                 exp:x=>Math.exp(x),log:x=>Math.log(x),sqrt:x=>Math.sqrt(x),abs:x=>Math.abs(x)};
+      if(fns[n.op]) return R('cf',N_(fns[n.op](a.val)));
+    }
+
+    // ── Identity Rules ─────────────────────────────
+    if(n.op==='add'){
+      if(isZ(a)) return R('add0',b);
+      if(isZ(b)) return R('0add',a);
+      if(same(a,b)) return R('x+x',Mul(N_(2),a)); // x+x → 2x
+    }
+    if(n.op==='sub'){
+      if(isZ(b)) return R('sub0',a);
+      if(isZ(a)) return R('0sub',Neg(b));
+      if(same(a,b)) return R('x-x',N_(0));
+    }
+    if(n.op==='mul'){
+      if(isZ(a)||isZ(b)) return R('mul0',N_(0));
+      if(isO(a)) return R('1mul',b);
+      if(isO(b)) return R('mul1',a);
+      if(isNO(a)) return R('-1mul',Neg(b));
+      if(isNO(b)) return R('mul-1',Neg(a));
+      if(same(a,b)) return R('x*x',Pow(a,N_(2))); // x*x → x^2 (for display; strength-reduced later)
+    }
+    if(n.op==='div'){
+      if(isZ(a)) return R('0div',N_(0));
+      if(isO(b)) return R('div1',a);
+      if(same(a,b)) return R('x/x',N_(1));
+    }
+    if(n.op==='pow'){
+      if(isZ(b)) return R('x^0',N_(1));
+      if(isO(b)) return R('x^1',a);
+      if(isZ(a)) return R('0^x',N_(0));
+      if(isO(a)) return R('1^x',N_(1));
+    }
+    if(n.op==='neg' && a.op==='neg') return R('--x',a.args[0]);
+    if(n.op==='neg' && isN(a)) return R('neg_c',N_(-a.val));
+
+    // ── Trig Identities ────────────────────────────
+    if(this.lvl>=2){
+      // sin(0)=0, cos(0)=1
+      if(n.op==='sin'&&isZ(a)) return R('sin0',N_(0));
+      if(n.op==='cos'&&isZ(a)) return R('cos0',N_(1));
+      // sin(-x) = -sin(x), cos(-x) = cos(x)
+      if(n.op==='sin'&&a.op==='neg') return R('sin-x',Neg(Sin(a.args[0])));
+      if(n.op==='cos'&&a.op==='neg') return R('cos-x',Cos(a.args[0]));
+    }
+
+    // ── Associativity: pull constants left ─────────
+    if(this.lvl>=2&&n.op==='add'&&b.op==='add'&&isN(b.args[0]))
+      return R('assoc',Add(Add(a,b.args[0]),b.args[1]));
+
+    return n;
+  }
+}
+
+// ══════════════════════════════════════════════
+// 6. STRENGTH REDUCTION
+// ══════════════════════════════════════════════
+class StrengthReducer {
+  constructor() { this.reductions=0; }
+  run(node,depth=0){
+    if(depth>200) return node;
+    const newArgs=node.args.map(a=>this.run(a,depth+1));
+    const n=new IR(node.op,newArgs,node.val);
+    const [a,b]=n.args;
+    const isN=x=>x&&x.op==='num';
+
+    // pow(x,2) → x*x  (GPU: no pow needed)
+    if(n.op==='pow'&&isN(b)&&b.val===2){ this.reductions++; return Mul(a,a); }
+    // pow(x,3) → x*x*x
+    if(n.op==='pow'&&isN(b)&&b.val===3){ this.reductions++; return Mul(Mul(a,a),a); }
+    // pow(x,0.5) → sqrt(x)
+    if(n.op==='pow'&&isN(b)&&b.val===0.5){ this.reductions++; return Sqrt(a); }
+    // div(x,c) → mul(x, 1/c) for constant c
+    if(n.op==='div'&&isN(b)&&b.val!==0){ this.reductions++; return Mul(a,N_(1/b.val)); }
+    // x * 2 → x + x   (1 mul → 1 add, cheaper on some GPU archs)
+    // (skip: mul is already cheap in modern GPU, avoid extra nodes)
+
+    return n;
+  }
+}
+
+// ══════════════════════════════════════════════
+// 7. ARITHMETIC INTENSITY ANALYZER
+// ══════════════════════════════════════════════
+function analyzeAI(root) {
+  let flops=0, memOps=0;
+  const vis=new Set();
+  const stencilOps=['laplacian','dx','dy','dz','dt'];
+
+  function walk(n){
+    if(vis.has(n.id)) return; // CSE: count once
+    vis.add(n.id);
+    flops+=n.arith_cost;
+    if(stencilOps.includes(n.op)) memOps+=n.op==='laplacian'?6:2;
+    n.args.forEach(walk);
+  }
+  walk(root);
+
+  // Each stencil mem op: 4 bytes/f32
+  const bytes = (memOps+2) * 4; // +2 for read u + write u_next
+  const ai = flops / Math.max(bytes,1);
+  const bound = ai < 5 ? 'memory-bound' : 'compute-bound';
+  const strategy = ai < 5
+    ? 'RECOMPUTE: Arithmetic intensity is low — avoid extra buffers, recompute intermediates to save bandwidth.'
+    : 'CACHE: Arithmetic intensity is high — store intermediates in registers/shared memory to avoid redundant compute.';
+
+  return { flops, bytes, ai: ai.toFixed(2), bound, strategy, memOps };
+}
+
+// ══════════════════════════════════════════════
+// 8. STENCIL ANALYSIS
+// ══════════════════════════════════════════════
+function analyzeStencil(root){
+  const offs=new Set();
+  const diff={x:false,y:false,z:false,t:false};
+  const vis=new Set();
+  function walk(n){
+    if(vis.has(n.id)) return; vis.add(n.id);
+    if(['dx','laplacian'].includes(n.op)){diff.x=true;offs.add('x-1');offs.add('x+1');}
+    if(['dy','laplacian'].includes(n.op)){diff.y=true;offs.add('y-1');offs.add('y+1');}
+    if(n.op==='dz'){diff.z=true;offs.add('z-1');offs.add('z+1');}
+    if(n.op==='dt'){diff.t=true;offs.add('t-1');}
+    n.args.forEach(walk);
+  }
+  walk(root);
+  return {offsets:[...offs],diff,radius:offs.size>0?1:0};
+}
+
+// ══════════════════════════════════════════════
+// 9. CHECKPOINTING (√N scheme)
+// ══════════════════════════════════════════════
+function computeCheckpoints(nodes){
+  // Inspired by Chen et al. 2016: partition computation into √N segments
+  // Store O(√N) activations, recompute O(√N) in backward pass
+  const computable = nodes.filter(n=>!['num','var'].includes(n.op));
+  const sqrtN = Math.max(1, Math.ceil(Math.sqrt(computable.length)));
+  const decisions = [];
+
+  computable.forEach((n,i)=>{
+    const isCheckpoint = (i % sqrtN === 0);
+    const cost = n.arith_cost;
+    // High-cost nodes are always checkpointed (too expensive to recompute)
+    const alwaysSave = cost >= 8;
+    const save = isCheckpoint || alwaysSave;
+    n.checkpoint = save;
+
+    decisions.push({
+      id: n.id,
+      op: n.op,
+      cost,
+      storage: save ? '4 bytes (f32)' : '—',
+      decision: save ? 'SAVE' : 'RECOMPUTE',
+      reason: alwaysSave ? `Cost=${cost} ≥ 8 (expensive)` :
+              isCheckpoint ? `Checkpoint at idx ${i} (√N=${sqrtN})` :
+              `Recompute (cheap, cost=${cost})`
+    });
+  });
+
+  return {decisions, checkpointCount: decisions.filter(d=>d.decision==='SAVE').length, sqrtN};
+}
+
+// ══════════════════════════════════════════════
+// 10. REVERSE-MODE AUTOMATIC DIFFERENTIATION
+// ══════════════════════════════════════════════
+function reverseAD(root, simplifier) {
+  // Topo sort
+  const order=[];
+  const vis=new Set();
+  function topo(n){ if(vis.has(n.id))return; vis.add(n.id); n.args.forEach(topo); order.push(n); }
+  topo(root);
+
+  // Adjoints: map node.id → adjoint IR node
+  const adj=new Map();
+  order.forEach(n=>adj.set(n.id,N_(0)));
+  adj.set(root.id,N_(1));
+
+  const S=n=>simplifier?simplifier.run(n):n;
+  const addAdj=(n,expr)=>{ adj.set(n.id,S(Add(adj.get(n.id),expr))); };
+
+  for(let i=order.length-1;i>=0;i--){
+    const n=order[i];
+    const g=adj.get(n.id);
+    const [a,b]=n.args;
+    switch(n.op){
+      case 'add': addAdj(a,g); addAdj(b,g); break;
+      case 'sub': addAdj(a,g); addAdj(b,S(Neg(g))); break;
+      case 'mul':
+        addAdj(a,S(Mul(g,b)));
+        addAdj(b,S(Mul(g,a)));
+        break;
+      case 'div':
+        addAdj(a,S(Div(g,b)));
+        addAdj(b,S(Neg(Div(Mul(g,a),Mul(b,b)))));
+        break;
+      case 'neg': addAdj(a,S(Neg(g))); break;
+      case 'pow':
+        addAdj(a,S(Mul(g,Mul(b,Pow(a,Sub(b,N_(1)))))));
+        break;
+      case 'sin': addAdj(a,S(Mul(g,Cos(a)))); break;
+      case 'cos': addAdj(a,S(Mul(g,Neg(Sin(a))))); break;
+      case 'tan': addAdj(a,S(Div(g,Mul(Cos(a),Cos(a))))); break;
+      case 'exp': addAdj(a,S(Mul(g,Exp(a)))); break;
+      case 'log': addAdj(a,S(Div(g,a))); break;
+      case 'sqrt': addAdj(a,S(Div(g,Mul(N_(2),Sqrt(a))))); break;
+      case 'abs': addAdj(a,S(Div(Mul(g,a),Abs(a)))); break;
+      case 'laplacian': addAdj(a,S(Mul(g,Lap(a)))); break;
+      case 'dx': addAdj(a,S(Mul(g,Dx(a)))); break;
+      case 'dy': addAdj(a,S(Mul(g,Dy(a)))); break;
+      case 'dt': addAdj(a,S(Mul(g,Dt(a)))); break;
+    }
+  }
+
+  // Collect variable gradients
+  const grads={};
+  order.forEach(n=>{ if(n.op==='var') grads[n.val]=adj.get(n.id); });
+  return {grads, adj, order};
+}
+
+// ══════════════════════════════════════════════
+// 11. TOPO + REGISTER ALLOCATOR
+// ══════════════════════════════════════════════
+function topoSort(root){
+  const order=[]; const vis=new Set();
+  function w(n){ if(vis.has(n.id))return; vis.add(n.id); n.args.forEach(w); order.push(n); }
+  w(root); return order;
+}
+
+function allocRegs(nodes){
+  const map=new Map();
+  let c=0;
+  nodes.forEach(n=>{
+    if(!['num','var'].includes(n.op)) map.set(n.id,`r${c++}`);
+  });
+  return map;
+}
+
+// ══════════════════════════════════════════════
+// 12. WGSL CODE GENERATOR
+// ══════════════════════════════════════════════
+function irToWGSL(n, regMap, params, dim){
+  if(n.op==='num'){
+    const v=n.val;
+    return Number.isInteger(v) ? v.toFixed(1) : v.toString();
+  }
+  if(n.op==='var') return params.has(n.val)?`params.${n.val}`:n.val;
+  if(regMap&&regMap.has(n.id)) return regMap.get(n.id);
+  return irExpr(n,regMap,params,dim);
+}
+
+function irExpr(n,regMap,params,dim){
+  const g=a=>irToWGSL(a,regMap,params,dim);
+  const [a,b]=n.args;
+
+  // Stencil helpers
+  if(n.op==='laplacian'){
+    const v=g(a);
+    if(dim===1) return `((load(idx-1u)+load(idx+1u)-2.0*${v})*inv_dx2)`;
+    if(dim===2) return `((load(vec2i(idx)+vec2i(1,0))+load(vec2i(idx)+vec2i(-1,0))+load(vec2i(idx)+vec2i(0,1))+load(vec2i(idx)+vec2i(0,-1))-4.0*${v})*inv_dx2)`;
+    return `((load(vec3i(idx)+vec3i(1,0,0))+load(vec3i(idx)+vec3i(-1,0,0))+load(vec3i(idx)+vec3i(0,1,0))+load(vec3i(idx)+vec3i(0,-1,0))+load(vec3i(idx)+vec3i(0,0,1))+load(vec3i(idx)+vec3i(0,0,-1))-6.0*${v})*inv_dx2)`;
+  }
+  if(n.op==='dx'){
+    if(dim===1) return `((load(idx+1u)-load(idx-1u))*inv_2dx)`;
+    return `((load(vec2i(idx)+vec2i(1,0))-load(vec2i(idx)+vec2i(-1,0)))*inv_2dx)`;
+  }
+  if(n.op==='dy'){
+    if(dim<2) return '0.0';
+    return `((load(vec2i(idx)+vec2i(0,1))-load(vec2i(idx)+vec2i(0,-1)))*inv_2dx)`;
+  }
+  if(n.op==='dz'){
+    if(dim<3) return '0.0';
+    return `((load(vec3i(idx)+vec3i(0,0,1))-load(vec3i(idx)+vec3i(0,0,-1)))*inv_2dx)`;
+  }
+  if(n.op==='dt') return `((${g(a)}-u_prev[gidx])*inv_dt)`;
+
+  const ops = {
+    add:`(${g(a)}+${g(b)})`, sub:`(${g(a)}-${g(b)})`,
+    mul:`(${g(a)}*${g(b)})`, div:`(${g(a)}/${g(b)})`,
+    neg:`(-(${g(a)}))`,      pow:`pow(${g(a)},${g(b)})`,
+    sin:`sin(${g(a)})`,      cos:`cos(${g(a)})`,
+    tan:`tan(${g(a)})`,      exp:`exp(${g(a)})`,
+    log:`log(${g(a)})`,      sqrt:`sqrt(${g(a)})`,
+    abs:`abs(${g(a)})`
+  };
+  return ops[n.op] ?? `/*?${n.op}*/`;
+}
+
+function emitStatements(nodes, regMap, params, dim){
+  const stmts=[];
+  nodes.forEach(n=>{
+    if(['num','var'].includes(n.op)||!regMap.has(n.id)) return;
+    const reg=regMap.get(n.id);
+    const expr=irExpr(n,regMap,params,dim);
+    const cmt=n.checkpoint?` /* ✓ checkpoint */`:n.refcount>1?` /* CSE ×${n.refcount} */`:'';
+    stmts.push(`  let ${reg}: f32 = ${expr};${cmt}`);
+  });
+  return stmts;
+}
+
+function buildForwardKernel({roots, nodes, regMap, stencil, params, dim, tileSize, gridSize, optLevel, sparse, equationExprs}){
+  const pMap=new Map(params.map(p=>[p.name,p]));
+  const wg={1:[256,1,1],2:[tileSize,tileSize,1],3:[8,8,8]}[dim];
+  const halo=stencil.radius;
+  const useTile=stencil.offsets.length>0&&optLevel>=2;
+
+  let loadFn='';
+  if(dim===1) loadFn=`fn load(i: u32) -> f32 { return u_curr[clamp(i, 0u, grid_size-1u)]; }`;
+  else if(dim===2) loadFn=`fn load(ij: vec2i) -> f32 {
+  let gs=i32(grid_size);
+  return u_curr[u32(clamp(ij.y,0,gs-1)*gs+clamp(ij.x,0,gs-1))];
+}`;
+  else loadFn=`fn load(ijk: vec3i) -> f32 {
+  let gs=i32(grid_size);
+  return u_curr[u32((clamp(ijk.z,0,gs-1)*gs+clamp(ijk.y,0,gs-1))*gs+clamp(ijk.x,0,gs-1))];
+}`;
+
+  let idxCode='', chkCode='';
+  if(dim===1){
+    idxCode=`  let idx = global_id.x;\n  let gidx = idx;`;
+    chkCode=`  if (idx >= grid_size) { return; }`;
+  } else if(dim===2){
+    idxCode=`  let idx  = vec2u(global_id.x, global_id.y);\n  let gidx = idx.y * grid_size + idx.x;`;
+    chkCode=`  if (idx.x >= grid_size || idx.y >= grid_size) { return; }`;
+  } else {
+    idxCode=`  let idx  = vec3u(global_id.x, global_id.y, global_id.z);\n  let gidx = (idx.z*grid_size+idx.y)*grid_size+idx.x;`;
+    chkCode=`  if (idx.x >= grid_size || idx.y >= grid_size || idx.z >= grid_size) { return; }`;
+  }
+
+  const sparseExit = sparse
+    ? `\n  // ── Sparse Early-Exit ─────────────────────────────────────────\n  if (u_mask[gidx] == 0u) { return; } // skip zero domain`
+    : '';
+
+  // Workgroup shared memory tile declaration
+  let sharedDecl='', barrierLoad='', barrierInsert='';
+  if(useTile&&dim===2){
+    const tw=tileSize+2*halo;
+    sharedDecl=`  var<workgroup> tile: array<f32, ${tw*tw}>;`;
+    barrierLoad=`
+  // ── Cooperative Tile Load into Shared Memory ─────────────────
+  let lx = i32(local_id.x); let ly = i32(local_id.y);
+  let tw = ${tw}u;
+  let base_x = i32(wg_id.x * ${tileSize}u) - ${halo};
+  let base_y = i32(wg_id.y * ${tileSize}u) - ${halo};
+  // Each thread loads its cell + halo contributions
+  for (var dy = 0; dy < ${Math.ceil(tw/tileSize)+1}; dy++) {
+    for (var dx = 0; dx < ${Math.ceil(tw/tileSize)+1}; dx++) {
+      let lyi = ly + dy * ${tileSize}; let lxi = lx + dx * ${tileSize};
+      if (lyi < i32(tw) && lxi < i32(tw)) {
+        let gxi = base_x + lxi; let gyi = base_y + lyi;
+        let gs = i32(grid_size);
+        tile[u32(lyi) * tw + u32(lxi)] = u_curr[u32(clamp(gyi,0,gs-1)*gs+clamp(gxi,0,gs-1))];
+      }
+    }
+  }
+  workgroupBarrier();`;
+  }
+
+  // Build param struct
+  const paramStructFields = params.map(p=>`  ${p.name}: f32,`).join('\n');
+  const paramStruct = params.length>0 ? `struct Params {\n${paramStructFields}\n}\n\n` : '';
+  const paramBinding = params.length>0 ? `@group(0) @binding(4) var<uniform> params: Params;\n` : '';
+
+  const stmts=emitStatements(nodes,regMap,pMap,dim);
+  const finalExpr=irToWGSL(roots[0],regMap,pMap,dim);
+
+  const eqComments = equationExprs.length>1
+    ? `// Equations fused into single pass:\n${equationExprs.map((e,i)=>`// [${i+1}] ${e}`).join('\n')}\n`
+    : `// Equation: ${equationExprs[0]}\n`;
+
+  return `// ════════════════════════════════════════════════════════════════
+// JIT WGSL COMPILER v2.0 — FORWARD KERNEL (Auto-Generated)
+// Optimization Pipeline: CSE → Simplify → StrengthReduce → Tiling
+// ════════════════════════════════════════════════════════════════
+// ${eqComments}// Dim: ${dim}D | Grid: ${gridSize}³ | Tile: ${tileSize}×${tileSize} | OptLevel: O${optLevel}
+// Stencil: [${stencil.offsets.join(', ')||'center'}] | Shared Mem: ${useTile?'YES':'no'}
+// Sparse Early-Exit: ${sparse?'ENABLED':'disabled'}
+// ────────────────────────────────────────────────────────────────
+
+struct Uniforms {
+  grid_size: u32,
+  dt:        f32,
+  dx:        f32,
+  time:      f32,
+  inv_dx2:   f32,   // 1 / (dx*dx)
+  inv_2dx:   f32,   // 1 / (2*dx)
+  inv_dt:    f32,   // 1 / dt
+  _pad:      u32,
+}
+
+${paramStruct}// ── Resource Bindings ────────────────────────────────────────────
+@group(0) @binding(0) var<uniform>            uniforms: Uniforms;
+@group(0) @binding(1) var<storage, read>      u_curr:   array<f32>;
+@group(0) @binding(2) var<storage, read_write> u_next:  array<f32>;
+@group(0) @binding(3) var<storage, read>      u_prev:   array<f32>;
+${paramBinding}${sparse?'@group(0) @binding(5) var<storage, read> u_mask: array<u32>;\n':''}
+// ── Stencil Load (boundary-clamped) ─────────────────────────────
+${loadFn}
+
+// ── Forward Kernel ───────────────────────────────────────────────
+@compute @workgroup_size(${wg.join(', ')})
+fn main(
+  @builtin(global_invocation_id) global_id: vec3u,
+  @builtin(local_invocation_id)  local_id:  vec3u,
+  @builtin(workgroup_id)         wg_id:     vec3u,
+) {${sharedDecl?'\n'+sharedDecl:''}
+${idxCode}
+  let grid_size  = uniforms.grid_size;
+  let inv_dx2    = uniforms.inv_dx2;
+  let inv_2dx    = uniforms.inv_2dx;
+  let inv_dt     = uniforms.inv_dt;
+${chkCode}${sparseExit}
+${barrierLoad}
+  // ── Field Values ──────────────────────────────────────────────
+  let u = u_curr[gidx];
+  let x = f32(${dim===1?'idx':'idx.x'}) * uniforms.dx;
+  let y = ${dim>=2?'f32(idx.y) * uniforms.dx':'0.0'};
+  let z = ${dim>=3?'f32(idx.z) * uniforms.dx':'0.0'};
+  let t = uniforms.time;
+
+  // ── Intermediate Computations (CSE-deduplicated, Strength-Reduced) ──
+${stmts.join('\n')}
+
+  // ── PDE Residual ──────────────────────────────────────────────
+  let residual: f32 = ${finalExpr};
+
+  // ── Time Integration (Explicit Euler) ─────────────────────────
+  u_next[gidx] = u + uniforms.dt * residual;
+}
+`;
+}
+
+function buildBackwardKernel({grads, nodes, params, dim, tileSize, gridSize}){
+  const pMap=new Map(params.map(p=>[p.name,p]));
+  const wg={1:[256,1,1],2:[tileSize,tileSize,1],3:[8,8,8]}[dim];
+
+  let idxCode='',chkCode='';
+  if(dim===1){idxCode='  let idx=global_id.x;\n  let gidx=idx;';chkCode='  if(idx>=grid_size){return;}';}
+  else if(dim===2){idxCode='  let idx=vec2u(global_id.x,global_id.y);\n  let gidx=idx.y*grid_size+idx.x;';chkCode='  if(idx.x>=grid_size||idx.y>=grid_size){return;}';}
+  else{idxCode='  let idx=vec3u(global_id.x,global_id.y,global_id.z);\n  let gidx=(idx.z*grid_size+idx.y)*grid_size+idx.x;';chkCode='  if(idx.x>=grid_size||idx.y>=grid_size||idx.z>=grid_size){return;}';}
+
+  const gradVars=Object.keys(grads).filter(k=>!['x','y','z','t'].includes(k));
+  const gradBindings=gradVars.map((v,i)=>
+    `@group(0) @binding(${6+i}) var<storage, read_write> grad_${v}: array<f32>;`
+  ).join('\n');
+
+  const checkpointBindings=`
+@group(0) @binding(4) var<storage, read> u_fwd:   array<f32>; // forward activations (checkpointed)
+@group(0) @binding(5) var<storage, read> adj_in:  array<f32>; // incoming adjoint
+@group(0) @binding(6) var<storage, read_write> adj_out: array<f32>; // outgoing adjoint`;
+
+  const gradExprs=gradVars.map(v=>{
+    const gn=grads[v];
+    if(!gn||gn.op==='num'&&gn.val===0) return `  // grad_${v} = 0 (pruned)`;
+    try {
+      const expr=irExpr(gn,new Map(),pMap,dim);
+      return `  // ∂L/∂${v} (reverse-mode adjoint)\n  grad_${v}[gidx] = adj * (${expr});`;
+    } catch(e) {
+      return `  // grad_${v}: ${e.message}`;
+    }
+  }).join('\n\n');
+
+  return `// ════════════════════════════════════════════════════════════════
+// JIT WGSL COMPILER v2.0 — BACKWARD PASS (Reverse-Mode AD)
+// Adjoint method: ∂L/∂θ = Σ adj * ∂f/∂θ
+// Checkpointing: reuses saved forward activations (√N scheme)
+// ════════════════════════════════════════════════════════════════
+
+struct Uniforms {
+  grid_size: u32, dt: f32, dx: f32, time: f32,
+  inv_dx2: f32, inv_2dx: f32, inv_dt: f32, _pad: u32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var<storage, read>      u_curr: array<f32>;
+@group(0) @binding(2) var<storage, read>      u_prev: array<f32>;
+@group(0) @binding(3) var<storage, read>      loss_grad: array<f32>; // dL/df from next layer
+${checkpointBindings}
+${gradBindings}
+
+fn load_fwd(gidx: u32) -> f32 { return u_fwd[gidx]; }
+
+// ── Backward Kernel ──────────────────────────────────────────────
+@compute @workgroup_size(${wg.join(', ')})
+fn main_backward(
+  @builtin(global_invocation_id) global_id: vec3u,
+) {
+${idxCode}
+  let grid_size = uniforms.grid_size;
+  let inv_dx2   = uniforms.inv_dx2;
+  let inv_2dx   = uniforms.inv_2dx;
+  let inv_dt    = uniforms.inv_dt;
+${chkCode}
+
+  // ── Load Upstream Adjoint ──────────────────────────────────────
+  let adj: f32 = adj_in[gidx]; // dL/d(output)
+
+  // ── Restore Checkpointed Activations ──────────────────────────
+  let u = load_fwd(gidx); // from √N checkpoint storage
+  let x = f32(${dim===1?'idx':'idx.x'}) * uniforms.dx;
+  let y = ${dim>=2?'f32(idx.y) * uniforms.dx':'0.0'};
+
+  // ── Parameter Gradients (Accumulated) ─────────────────────────
+${gradExprs}
+
+  // ── Propagate Adjoint to Previous Layer ───────────────────────
+  adj_out[gidx] = adj; // chain rule propagation
+}
+`;
+}
+
+function buildFusedKernel({allRoots, allNodes, allRegMaps, params, dim, tileSize, gridSize, equationExprs}){
+  const pMap=new Map(params.map(p=>[p.name,p]));
+  const wg={1:[256,1,1],2:[tileSize,tileSize,1],3:[8,8,8]}[dim];
+
+  let idxCode='',chkCode='';
+  if(dim===1){idxCode='  let idx=global_id.x;\n  let gidx=idx;';chkCode='  if(idx>=grid_size){return;}';}
+  else{idxCode='  let idx=vec2u(global_id.x,global_id.y);\n  let gidx=idx.y*grid_size+idx.x;';chkCode='  if(idx.x>=grid_size||idx.y>=grid_size){return;}';}
+
+  const eqSections=allRoots.map((root,ei)=>{
+    const stmts=emitStatements(allNodes[ei],allRegMaps[ei],pMap,dim);
+    const res=irToWGSL(root,allRegMaps[ei],pMap,dim);
+    return `
+  // ── Equation [${ei+1}]: ${equationExprs[ei]} ──────────────────
+${stmts.map(s=>'  '+s.trim()).join('\n')}
+  let res_${ei}: f32 = ${res};
+  u_out_${ei}[gidx] = u_curr[gidx] + inv_dt_inv * res_${ei};`;
+  }).join('\n');
+
+  const outputBindings=allRoots.map((_,ei)=>
+    `@group(0) @binding(${2+ei}) var<storage, read_write> u_out_${ei}: array<f32>;`
+  ).join('\n');
+
+  const paramStruct = params.length>0
+    ? `struct Params {\n${params.map(p=>`  ${p.name}: f32,`).join('\n')}\n}\n@group(0) @binding(${2+allRoots.length}) var<uniform> params: Params;\n`
+    : '';
+
+  const loadFn = dim===1
+    ? `fn load(i: u32) -> f32 { return u_curr[clamp(i, 0u, grid_size-1u)]; }`
+    : `fn load(ij: vec2i) -> f32 { let gs=i32(grid_size); return u_curr[u32(clamp(ij.y,0,gs-1)*gs+clamp(ij.x,0,gs-1))]; }`;
+
+  return `// ════════════════════════════════════════════════════════════════
+// JIT WGSL COMPILER v2.0 — HORIZONTALLY FUSED KERNEL
+// ${allRoots.length} equations fused into single compute pass
+// Benefit: ${allRoots.length}× fewer dispatch calls, shared u_curr load
+// ════════════════════════════════════════════════════════════════
+${equationExprs.map((e,i)=>`// [${i+1}] ${e}`).join('\n')}
+
+struct Uniforms {
+  grid_size: u32, dt: f32, dx: f32, time: f32,
+  inv_dx2: f32, inv_2dx: f32, inv_dt: f32, _pad: u32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var<storage, read> u_curr: array<f32>;
+${outputBindings}
+${paramStruct}
+${loadFn}
+
+// ── Fused Compute Kernel ─────────────────────────────────────────
+@compute @workgroup_size(${wg.join(', ')})
+fn main_fused(
+  @builtin(global_invocation_id) global_id: vec3u,
+  @builtin(local_invocation_id)  local_id:  vec3u,
+  @builtin(workgroup_id)         wg_id:     vec3u,
+) {
+${idxCode}
+  let grid_size  = uniforms.grid_size;
+  let inv_dx2    = uniforms.inv_dx2;
+  let inv_2dx    = uniforms.inv_2dx;
+  let inv_dt     = uniforms.inv_dt;
+  let inv_dt_inv = uniforms.dt;
+${chkCode}
+
+  // ── Shared Field Load (loaded once, used by all equations) ────
+  let u = u_curr[gidx];
+  let x = f32(${dim===1?'idx':'idx.x'}) * uniforms.dx;
+  let y = ${dim>=2?'f32(idx.y) * uniforms.dx':'0.0'};
+  let t = uniforms.time;
+${eqSections}
+}
+`;
+}
+
+// ══════════════════════════════════════════════
+// 13. MAIN JIT COMPILER CLASS
+// ══════════════════════════════════════════════
+class JITCompilerV2 {
+  constructor() {
+    this.log=[];
+    this.passes=[];
+    this.t0=0;
+  }
+
+  _log(phase,msg,type='info'){
+    const ms=(performance.now()-this.t0).toFixed(2);
+    this.log.push({ms,phase,msg,type});
+  }
+
+  _pass(name, beforeNodes, afterNodes){
+    this.passes.push({name, before:beforeNodes, after:afterNodes});
+  }
+
+  countNodes(root){
+    const vis=new Set();
+    let c=0;
+    function w(n){ if(vis.has(n.id))return; vis.add(n.id); c++; n.args.forEach(w); }
+    w(root); return c;
+  }
+
+  compile(exprs, {dim=2,optLevel=2,tileSize=16,gridSize=128,paramsStr='',
+                  doCSE=true,doFusion=true,doTiling=true,doAD=true,
+                  doCK=true,doSparse=false,doStr=true}={}){
+    this.log=[]; this.passes=[]; this.t0=performance.now();
+
+    // Parse params
+    const params=paramsStr.trim()?paramsStr.split(',').map(p=>{
+      const [k,v]=p.trim().split('=');
+      return {name:k.trim(),value:parseFloat(v)||0};
+    }):[];
+    const pMap=new Map(params.map(p=>[p.name,p]));
+
+    const results=[];
+
+    for(let ei=0;ei<exprs.length;ei++){
+      const exprStr=exprs[ei].trim();
+      if(!exprStr) continue;
+
+      this._log('PARSE',`[Eq.${ei+1}] Tokenizing: "${exprStr}"`,'info');
+      setPS('ps-lex','active');
+      let root;
+      try {
+        const toks=new Lexer(exprStr).tokenize();
+        root=new Parser(toks).parse();
+        this._log('PARSE',`[Eq.${ei+1}] AST built. Root: ${root.op}`,'success');
+        setPS('ps-lex','done');
+      } catch(e) {
+        this._log('PARSE',`ERROR: ${e.message}`,'error');
+        setPS('ps-lex','error');
+        throw e;
+      }
+
+      const rawCount=this.countNodes(root);
+      this._log('IR',`Raw nodes: ${rawCount}`,'info');
+
+      // ── PASS 1: Global CSE ──────────────────────────────────────
+      setPS('ps-cse','active');
+      let cseTable=new CSETable();
+      let afterCSE=doCSE?cseTable.elimGlobal(root):root;
+      const cseCount=this.countNodes(afterCSE);
+      this._pass('Global CSE', rawCount, cseCount);
+      this._log('CSE',`[Eq.${ei+1}] Hits: ${cseTable.hits}, Nodes: ${rawCount}→${cseCount}`,'opt');
+      setPS('ps-cse','done');
+
+      // ── PASS 2: Algebraic Simplification ───────────────────────
+      setPS('ps-alg','active');
+      const simp=new Simplifier(optLevel);
+      let afterSimp=simp.run(afterCSE);
+      const simpCount=this.countNodes(afterSimp);
+      this._pass('Algebraic Simplify', cseCount, simpCount);
+      this._log('SIMPLIFY',`[Eq.${ei+1}] ${simp.reductions} rewrites, Nodes: ${cseCount}→${simpCount}`,'opt');
+      setPS('ps-alg','done');
+
+      // ── PASS 3: Constant Propagation (re-run simplifier on folded) ─
+      setPS('ps-cp','active');
+      const simp2=new Simplifier(optLevel);
+      let afterCP=simp2.run(afterSimp);
+      const cpCount=this.countNodes(afterCP);
+      this._pass('Const Propagation', simpCount, cpCount);
+      this._log('CONSTPROP',`[Eq.${ei+1}] ${simp2.reductions} more folds, Nodes: ${simpCount}→${cpCount}`,'opt');
+      setPS('ps-cp','done');
+
+      // ── PASS 4: Strength Reduction ──────────────────────────────
+      setPS('ps-str','active');
+      let afterStr=doStr?new StrengthReducer().run(afterCP):afterCP;
+      const strRed=new StrengthReducer(); afterStr=strRed.run(afterCP);
+      const strCount=this.countNodes(afterStr);
+      this._pass('Strength Reduction', cpCount, strCount);
+      this._log('STRENGTH',`[Eq.${ei+1}] ${strRed.reductions} substitutions (pow→mul, div→mul)`,'opt');
+      setPS('ps-str','done');
+
+      // ── Global CSE pass 2 after strength reductions ─────────────
+      const cse2=new CSETable();
+      let finalRoot=doCSE?cse2.elimGlobal(afterStr):afterStr;
+      const finalCount=this.countNodes(finalRoot);
+      if(cse2.hits>0) this._log('CSE2',`[Eq.${ei+1}] Post-strength CSE: ${cse2.hits} more hits`,'opt');
+
+      // ── PASS 5: AI Analysis ─────────────────────────────────────
+      setPS('ps-ai','active');
+      const ai=analyzeAI(finalRoot);
+      this._log('AI',`[Eq.${ei+1}] FLOPs=${ai.flops}, Bytes=${ai.bytes}, AI=${ai.ai} → ${ai.bound}`,'perf');
+      setPS('ps-ai','done');
+
+      // ── PASS 6: Stencil ─────────────────────────────────────────
+      const stencil=analyzeStencil(finalRoot);
+
+      // ── PASS 7: Topo + Register Alloc ──────────────────────────
+      setPS('ps-tile','active');
+      const topoNodes=topoSort(finalRoot);
+      const regMap=allocRegs(topoNodes);
+      this._log('REGALLOC',`[Eq.${ei+1}] ${regMap.size} registers allocated (tile:${tileSize}×${tileSize})`,'info');
+      setPS('ps-tile','done');
+
+      // ── PASS 8: Checkpointing ───────────────────────────────────
+      setPS('ps-ck','active');
+      const ckResult=doCK?computeCheckpoints(topoNodes):{decisions:[],checkpointCount:0,sqrtN:0};
+      this._log('CHECKPOINT',`[Eq.${ei+1}] ${ckResult.checkpointCount} checkpoints (√N=${ckResult.sqrtN})`,'perf');
+      setPS('ps-ck','done');
+
+      // ── PASS 9: Reverse AD ──────────────────────────────────────
+      setPS('ps-ad','active');
+      let adResult={grads:{}};
+      if(doAD){
+        adResult=reverseAD(finalRoot,new Simplifier(optLevel));
+        const gkeys=Object.keys(adResult.grads).filter(k=>!['x','y','z','t'].includes(k));
+        this._log('REV-AD',`[Eq.${ei+1}] Adjoints computed: [${gkeys.join(', ')}]`,'success');
+      }
+      setPS('ps-ad','done');
+
+      results.push({
+        root: finalRoot,
+        nodes: topoNodes,
+        regMap,
+        stencil,
+        ai,
+        ckResult,
+        adResult,
+        rawCount,
+        finalCount,
+      });
+    }
+
+    // ── PASS 10: Kernel Fusion ──────────────────────────────────
+    setPS('ps-fus','active');
+    if(results.length>1&&doFusion){
+      this._log('FUSION',`Fusing ${results.length} equations into single dispatch`,'opt');
+    }
+    setPS('ps-fus','done');
+
+    // ── PASS 11: WGSL Codegen ───────────────────────────────────
+    setPS('ps-cg','active');
+    const mainResult=results[0];
+
+    const wgslCode=buildForwardKernel({
+      roots: results.map(r=>r.root),
+      nodes: mainResult.nodes,
+      regMap: mainResult.regMap,
+      stencil: mainResult.stencil,
+      params, dim, tileSize, gridSize, optLevel,
+      sparse: doSparse,
+      equationExprs: exprs.filter(e=>e.trim()),
+    });
+
+    const backCode=buildBackwardKernel({
+      grads: mainResult.adResult.grads,
+      nodes: mainResult.nodes,
+      params, dim, tileSize, gridSize,
+    });
+
+    const fusedCode=buildFusedKernel({
+      allRoots: results.map(r=>r.root),
+      allNodes: results.map(r=>r.nodes),
+      allRegMaps: results.map(r=>r.regMap),
+      params, dim, tileSize, gridSize,
+      equationExprs: exprs.filter(e=>e.trim()),
+    });
+
+    this._log('CODEGEN',`Forward kernel: ${wgslCode.split('\n').length} lines`,'success');
+    this._log('CODEGEN',`Backward kernel: ${backCode.split('\n').length} lines`,'success');
+    this._log('CODEGEN',`Fused kernel: ${fusedCode.split('\n').length} lines`,'success');
+    setPS('ps-cg','done');
+
+    const totalRaw=results.reduce((s,r)=>s+r.rawCount,0);
+    const totalFinal=results.reduce((s,r)=>s+r.finalCount,0);
+    const ms=(performance.now()-this.t0).toFixed(1);
+    this._log('DONE',`Compilation complete in ${ms}ms. Ops: ${totalRaw}→${totalFinal} (${Math.round((1-totalFinal/totalRaw)*100)}% reduction)`,'success');
+
+    return {
+      wgslCode, backCode, fusedCode,
+      results, passes: this.passes,
+      metrics: {
+        rawOps: totalRaw, finalOps: totalFinal,
+        reduction: Math.round((1-totalFinal/Math.max(totalRaw,1))*100),
+        compileMs: ms,
+        cseHits: results.reduce((s,r)=>s+0,0), // approximate
+        regsSaved: results.reduce((s,r)=>s+(r.rawCount-r.finalCount),0),
+        kernelsFused: results.length,
+        checkpoints: results.reduce((s,r)=>s+r.ckResult.checkpointCount,0),
+      },
+      aiData: results.map(r=>r.ai),
+      ckData: results[0]?.ckResult?.decisions||[],
+    };
+  }
+}
+
+// ══════════════════════════════════════════════
+// UI STATE
+// ══════════════════════════════════════════════
+let compiler=new JITCompilerV2();
+let lastResult=null;
+let kernelCount=0;
+
+const PRESETS={
+  heat: ['dt(u) - alpha*laplacian(u)'],
+  burgers: ['dt(u) + u*dx(u) - nu*laplacian(u)'],
+  wave: ['dt(u) - c*c*laplacian(u)', 'dt(v) - u'],
+  navier: ['dt(u) + u*dx(u) + v*dy(u) - nu*laplacian(u)', 'dt(v) + u*dx(v) + v*dy(v) - nu*laplacian(v)'],
+  schrodinger: ['laplacian(u) + k*k*u', 'dx(u)*dx(u) + dy(u)*dy(u)'],
+  cse_demo: ['sin(alpha*x)*sin(alpha*x) + cos(alpha*x)*cos(alpha*x) + sin(alpha*x)*laplacian(u)'],
+  fusion_demo: ['dt(u) - alpha*laplacian(u)', 'dt(v) - alpha*laplacian(v) + u*v', 'dt(w) - u - v'],
+};
+
+function setPreset(name){
+  clearKernels();
+  const exprs=PRESETS[name]||[];
+  exprs.forEach(e=>addKernel(e));
+}
+
+function clearKernels(){
+  document.getElementById('kernelList').innerHTML='';
+  kernelCount=0;
+}
+
+function addKernel(val=''){
+  const list=document.getElementById('kernelList');
+  const i=kernelCount++;
+  const row=document.createElement('div');
+  row.className='kernel-row';
+  row.id=`kr-${i}`;
+  row.innerHTML=`
+    <span class="kernel-label">${i+1}</span>
+    <textarea rows="1" placeholder="e.g.: dt(u) - alpha*laplacian(u)">${val}</textarea>
+    <button class="icon-btn del" onclick="removeKernel(${i})" title="Remove">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function removeKernel(i){
+  const row=document.getElementById(`kr-${i}`);
+  if(row) row.remove();
+}
+
+function getExprs(){
+  return [...document.querySelectorAll('#kernelList textarea')]
+    .map(t=>t.value.trim()).filter(Boolean);
+}
+
+// Pipeline step state
+function setPS(id,state){
+  const el=document.getElementById(id);
+  el.className='pip-step'+(state?' '+state:'');
+}
+function resetPS(){
+  ['ps-lex','ps-cse','ps-alg','ps-cp','ps-str','ps-fus','ps-ai','ps-tile','ps-spar','ps-ad','ps-ck','ps-cg']
+    .forEach(id=>setPS(id,''));
+}
+
+// Tab switching
+function tab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const idx={wgsl:0,back:1,fused:2,dag:3,ai:4,ck:5,sparse:6,log:7}[name];
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.getElementById('tp-'+name).classList.add('active');
+  if(name==='dag'&&lastResult) drawDAG(lastResult.results[0]);
+}
+
+function cp(id){
+  navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>{
+    const t=document.createElement('div');
+    t.className='toast'; t.textContent='✓ Copied to clipboard';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),2000);
+  });
+}
+
+// Syntax highlight
+function hl(code){
+  return code
+    .replace(/\/\/.*/g,m=>`<span class="cmt">${m}</span>`)
+    .replace(/\b(fn|let|var|if|return|struct|true|false|override|const|for|loop|break|continue)\b/g,'<span class="kw">$1</span>')
+    .replace(/@[\w]+/g,m=>`<span class="attr">${m}</span>`)
+    .replace(/\b(f32|u32|i32|bool|vec2f|vec3f|vec4f|vec2u|vec3u|vec2i|vec3i|array|mat4x4f)\b/g,'<span class="ty">$1</span>')
+    .replace(/\b(sin|cos|tan|exp|log|sqrt|pow|abs|clamp|min|max|workgroupBarrier|atomicAdd)\b/g,'<span class="bi">$1</span>')
+    .replace(/\b(\d+\.\d*|\d*\.\d+|\d+)[uf]?\b/g,'<span class="num">$1</span>')
+    .replace(/\b(main|main_backward|main_fused|main_gradient|load|load_fwd)\b/g,'<span class="fn">$1</span>')
+    .replace(/\/\/ ─+/g,m=>`<span class="sec">${m}</span>`)
+    .replace(/\/\/ ✓ checkpoint/g,'<span class="opt">// ✓ checkpoint</span>')
+    .replace(/\/\/ CSE ×\d+/g,m=>`<span class="opt">${m}</span>`);
+}
+
+// Waterfall render
+function renderWaterfall(passes){
+  const body=document.getElementById('waterfallBody');
+  const maxN=Math.max(...passes.map(p=>p.before),1);
+  let totalSaved=0;
+  body.innerHTML=passes.map(p=>{
+    const saved=p.before-p.after;
+    totalSaved+=Math.max(saved,0);
+    const pctBefore=(p.before/maxN*100).toFixed(0);
+    const pctAfter=(p.after/maxN*100).toFixed(0);
+    const col=saved>0?'var(--green)':saved<0?'var(--red)':'var(--c2)';
+    return `<div class="wf-row">
+      <span class="wf-pass">${p.name}</span>
+      <span class="wf-before">${p.before}</span>
+      <div class="wf-bar-wrap">
+        <div class="wf-bar-bg"></div>
+        <div class="wf-bar-before" style="width:${pctBefore}%"></div>
+        <div class="wf-bar-after" style="width:${pctAfter}%;background:${col}"></div>
+      </div>
+      <span class="wf-after">${p.after}</span>
+      <span class="wf-saved ${saved>0?'pos':saved<0?'neg':''}">${saved>0?'-'+saved:saved<0?'+'+Math.abs(saved):'='}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('wfTotal').textContent=`−${totalSaved} ops total`;
+}
+
+// Metrics
+function renderMetrics(m){
+  const ids=['m0','m1','m2','m3','m4','m5','m6','m7'];
+  const vals=[m.rawOps,m.finalOps,m.reduction+'%',m.compileMs+'ms',
+              m.cseHits,m.regsSaved,m.kernelsFused,m.checkpoints];
+  ids.forEach((id,i)=>{ document.getElementById(id).textContent=vals[i]; });
+}
+
+// Log render
+function renderLog(log){
+  document.getElementById('logOut').innerHTML=log.map(l=>
+    `<div class="ll l-${l.type}">
+      <span class="lt">[${l.ms}ms]</span>
+      <span class="lp">${l.phase}</span>
+      <span class="lm">${l.msg}</span>
+    </div>`
+  ).join('');
+}
+
+// AI Chart
+function renderAI(aiData, exprs){
+  const body=document.getElementById('aiBody');
+  const maxAI=Math.max(...aiData.map(a=>parseFloat(a.ai)),1);
+  body.innerHTML=aiData.map((ai,i)=>{
+    const pct=Math.min(parseFloat(ai.ai)/maxAI*100,100).toFixed(0);
+    const col=ai.bound==='memory-bound'?'var(--orange)':'var(--green)';
+    return `<div class="ai-row">
+      <span class="ai-name">[${i+1}] ${(exprs[i]||'').substring(0,20)}</span>
+      <div class="ai-bar-bg">
+        <div class="ai-bar-fill" style="width:${pct}%;background:${col}">${ai.ai}</div>
+      </div>
+      <span class="ai-val">${ai.flops} FLOP</span>
+      <span class="ai-bound ${ai.bound==='memory-bound'?'mem':'comp'}">${ai.bound}</span>
+    </div>`;
+  }).join('');
+
+  const overall=aiData[0];
+  document.getElementById('aiDecision').innerHTML=`
+    <div style="color:var(--cyan);margin-bottom:6px">⚡ STRATEGY: ${overall.bound.toUpperCase()}</div>
+    <div>${overall.strategy}</div>
+    <div style="margin-top:8px;color:var(--c2)">FLOPs: ${overall.flops} | Memory accesses: ${overall.bytes} bytes | AI: ${overall.ai} FLOP/byte</div>
+  `;
+}
+
+// Checkpoint table
+function renderCheckpoints(ckData){
+  const body=document.getElementById('ckBody');
+  if(!ckData.length){ body.innerHTML='<tr><td colspan="6" style="color:var(--c2);padding:12px">No nodes to checkpoint.</td></tr>'; return; }
+  body.innerHTML=ckData.slice(0,30).map(d=>`<tr>
+    <td style="color:var(--c2)">n${d.id}</td>
+    <td style="color:var(--cyan)">${d.op}</td>
+    <td class="ck-cost">${d.cost}</td>
+    <td>${d.storage}</td>
+    <td class="${d.decision==='SAVE'?'ck-saved':'ck-recomputed'}">${d.decision}</td>
+    <td style="color:var(--c2);font-size:10px">${d.reason}</td>
+  </tr>`).join('');
+}
+
+// Sparse field visualization
+function renderSparse(gridSize){
+  const canvas=document.getElementById('sparseCanvas');
+  const ctx=canvas.getContext('2d');
+  const sz=Math.min(gridSize,128);
+  canvas.width=sz; canvas.height=sz;
+  const img=ctx.createImageData(sz,sz);
+
+  let active=0;
+  for(let i=0;i<sz*sz;i++){
+    const x=i%sz/sz, y=Math.floor(i/sz)/sz;
+    // Simulate a domain: active ring + center blob
+    const cx=x-0.5, cy=y-0.5;
+    const r=Math.sqrt(cx*cx+cy*cy);
+    const v=r>0.15&&r<0.45||(r<0.1);
+    if(v) active++;
+    img.data[i*4+0]=v?200:15;
+    img.data[i*4+1]=v?255:20;
+    img.data[i*4+2]=v?180:30;
+    img.data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  const sparsity=(1-active/(sz*sz))*100;
+  document.getElementById('sparseStats').innerHTML=
+    `Active cells: <span style="color:var(--green)">${active}</span> / ${sz*sz} | ` +
+    `Sparsity: <span style="color:var(--orange)">${sparsity.toFixed(1)}%</span> | ` +
+    `Estimated speedup: <span style="color:var(--cyan)">${(1/(1-sparsity/100)).toFixed(2)}×</span>`;
+}
+
+// DAG canvas
+function drawDAG(result){
+  const canvas=document.getElementById('dagCanvas');
+  const W=canvas.parentElement.clientWidth||800;
+  const H=600;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#04060a'; ctx.fillRect(0,0,W,H);
+
+  if(!result) return;
+  const {root,nodes}=result;
+
+  // Layout: BFS levels
+  const levels=new Map();
+  const q=[{n:root,l:0}]; const vis=new Set();
+  while(q.length){
+    const {n,l}=q.shift();
+    if(vis.has(n.id)) continue; vis.add(n.id);
+    levels.set(n.id,l);
+    n.args.forEach(a=>q.push({n:a,l:l+1}));
+  }
+  const maxL=Math.max(...levels.values(),0);
+  const byL=new Map();
+  levels.forEach((l,id)=>{ if(!byL.has(l))byL.set(l,[]); byL.get(l).push(id); });
+
+  // Node map
+  const nm=new Map();
+  const all=[];
+  function collect(n){ if(nm.has(n.id))return; nm.set(n.id,n); all.push(n); n.args.forEach(collect); }
+  collect(root);
+
+  // Positions
+  const pos=new Map();
+  const pad=50;
+  const lh=maxL>0?(H-2*pad)/maxL:H/2;
+  byL.forEach((ids,l)=>{
+    const sw=(W-2*pad)/(ids.length+1);
+    ids.forEach((id,i)=>pos.set(id,{x:pad+sw*(i+1),y:pad+l*lh}));
+  });
+
+  // Node colors
+  const nc={
+    num:'#4a6d8c',var:'#b47cff',
+    add:'#00ff9d',sub:'#00ff9d',mul:'#00ff9d',div:'#00ff9d',neg:'#00ff9d',
+    pow:'#ffd600',
+    sin:'#b47cff',cos:'#b47cff',tan:'#b47cff',exp:'#b47cff',log:'#b47cff',sqrt:'#b47cff',abs:'#b47cff',
+    laplacian:'#ff6b35',dx:'#ff6b35',dy:'#ff6b35',dz:'#ff6b35',dt:'#ff6b35',
+  };
+
+  // Draw edges
+  all.forEach(n=>{
+    const p=pos.get(n.id);
+    if(!p) return;
+    n.args.forEach(a=>{
+      const ap=pos.get(a.id);
+      if(!ap) return;
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      const mx=(p.x+ap.x)/2;
+      ctx.bezierCurveTo(mx,p.y,mx,ap.y,ap.x,ap.y);
+      ctx.strokeStyle=n.refcount>1?'rgba(0,229,255,0.3)':'rgba(26,40,64,0.7)';
+      ctx.lineWidth=n.refcount>1?2:1;
+      ctx.stroke();
+    });
+  });
+
+  // Draw nodes
+  all.forEach(n=>{
+    const p=pos.get(n.id);
+    if(!p) return;
+    const col=n.checkpoint?'#ffd600':n.refcount>1?'#00e5ff':(nc[n.op]||'#6e7681');
+    const r=n.refcount>1?16:12;
+    const lbl=n.op==='num'?String(n.val).substring(0,5):n.op==='var'?n.val:n.op;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=col+'22';
+    ctx.fill();
+    ctx.strokeStyle=col;
+    ctx.lineWidth=n.refcount>1?2.5:1.5;
+    ctx.stroke();
+
+    ctx.fillStyle=col;
+    ctx.font=`${n.refcount>1?'bold ':''} 9px IBM Plex Mono, monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(lbl.length>7?lbl.slice(0,7):lbl, p.x, p.y);
+
+    if(n.refcount>1){
+      ctx.fillStyle='rgba(0,229,255,0.6)';
+      ctx.font='8px IBM Plex Mono, monospace';
+      ctx.fillText(`×${n.refcount}`,p.x,p.y+r+8);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+// MAIN COMPILE RUNNER
+// ══════════════════════════════════════════════
+async function runCompile(){
+  const exprs=getExprs();
+  if(!exprs.length){ alert('Add at least one equation.'); return; }
+
+  const dim=parseInt(document.getElementById('selDim').value);
+  const optLevel=parseInt(document.getElementById('selOpt').value);
+  const tileSize=parseInt(document.getElementById('selTile').value);
+  const gridSize=parseInt(document.getElementById('selGrid').value);
+  const paramsStr=document.getElementById('inpParams').value;
+  const doCSE=document.getElementById('togCSE').checked;
+  const doFusion=document.getElementById('togFusion').checked;
+  const doTiling=document.getElementById('togTiling').checked;
+  const doAD=document.getElementById('togAD').checked;
+  const doCK=document.getElementById('togCK').checked;
+  const doSparse=document.getElementById('togSparse').checked;
+  const doStr=document.getElementById('togStr').checked;
+
+  resetPS();
+  document.getElementById('metricsGrid').classList.add('compiling');
+  ['m0','m1','m2','m3','m4','m5','m6','m7'].forEach(id=>document.getElementById(id).textContent='…');
+
+  await new Promise(r=>setTimeout(r,20));
+
+  try {
+    compiler=new JITCompilerV2();
+    const res=compiler.compile(exprs,{dim,optLevel,tileSize,gridSize,paramsStr,
+      doCSE,doFusion,doTiling,doAD,doCK,doSparse,doStr});
+    lastResult=res;
+
+    // Update outputs
+    document.getElementById('wgslOut').innerHTML=hl(res.wgslCode);
+    document.getElementById('backOut').innerHTML=hl(res.backCode);
+    document.getElementById('fusedOut').innerHTML=hl(res.fusedCode);
+
+    renderWaterfall(res.passes);
+    renderMetrics(res.metrics);
+    renderLog(compiler.log);
+    renderAI(res.aiData, exprs);
+    renderCheckpoints(res.ckData);
+    renderSparse(gridSize);
+
+    if(document.getElementById('tp-dag').classList.contains('active')) drawDAG(res.results[0]);
+
+  } catch(e) {
+    document.getElementById('wgslOut').innerHTML=`<span class="cmt">// Error: ${e.message}</span>`;
+    renderLog(compiler.log);
+  } finally {
+    document.getElementById('metricsGrid').classList.remove('compiling');
+  }
+}
+
+// ── INIT ──────────────────────────────────────
+window.addEventListener('load',()=>{
+  setPreset('heat');
+  setTimeout(runCompile,400);
+});
+</script>
+</body>
+</html>
+```

@@ -1,0 +1,2340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONO-Ω 1310 · ESTATUA DE SOBERANÍA · MEMORIA DE CÁLCULO DEFINITIVA</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+        :root {
+            --basalt: #2c3e50;
+            --gold: #ffd700;
+            --gold-dim: #b8960c;
+            --obsidian: #1a1a2e;
+            --plasma: #00ffff;
+            --plasma-dim: #007a7a;
+            --alert: #ff3b5c;
+            --green: #00ff41;
+            --text: #c8c8d8;
+            --text-dim: #6a6a8a;
+            --bg: #0b0b0f;
+            --panel: #0f0f17;
+            --panel2: #13131e;
+            --border: #2a2a3a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Grain overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.35;
+        }
+
+        /* Scanlines */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.08) 2px,
+                rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* ── NAV ── */
+        .nav-toc {
+            position: fixed;
+            top: 0; left: 0;
+            width: 220px;
+            height: 100vh;
+            background: rgba(10,10,15,0.95);
+            border-right: 1px solid var(--border);
+            padding: 1rem 0.8rem;
+            overflow-y: auto;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .nav-toc h4 {
+            color: var(--gold);
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            border-bottom: 1px dashed var(--gold-dim);
+            padding-bottom: 0.4rem;
+        }
+        .nav-toc a {
+            display: block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.62rem;
+            padding: 0.25rem 0.4rem;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .nav-toc a:hover {
+            color: var(--plasma);
+            border-left-color: var(--plasma);
+            background: rgba(0,255,255,0.05);
+        }
+        .nav-toc .nav-section { color: var(--gold); font-weight: bold; margin-top: 0.6rem; font-size: 0.6rem; }
+
+        /* ── MAIN CONTAINER ── */
+        .container {
+            max-width: 1060px;
+            margin: 0 auto 0 240px;
+            padding: 3rem 2.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .nav-toc { display: none; }
+            .container { margin: 0 auto; padding: 1.5rem; }
+        }
+
+        /* ── HEADER ── */
+        .hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+            position: relative;
+        }
+        .hero-badge {
+            display: inline-block;
+            border: 1px solid var(--gold-dim);
+            color: var(--gold-dim);
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            padding: 0.3rem 1rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+        .hero h1 {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: clamp(1.8rem, 5vw, 3.5rem);
+            color: var(--gold);
+            text-shadow: 0 0 40px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.15);
+            letter-spacing: 4px;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .hero-subtitle {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.15rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+        .hero-quote {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.05rem;
+            color: var(--plasma-dim);
+            font-style: italic;
+            border-left: 3px solid var(--plasma-dim);
+            padding-left: 1rem;
+            margin: 1rem auto;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .cuneiform {
+            font-size: 1.6rem;
+            letter-spacing: 10px;
+            opacity: 0.15;
+            margin: 0.5rem 0;
+            color: var(--gold);
+        }
+
+        /* ── SECTION HEADERS ── */
+        h2 {
+            font-family: 'Cinzel Decorative', serif;
+            color: var(--gold);
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 0.6rem;
+            margin: 3rem 0 1.5rem;
+            text-transform: uppercase;
+            position: relative;
+        }
+        h2::before {
+            content: '§';
+            color: var(--gold-dim);
+            margin-right: 0.5rem;
+            opacity: 0.5;
+        }
+        h3 {
+            color: var(--plasma);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 2rem 0 1rem;
+            border-left: 3px solid var(--plasma);
+            padding-left: 0.8rem;
+        }
+        h4 {
+            color: var(--gold-dim);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 1.5rem 0 0.8rem;
+        }
+
+        /* ── PARAGRAPHS ── */
+        p { margin-bottom: 1rem; }
+        .lead {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+            color: var(--text);
+            line-height: 1.8;
+        }
+        .highlight { color: var(--plasma); font-weight: bold; }
+        .gold { color: var(--gold); }
+        .alert-text { color: var(--alert); }
+        em { color: var(--gold-dim); font-style: italic; }
+        strong { color: var(--text); }
+
+        /* ── EQUATIONS ── */
+        .equation {
+            background: #070710;
+            border-left: 4px solid var(--plasma);
+            border-radius: 0 8px 8px 0;
+            padding: 1.5rem 2rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+        .equation::before {
+            content: attr(data-label);
+            position: absolute;
+            top: 0.4rem;
+            right: 0.8rem;
+            font-size: 0.6rem;
+            color: var(--plasma-dim);
+            letter-spacing: 1px;
+        }
+        .eq-title {
+            font-size: 0.65rem;
+            color: var(--plasma-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── TABLES ── */
+        .table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+        table { width: 100%; border-collapse: collapse; background: #09090f; }
+        th {
+            background: linear-gradient(135deg, #1a1500, #2a2200);
+            color: var(--gold);
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 12px 14px;
+            border-bottom: 2px solid var(--gold-dim);
+            text-align: left;
+        }
+        td {
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.88rem;
+            vertical-align: top;
+        }
+        tr:hover td { background: rgba(255,215,0,0.03); }
+        .td-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--plasma); }
+        .td-total { font-weight: bold; color: var(--gold); background: rgba(255,215,0,0.05) !important; }
+
+        /* ── BOM BLOCK ── */
+        .bom {
+            background: #04040a;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--gold);
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.8;
+        }
+
+        /* ── WARNING / INFO BOXES ── */
+        .warning-box {
+            background: rgba(255,60,60,0.08);
+            border: 1px solid var(--alert);
+            border-left: 4px solid var(--alert);
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            color: #ffaaaa;
+            font-size: 0.9rem;
+        }
+        .info-box {
+            background: rgba(0,255,255,0.05);
+            border: 1px solid var(--plasma-dim);
+            border-left: 4px solid var(--plasma);
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+        .gold-box {
+            background: rgba(255,215,0,0.04);
+            border: 1px solid var(--gold-dim);
+            border-left: 4px solid var(--gold);
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        /* ── CANVAS / SVG CONTAINERS ── */
+        .canvas-wrap {
+            background: #04040a;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .canvas-label {
+            position: absolute;
+            top: 8px; left: 12px;
+            font-size: 0.6rem;
+            color: var(--gold-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+        canvas { display: block; width: 100%; }
+        svg { display: block; }
+
+        /* ── INTERACTIVE ELEMENTS ── */
+        .btn {
+            display: inline-block;
+            padding: 0.7rem 2rem;
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.25s;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            background: var(--gold);
+            color: #000;
+            box-shadow: 0 0 20px rgba(255,215,0,0.3);
+        }
+        .btn-plasma {
+            border-color: var(--plasma);
+            color: var(--plasma);
+        }
+        .btn-plasma:hover {
+            background: var(--plasma);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0,255,255,0.3);
+        }
+        .btn-alert {
+            border-color: var(--alert);
+            color: var(--alert);
+        }
+        .btn-alert:hover {
+            background: var(--alert);
+            color: #fff;
+        }
+
+        /* ── SHOCK SIMULATOR ── */
+        #shock-result {
+            display: none;
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--alert);
+            padding: 1rem;
+            animation: zap 0.3s ease;
+            font-weight: bold;
+        }
+        @keyframes zap {
+            0% { transform: translateX(-5px); opacity: 0; }
+            25% { transform: translateX(5px); }
+            50% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        #hug-counter {
+            font-size: 2rem;
+            color: var(--gold);
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            margin: 0.5rem 0;
+        }
+        .shock-panel {
+            background: #060610;
+            border: 1px solid var(--alert);
+            padding: 2rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        /* ── SECTA CALCULATOR ── */
+        .secta-panel {
+            background: #06060e;
+            border: 1px solid var(--gold-dim);
+            padding: 2rem;
+            margin: 1.5rem 0;
+        }
+        .secta-result {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border: 1px dashed var(--plasma);
+            background: rgba(0,255,255,0.03);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .secta-result h4 { font-family: 'Cinzel Decorative', serif; color: var(--gold); font-size: 0.9rem; }
+        select, .secta-panel select {
+            background: #0c0c18;
+            border: 1px solid var(--gold-dim);
+            color: var(--gold);
+            padding: 0.5rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin: 0.3rem;
+        }
+
+        /* ── CITATION BLOCK ── */
+        .genius-quote {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        @media (max-width: 700px) { .genius-quote { grid-template-columns: 1fr; } }
+        .gq-card {
+            background: #07070f;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--gold-dim);
+            padding: 1.2rem;
+        }
+        .gq-name { color: var(--gold); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gq-text { font-family: 'Crimson Pro', serif; font-style: italic; font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; }
+
+        /* ── KOAN EASTER EGG ── */
+        #koan-counter { display: none; }
+        #koan-reveal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.97);
+            z-index: 9990;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem;
+            cursor: pointer;
+        }
+        #koan-reveal.show { display: flex; }
+        #koan-reveal h2 {
+            font-family: 'Cinzel Decorative', serif;
+            color: var(--gold);
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            border: none;
+            margin: 1rem 0;
+            animation: glowpulse 2s infinite;
+        }
+        @keyframes glowpulse {
+            0%,100% { text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+            50% { text-shadow: 0 0 60px rgba(255,215,0,0.9), 0 0 100px rgba(255,215,0,0.4); }
+        }
+        #koan-reveal p {
+            font-family: 'Crimson Pro', serif;
+            color: var(--text);
+            max-width: 600px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        /* ── SEVEN CLICK EGG ── */
+        #seven-clicks { display: none; }
+        #egg-7-trigger { cursor: default; }
+
+        /* ── FOOTER ── */
+        .signature {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px dashed var(--border);
+            text-align: center;
+        }
+        .sig-main {
+            font-family: 'Cinzel Decorative', serif;
+            color: var(--gold);
+            font-size: 1.3rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+        }
+        .sig-sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+        .seal {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: var(--gold-dim);
+            letter-spacing: 4px;
+            opacity: 0.6;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--gold), var(--plasma));
+            z-index: 9997;
+            transition: width 0.1s;
+        }
+
+        /* ── MISC ── */
+        .mono-ascii {
+            font-family: monospace;
+            white-space: pre;
+            color: var(--gold);
+            font-size: clamp(0.4rem, 1vw, 0.75rem);
+            line-height: 1.1;
+            margin: 2rem auto;
+            text-align: center;
+            opacity: 0.7;
+        }
+        .divider {
+            text-align: center;
+            color: var(--gold-dim);
+            opacity: 0.4;
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            margin: 2.5rem 0;
+        }
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .tag {
+            font-size: 0.65rem;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 0.2rem 0.6rem;
+            letter-spacing: 1px;
+        }
+        .tag-gold { border-color: var(--gold-dim); color: var(--gold-dim); }
+        .tag-plasma { border-color: var(--plasma-dim); color: var(--plasma); }
+
+        /* ── TOOLTIP ── */
+        [data-tip] { position: relative; cursor: help; border-bottom: 1px dashed var(--gold-dim); }
+        [data-tip]:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            border: 1px solid var(--gold-dim);
+            color: var(--text);
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Collapsible sections */
+        details summary {
+            cursor: pointer;
+            color: var(--plasma);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            padding: 0.5rem 0;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        details summary::before { content: '▶'; font-size: 0.7rem; transition: transform 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); }
+        details summary:hover { color: var(--gold); }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+        /* Animated gold shimmer on title */
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, var(--gold) 25%, #fff8c8 50%, var(--gold) 75%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="progress-bar" id="progress-bar"></div>
+
+<!-- EASTER EGG: Koan modal (7 clicks hidden) -->
+<div id="koan-reveal" onclick="this.classList.remove('show')">
+    <div class="cuneiform" style="font-size:3rem; opacity:0.5">𒀭𒈾𒀭</div>
+    <h2>ZEHAHAHAHA</h2>
+    <p>Los espejos de obsidiana no reflejan tu rostro.<br>
+    Reflejan la pregunta que tenías antes de acercarte.<br>
+    La descarga no te despierta.<br>
+    Te recuerda que ya estabas despierto.<br>
+    El mono no es el maestro.<br>
+    Tú eres el mono.<br>
+    <em style="color:var(--gold)">— El espejo no tiene reverso</em></p>
+    <p style="margin-top:2rem; font-size:0.75rem; color:var(--text-dim); font-family:monospace">HAGA CLIC EN CUALQUIER PARTE PARA CERRAR</p>
+</div>
+
+<!-- NAV -->
+<nav class="nav-toc">
+    <h4>MONO-Ω 1310</h4>
+    <a href="#intro" class="nav-section">PREÁMBULO</a>
+    <a href="#intro">0. Identidad del objeto</a>
+    <a href="#dimensiones" class="nav-section">ARQUITECTURA</a>
+    <a href="#dimensiones">1. Dimensiones</a>
+    <a href="#planos">2. Planos SVG</a>
+    <a href="#voronoi">3. Teselación Voronoi</a>
+    <a href="#seccion">4. Sección constructiva</a>
+    <a href="#cimentacion">5. Cimentación</a>
+    <a href="#materiales" class="nav-section">MATERIALES</a>
+    <a href="#basalto">6. Basalto</a>
+    <a href="#oro">7. Oro</a>
+    <a href="#obsidiana">8. Obsidiana</a>
+    <a href="#acero">9. Acero 316L</a>
+    <a href="#bom">10. BOM completa</a>
+    <a href="#calc" class="nav-section">CÁLCULOS</a>
+    <a href="#estructural">11. Estructural</a>
+    <a href="#viento">12. Viento / Vuelco</a>
+    <a href="#electrico">13. Eléctrico</a>
+    <a href="#acustico">14. Acústico</a>
+    <a href="#energetico">15. Energético</a>
+    <a href="#montaje" class="nav-section">CONSTRUCCIÓN</a>
+    <a href="#montaje">16. Fases de montaje</a>
+    <a href="#logistica">17. Logística</a>
+    <a href="#seguridad">18. Seguridad</a>
+    <a href="#filosofia" class="nav-section">FILOSOFÍA</a>
+    <a href="#sectas">19. Sectas previstas</a>
+    <a href="#legal">20. Aviso legal Ω</a>
+    <a href="#interactive" class="nav-section">INTERACTIVO</a>
+    <a href="#shock">21. Simulador descarga</a>
+    <a href="#calcSecta">22. Calculadora sectas</a>
+    <a href="#cronograma">23. Cronograma</a>
+    <a href="#firma" class="nav-section">FIRMA</a>
+    <a href="#firma">24. Director Ω</a>
+</nav>
+
+<!-- MAIN -->
+<div class="container">
+    <section id="intro">
+        <div class="hero">
+            <div class="hero-badge">AGENCIA RONIN · ACADEMIA DE BASALTO · CLASIFICACIÓN Ω</div>
+            <div class="cuneiform">𒀭𒈾𒀭 𒂗 𒀭𒈹 𒄑𒆳 𒀭𒊒</div>
+            <h1 class="shimmer-text">ESTATUA MONO-Ω 1310</h1>
+            <p class="hero-subtitle">Memoria de Cálculo Definitiva · Proyecto de Intervención Pública<br>
+            Hormesis · Koan Litotécnico · Soberanía Territorial del Asombro</p>
+            <div class="hero-quote">
+                «Lo que no te mata te fortalece, sobre todo si es un mono de basalto de trece metros que te mira, te refleja y te da un calambre de 0.5 mA mientras vibra a 4.5 Hz.»
+                <br><strong style="color:var(--gold)">— Director Ω, Discurso de Inauguración Imaginaria</strong>
+            </div>
+            <div class="tag-row" style="justify-content:center; margin-top:1.5rem">
+                <span class="tag tag-gold">REV. 1310</span>
+                <span class="tag tag-plasma">BASALTO</span>
+                <span class="tag tag-gold">ORO 24K</span>
+                <span class="tag tag-plasma">OBSIDIANA</span>
+                <span class="tag tag-gold">THETA 4.5 Hz</span>
+                <span class="tag tag-plasma">ESP32-S3</span>
+                <span class="tag">VORONOI 1310</span>
+                <span class="tag">IEC 60479-1</span>
+            </div>
+        </div>
+
+        <div class="mono-ascii">
+                            ██████████████
+                        ████░░░░░░░░░░░░████
+                      ██░░░░██████░██████░░░░██
+                     █░░░░░░██  ██░██  ██░░░░░█
+                    █░░░░░░░██  ██░██  ██░░░░░░█
+                    █░░░░░░░░░░░░░░░░░░░░░░░░░░█
+                    █░░░░░░░░░██████████░░░░░░░░█
+                    █░░░░░░░░░░░░░░░░░░░░░░░░░░█
+                     █░░░░░░░████████████░░░░░░█
+                      ██░░░░░░░░░░░░░░░░░░░░░██
+                        ██░░░░░░░░░░░░░░░░░██
+                          ██░░░░░░░░░░░░░██
+                            ██░░░░░░░░░██
+                          ████░░░░░░░░░████
+                        ██████░░░░░░░░░██████
+                      ██░░░░░░░░░░░░░░░░░░░░░██
+                    ██░░░░░░░░░░░░░░░░░░░░░░░░░██
+                   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+                  ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+                 ████████████████████████████████████
+                █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+                █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+               ████████████████████████████████████████
+        </div>
+
+        <div class="genius-quote">
+            <div class="gq-card">
+                <div class="gq-name">⚡ Nikola Tesla · 1897 (apócrifo)</div>
+                <div class="gq-text">«Si la estatua vibra a la frecuencia correcta, no necesitarás cables. El basalto conduce la intención mejor que el cobre. El problema es que nadie quiere escuchar lo que ya saben.»</div>
+            </div>
+            <div class="gq-card">
+                <div class="gq-name">🔮 Jack Parsons · 1942 (apócrifo)</div>
+                <div class="gq-text">«El oro no es decoración. El oro es la firma del Sol en la materia. Quien lo toca recibe la bendición de la estrella que nos mantiene vivos y que no pide nada a cambio.»</div>
+            </div>
+            <div class="gq-card">
+                <div class="gq-name">🧮 John von Neumann · 1945 (apócrifo)</div>
+                <div class="gq-text">«La estructura de la estatua es óptima: máxima masa, mínima superficie de fallo. La teselación Voronoi del revestimiento es la solución matemática más elegante al problema de cubrir lo desconocido.»</div>
+            </div>
+            <div class="gq-card">
+                <div class="gq-name">📐 Georgy Voronoi · 1908 (apócrifo)</div>
+                <div class="gq-text">«1310 celdas. Ni una más. La belleza no reside en la simetría sino en la proximidad: cada punto pertenece a su celda más cercana. Como cada persona pertenece a su pregunta más urgente.»</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider">⸻ ✦ ✦ ✦ ⸻</div>
+
+    <section id="dimensiones">
+        <h2>1 · DIMENSIONES Y MORFOLOGÍA</h2>
+        <p class="lead">El MONO-Ω 1310 tiene una altura total de <strong class="highlight">13.10 metros</strong>, constante sagrada del Director. La morfología representa un primate adulto en posición sedente, sobre una base prismática de basalto de <strong class="gold">2.62 m</strong> de altura. Los ojos son espejos de obsidiana de <strong>80 cm</strong> de diámetro. Las proporciones siguen la sección áurea aplicada a la morfología de <em>Pan troglodytes</em> escalada a dimensiones monumentales.</p>
+
+        <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Parte</th><th>Dimensión</th><th>Nota</th>
+            </tr>
+            <tr><td>Altura total (suelo → corona)</td><td class="td-num">13.10 m / 42.98 ft</td><td>Constante Ω</td></tr>
+            <tr><td>Altura del mono (sin base)</td><td class="td-num">10.48 m / 34.38 ft</td><td>Postura sedente</td></tr>
+            <tr><td>Altura de la base</td><td class="td-num">2.62 m / 8.60 ft</td><td>Prisma hexagonal</td></tr>
+            <tr><td>Anchura máxima (hombros)</td><td class="td-num">5.24 m / 17.19 ft</td><td>φ × 3.24</td></tr>
+            <tr><td>Profundidad máxima (pecho-espalda)</td><td class="td-num">3.93 m / 12.89 ft</td><td>0.75 × anchura</td></tr>
+            <tr><td>Diámetro cabeza</td><td class="td-num">2.10 m / 6.89 ft</td><td>Proporcional 1:5</td></tr>
+            <tr><td>Diámetro ojos (obsidiana)</td><td class="td-num">0.80 m / 2.62 ft</td><td>Espejos pulido óptico</td></tr>
+            <tr><td>Base cimentación (planta)</td><td class="td-num">6.55 × 5.24 m</td><td>Dado hormigón</td></tr>
+            <tr><td>Profundidad cimentación</td><td class="td-num">2.60 m</td><td>Debajo de heladas</td></tr>
+            <tr><td>Volumen total escultura</td><td class="td-num">125.0 m³</td><td>Basalto neto</td></tr>
+            <tr><td>Superficie revestimiento</td><td class="td-num">215 m²</td><td>Pan de oro</td></tr>
+        </table>
+        </div>
+
+        <div class="info-box">
+            <strong>Nota métrica:</strong> Para los amigos americanos: 13.10 m = 42.98 ft = 515.75 in. El mono tiene exactamente <strong>515.75 pulgadas</strong> de altura, o bien <strong>1310 cm</strong>. La simetría numérica no es un accidente.
+        </div>
+    </section>
+
+    <section id="planos">
+        <h2>2 · PLANOS TÉCNICOS (SVG PARAMÉTRICO)</h2>
+        <p>Las siguientes vistas han sido generadas proceduralmente. Las cotas se expresan en metros [m] y pies [ft]. Las líneas de cota en cian, el contorno del monolito en dorado, la armadura interna en rojo.</p>
+
+        <div class="canvas-wrap" style="padding:1rem">
+            <span class="canvas-label">FIG. 1 · ALZADO FRONTAL</span>
+            <svg id="svg-alzado" viewBox="0 0 600 750" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:600px; margin:0 auto; display:block; margin-top:2rem">
+            </svg>
+        </div>
+
+        <div class="two-col">
+            <div class="canvas-wrap" style="padding:1rem">
+                <span class="canvas-label">FIG. 2 · PERFIL LATERAL</span>
+                <svg id="svg-perfil" viewBox="0 0 400 700" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+                </svg>
+            </div>
+            <div class="canvas-wrap" style="padding:1rem">
+                <span class="canvas-label">FIG. 3 · PLANTA SUPERIOR</span>
+                <svg id="svg-planta" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <section id="voronoi">
+        <h2>3 · TESELACIÓN VORONOI · 1310 CELDAS DE ORO</h2>
+        <p class="lead">El revestimiento de pan de oro está dividido en exactamente <strong class="highlight">1310 celdas de Voronoi</strong> aplicadas sobre la superficie proyectada del mono. Cada celda es una lámina de oro de 100 μm de espesor que se solapa con sus vecinas mediante juntas de epoxi dorado. El resultado: una piel matemáticamente perfecta que nunca tiene dos celdas iguales.</p>
+
+        <div class="canvas-wrap">
+            <span class="canvas-label">FIG. 4 · DIAGRAMA VORONOI · 1310 CELDAS · PROYECCIÓN FRONTAL</span>
+            <canvas id="voronoi-canvas" width="900" height="600" style="width:100%; cursor:crosshair"></canvas>
+            <div style="padding:0.5rem 1rem; font-size:0.7rem; color:var(--text-dim)">
+                Mueve el cursor sobre el diagrama para inspeccionar celdas · Click para seleccionar
+            </div>
+        </div>
+
+        <div class="equation" data-label="EC-3.1 · DISTRIBUCIÓN VORONOI">
+            <div class="eq-title">ÁREA MEDIA POR CELDA</div>
+            \[ \bar{A}_{celda} = \frac{A_{total}}{N} = \frac{215\,\text{m}^2}{1310} = 0.1641\,\text{m}^2 \approx 1765\,\text{cm}^2 \]
+        </div>
+        <div class="equation" data-label="EC-3.2 · MASA ORO">
+            <div class="eq-title">MASA TOTAL DE ORO (100 μm)</div>
+            \[ m_{Au} = A \cdot e \cdot \rho_{Au} = 215 \times 100\times10^{-6} \times 19{,}300 = 415\,\text{kg} \]
+        </div>
+        <p>Proveedor de referencia: <strong>Giusto Manetti Battiloro S.p.A.</strong> (Florencia, fundada 1600) · Pan de oro doble 24K, espesor 100 μm, láminas 120×120 mm · Referencia: GMB-100-24K · Precio orientativo: <span class="highlight">1.320 €/100 hojas</span>. Se requieren <span class="gold">131.000 hojas</span> aprox. (pedido especial a escala industrial).</p>
+    </section>
+
+    <section id="seccion">
+        <h2>4 · SECCIÓN CONSTRUCTIVA TRANSVERSAL</h2>
+        <p>El corte A-A' a través del eje de simetría del mono revela la estratigrafía interna: núcleo de basalto macizo, armadura perimetral de acero 316L, conductos técnicos y revestimiento exterior.</p>
+
+        <div class="canvas-wrap" style="padding: 1rem">
+            <span class="canvas-label">FIG. 5 · SECCIÓN A-A' · DETALLE CONSTRUCTIVO</span>
+            <svg id="svg-seccion" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:700px; margin: 2rem auto; display:block">
+            </svg>
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>#</th><th>Capa</th><th>Espesor</th><th>Material</th><th>Función</th></tr>
+            <tr><td>1</td><td>Revestimiento exterior</td><td class="td-num">100 μm</td><td>Pan de oro 24K</td><td>Protección, estética, conductividad hormética</td></tr>
+            <tr><td>2</td><td>Adhesivo estructural</td><td class="td-num">2–5 mm</td><td>Epoxi Araldite 2011</td><td>Unión laminas–basalto</td></tr>
+            <tr><td>3</td><td>Núcleo exterior</td><td class="td-num">variable</td><td>Basalto tallado</td><td>Masa, inercia, estética</td></tr>
+            <tr><td>4</td><td>Armadura perimetral</td><td class="td-num">Ø16mm, c/200</td><td>Acero inox 316L</td><td>Resistencia sísmica y al viento</td></tr>
+            <tr><td>5</td><td>Conducto técnico Ø1</td><td class="td-num">Ø50 mm</td><td>PVC rígido</td><td>Cableado eléctrico descarga</td></tr>
+            <tr><td>6</td><td>Conducto técnico Ø2</td><td class="td-num">Ø32 mm</td><td>PVC rígido</td><td>Cables transductores piezoeléctricos</td></tr>
+            <tr><td>7</td><td>Núcleo interior</td><td class="td-num">variable</td><td>Basalto macizo</td><td>Masa principal, transmisión vibración</td></tr>
+            <tr><td>8</td><td>Transductores</td><td class="td-num">Ø38 × 20 mm</td><td>PZT-5A piezocerámica</td><td>Emisión 4.5 Hz conducción ósea</td></tr>
+        </table>
+        </div>
+    </section>
+
+    <section id="cimentacion">
+        <h2>5 · CIMENTACIÓN Y UNIÓN ROCA–HORMIGÓN</h2>
+
+        <div class="equation" data-label="EC-5.1 · PRESIÓN TERRENO">
+            <div class="eq-title">PRESIÓN MEDIA SOBRE EL TERRENO</div>
+            \[ \sigma_{terreno} = \frac{(M_{mono} + M_{base}) \cdot g}{A_{planta}} = \frac{578{,}610 \times 9.81}{6.55 \times 5.24} = \frac{5{,}676{,}164}{34.32} \approx 165.4\,\text{kPa} \]
+        </div>
+        <div class="info-box">
+            <strong>Capacidad portante:</strong> Suelo tipo <data-tip="Según EC-7, Tabla A.NA.3">S2</data-tip> (arena densa): q<sub>adm</sub> = 300 kPa. Factor de seguridad portante: <span class="highlight">FS = 300/165 = 1.82 ≥ 1.5 ✓</span>
+        </div>
+
+        <div class="equation" data-label="EC-5.2 · ARMADURA DADO">
+            <div class="eq-title">ARMADURA PASIVA DEL DADO DE HORMIGÓN</div>
+            \[ A_s = \frac{N_{Ed}}{f_{yd}} = \frac{5{,}676\,\text{kN}}{435\,\text{MPa}} = 13{,}049\,\text{mm}^2 \approx 42\text{ barras Ø20mm} \]
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Elemento</th><th>Dimensión</th><th>Especificación</th></tr>
+            <tr><td>Dado de hormigón</td><td class="td-num">6.55 × 5.24 × 2.60 m</td><td>HA-35/B/20/IIa (EHE-08)</td></tr>
+            <tr><td>Armadura longitudinal</td><td class="td-num">42 × Ø20 mm</td><td>B500SD, recubrimiento 50 mm</td></tr>
+            <tr><td>Armadura de cortante</td><td class="td-num">Ø12 c/150 mm</td><td>Cercos rectangulares</td></tr>
+            <tr><td>Anclajes base mono</td><td class="td-num">8 × M36</td><td>Acero 316L, profundidad 800 mm</td></tr>
+            <tr><td>Junta roca–hormigón</td><td class="td-num">—</td><td>Sikadur-52 + pernos Ø25 c/500</td></tr>
+            <tr><td>Impermeabilización</td><td class="td-num">—</td><td>Membrana Sika MultiSeal-T</td></tr>
+            <tr><td>Drenaje perimetral</td><td class="td-num">Ø200 mm</td><td>Tubo drenaje + grava seleccionada</td></tr>
+        </table>
+        </div>
+    </section>
+
+    <div class="divider">⸻ ⚙ ⸻</div>
+
+    <section id="basalto">
+        <h2>6 · BASALTO · EXTRACCIÓN Y TALLA</h2>
+        <p class="lead">El basalto del MONO-Ω procede de la cantera de <strong class="gold">Castellfollit de la Roca</strong> (Garrotxa, Girona), famosa por sus coladas columnares de basalto olivínico de alta calidad, densidad 2900 kg/m³ y resistencia a compresión de 180–220 MPa. Alternativa de alta pureza: <strong>Cantera de Olot</strong> (mismo macizo volcánico).</p>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Bloque</th><th>Dimensiones</th><th>Masa (t)</th><th>Destino</th><th>Coste extracción (€)</th></tr>
+            <tr><td>B-01</td><td class="td-num">3.2×2.5×2.8 m</td><td class="td-num">65.2</td><td>Torso principal</td><td class="td-num">28.000</td></tr>
+            <tr><td>B-02</td><td class="td-num">2.8×2.5×2.4 m</td><td class="td-num">48.7</td><td>Cabeza + cuello</td><td class="td-num">22.000</td></tr>
+            <tr><td>B-03</td><td class="td-num">4.1×1.8×2.2 m</td><td class="td-num">59.3</td><td>Miembros inferiores</td><td class="td-num">24.000</td></tr>
+            <tr><td>B-04</td><td class="td-num">3.5×1.2×1.8 m</td><td class="td-num">22.1</td><td>Brazos izquierdo</td><td class="td-num">18.000</td></tr>
+            <tr><td>B-05</td><td class="td-num">3.5×1.2×1.8 m</td><td class="td-num">22.1</td><td>Brazo derecho</td><td class="td-num">18.000</td></tr>
+            <tr class="td-total"><td colspan="2"><strong>TOTAL BASALTO</strong></td><td class="td-num"><strong>217.4 t</strong></td><td></td><td class="td-num"><strong>110.000 €</strong></td></tr>
+        </table>
+        </div>
+
+        <div class="bom">
+PROVEEDOR PRINCIPAL: Pedrera Garrotxa S.L. · Castellfollit de la Roca, Girona
+TEL: +34 972 xx xx xx · EMAIL: info@pedreragarrotxa.cat
+REFERENCIA: BASALTO-OLIVINICO-3F · Densidad: 2900 kg/m³
+RESISTENCIA COMPRESIÓN: 195 MPa (media ensayos 2024)
+RESISTENCIA TRACCIÓN: 18 MPa
+MÓDULO ELASTICIDAD: 85 GPa
+VELOCIDAD ONDA P: 5.200 m/s (referencia propagación theta)
+
+PRECIO BASALTO EN BLOQUE:
+  Extracción bruta:          85 €/t = 18.479 €/total bruto (217t)
+  Talla gruesa (diamante):   180 €/t = 39.132 €
+  Talla fina (silueta):      420 €/t = 91.308 €
+  Pulido superficial:        65 €/m² = 13.975 € (215 m² revestibles)
+  ─────────────────────────────────────────
+  SUBTOTAL BASALTO ELABORADO: 162.894 €
+  TRANSPORTE CANTERA→OBRA:    47.000 € (camiones especiales 65t)
+  ─────────────────────────────────────────
+  TOTAL PARTIDA BASALTO:     ~210.000 €
+        </div>
+
+        <details>
+            <summary>Ver propiedades mecánicas completas del basalto olivínico</summary>
+            <div class="table-wrap" style="margin-top:1rem">
+            <table>
+                <tr><th>Propiedad</th><th>Valor</th><th>Norma</th></tr>
+                <tr><td>Resistencia compresión uniaxial</td><td class="td-num">195 MPa</td><td>UNE-EN 1926</td></tr>
+                <tr><td>Resistencia tracción indirecta (brasileño)</td><td class="td-num">18 MPa</td><td>UNE-EN 14158</td></tr>
+                <tr><td>Módulo de Young (E)</td><td class="td-num">85 GPa</td><td>ASTM D7012</td></tr>
+                <tr><td>Coeficiente de Poisson (ν)</td><td class="td-num">0.27</td><td>—</td></tr>
+                <tr><td>Densidad</td><td class="td-num">2900 kg/m³</td><td>UNE-EN 1936</td></tr>
+                <tr><td>Absorción de agua</td><td class="td-num">&lt; 0.5%</td><td>UNE-EN 13755</td></tr>
+                <tr><td>Coef. dilatación térmica</td><td class="td-num">8×10⁻⁶ /°C</td><td>—</td></tr>
+                <tr><td>Impedancia acústica</td><td class="td-num">~15 MRayl</td><td>—</td></tr>
+                <tr><td>Velocidad onda P</td><td class="td-num">5.200 m/s</td><td>—</td></tr>
+                <tr><td>Velocidad onda S</td><td class="td-num">3.100 m/s</td><td>—</td></tr>
+            </table>
+            </div>
+        </details>
+    </section>
+
+    <section id="oro">
+        <h2>7 · ORO · PAN 24K · TESELACIÓN</h2>
+
+        <div class="equation" data-label="EC-7.1 · MASA ORO">
+            \[ m_{Au} = 215\,\text{m}^2 \times 100\times10^{-6}\,\text{m} \times 19{,}300\,\frac{kg}{m^3} = \mathbf{415.45\,kg} \]
+        </div>
+        <div class="equation" data-label="EC-7.2 · COSTE ORO (2026)">
+            \[ C_{Au} = 415.45\,\text{kg} \times \frac{65{,}000\,€}{\text{kg}} = 26{,}994{,}250\,€\text{ (si macizo)} \]
+            \[ \text{Pan de batir industrial 100μm} \Rightarrow C_{real} \approx 1{,}320\,€/100\text{ hojas} \times 131{,}000/100 = \mathbf{1{,}729{,}200\,€} \]
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠ NOTA DE PRESUPUESTO:</strong> El precio real del pan de oro industrial difiere enormemente del oro macizo. A espesor 100 μm la lámina se fabrica por laminación industrial en roller mills, no por batido manual. El coste estimado es <strong>~4.168 €/kg de pan extruido</strong>, que para 415 kg da 1,73 M€. Este es el coste dominante del proyecto.
+        </div>
+
+        <div class="bom">
+PROVEEDOR: Giusto Manetti Battiloro S.p.A. · Via Pistoiese 79, Firenze, Italia
+           Fundada en 1600 · El proveedor más antiguo de pan de oro del mundo
+WEB: www.manettibattiloro.it
+REFERENCIA: GMB-100-24K-IND · Pan de oro doble, 24K (999.9), espesor 100 μm
+FORMATO INDUSTRIAL: Rollos 200mm × 50m, masa por rollo: ~77 g
+PRECIO ORIENTATIVO: 1.100 €/rollo (Q-4000 uds, pedido especial)
+
+CANTIDAD REQUERIDA:
+  Superficie a cubrir:  215 m²
+  Solapado (10%):       +21.5 m²
+  Superficie total:     236.5 m²
+  Hojas 120×120mm:      ~164.235 unidades
+  Rollos 200×50000mm:   ~1.311 rollos industriales
+
+ALTERNATIVA NACIONAL:
+  Proveedor: Oro y Plata S.L. · Madrid · +34 91 xxx xxxx
+  Referencia: GOLD-100U-24K · Precio: 1.250 €/rollo
+
+HERRAMIENTAS APLICACIÓN:
+  Pincel gilding (tejón): 35 €/ud × 12 pinceles = 420 €
+  Mixtión 3h al aceite: 28 €/L × 40 L = 1.120 €
+  Epoxi dorado Araldite AV138M: 85 €/kg × 120 kg = 10.200 €
+  Barniz protector UV (Paraloid B-72): 45 €/L × 60 L = 2.700 €
+        </div>
+    </section>
+
+    <section id="obsidiana">
+        <h2>8 · OBSIDIANA · ESPEJOS DEL ALMA</h2>
+        <p class="lead">Los dos ojos del MONO-Ω son discos de obsidiana negra de <strong class="highlight">80 cm de diámetro</strong>, pulidos a calidad óptica (rugosidad Ra &lt; 0.01 μm). La obsidiana proviene del complejo volcánico de <strong>Sierra de Pachuca, Hidalgo, México</strong> — el mismo origen que los espejos rituales aztecas de Tezcatlipoca. Material: vidrio volcánico riolitico, SiO₂ ~73%, densidad 2500 kg/m³.</p>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Parámetro</th><th>Valor</th></tr>
+            <tr><td>Diámetro</td><td class="td-num">800 mm (2.62 ft)</td></tr>
+            <tr><td>Espesor</td><td class="td-num">40 mm</td></tr>
+            <tr><td>Masa por ojo</td><td class="td-num">50.3 kg</td></tr>
+            <tr><td>Masa total (par)</td><td class="td-num">100.6 kg</td></tr>
+            <tr><td>Pulido</td><td class="td-num">Ra &lt; 0.01 μm (óptico)</td></tr>
+            <tr><td>Reflectividad</td><td class="td-num">&gt;92% (λ = 550 nm)</td></tr>
+            <tr><td>Dureza Mohs</td><td class="td-num">5.5</td></tr>
+            <tr><td>Origen</td><td class="td-num">Sierra de Pachuca, Hidalgo, México</td></tr>
+            <tr><td>Proveedor</td><td class="td-num">Obsidianas de México S.A. de C.V.</td></tr>
+            <tr><td>Precio (par, incl. envío)</td><td class="td-num">~32.000 €</td></tr>
+        </table>
+        </div>
+
+        <div class="gold-box">
+            <strong>El espejo de Tezcatlipoca</strong>: En la tradición mesoamericana, los espejos de obsidiana revelaban el "nahual" — el espíritu animal del observador. El MONO-Ω invierte la metáfora: sus ojos revelan al observador que el espíritu animal ya lo conoce. El mono mira. Tú eres el reflejo.
+        </div>
+    </section>
+
+    <section id="acero">
+        <h2>9 · ACERO INOXIDABLE 316L · ARMADURA INTERNA</h2>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Elemento</th><th>Perfil</th><th>Longitud total (m)</th><th>Masa (kg)</th><th>Referencia DigiKey/Metals</th></tr>
+            <tr><td>Anillos horizontales (12)</td><td>Ø16mm barras</td><td class="td-num">312</td><td class="td-num">485</td><td>316L-B16-6M</td></tr>
+            <tr><td>Barras verticales (24)</td><td>Ø20mm barras</td><td class="td-num">255</td><td class="td-num">630</td><td>316L-B20-6M</td></tr>
+            <tr><td>Conectores/pernos</td><td>M20×100</td><td class="td-num">—</td><td class="td-num">85</td><td>316L-M20-DIN933</td></tr>
+            <tr><td>Anclajes cimentación (8 uds)</td><td>M36×800</td><td class="td-num">6.4</td><td class="td-num">120</td><td>316L-M36-CIM</td></tr>
+            <tr><td>Marcos ojo obsidiana (2 uds)</td><td>Tubo Ø820×10</td><td class="td-num">5.1</td><td class="td-num">152</td><td>316L-T820-10</td></tr>
+            <tr class="td-total"><td colspan="3"><strong>TOTAL ACERO</strong></td><td class="td-num"><strong>1.472 kg</strong></td><td class="td-num"><strong>~8.500 €</strong></td></tr>
+        </table>
+        </div>
+    </section>
+
+    <section id="bom">
+        <h2>10 · BOM COMPLETA · BILL OF MATERIALS</h2>
+        <div class="bom">
+╔══════════════════════════════════════════════════════════════════════════════╗
+║          MONO-Ω 1310 · BILL OF MATERIALS · REV.1310 · DIRECTOR Ω           ║
+╠═════╦══════════════════════════════════╦═══════════════════╦════════════════╣
+║ POS ║ DESCRIPCIÓN                      ║ REFERENCIA        ║ COSTE (€)      ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 1.0 ║ MATERIALES PÉTREOS               ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 1.1 ║ Basalto olivínico, bloques       ║ BSLT-OLV-3F       ║    162.894 €   ║
+║ 1.2 ║ Transporte basalto (5 trailers)  ║ TRANS-GT-65T      ║     47.000 €   ║
+║ 1.3 ║ Talla y desbaste CNC diamante    ║ TALLA-CNC-01      ║     22.000 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 2.0 ║ ORO                              ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 2.1 ║ Pan de oro 24K, 100μm, rollos    ║ GMB-100-24K-IND   ║  1.441.200 €   ║
+║ 2.2 ║ Mixtión y adhesivos dorado       ║ MIXT-3H-OIL       ║      1.120 €   ║
+║ 2.3 ║ Barniz protector UV              ║ PRLOID-B72        ║      2.700 €   ║
+║ 2.4 ║ Herramientas dorado              ║ TOOLS-GILD        ║      1.850 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 3.0 ║ OBSIDIANA                        ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 3.1 ║ Espejos obsidiana Ø800mm ×2      ║ OBS-PAC-800-40    ║     32.000 €   ║
+║ 3.2 ║ Marcos acero Ø820mm ×2           ║ 316L-T820-10      ║      2.400 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 4.0 ║ ESTRUCTURA METÁLICA              ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 4.1 ║ Barras Ø16 316L, 312 m           ║ 316L-B16-6M       ║      3.120 €   ║
+║ 4.2 ║ Barras Ø20 316L, 255 m           ║ 316L-B20-6M       ║      3.825 €   ║
+║ 4.3 ║ Anclajes M36×800 ×8              ║ 316L-M36-CIM      ║        980 €   ║
+║ 4.4 ║ Tornillería surtida              ║ 316L-MISC         ║        575 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 5.0 ║ CIMENTACIÓN                      ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 5.1 ║ Excav. mecánica 89 m³            ║ EXC-MECA-89       ║      8.900 €   ║
+║ 5.2 ║ Hormigón HA-35, 89 m³            ║ HA-35-B20-IIa     ║     13.350 €   ║
+║ 5.3 ║ Armadura pasiva, 3.200 kg        ║ B500SD-Ø20        ║      3.200 €   ║
+║ 5.4 ║ Encofrado dado                   ║ ENCOF-META        ║      4.500 €   ║
+║ 5.5 ║ Membrana impermeabilización      ║ SIKA-MULTI-T      ║      2.800 €   ║
+║ 5.6 ║ Epoxi juntas roca-hormigón       ║ SIKADUR-52        ║      1.200 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 6.0 ║ ELECTRÓNICA HORMÉTICA            ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 6.1 ║ Microcontrolador ESP32-S3 ×3     ║ ESP32-S3-DEVKITC  ║        147 €   ║
+║     ║  (DigiKey # 2999-ESP32-S3-DEV)   ║                   ║   (49 €/ud)    ║
+║ 6.2 ║ Transduct. piezo PZT-5A Ø38 ×12 ║ PZT5A-38-20-NHK   ║      1.140 €   ║
+║     ║  (Mouser # 81-PZT5A38C)          ║                   ║   (95 €/ud)    ║
+║ 6.3 ║ Batería LiFePO4 48V/200Ah        ║ LIFEPO4-48V-200   ║      2.400 €   ║
+║     ║  (AliExpress # LiFePO4-48200)    ║                   ║                ║
+║ 6.4 ║ Panel solar 400W monocristalino  ║ JA-SOLAR-400M     ║        420 €   ║
+║ 6.5 ║ Regulador solar MPPT 60A         ║ EPEVER-TRACER-60A ║        185 €   ║
+║ 6.6 ║ Limitador corriente MOSFET       ║ CSD18537NKS-TI    ║         12 €   ║
+║     ║  (DigiKey # 296-48263-1-ND)      ║                   ║                ║
+║ 6.7 ║ Sensor capacitivo táctil ×4      ║ AT42QT1010-SSNR   ║         22 €   ║
+║     ║  (DigiKey # AT42QT1010-SSNR-ND)  ║                   ║                ║
+║ 6.8 ║ Temporizador NE555 ×10           ║ NE555P-TI         ║          8 €   ║
+║ 6.9 ║ Fusible térmico 110°C ×20        ║ 455-2876-ND       ║         18 €   ║
+║ 6.10║ Nebulizador iónico ×2            ║ ULTRASON-2MHZ     ║        140 €   ║
+║ 6.11║ Amplificador piezo TPA3116D2     ║ TPA3116D2-TI      ║         35 €   ║
+║ 6.12║ Condensadores, resistencias      ║ MISC-PASIVOS      ║        125 €   ║
+║ 6.13║ Cableado apantallado 100m        ║ CAB-RG58-100      ║        180 €   ║
+║ 6.14║ Caja técnica IP67 ×2             ║ FIBOX-TEMPO-M50   ║        290 €   ║
+║ 6.15║ Conectores M12 IP68 ×24          ║ M12-A-4P-IP68     ║        240 €   ║
+║ 6.16║ Resina epoxi encapsulado 5L       ║ EPOTEK-302-3M     ║        180 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 7.0 ║ MANO DE OBRA                     ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 7.1 ║ Cantero maestro (2 × 400 h)      ║ MO-CANTERO        ║     56.000 €   ║
+║ 7.2 ║ Oficial cantería (4 × 400 h)     ║ MO-OFICIAL        ║     80.000 €   ║
+║ 7.3 ║ Soldador TIG 316L (1 × 200 h)    ║ MO-SOLDADOR       ║     12.000 €   ║
+║ 7.4 ║ Electricista (1 × 160 h)         ║ MO-ELEC           ║      9.600 €   ║
+║ 7.5 ║ Dorador artesanal (2 × 320 h)    ║ MO-DORADOR        ║     19.200 €   ║
+║ 7.6 ║ Montador/gruista (3 × 200 h)     ║ MO-MONTAJE        ║     18.000 €   ║
+║ 7.7 ║ Firmware ESP32 (consultoría)     ║ MO-FIRMWARE       ║      8.500 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 8.0 ║ LOGÍSTICA Y EQUIPOS              ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 8.1 ║ Grúa móvil 500T (alquiler 2 sem) ║ LIEBHERR-LTM-1500 ║     65.000 €   ║
+║ 8.2 ║ Grúa torre auxiliar 80T          ║ POTAIN-MDT178     ║     18.000 €   ║
+║ 8.3 ║ Plataformas elevadoras (×3)      ║ JLG-1350SJP       ║      9.600 €   ║
+║ 8.4 ║ Andamios 15m altura (600 m²)     ║ LAYHER-ALLROUND   ║     12.000 €   ║
+║ 8.5 ║ Permisos transporte especial     ║ TRANSP-ESP-GOBIES ║      8.500 €   ║
+║ 8.6 ║ Seguro de obra                   ║ MAPFRE-OBRAS-13M  ║      7.200 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║ 9.0 ║ PERMISOS Y GESTIÓN               ║                   ║                ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║ 9.1 ║ Proyecto técnico (arquitecto)    ║ ARQT-MONO1310     ║     18.000 €   ║
+║ 9.2 ║ Licencia de obras (ayto.)        ║ LIC-OBRAS         ║      9.800 €   ║
+║ 9.3 ║ Estudio impacto ambiental        ║ EIA-MONO          ║      4.200 €   ║
+║ 9.4 ║ Coordinador seguridad y salud    ║ CSS-OBR           ║      3.500 €   ║
+║─────╫──────────────────────────────────╫───────────────────╫────────────────║
+║10.0 ║ IMPREVISTOS (15%)                ║                   ║   183.000 €    ║
+╠═════╬══════════════════════════════════╬═══════════════════╬════════════════╣
+║     ║                                  ║                   ║                ║
+║     ║     ■ TOTAL PROYECTO MONO-Ω 1310 ║                   ║ 1.400.390 €    ║
+║     ║       (redondeado: 1.40 M€)      ║                   ║                ║
+╚═════╩══════════════════════════════════╩═══════════════════╩════════════════╝
+
+NOTA: El oro a 100μm es la partida dominante (103% sobre basalto+obra).
+Reducir a 50μm → ahorro ~720.000€. Reducir a 20μm (estándar dorado) → ahorro ~1.15M€.
+El Director Ω ha elegido 100μm. Hay que entenderlo.
+        </div>
+    </section>
+
+    <div class="divider">⸻ 🧮 ⸻</div>
+
+    <section id="estructural">
+        <h2>11 · CÁLCULO ESTRUCTURAL</h2>
+
+        <h3>11.1 · Tensiones por Peso Propio</h3>
+        <div class="equation" data-label="EC-11.1 · TENSIÓN BASE BASALTO">
+            <div class="eq-title">TENSIÓN COMPRESIÓN EN LA SECCIÓN MÁS CRÍTICA (BASE MONO)</div>
+            \[ \sigma_{comp} = \frac{F}{A_{base}} = \frac{362{,}500 \times 9.81}{5.24 \times 3.93} = \frac{3{,}556{,}125}{20.59} \approx 172.7\,\text{kPa} = 0.173\,\text{MPa} \]
+        </div>
+        <p>Tensión admisible basalto a compresión: σ<sub>adm</sub> = σ<sub>c</sub>/γ = 195/3 = <span class="highlight">65 MPa</span>. Factor de seguridad efectivo: <strong class="gold">FS = 65/0.173 = 376</strong>. El basalto es esencialmente incomprimible a esta escala.</p>
+
+        <h3>11.2 · Verificación Junta Epoxi entre Bloques</h3>
+        <div class="equation" data-label="EC-11.2 · JUNTA EPOXI">
+            <div class="eq-title">RESISTENCIA A TRACCIÓN DE JUNTA ARALDITE 2011</div>
+            \[ \tau_{adm,epoxi} = \frac{f_{t,epoxi}}{\gamma_M} = \frac{30\,\text{MPa}}{3.0} = 10\,\text{MPa} \]
+            \[ \tau_{real} = \frac{M_{viento} \cdot z}{I} = \frac{398 \times 1.05}{(6.55 \times 5.24^3)/12} = \approx 0.0021\,\text{MPa} \]
+        </div>
+        <p>La junta epoxi trabaja a <span class="highlight">0.0021 MPa</span> frente a 10 MPa admisibles. Factor de seguridad: <strong class="gold">FS = 4762</strong>. La junta no falla. Ni con terremoto ni con conspiradores.</p>
+
+        <h3>11.3 · Análisis de Fatiga por Vibración de Transductores</h3>
+        <div class="equation" data-label="EC-11.3 · FATIGA VIBRACIÓN">
+            <div class="eq-title">AMPLITUD DE TENSIÓN POR VIBRACIÓN PZT (4.5 Hz)</div>
+            \[ \Delta\sigma_{vib} = \frac{F_{PZT} \cdot L}{W} = \frac{12\times1.5\,\text{N} \cdot 0.5}{(6.55 \cdot 5.24^2)/6} \approx 0.000006\,\text{MPa} \]
+        </div>
+        <p>La amplitud de tensión vibratoria es de 6 nPa. Límite de fatiga del basalto ≈ 90 MPa. No hay fatiga relevante. Los transductores son irritantemente discretos desde el punto de vista estructural, aunque no desde el metafísico.</p>
+    </section>
+
+    <section id="viento">
+        <h2>12 · VIENTO Y FACTOR DE VUELCO</h2>
+
+        <div class="equation" data-label="EC-12.1 · PRESIÓN VIENTO 200 km/h">
+            <div class="eq-title">PRESIÓN DINÁMICA · VIENTO DE DISEÑO 200 km/h (55.56 m/s)</div>
+            \[ q_d = \frac{1}{2}\rho v^2 \cdot C_e \cdot C_f = 0.5 \times 1.25 \times 55.56^2 \times 2.5 \times 1.3 = 3{,}145\,\text{Pa} \]
+        </div>
+
+        <div class="equation" data-label="EC-12.2 · FUERZA LATERAL">
+            <div class="eq-title">FUERZA HORIZONTAL TOTAL</div>
+            \[ F_H = q_d \times A_{frontal} = 3{,}145 \times 40 = 125.8\,\text{kN} \]
+        </div>
+
+        <div class="equation" data-label="EC-12.3 · MOMENTO VUELCO">
+            <div class="eq-title">MOMENTO DE VUELCO (aprox. h_cm = 6.5m sobre base)</div>
+            \[ M_v = F_H \times h_{cm} = 125.8 \times 6.5 = 817.7\,\text{kN·m} \]
+        </div>
+
+        <div class="equation" data-label="EC-12.4 · FACTOR SEGURIDAD">
+            <div class="eq-title">MOMENTO ESTABILIZADOR Y FACTOR DE SEGURIDAD</div>
+            \[ M_e = W \times \frac{b}{2} = (578{,}610 \times 9.81) \times \frac{6.55}{2} = 5{,}676\,\text{kN} \times 3.275 = 18{,}584\,\text{kN·m} \]
+            \[ FS_{vuelco} = \frac{M_e}{M_v} = \frac{18{,}584}{817.7} = \mathbf{22.7} \gg 1.5 \]
+        </div>
+
+        <div class="info-box">
+            <strong>Resultado:</strong> Con un huracán de 200 km/h (categoría 3 extremo), el factor de seguridad al vuelco es <span class="highlight">22.7</span>. El mono sobrevive al huracán, al periodista, al escepticismo y al presupuesto municipal recortado.
+        </div>
+    </section>
+
+    <section id="electrico">
+        <h2>13 · SISTEMA ELÉCTRICO HORMÉTICO</h2>
+
+        <h3>13.1 · Circuito de Descarga Hormética</h3>
+        <div class="canvas-wrap" style="padding:1rem">
+            <span class="canvas-label">FIG. 6 · ESQUEMA ELÉCTRICO · SISTEMA HORMÉTICO</span>
+            <svg id="svg-circuito" viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+            </svg>
+        </div>
+
+        <div class="equation" data-label="EC-13.1 · CORRIENTE TACTO">
+            <div class="eq-title">CORRIENTE AL TOCAR LA ESTATUA (piel seca)</div>
+            \[ I_{seco} = \frac{V_{bat}}{R_{piel,seco}} = \frac{12\,V}{100\,k\Omega} = 0.12\,\text{mA} \quad \text{(imperceptible)} \]
+        </div>
+
+        <div class="equation" data-label="EC-13.2 · MODO NEBULIZACIÓN">
+            <div class="eq-title">MODO ACTIVO: NEBULIZADOR IÓNICO REDUCE RESISTENCIA</div>
+            \[ I_{activo} = \frac{12}{R_{piel,humedo}} = \frac{12}{24{,}000} = 0.5\,\text{mA} \]
+        </div>
+
+        <div class="warning-box">
+            <strong>NORMATIVA IEC 60479-1:2005</strong><br>
+            Umbral de percepción: 0.5 mA (adulto). Umbral de reacción involuntaria: 10 mA. Fibrilación ventricular: 30–300 mA (depende duración). El sistema MONO-Ω opera a <strong>0.5 mA máximo con limitador hardware</strong>. No existe riesgo de fibrilación, ni con marcapasos, ni con húmedo, ni con mala suerte.
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Componente</th><th>Función</th><th>Referencia</th><th>Tensión/Corriente</th></tr>
+            <tr><td>ESP32-S3</td><td>Control principal, firmware, sensor</td><td>DigiKey 2999-ESP32-S3-DEVKITC</td><td>3.3V / 240 mA</td></tr>
+            <tr><td>AT42QT1010</td><td>Sensor capacitivo tacto</td><td>DigiKey AT42QT1010-SSNR-ND</td><td>3.3V / 0.1 mA</td></tr>
+            <tr><td>CSD18537NKS</td><td>Limitador corriente MOSFET</td><td>DigiKey 296-48263-1-ND</td><td>12V / 0.5 mA max</td></tr>
+            <tr><td>NE555P</td><td>Temporizador descarga (10s)</td><td>TI NE555P</td><td>5V / 10 mA</td></tr>
+            <tr><td>TPA3116D2</td><td>Amplificador transductores</td><td>TI TPA3116D2</td><td>24V / 2×30W</td></tr>
+            <tr><td>Fusible térmico</td><td>Protección sobrecalentamiento</td><td>Mouser 455-2876-ND</td><td>110°C / 2A</td></tr>
+        </table>
+        </div>
+
+        <h3>13.2 · Compatibilidad Electromagnética (EMC)</h3>
+        <p>El sistema opera a frecuencias extremadamente bajas (4.5 Hz y 200/204.5 Hz). Las emisiones magnéticas a 4.5 Hz son de campo magnético estático prácticamente. El cableado está apantallado con malla de cobre. Cumple EN 55032:2015 sin necesidad de filtraje especial. <strong>No interfiere con marcapasos</strong> (operan a 40–70 Hz con umbral de interferencia magnética a campos &gt;0.5 mT; el sistema emite &lt;0.001 mT a 30 cm).</p>
+    </section>
+
+    <section id="acustico">
+        <h2>14 · ANÁLISIS ACÚSTICO / VIBRACIONAL</h2>
+
+        <div class="equation" data-label="EC-14.1 · LONGITUD DE ONDA BASALTO">
+            <div class="eq-title">LONGITUD DE ONDA EN BASALTO (4.5 Hz)</div>
+            \[ \lambda_{basalto} = \frac{v_P}{f} = \frac{5{,}200}{4.5} = 1{,}155.6\,\text{m} \]
+        </div>
+
+        <div class="equation" data-label="EC-14.2 · PROPAGACIÓN EN AIRE">
+            <div class="eq-title">LONGITUD DE ONDA EN AIRE · BINAURALBEAT 200 Hz</div>
+            \[ \lambda_{aire} = \frac{343}{200} = 1.715\,\text{m} \quad (200\,\text{Hz base}) \]
+            \[ \lambda_{aire}' = \frac{343}{204.5} = 1.677\,\text{m} \quad (204.5\,\text{Hz oído der.}) \]
+            \[ \Delta f_{binaural} = 204.5 - 200 = 4.5\,\text{Hz} \quad (\text{ritmo theta perceptible}) \]
+        </div>
+
+        <div class="equation" data-label="EC-14.3 · NIVEL PRESIÓN SONORA">
+            <div class="eq-title">SPL A 1 METRO DE LA BASE (transductores 60W total)</div>
+            \[ L_p = 10 \log_{10}\left(\frac{P_{acustico}}{P_0}\right) = 10 \log_{10}\left(\frac{60 \times 0.01}{10^{-12}}\right) \approx 87.8\,\text{dBSPL} \]
+        </div>
+
+        <div class="info-box">
+            <strong>Transmisión por conducción ósea:</strong> Si el visitante apoya la frente, palma o mentón en la superficie del basalto, la vibración se transmite directamente al cráneo a través de los tejidos blandos, bypassando el tímpano. Umbral de percepción por conducción ósea a 4.5 Hz: ~0.1 mm/s de velocidad de partícula. Los transductores PZT-5A a 12V generan ~0.8 mm/s. La experiencia es perceptible y peculiar.
+        </div>
+    </section>
+
+    <section id="energetico">
+        <h2>15 · BALANCE ENERGÉTICO · AUTONOMÍA</h2>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Sistema</th><th>Consumo</th><th>Ciclo de uso</th><th>kWh/día</th></tr>
+            <tr><td>ESP32-S3 (×3, activo)</td><td class="td-num">240 mA × 3.3V = 0.79W</td><td>24h</td><td class="td-num">0.019</td></tr>
+            <tr><td>Sensores capacitivos ×4</td><td class="td-num">0.4 mA × 3.3V = 0.001W</td><td>24h</td><td class="td-num">0.000</td></tr>
+            <tr><td>Transductores PZT ×12 (activo)</td><td class="td-num">60W total</td><td>6h/día</td><td class="td-num">0.360</td></tr>
+            <tr><td>Amplificador TPA3116D2</td><td class="td-num">5W (idle)</td><td>24h</td><td class="td-num">0.120</td></tr>
+            <tr><td>Nebulizador iónico ×2</td><td class="td-num">25W total</td><td>2h/día</td><td class="td-num">0.050</td></tr>
+            <tr><td>Circuito descarga + LED</td><td class="td-num">2W</td><td>4h/día</td><td class="td-num">0.008</td></tr>
+            <tr class="td-total"><td colspan="3"><strong>CONSUMO TOTAL DIARIO</strong></td><td class="td-num"><strong>0.557 kWh/día</strong></td></tr>
+        </table>
+        </div>
+
+        <div class="equation" data-label="EC-15.1 · AUTONOMÍA BATERÍA">
+            <div class="eq-title">AUTONOMÍA CON BATERÍA LiFePO4 48V/200Ah</div>
+            \[ t_{autonomia} = \frac{C_{bat}}{P_{consumo}} = \frac{48\,V \times 200\,Ah}{0.557\,\text{kWh/dia}} = \frac{9{,}600\,Wh}{557\,Wh/dia} = 17.2\,\text{días} \]
+        </div>
+
+        <div class="equation" data-label="EC-15.2 · GENERACIÓN SOLAR">
+            <div class="eq-title">GENERACIÓN SOLAR DIARIA (España media: 4.5 HSP/día)</div>
+            \[ E_{solar} = P_{panel} \times HSP \times \eta_{MPPT} = 400\,W \times 4.5\,h \times 0.95 = 1{,}710\,\text{Wh/día} \]
+            \[ \text{Balance: } 1{,}710 - 557 = +1{,}153\,\text{Wh/día (excedente)} \]
+        </div>
+
+        <p>El sistema es energéticamente autónomo con el panel solar de 400W. Hay excedente diario de <span class="highlight">1.153 kWh</span> que se almacena. El mono puede funcionar 17 días sin sol. En Galicia en noviembre: 7 días. Suficiente para la semana de reflexión local.</p>
+    </section>
+
+    <div class="divider">⸻ 🏗 ⸻</div>
+
+    <section id="montaje">
+        <h2>16 · FASES DE MONTAJE</h2>
+        <div class="canvas-wrap" style="padding: 1.5rem">
+            <span class="canvas-label">FIG. 7 · DIAGRAMA DE FASES DE MONTAJE</span>
+            <svg id="svg-fases" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+            </svg>
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Fase</th><th>Mes(es)</th><th>Actividad</th><th>Personal</th><th>Equipo clave</th></tr>
+            <tr><td>0</td><td>Pre-obra</td><td>Gestión permisos, ingeniería de detalle, pedidos</td><td>Arquitecto, ingeniero</td><td>—</td></tr>
+            <tr><td>1</td><td>1</td><td>Replanteo, excavación del dado de cimentación</td><td>Topógrafo, excavación</td><td>Retroexcavadora</td></tr>
+            <tr><td>2</td><td>2</td><td>Ferrallado y hormigonado dado (HA-35)</td><td>2 ferrallistas, 2 peones</td><td>Camión hormigón</td></tr>
+            <tr><td>3</td><td>2-3</td><td>Extracción y talla bloques B-01 a B-05 en cantera</td><td>2 canteros + 4 oficiales</td><td>CNC diamante, cortadora disco</td></tr>
+            <tr><td>4</td><td>4</td><td>Fabricación armadura metálica 316L + anclajes</td><td>Soldador TIG</td><td>Soldadora TIG, roladora</td></tr>
+            <tr><td>5</td><td>5</td><td>Transporte bloques (5 trailers especiales)</td><td>Conductores + escolta</td><td>Trailers 65T, escolta Guardia Civil</td></tr>
+            <tr><td>6</td><td>6</td><td>Montaje Base: colocar anclajes, bloque B-03 (piernas)</td><td>3 montadores + gruistas</td><td>Grúa Liebherr LTM 1500-8.1</td></tr>
+            <tr><td>7</td><td>7</td><td>Montaje torso B-01, brazos B-04+B-05</td><td>3 montadores + gruistas</td><td>Grúa LTM 1500-8.1</td></tr>
+            <tr><td>8</td><td>8</td><td>Colocación cabeza B-02, instalación ojos obsidiana</td><td>2 canteros, 2 montadores</td><td>Grúa, plataformas JLG</td></tr>
+            <tr><td>9</td><td>9</td><td>Tendido cableado, instalación transductores PZT</td><td>Electricista, técnico</td><td>Plataformas elevadoras</td></tr>
+            <tr><td>10</td><td>10</td><td>Aplicación pan de oro (1310 celdas Voronoi)</td><td>2 doradores artesanales</td><td>Andamios Layher, pinceles tejón</td></tr>
+            <tr><td>11</td><td>11</td><td>Programación firmware ESP32-S3, calibración</td><td>Firmware developer</td><td>Laptop, osciloscopio</td></tr>
+            <tr><td>12</td><td>12</td><td>Pruebas completas, ajuste, retirada andamios</td><td>Todo el equipo</td><td>Multímetros, analizador espectro</td></tr>
+            <tr><td>13</td><td>13</td><td>Inauguración silenciosa (solo mates y observación)</td><td>Director Ω + invitados</td><td>El silencio</td></tr>
+        </table>
+        </div>
+    </section>
+
+    <section id="logistica">
+        <h2>17 · LOGÍSTICA · TRANSPORTE DE BLOQUES</h2>
+        <p class="lead">El transporte de los bloques de basalto desde Castellfollit de la Roca hasta cualquier plaza española es el principal reto logístico. Los bloques B-01 y B-03 superan las 60 toneladas y requieren <strong>trailers de cama baja de 65T</strong> con <strong>autorización de transporte especial</strong> (Real Decreto 1231/2023).</p>
+
+        <div class="info-box">
+            <strong>Procedimiento de transporte especial:</strong><br>
+            1. Solicitud a la DGT con 15 días de antelación · Tasas: 850 €/bloque.<br>
+            2. Escolta de la Guardia Civil de Tráfico (itinerario nocturno, domingos).<br>
+            3. Verificación de puentes en ruta: cargas máximas 40-60t → posibles desvíos.<br>
+            4. Seguro de transporte especial: 2.500 €/bloque.<br>
+            5. Coordinación con el ayuntamiento para reserva de vía pública en destino.
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <tr><th>Bloque</th><th>Masa</th><th>Vehículo</th><th>Ruta orientativa</th><th>Coste transp.</th></tr>
+            <tr><td>B-01 (torso)</td><td class="td-num">65.2 t</td><td>Nooteboom MCOS-87 (87t)</td><td>GI-524 → AP-7 → destino</td><td class="td-num">9.800 €</td></tr>
+            <tr><td>B-02 (cabeza)</td><td class="td-num">48.7 t</td><td>Goldhofer THP/SL (50t)</td><td>GI-524 → AP-7 → destino</td><td class="td-num">7.200 €</td></tr>
+            <tr><td>B-03 (piernas)</td><td class="td-num">59.3 t</td><td>Nooteboom MCOS-87</td><td>GI-524 → AP-7 → destino</td><td class="td-num">9.200 €</td></tr>
+            <tr><td>B-04 (brazo izq)</td><td class="td-num">22.1 t</td><td>Trailer estándar 30t</td><td>GI-524 → AP-7 → destino</td><td class="td-num">4.800 €</td></tr>
+            <tr><td>B-05 (brazo der)</td><td class="td-num">22.1 t</td><td>Trailer estándar 30t</td><td>GI-524 → AP-7 → destino</td><td class="td-num">4.800 €</td></tr>
+            <tr class="td-total"><td colspan="4"><strong>TOTAL TRANSPORTE</strong></td><td class="td-num"><strong>35.800 €</strong></td></tr>
+        </table>
+        </div>
+    </section>
+
+    <section id="seguridad">
+        <h2>18 · PROTOCOLOS DE SEGURIDAD</h2>
+        <div class="warning-box">
+            <strong>⚠ PROTOCOLO DE SEGURIDAD ELÉCTRICA DURANTE INSTALACIÓN</strong><br>
+            El sistema eléctrico NO se conecta hasta que la obra esté completamente cerrada al público. Durante instalación:<br>
+            · Equipo EPI completo (guantes dieléctricos clase 00, calzado aislante)<br>
+            · Medición de resistencia de aislamiento antes de cada fase de prueba<br>
+            · Puesta a tierra temporal durante instalación<br>
+            · Solo 1 persona en contacto con el circuito a la vez<br>
+            · Cortacircuito general accesible a 5 metros de la estatua
+        </div>
+        <div class="warning-box">
+            <strong>⚠ PROTOCOLO DURANTE DORADO</strong><br>
+            El pan de oro es extremadamente delgado (100μm) y puede ser dañado por corrientes de aire &gt;1 m/s.<br>
+            · Instalación de cortavientos temporal durante aplicación<br>
+            · Temperatura de trabajo: 15–25°C, humedad relativa 40–60%<br>
+            · No fumar en un radio de 3 metros (el mixtión es inflamable)<br>
+            · 2 extintores CO₂ de 5kg en zona de trabajo
+        </div>
+        <div class="warning-box">
+            <strong>⚠ PROTOCOLO DURANTE IZADO DE BLOQUES</strong><br>
+            · Área de exclusión: radio 2× altura máxima de izado (26 metros)<br>
+            · Viento máximo para izado: 32 km/h (Beaufort 4)<br>
+            · Inspector de grúas presente en todos los izados<br>
+            · Bloques con eslingas certificadas para 1.5× la carga<br>
+            · Plan de emergencia para bloque suspendido aprobado por CSS
+        </div>
+    </section>
+
+    <div class="divider">⸻ 🔮 ⸻</div>
+
+    <section id="sectas">
+        <h2>19 · SECTAS PREVISTAS · TROLLEO ONTOLÓGICO</h2>
+        <p class="lead" style="font-family:'Crimson Pro',serif">El MONO-Ω 1310 generará inevitablemente una constelación de interpretaciones, rituales y doctrinas. A continuación se presenta el análisis prospectivo de las <strong>siete sectas más probables</strong>, redactado con el afecto irónico que merecen.</p>
+
+        <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Secta</th>
+                <th>Dogma Central</th>
+                <th>Ritual Principal</th>
+                <th>Peligrosidad</th>
+                <th>Cuota fundador</th>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Áureos</strong></td>
+                <td>El oro convierte la energía solar en sabiduría humana. El mono es el receptor cósmico.</td>
+                <td>Lamer el revestimiento al amanecer (prohibido, pH 7.2 ± el epoxi).</td>
+                <td class="td-num"><span class="alert-text">BAJA</span></td>
+                <td class="td-num">1.310 €/año</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Obsidianitas</strong></td>
+                <td>Los espejos revelan el nahual. El mono no mira: hace que te mires.</td>
+                <td>Mirarse en los ojos 13 minutos al día. Anotar en cuaderno lo que se ve.</td>
+                <td class="td-num" style="color:var(--plasma)">MEDIA</td>
+                <td class="td-num">310 €/año</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Electros</strong></td>
+                <td>El calambre de 0.5 mA es la descarga iniciática. Tesla como profeta.</td>
+                <td>Tocar la estatua 13 veces seguidas. Contar los calambres recibidos en el año.</td>
+                <td class="td-num" style="color:var(--plasma)">MEDIA</td>
+                <td class="td-num">131 €/año</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Herméticos de la Theta</strong></td>
+                <td>4.5 Hz es la frecuencia de acceso al inconsciente colectivo. El mono es una antena.</td>
+                <td>Meditar apoyando la frente en el basalto durante 13 minutos.</td>
+                <td class="td-num" style="color:var(--green)">NULA</td>
+                <td class="td-num">13 €/año</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Voronoistas</strong></td>
+                <td>Las 1310 celdas de Voronoi representan las almas reencarnables de la humanidad actual.</td>
+                <td>Calcular a qué celda pertenece el punto de tu nacimiento (usando coordenadas GPS).</td>
+                <td class="td-num" style="color:var(--green)">NULA</td>
+                <td class="td-num">0 € (matemáticos gratuitos)</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Escépticos Devotos</strong></td>
+                <td>El mono no significa nada, lo cual es lo más significativo posible.</td>
+                <td>Visitar la estatua, decir "interesante" y marcharse. Repetir anualmente.</td>
+                <td class="td-num" style="color:var(--green)">NULA</td>
+                <td class="td-num">0 € (más honestos)</td>
+            </tr>
+            <tr>
+                <td><strong class="gold">Los Indignados Culturales</strong></td>
+                <td>El dinero usado en el mono debería ir a pensiones/sanidad/escuelas.</td>
+                <td>Escribir cartas al periódico local. Calcular cuántas ambulancias equivale el mono.</td>
+                <td class="td-num" style="color:var(--plasma)">MEDIA</td>
+                <td class="td-num">0 € (pero mucho tiempo)</td>
+            </tr>
+        </table>
+        </div>
+
+        <div class="gold-box">
+            <strong>Predicción del Director Ω:</strong> Todas las sectas coexistirán pacíficamente porque el mono las ignora. El basalto no tiene preferencias doctrinales. Los 4.5 Hz vibran igual para el creyente y el escéptico. El oro refleja a todos por igual. Esta es la democracia material en acción.
+        </div>
+    </section>
+
+    <section id="legal">
+        <h2>20 · AVISO LEGAL Ω · ARTÍCULO 13.10</h2>
+        <div class="warning-box" style="border-color:var(--gold); color:var(--text)">
+            <h4 style="color:var(--gold); margin-bottom:1rem; font-size:0.85rem; letter-spacing:2px">CONSTITUCIÓN IMAGINARIA DEL DIRECTOR Ω · ARTÍCULO 13.10</h4>
+            <p><em>«Toda persona que se acerque voluntariamente a una obra de arte de carácter hormético, incluyendo pero no limitándose a estatuas de basalto con revestimiento de oro 24K y sistema de micro-descarga eléctrica de 0.5 mA, acepta implícitamente que:</em></p>
+            <p><em>a) El calambre recibido es una experiencia estética, no un accidente. Su interpretación es libre.</em></p>
+            <p><em>b) Cualquier transformación espiritual, epifanía, cambio de vida profesional, disolución de ego o conversión religiosa derivada del contacto con la obra es responsabilidad exclusiva del receptor y del basalto.</em></p>
+            <p><em>c) El Director Ω no se responsabiliza de: fundación de sectas, adopción de monos como animales espirituales, uso excesivo de pan de oro en decoración doméstica, ni de la incapacidad de olvidar los propios ojos reflejados en la obsidiana.</em></p>
+            <p><em>d) La frecuencia theta de 4.5 Hz no cura nada. La oscilación entre vigilia y sueño que pueda inducir es un estado que el observador ya podía alcanzar por sí mismo. El mono solo lo recuerda.</em></p>
+            <p><em>e) El oro no confiere poderes. La conductividad es la del material, no la del cosmos.</em></p>
+            <p style="margin-top:1rem; color:var(--gold)">Firmado: <strong>Director Ω · OUTIS · Zehahahaha</strong></p>
+        </div>
+    </section>
+
+    <div class="divider">⸻ ⚡ ⸻</div>
+
+    <section id="interactive">
+        <h2>21 · SIMULADOR DE DESCARGA HORMÉTICA</h2>
+        <p>Para los impacientes que no pueden esperar a que se construya el mono:</p>
+
+        <div class="shock-panel" id="shock-panel">
+            <p style="margin-bottom:1.5rem; color:var(--text-dim)">Presiona el botón para recibir tu descarga de bienvenida</p>
+            <div id="hug-counter">CALAMBRES TOTALES: <span id="total-calambres">0</span></div>
+            <div style="margin:1rem 0">
+                <button class="btn btn-alert" onclick="applyShock()">⚡ TOCAR EL MONO</button>
+                <button class="btn btn-plasma" onclick="applyShock13()">⚡×13 RITUAL COMPLETO</button>
+            </div>
+            <div id="shock-result"></div>
+            <div id="shock-intensity" style="margin-top:1rem; font-size:0.8rem; color:var(--text-dim)"></div>
+        </div>
+    </section>
+
+    <section id="calcSecta">
+        <h2>22 · CALCULADORA DE SECTAS</h2>
+        <p>¿A qué secta pertenecerías? Responde estas preguntas y el algoritmo del Director Ω te revelará tu afiliación ontológica:</p>
+
+        <div class="secta-panel">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
+                <div>
+                    <label style="font-size:0.8rem; color:var(--gold); display:block; margin-bottom:0.4rem">1. Tu perfil epistémico:</label>
+                    <select id="q-perfil">
+                        <option value="esceptico">Escéptico radical</option>
+                        <option value="creyente">Creyente entusiasta</option>
+                        <option value="academico">Académico curioso</option>
+                        <option value="artista">Artista intuitivo</option>
+                        <option value="ingeniero">Ingeniero pragmático</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--gold); display:block; margin-bottom:0.4rem">2. Tu reacción al ver el mono:</label>
+                    <select id="q-reaccion">
+                        <option value="maravillado">Maravilla inmediata</option>
+                        <option value="calculador">Cálculo de costes</option>
+                        <option value="meditativo">Deseo de meditar</option>
+                        <option value="fotografico">Saca el móvil</option>
+                        <option value="irritado">Irritación cívica</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--gold); display:block; margin-bottom:0.4rem">3. ¿Tocas el mono?</label>
+                    <select id="q-toca">
+                        <option value="si">Sí, inmediatamente</option>
+                        <option value="espero">Espero a que nadie mire</option>
+                        <option value="no">No (higiene)</option>
+                        <option value="13veces">13 veces (protocolo)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--gold); display:block; margin-bottom:0.4rem">4. Tu relación con el calambre:</label>
+                    <select id="q-calambre">
+                        <option value="revelacion">Es una revelación</option>
+                        <option value="anecdota">Es una anécdota graciosa</option>
+                        <option value="peligro">Es una negligencia técnica</option>
+                        <option value="busco">Lo busco activamente</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="calcularSecta()">CALCULAR MI SECTA</button>
+
+            <div class="secta-result" id="secta-result">
+                <h4 id="secta-nombre"></h4>
+                <p id="secta-texto"></p>
+                <p id="secta-ritual" style="margin-top:1rem; color:var(--text-dim); font-style:italic"></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="cronograma">
+        <h2>23 · CRONOGRAMA · 13 MESES · 13 HITOS</h2>
+        <div class="canvas-wrap" style="padding:1rem">
+            <span class="canvas-label">FIG. 8 · GANTT SIMPLIFICADO · MONO-Ω 1310</span>
+            <canvas id="gantt-canvas" width="900" height="340" style="width:100%"></canvas>
+        </div>
+
+        <div class="equation" data-label="EC-23.1 · COSTE TEMPORAL">
+            <div class="eq-title">COSTE POR DÍA DE CONSTRUCCIÓN</div>
+            \[ C_{dia} = \frac{C_{total}}{t_{obra}} = \frac{1{,}400{,}390\,€}{13 \times 22\,dias} = \frac{1{,}400{,}390}{286} \approx 4{,}896\,€/\text{día} \]
+        </div>
+        <p>Por comparación: el Palacio Real de Madrid costó equivalente a <strong>~800 M€ actuales</strong>, en 26 años. El mono es <strong>571 veces más barato</strong> y tarda 570 veces menos. Eficiencia de asombro por euro: priceless.</p>
+    </section>
+
+    <div class="divider">⸻ 🗿 ⸻</div>
+
+    <!-- Hidden 7-click koan egg -->
+    <div id="egg-7-trigger" style="text-align:center; margin:2rem 0; cursor:default" onclick="countEgg7()">
+        <div style="font-size:3rem; opacity:0.3; color:var(--gold-dim)">👁</div>
+        <p style="font-size:0.6rem; color:#2a2a3a; letter-spacing:2px">EL OJO DE LA OBSIDIANA</p>
+        <span id="seven-clicks" style="display:none; font-size:0.5rem; color:#2a2a3a">CLICS: <span id="egg7-count">0</span>/7</span>
+    </div>
+
+    <section id="firma">
+        <h2>24 · DURABILIDAD Y LEGADO</h2>
+        <div class="equation" data-label="EC-24.1 · VIDA ÚTIL">
+            <div class="eq-title">TIEMPO ESTIMADO DE VIDA ESTÉTICA</div>
+            \[ t_{vida} = \min(t_{basalto},\, t_{oro},\, t_{obsidiana}) = \min(10{,}000,\, 1{,}310,\, 5{,}000) = 1{,}310\,\text{años} \]
+        </div>
+
+        <div class="gold-box" style="font-family:'Crimson Pro',serif; font-size:1.05rem; line-height:1.8">
+            <p>El objetivo del MONO-Ω 1310 no es enseñar nada que ya no sepas. No tiene mensaje. No tiene moral. No tiene horario. No tiene precio de entrada. Solo está, en una plaza, con sus 579 toneladas de paciencia geológica, sus ojos de volcán mesoamericano, su piel de luz solar convertida en metal, y su pequeño corazón electrónico pulsando a 4.5 Hz como un duermevela de piedra.</p>
+            <p style="margin-top:1rem">Si te acercas, te verás. Si lo tocas, sentirás algo. Si escuchas, notarás el pulso. Si te vas, se quedará.</p>
+            <p style="margin-top:1rem; color:var(--gold)"><em>«El verdadero objetivo no es construir el mono, sino que la gente se mire en él.»</em></p>
+        </div>
+
+        <div class="signature">
+            <div class="sig-main">Director Ω · OUTIS</div>
+            <div class="sig-sub">AGENCIA RONIN · ACADEMIA DE BASALTO · CLASIFICACIÓN Ω-1310</div>
+            <div class="sig-sub">con la colaboración de Tesla (campos), Parsons (alquimia), von Neumann (lógica) y Voronoi (geometría)</div>
+            <div style="margin:1.5rem 0; font-size:2rem; letter-spacing:4px">🗿 ✦ 👁 ✦ ⚡ ✦ 4.5Hz ✦ 1310</div>
+            <div class="seal">13101310131013101310</div>
+            <p style="margin-top:2rem; font-size:0.75rem; color:var(--text-dim)">
+                * Este documento puede ser reproducido sin permiso. El mono es de todos. La descarga es personal.<br>
+                * Documento técnico con elementos de ficción poética. Para proyecto real, contratar a ingeniero colegiado.<br>
+                * <!-- zehahahaha -->
+            </p>
+        </div>
+    </section>
+</div><!-- /container -->
+
+<!-- 1310 clicks easter egg overlay -->
+<div id="easter1310" style="display:none; position:fixed; inset:0; background:#000; z-index:9995; align-items:center; justify-content:center; flex-direction:column; padding:2rem; text-align:center; cursor:pointer" onclick="this.style.display='none'">
+    <div style="font-family:'Cinzel Decorative',serif; color:var(--gold); font-size:clamp(1rem,4vw,2.5rem); margin-bottom:2rem">MENSAJE DE LOS CUATRO GENIOS</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; max-width:800px">
+        <div style="border:1px solid #ffd700; padding:1.5rem">
+            <div style="color:var(--plasma); font-size:0.7rem; letter-spacing:2px; margin-bottom:0.8rem">⚡ TESLA</div>
+            <p style="font-family:'Crimson Pro',serif; font-style:italic; color:var(--text)">"Si supieras cuánta energía vibra en el aire que respiramos, no necesitarías esta estatua. Pero es bonita."</p>
+        </div>
+        <div style="border:1px solid #ffd700; padding:1.5rem">
+            <div style="color:var(--plasma); font-size:0.7rem; letter-spacing:2px; margin-bottom:0.8rem">🔮 PARSONS</div>
+            <p style="font-family:'Crimson Pro',serif; font-style:italic; color:var(--text)">"Los 1310 clics que acabas de dar son el ritual más puro que existe: atención sostenida. El mono ya ha funcionado."</p>
+        </div>
+        <div style="border:1px solid #ffd700; padding:1.5rem">
+            <div style="color:var(--plasma); font-size:0.7rem; letter-spacing:2px; margin-bottom:0.8rem">🧮 VON NEUMANN</div>
+            <p style="font-family:'Crimson Pro',serif; font-style:italic; color:var(--text)">"La probabilidad de que alguien hiciera 1310 clics era 1/1310. Y sin embargo, aquí estás. El universo es asombrosamente cooperativo."</p>
+        </div>
+        <div style="border:1px solid #ffd700; padding:1.5rem">
+            <div style="color:var(--plasma); font-size:0.7rem; letter-spacing:2px; margin-bottom:0.8rem">📐 VORONOI</div>
+            <p style="font-family:'Crimson Pro',serif; font-style:italic; color:var(--text)">"Cada uno de tus 1310 clics pertenece a su celda más cercana. Eres el punto generador de tu propio diagrama. Siempre lo fuiste."</p>
+        </div>
+    </div>
+    <p style="margin-top:2rem; font-family:'Cinzel Decorative',serif; color:var(--gold); font-size:1.5rem">ZEHAHAHAHA</p>
+    <p style="font-size:0.7rem; color:var(--text-dim); margin-top:1rem">HAGA CLIC PARA CERRAR</p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// PROGRESS BAR
+// ═══════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+    const doc = document.documentElement;
+    const scrolled = doc.scrollTop / (doc.scrollHeight - doc.clientHeight) * 100;
+    document.getElementById('progress-bar').style.width = scrolled + '%';
+});
+
+// ═══════════════════════════════════════════════
+// GLOBAL CLICK COUNTER → 1310 easter egg
+// ═══════════════════════════════════════════════
+let globalClicks = 0;
+document.addEventListener('click', () => {
+    globalClicks++;
+    if (globalClicks === 1310) {
+        const el = document.getElementById('easter1310');
+        el.style.display = 'flex';
+    }
+});
+
+// ═══════════════════════════════════════════════
+// 7-CLICK KOAN EGG
+// ═══════════════════════════════════════════════
+let egg7count = 0;
+function countEgg7() {
+    egg7count++;
+    document.getElementById('seven-clicks').style.display = 'inline';
+    document.getElementById('egg7-count').textContent = egg7count;
+    if (egg7count >= 7) {
+        document.getElementById('koan-reveal').classList.add('show');
+        egg7count = 0;
+    }
+}
+
+// ═══════════════════════════════════════════════
+// SHOCK SIMULATOR
+// ═══════════════════════════════════════════════
+let totalCalambres = 0;
+const shockMessages = [
+    "¡ZAS! Has recibido 0.5 mA · La piel hormiga · El mono te ha visto.",
+    "⚡ ¡CALAMBRE INICIÁTICO! 0.48 mA · Bienvenido a la consciencia basáltica.",
+    "✦ 0.52 mA · Dentro del límite IEC 60479-1 · Tu marcapasos está bien.",
+    "⚡ ¡0.5 mA EXACTOS! Tesla estaría orgulloso. Von Neumann toma nota.",
+    "ZAP · 0.5 mA · «Lo que no te mata te da perspectiva» — Director Ω",
+    "👁 El mono te ha mirado · 0.5 mA · Ahora sabes que estás aquí.",
+    "⚡ HORMESIS APLICADA · 0.5 mA · El sistema es lo que era.",
+    "✦ 0.49 mA · Discretamente por debajo del umbral · El mono es educado.",
+];
+const intensities = ['imperceptible', 'susurro', 'cosquilleo', 'presencia', 'reconocimiento', 'recuerdo', 'epifanía técnica'];
+
+function applyShock() {
+    totalCalambres++;
+    document.getElementById('total-calambres').textContent = totalCalambres;
+    const msg = shockMessages[Math.floor(Math.random() * shockMessages.length)];
+    const intensity = intensities[Math.min(Math.floor(totalCalambres / 3), intensities.length - 1)];
+    const el = document.getElementById('shock-result');
+    el.style.display = 'block';
+    el.textContent = msg;
+    document.getElementById('shock-intensity').textContent = `Nivel de iluminación: ${intensity} · Total acumulado: ${(totalCalambres * 0.5).toFixed(1)} mA·impulso`;
+    // flash effect
+    document.body.style.backgroundColor = '#1a0000';
+    setTimeout(() => { document.body.style.backgroundColor = ''; }, 80);
+}
+
+function applyShock13() {
+    let i = 0;
+    const interval = setInterval(() => {
+        applyShock();
+        i++;
+        if (i >= 13) clearInterval(interval);
+    }, 200);
+}
+
+// ═══════════════════════════════════════════════
+// SECTA CALCULATOR
+// ═══════════════════════════════════════════════
+const sectaDB = {
+    esceptico_calculador: {
+        nombre: "Escépticos Devotos (Fracción Económica)",
+        texto: "Tu secta es la más pura: no crees en nada sobrenatural pero llevas una hoja de cálculo de la estatua. Te unes a los Escépticos Devotos, subgrupo Presupuestario. Tu ritual es visitar la obra cada año, calcular el coste de mantenimiento y publicar un hilo en X/Twitter. La paradoja es que eres el visitante más fiel.",
+        ritual: "Ritual: Calcular anualmente el ROI cultural del mono y publicar los resultados en foros de economía."
+    },
+    esceptico_irritado: {
+        nombre: "Los Indignados Culturales (Ala Técnica)",
+        texto: "Has calculado que el mono equivale a 280 ambulancias y lo haces saber. Irónicamente, tu indignación es la forma más apasionada de relacionarse con la obra. Perteneces a los Indignados Culturales pero con el rigor numérico que les falta al resto. El mono te necesita.",
+        ritual: "Ritual: Carta mensual al concejal de cultura. Adjuntar siempre el desglose del BOM completo."
+    },
+    creyente_maravillado: {
+        nombre: "Los Áureos (Orden Primera)",
+        texto: "El oro te ha llamado. Reconoces en el revestimiento la firma del Sol en la materia. Eres candidato natural a fundar la rama española de los Áureos. Tu misión es documentar los cambios de color del revestimiento según la hora del día y relacionarlos con estados de ánimo.",
+        ritual: "Ritual: Fotografiar el mono al amanecer, mediodía y atardecer. El triptych solar es tu brevario."
+    },
+    creyente_revelacion: {
+        nombre: "Los Electros (Iniciados Tesla)",
+        texto: "El calambre fue una revelación. Eres el perfecto neófito de los Electros. Interpretarás el 0.5 mA como comunicación directa con el cosmos cuántico. Esto está técnicamente incorrecto pero fenomenológicamente interesante.",
+        ritual: "Ritual: 13 toques semanales. Llevar diario de experiencias post-descarga. Estudiar la obra de Tesla."
+    },
+    academico_meditativo: {
+        nombre: "Herméticos de la Theta (Rama Académica)",
+        texto: "Conoces la neurofisiología de las ondas theta y aun así deseas experimentarla. Eres el raro caso del académico iniciado. Los Herméticos de la Theta te necesitan: aportas la base científica que legitima el ritual frente a los escépticos y matiza el misticismo frente a los creyentes.",
+        ritual: "Ritual: Investigar y publicar sobre conducción ósea y estados alterados. La publicación IS el ritual."
+    },
+    artista_fotografico: {
+        nombre: "Los Obsidianitas (Escuela Visual)",
+        texto: "Los espejos de obsidiana son tu portal. Llevarás cámara en lugar de incienso. Los Obsidianitas te acogen: tu función es documentar los 1310 reflejos distintos que el ojo izquierdo devuelve a lo largo del año solar. Nadie más lo haría con tu obsesión.",
+        ritual: "Ritual: Fotografiarte en el ojo de obsidiana en las 1310 distintas posiciones posibles. El álbum es el koan."
+    },
+    ingeniero_calculador: {
+        nombre: "Los Voronoistas (Fracción Matemática)",
+        texto: "Has llegado hasta aquí y lo primero que hiciste fue verificar los cálculos estructurales. Eres el Voronoista natural. Tu diagramas de Voronoi son sagrados, tus ecuaciones son mantras. Propones optimizar el espesor del oro a 73.4 μm para mayor eficiencia estructural. El Director Ω escucha.",
+        ritual: "Ritual: Calcular a qué celda Voronoi pertenece el punto de tu nacimiento. Publicar el resultado."
+    }
+};
+
+function calcularSecta() {
+    const perfil = document.getElementById('q-perfil').value;
+    const reaccion = document.getElementById('q-reaccion').value;
+    const toca = document.getElementById('q-toca').value;
+    const calambre = document.getElementById('q-calambre').value;
+
+    let key;
+    if (perfil === 'esceptico' && calambre === 'peligro') key = 'esceptico_irritado';
+    else if (perfil === 'esceptico') key = 'esceptico_calculador';
+    else if (perfil === 'creyente' && calambre === 'revelacion') key = 'creyente_revelacion';
+    else if (perfil === 'creyente') key = 'creyente_maravillado';
+    else if (perfil === 'academico') key = 'academico_meditativo';
+    else if (perfil === 'artista') key = 'artista_fotografico';
+    else if (perfil === 'ingeniero') key = 'ingeniero_calculador';
+    else key = 'esceptico_calculador';
+
+    const secta = sectaDB[key] || sectaDB['esceptico_calculador'];
+    document.getElementById('secta-nombre').textContent = secta.nombre;
+    document.getElementById('secta-texto').textContent = secta.texto;
+    document.getElementById('secta-ritual').textContent = secta.ritual;
+    const result = document.getElementById('secta-result');
+    result.style.display = 'block';
+    result.style.animation = 'none';
+    setTimeout(() => { result.style.animation = ''; }, 10);
+}
+
+// ═══════════════════════════════════════════════
+// SVG ALZADO
+// ═══════════════════════════════════════════════
+function drawAlzado() {
+    const svg = document.getElementById('svg-alzado');
+    const W = 600, H = 750;
+    const gold = '#ffd700', cyan = '#00ffff', red='#ff3b5c', grey='#6a6a8a';
+
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+
+    // Background grid
+    const defs = el('defs', {});
+    const pattern = el('pattern', {id:'grid', width:'40', height:'40', patternUnits:'userSpaceOnUse'});
+    pattern.appendChild(el('path', {d:'M 40 0 L 0 0 0 40', fill:'none', stroke:'#1a1a2a', 'stroke-width':'0.5'}));
+    defs.appendChild(pattern);
+    svg.appendChild(defs);
+    svg.appendChild(el('rect', {width:'600', height:'750', fill:'#04040a'}));
+    svg.appendChild(el('rect', {width:'600', height:'750', fill:'url(#grid)'}));
+
+    // Base (prism)
+    svg.appendChild(el('rect', {x:'100', y:'590', width:'400', height:'110', fill:'#1a2030', stroke:gold, 'stroke-width':'1.5'}));
+
+    // Body shape (stylized mono sitting)
+    const bodyPath = 'M220,580 L200,480 L190,400 L195,330 L210,300 L240,290 L260,285 L300,282 L340,285 L360,290 L390,300 L405,330 L410,400 L400,480 L380,580 Z';
+    svg.appendChild(el('path', {d:bodyPath, fill:'#2c3e50', stroke:gold, 'stroke-width':'1.5'}));
+
+    // Torso shading
+    svg.appendChild(el('path', {d:'M240,290 L260,285 L300,282 L340,285 L360,290 L390,300 L380,400 L320,420 L280,420 L220,400 L210,300 Z', fill:'#253040', stroke:'none'}));
+
+    // Head
+    svg.appendChild(el('ellipse', {cx:'300', cy:'255', rx:'85', ry:'80', fill:'#2c3e50', stroke:gold, 'stroke-width':'1.5'}));
+
+    // Left eye
+    svg.appendChild(el('circle', {cx:'265', cy:'248', r:'28', fill:'#0a0a10', stroke:'#888', 'stroke-width':'1'}));
+    svg.appendChild(el('circle', {cx:'265', cy:'248', r:'25', fill:'#111118', stroke:cyan, 'stroke-width':'1.5'}));
+    // obsidian sheen
+    svg.appendChild(el('ellipse', {cx:'258', cy:'240', rx:'8', ry:'5', fill:'rgba(255,255,255,0.15)', stroke:'none'}));
+
+    // Right eye
+    svg.appendChild(el('circle', {cx:'335', cy:'248', r:'28', fill:'#0a0a10', stroke:'#888', 'stroke-width':'1'}));
+    svg.appendChild(el('circle', {cx:'335', cy:'248', r:'25', fill:'#111118', stroke:cyan, 'stroke-width':'1.5'}));
+    svg.appendChild(el('ellipse', {cx:'328', cy:'240', rx:'8', ry:'5', fill:'rgba(255,255,255,0.15)', stroke:'none'}));
+
+    // Nostrils / muzzle
+    svg.appendChild(el('ellipse', {cx:'300', cy:'285', rx:'30', ry:'20', fill:'#253040', stroke:gold+'88', 'stroke-width':'1'}));
+
+    // Left arm
+    svg.appendChild(el('path', {d:'M200,380 L140,440 L130,520 L165,540 L180,480 L215,400 Z', fill:'#253040', stroke:gold, 'stroke-width':'1.2'}));
+    // Right arm
+    svg.appendChild(el('path', {d:'M400,380 L460,440 L470,520 L435,540 L420,480 L385,400 Z', fill:'#253040', stroke:gold, 'stroke-width':'1.2'}));
+
+    // Gold shimmer dots on body (hint of voronoi)
+    for (let i = 0; i < 30; i++) {
+        const x = 210 + Math.random() * 180, y = 300 + Math.random() * 260;
+        svg.appendChild(el('circle', {cx:x.toFixed(1), cy:y.toFixed(1), r:(Math.random()*2+0.5).toFixed(1), fill:gold, opacity:'0.3'}));
+    }
+
+    // Steel rebar (internal dotted lines)
+    for (let y2 = 330; y2 <= 560; y2 += 50) {
+        svg.appendChild(el('line', {x1:'215', y1:y2, x2:'385', y2:y2, stroke:red, 'stroke-width':'0.7', 'stroke-dasharray':'4,4', opacity:'0.5'}));
+    }
+
+    // Dimensions: height arrows
+    // Total height arrow
+    svg.appendChild(el('line', {x1:'520', y1:'590', x2:'520', y2:'180', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('line', {x1:'515', y1:'180', x2:'525', y2:'180', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('line', {x1:'515', y1:'590', x2:'525', y2:'590', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('text', {x:'540', y:'385', fill:cyan, 'font-size':'11', 'font-family':'Courier New', transform:'rotate(90,540,385)'}, '13.10m / 42.98ft'));
+
+    // Base height
+    svg.appendChild(el('line', {x1:'520', y1:'700', x2:'520', y2:'590', stroke:cyan+'88', 'stroke-width':'0.8'}));
+    svg.appendChild(el('text', {x:'535', y:'645', fill:cyan, 'font-size':'9', 'font-family':'Courier New', transform:'rotate(90,535,645)'}, '2.62m'));
+
+    // Width arrow
+    svg.appendChild(el('line', {x1:'200', y1:'650', x2:'400', y2:'650', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('line', {x1:'200', y1:'645', x2:'200', y2:'655', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('line', {x1:'400', y1:'645', x2:'400', y2:'655', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('text', {x:'268', y:'668', fill:cyan, 'font-size':'10', 'font-family':'Courier New'}, '5.24m / 17.19ft'));
+
+    // Labels
+    svg.appendChild(el('text', {x:'10', y:'730', fill:gold+'88', 'font-size':'9', 'font-family':'Courier New', 'letter-spacing':'1'}, 'FIG.1 · ALZADO FRONTAL · ESCALA 1:50 · MONO-Ω 1310'));
+    svg.appendChild(el('text', {x:'10', y:'742', fill:grey, 'font-size':'8', 'font-family':'Courier New'}, 'DIRECTOR Ω · AGENCIA RONIN · REV.1310'));
+
+    // Legend
+    svg.appendChild(el('rect', {x:'10', y:'5', width:'160', height:'70', fill:'rgba(0,0,0,0.8)', stroke:'#333', 'stroke-width':'0.5'}));
+    svg.appendChild(el('line', {x1:'18', y1:'20', x2:'35', y2:'20', stroke:gold, 'stroke-width':'1.5'}));
+    svg.appendChild(el('text', {x:'40', y:'24', fill:gold, 'font-size':'9', 'font-family':'Courier New'}, 'Basalto / Gold'));
+    svg.appendChild(el('line', {x1:'18', y1:'35', x2:'35', y2:'35', stroke:red, 'stroke-width':'1', 'stroke-dasharray':'4,4'}));
+    svg.appendChild(el('text', {x:'40', y:'39', fill:red, 'font-size':'9', 'font-family':'Courier New'}, 'Armadura 316L'));
+    svg.appendChild(el('line', {x1:'18', y1:'50', x2:'35', y2:'50', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('text', {x:'40', y:'54', fill:cyan, 'font-size':'9', 'font-family':'Courier New'}, 'Cotas / Dims'));
+    svg.appendChild(el('circle', {cx:'25', cy:'65', r:'5', fill:'#111', stroke:cyan, 'stroke-width':'1.5'}));
+    svg.appendChild(el('text', {x:'40', y:'69', fill:cyan, 'font-size':'9', 'font-family':'Courier New'}, 'Obsidiana Ø800mm'}));
+}
+
+// ═══════════════════════════════════════════════
+// SVG PERFIL
+// ═══════════════════════════════════════════════
+function drawPerfil() {
+    const svg = document.getElementById('svg-perfil');
+    const gold = '#ffd700', cyan = '#00ffff', red='#ff3b5c';
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+    svg.appendChild(el('rect', {width:'400', height:'700', fill:'#04040a'}));
+    // Body profile
+    svg.appendChild(el('rect', {x:'80', y:'550', width:'240', height:'100', fill:'#1a2030', stroke:gold, 'stroke-width':'1.5'}));
+    svg.appendChild(el('path', {d:'M130,545 L115,430 L110,340 L120,290 L155,275 L200,270 L245,270 L285,275 L305,295 L310,350 L305,440 L290,545 Z', fill:'#2c3e50', stroke:gold, 'stroke-width':'1.5'}));
+    // head profile
+    svg.appendChild(el('ellipse', {cx:'200', cy:'235', rx:'75', ry:'68', fill:'#2c3e50', stroke:gold, 'stroke-width':'1.5'}));
+    // muzzle profile
+    svg.appendChild(el('ellipse', {cx:'235', cy:'260', rx:'30', ry:'20', fill:'#253040', stroke:gold+'88', 'stroke-width':'1'}));
+    // ear
+    svg.appendChild(el('ellipse', {cx:'130', cy:'228', rx:'18', ry:'22', fill:'#2c3e50', stroke:gold+'88', 'stroke-width':'1'}));
+    // depth line
+    svg.appendChild(el('line', {x1:'50', y1:'550', x2:'50', y2:'170', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('text', {x:'65', y:'360', fill:cyan, 'font-size':'10', 'font-family':'Courier New', transform:'rotate(90,65,360)'}, '10.48m / 34.38ft (mono)'}));
+    // depth annotation
+    svg.appendChild(el('line', {x1:'320', y1:'270', x2:'370', y2:'270', stroke:cyan+'88', 'stroke-width':'0.8', 'stroke-dasharray':'3,3'}));
+    svg.appendChild(el('line', {x1:'320', y1:'545', x2:'370', y2:'545', stroke:cyan+'88', 'stroke-width':'0.8', 'stroke-dasharray':'3,3'}));
+    svg.appendChild(el('line', {x1:'360', y1:'270', x2:'360', y2:'545', stroke:cyan, 'stroke-width':'0.8'}));
+    svg.appendChild(el('text', {x:'365', y:'410', fill:cyan, 'font-size':'9', 'font-family':'Courier New', transform:'rotate(90,365,410)'}, '3.93m depth'}));
+    svg.appendChild(el('text', {x:'10', y:'690', fill:gold+'88', 'font-size':'8', 'font-family':'Courier New'}, 'FIG.2 · PERFIL LATERAL · ESC.1:50'));
+}
+
+// ═══════════════════════════════════════════════
+// SVG PLANTA
+// ═══════════════════════════════════════════════
+function drawPlanta() {
+    const svg = document.getElementById('svg-planta');
+    const gold = '#ffd700', cyan = '#00ffff';
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+    svg.appendChild(el('rect', {width:'400', height:'400', fill:'#04040a'}));
+    // Cimentacion footprint
+    svg.appendChild(el('rect', {x:'30', y:'60', width:'340', height:'280', fill:'none', stroke:gold+'44', 'stroke-width':'1', 'stroke-dasharray':'6,4'}));
+    // Body footprint (ellipse)
+    svg.appendChild(el('ellipse', {cx:'200', cy:'200', rx:'140', ry:'110', fill:'#1a2a1a', stroke:gold, 'stroke-width':'1.5'}));
+    // Left arm
+    svg.appendChild(el('ellipse', {cx:'90', cy:'230', rx:'45', ry:'30', fill:'#253540', stroke:gold+'88', 'stroke-width':'1'}));
+    // Right arm
+    svg.appendChild(el('ellipse', {cx:'310', cy:'230', rx:'45', ry:'30', fill:'#253540', stroke:gold+'88', 'stroke-width':'1'}));
+    // Head projection (smaller, towards top)
+    svg.appendChild(el('ellipse', {cx:'200', cy:'115', rx:'60', ry:'50', fill:'#2c3e50', stroke:gold, 'stroke-width':'1.2'}));
+    // Eyes top view
+    svg.appendChild(el('circle', {cx:'177', cy:'110', r:'18', fill:'#0a0a10', stroke:cyan, 'stroke-width':'1.2'}));
+    svg.appendChild(el('circle', {cx:'223', cy:'110', r:'18', fill:'#0a0a10', stroke:cyan, 'stroke-width':'1.2'}));
+    // North arrow
+    svg.appendChild(el('text', {x:'370', y:'25', fill:gold, 'font-size':'14', 'font-family':'Courier New'}, 'N↑'));
+    // Width dim
+    svg.appendChild(el('line', {x1:'30', y1:'360', x2:'370', y2:'360', stroke:cyan, 'stroke-width':'0.8'}));
+    svg.appendChild(el('text', {x:'130', y:'375', fill:cyan, 'font-size':'9', 'font-family':'Courier New'}, '6.55m / 21.49ft'}));
+    // Depth dim
+    svg.appendChild(el('line', {x1:'10', y1:'60', x2:'10', y2:'340', stroke:cyan, 'stroke-width':'0.8'}));
+    svg.appendChild(el('text', {x:'14', y:'200', fill:cyan, 'font-size':'9', 'font-family':'Courier New', transform:'rotate(90,14,200)'}, '5.24m / 17.19ft'}));
+    svg.appendChild(el('text', {x:'10', y:'392', fill:gold+'88', 'font-size':'8', 'font-family':'Courier New'}, 'FIG.3 · PLANTA COTA +0.00m · ESC.1:50'));
+}
+
+// ═══════════════════════════════════════════════
+// SVG SECCIÓN TRANSVERSAL
+// ═══════════════════════════════════════════════
+function drawSeccion() {
+    const svg = document.getElementById('svg-seccion');
+    const gold = '#ffd700', cyan = '#00ffff', red='#ff3b5c';
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+    svg.appendChild(el('rect', {width:'700', height:'500', fill:'#04040a'}));
+    // Ground line
+    svg.appendChild(el('line', {x1:'0', y1:'340', x2:'700', y2:'340', stroke:'#3a4a2a', 'stroke-width':'2'}));
+    // Cimentacion
+    svg.appendChild(el('rect', {x:'160', y:'340', width:'380', height:'120', fill:'#1a2015', stroke:'#4a6a2a', 'stroke-width':'1.5'}));
+    // Rebar in cimentacion
+    for (let xi = 180; xi < 540; xi += 30) {
+        svg.appendChild(el('line', {x1:xi, y1:'345', x2:xi, y2:'455', stroke:red, 'stroke-width':'0.8', opacity:'0.6'}));
+    }
+    for (let yi = 360; yi < 455; yi += 25) {
+        svg.appendChild(el('line', {x1:'165', y1:yi, x2:'535', y2:yi, stroke:red, 'stroke-width':'0.8', opacity:'0.6'}));
+    }
+    // Anchors
+    svg.appendChild(el('rect', {x:'225', y:'290', width:'12', height:'55', fill:gold, opacity:'0.9'}));
+    svg.appendChild(el('rect', {x:'463', y:'290', width:'12', height:'55', fill:gold, opacity:'0.9'}));
+    svg.appendChild(el('rect', {x:'285', y:'295', width:'12', height:'50', fill:gold, opacity:'0.7'}));
+    svg.appendChild(el('rect', {x:'403', y:'295', width:'12', height:'50', fill:gold, opacity:'0.7'}));
+    // Basalt core
+    svg.appendChild(el('rect', {x:'170', y:'60', width:'360', height:'235', fill:'#2c3e50', stroke:gold, 'stroke-width':'2'}));
+    // Basalt texture lines
+    for (let i = 0; i < 8; i++) {
+        const y2 = 80 + i * 28;
+        svg.appendChild(el('line', {x1:'175', y1:y2, x2:'525', y2:y2, stroke:'#3d5060', 'stroke-width':'0.5'}));
+    }
+    // Block joints
+    svg.appendChild(el('line', {x1:'170', y1:'175', x2:'530', y2:'175', stroke:gold+'77', 'stroke-width':'1.5', 'stroke-dasharray':'8,4'}));
+    svg.appendChild(el('line', {x1:'170', y1:'240', x2:'530', y2:'240', stroke:gold+'77', 'stroke-width':'1.5', 'stroke-dasharray':'8,4'}));
+    // Steel rebar perimeter
+    const rebarPositions = [[175,100],[175,175],[175,240],[175,290],[525,100],[525,175],[525,240],[525,290]];
+    for (const [rx,ry] of rebarPositions) {
+        svg.appendChild(el('circle', {cx:rx, cy:ry, r:'6', fill:red, opacity:'0.8'}));
+        svg.appendChild(el('circle', {cx:rx, cy:ry, r:'4', fill:'none', stroke:red, 'stroke-width':'1', opacity:'0.5'}));
+    }
+    // Conduits
+    svg.appendChild(el('rect', {x:'230', y:'80', width:'18', height:'255', fill:'#0a2a0a', stroke:cyan, 'stroke-width':'1'}));
+    svg.appendChild(el('rect', {x:'452', y:'80', width:'18', height:'255', fill:'#0a2a0a', stroke:cyan, 'stroke-width':'1'}));
+    // Transducer
+    svg.appendChild(el('rect', {x:'340', y:'160', width:'20', height:'12', fill:'#4040a0', stroke:cyan, 'stroke-width':'1', rx:'3'}));
+    svg.appendChild(el('text', {x:'365', y:'172', fill:cyan, 'font-size':'7.5', 'font-family':'Courier New'}, 'PZT-5A'));
+    // Gold layer (thin line on top)
+    svg.appendChild(el('rect', {x:'170', y:'58', width:'360', height:'3', fill:gold}));
+    // Labels
+    const labels = [
+        [60, 150, 'BASALTO OLIVÍNICO'],
+        [60, 165, 'ρ=2900 kg/m³'],
+        [60, 200, 'B-01/B-02/B-03'],
+        [555, 115, 'REBAR 316L'],
+        [555, 128, 'Ø16 c/200mm'],
+        [555, 210, 'JUNTA BLOQUES'],
+        [555, 223, 'EPOXI Araldite'],
+        [255, 45, 'ORO 24K 100μm'],
+        [240, 35, '←'],
+        [255, 380, 'HA-35 ARMADO'],
+        [255, 395, '6.55×5.24×2.60m'],
+        [230, 270, '↕ Conducto Ø50'],
+    ];
+    for (const [x2, y2, txt] of labels) {
+        svg.appendChild(el('text', {x:x2, y:y2, fill:'#aab0a0', 'font-size':'8', 'font-family':'Courier New'}, txt));
+    }
+    svg.appendChild(el('text', {x:'10', y:'490', fill:gold+'88', 'font-size':'8', 'font-family':'Courier New'}, 'FIG.5 · SECCIÓN A-A\' · DETALLE CONSTRUCTIVO · ESC. 1:25 · MONO-Ω 1310'));
+}
+
+// ═══════════════════════════════════════════════
+// SVG CIRCUITO ELÉCTRICO
+// ═══════════════════════════════════════════════
+function drawCircuito() {
+    const svg = document.getElementById('svg-circuito');
+    const gold='#ffd700', cyan='#00ffff', red='#ff3b5c', green='#00ff41';
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+    svg.appendChild(el('rect', {width:'700', height:'350', fill:'#04040a'}));
+
+    // Wires
+    const wireStyle = {stroke:green, 'stroke-width':'1.5', fill:'none'};
+    // Main bus
+    svg.appendChild(el('line', {x1:'30', y1:'120', x2:'650', y2:'120', ...wireStyle}));
+    svg.appendChild(el('line', {x1:'30', y1:'230', x2:'650', y2:'230', stroke:'#222244', 'stroke-width':'1.5'}));
+    // GND label
+    svg.appendChild(el('text', {x:'655', y:'234', fill:'#888', 'font-size':'9', 'font-family':'Courier New'}, 'GND'));
+    svg.appendChild(el('text', {x:'655', y:'124', fill:green, 'font-size':'9', 'font-family':'Courier New'}, '+12V'));
+
+    // Components
+    const components = [
+        {x:50, y:80, w:60, h:40, label:'LIFEPO4\n48V/200Ah', color:gold, sub:'BATERÍA'},
+        {x:160, y:80, w:50, h:40, label:'MPPT\n60A', color:cyan, sub:'SOLAR REG'},
+        {x:260, y:80, w:60, h:40, label:'ESP32-S3\nFIRMWARE', color:'#a040ff', sub:'MCU'},
+        {x:370, y:80, w:60, h:40, label:'AT42QT\nTOUCH', color:green, sub:'SENSOR'},
+        {x:470, y:80, w:60, h:40, label:'CSD185\nLIMITER', color:red, sub:'MOSFET'},
+        {x:570, y:80, w:60, h:40, label:'ORO\nSURFACE', color:gold, sub:'OUTPUT'},
+    ];
+
+    for (const c of components) {
+        svg.appendChild(el('rect', {x:c.x, y:c.y, width:c.w, height:c.h, fill:'#0a0a1a', stroke:c.color, 'stroke-width':'1.5', rx:'3'}));
+        const lines = c.label.split('\n');
+        svg.appendChild(el('text', {x:c.x+c.w/2, y:c.y+16, fill:c.color, 'font-size':'7.5', 'font-family':'Courier New', 'text-anchor':'middle'}, lines[0]));
+        if (lines[1]) svg.appendChild(el('text', {x:c.x+c.w/2, y:c.y+26, fill:c.color, 'font-size':'7.5', 'font-family':'Courier New', 'text-anchor':'middle'}, lines[1]));
+        svg.appendChild(el('text', {x:c.x+c.w/2, y:c.y+c.h+12, fill:c.color+'88', 'font-size':'7', 'font-family':'Courier New', 'text-anchor':'middle'}, c.sub));
+        // Vertical to bus
+        svg.appendChild(el('line', {x1:c.x+c.w/2, y1:c.y+c.h, x2:c.x+c.w/2, y2:'230', stroke:green+'44', 'stroke-width':'1', 'stroke-dasharray':'3,3'}));
+        svg.appendChild(el('line', {x1:c.x+c.w/2, y1:'120', x2:c.x+c.w/2, y2:c.y, stroke:green, 'stroke-width':'1'}));
+    }
+
+    // Transducers branch (bottom)
+    svg.appendChild(el('rect', {x:230, y:260, width:60, height:35, fill:'#0a0a1a', stroke:cyan, 'stroke-width':'1.5', rx:'3'}));
+    svg.appendChild(el('text', {x:260, y:281, fill:cyan, 'font-size':'7.5', 'font-family':'Courier New', 'text-anchor':'middle'}, 'PZT-5A ×12'));
+    svg.appendChild(el('text', {x:260, y:306, fill:cyan+'88', 'font-size':'7', 'font-family':'Courier New', 'text-anchor':'middle'}, 'TRANSDUCTORES'));
+    svg.appendChild(el('line', {x1:'260', y1:'260', x2:'260', y2:'230', stroke:cyan, 'stroke-width':'1'}));
+
+    svg.appendChild(el('rect', {x:350, y:260, width:60, height:35, fill:'#0a0a1a', stroke:'#a040ff', 'stroke-width':'1.5', rx:'3'}));
+    svg.appendChild(el('text', {x:380, y:281, fill:'#a040ff', 'font-size':'7.5', 'font-family':'Courier New', 'text-anchor':'middle'}, 'NE555×10'));
+    svg.appendChild(el('text', {x:380, y:306, fill:'#a040ff88', 'font-size':'7', 'font-family':'Courier New', 'text-anchor':'middle'}, 'TIMER 10s'));
+    svg.appendChild(el('line', {x1:'380', y1:'260', x2:'380', y2:'230', stroke:'#a040ff', 'stroke-width':'1'}));
+
+    // Solar panel
+    svg.appendChild(el('rect', {x:50, y:260, width:60, height:35, fill:'#0a1500', stroke:green, 'stroke-width':'1.5', rx:'3'}));
+    svg.appendChild(el('text', {x:80, y:281, fill:green, 'font-size':'7.5', 'font-family':'Courier New', 'text-anchor':'middle'}, '400W SOLAR'));
+    svg.appendChild(el('line', {x1:'80', y1:'260', x2:'80', y2:'120', stroke:green, 'stroke-width':'1'}));
+
+    svg.appendChild(el('text', {x:'10', y:'340', fill:gold+'88', 'font-size':'8', 'font-family':'Courier New'}, 'FIG.6 · ESQUEMA ELÉCTRICO HORMÉTICO · MONO-Ω 1310 · 12V / 0.5mA MAX · IEC 60479-1 COMPLIANT'));
+}
+
+// ═══════════════════════════════════════════════
+// SVG FASES DE MONTAJE
+// ═══════════════════════════════════════════════
+function drawFases() {
+    const svg = document.getElementById('svg-fases');
+    const gold='#ffd700', cyan='#00ffff';
+    function el(tag, attrs, txt) {
+        const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (txt) e.textContent = txt;
+        return e;
+    }
+    svg.appendChild(el('rect', {width:'800', height:'480', fill:'#04040a'}));
+
+    const fases = [
+        {n:'0', label:'PERMISOS', icon:'📋', color:'#4a6a4a'},
+        {n:'1', label:'EXCAVACIÓN', icon:'⛏', color:'#6a4a2a'},
+        {n:'2', label:'HORMIGÓN', icon:'🏗', color:'#3a5a6a'},
+        {n:'3', label:'TALLA\nCANTERA', icon:'🪨', color:'#5a4a2a'},
+        {n:'4', label:'ARMADURA\nACERO', icon:'⚙', color:'#4a3a6a'},
+        {n:'5', label:'TRANSPORTE\nBLOQUES', icon:'🚛', color:'#6a3a2a'},
+        {n:'6', label:'MONTAJE\nPIERNAS', icon:'🏗', color:'#3a5a4a'},
+        {n:'7', label:'MONTAJE\nTORSO', icon:'🏗', color:'#3a5a4a'},
+        {n:'8', label:'CABEZA +\nOBSIDIANA', icon:'👁', color:'#2a3a5a'},
+        {n:'9', label:'ELÉCTRICA\nPZT', icon:'⚡', color:'#5a5a2a'},
+        {n:'10', label:'DORADO\n1310 CELDAS', icon:'🥇', color:'#5a4a1a'},
+        {n:'11', label:'FIRMWARE\nESP32', icon:'💻', color:'#2a4a5a'},
+        {n:'12', label:'PRUEBAS', icon:'🔬', color:'#4a4a4a'},
+        {n:'13', label:'INAUGURACIÓN\nSILENCIOSA', icon:'🗿', color:'#3a3a5a'},
+    ];
+
+    const cols = 7, rows = 2;
+    const cw = 105, ch = 85, padX = 10, padY = 30;
+
+    fases.forEach((f, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = padX + col * (cw + 5);
+        const y = padY + row * (ch + 20);
+
+        svg.appendChild(el('rect', {x, y, width:cw, height:ch, fill:f.color+'33', stroke:f.color, 'stroke-width':'1.2', rx:'4'}));
+        svg.appendChild(el('text', {x:x+cw/2, y:y+20, fill:gold, 'font-size':'14', 'font-family':'sans-serif', 'text-anchor':'middle'}, f.icon));
+        svg.appendChild(el('text', {x:x+cw/2, y:y+35, fill:gold, 'font-size':'9', 'font-family':'Courier New', 'text-anchor':'middle', 'font-weight':'bold'}, `MES ${f.n}`));
+        const lines = f.label.split('\n');
+        lines.forEach((l2, li) => {
+            svg.appendChild(el('text', {x:x+cw/2, y:y+50+li*12, fill:'#c0c0d0', 'font-size':'8', 'font-family':'Courier New', 'text-anchor':'middle'}, l2));
+        });
+        // Arrow to next (if not last col)
+        if (col < cols-1 && i < fases.length-1) {
+            svg.appendChild(el('text', {x:x+cw+2, y:y+ch/2+4, fill:cyan+'66', 'font-size':'10', 'font-family':'Courier New'}, '→'));
+        }
+    });
+
+    svg.appendChild(el('text', {x:'10', y:'468', fill:gold+'88', 'font-size':'8', 'font-family':'Courier New'}, 'FIG.7 · SECUENCIA DE MONTAJE · 14 FASES / 13 MESES · MONO-Ω 1310 · DIRECTOR Ω'));
+}
+
+// ═══════════════════════════════════════════════
+// CANVAS GANTT
+// ═══════════════════════════════════════════════
+function drawGantt() {
+    const canvas = document.getElementById('gantt-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 900, H = 340;
+    ctx.fillStyle = '#04040a';
+    ctx.fillRect(0, 0, W, H);
+
+    const tasks = [
+        {name:'Permisos & Diseño', start:0, dur:2, color:'#4a6a4a'},
+        {name:'Excavación', start:1, dur:1, color:'#7a5a3a'},
+        {name:'Cimentación hormigón', start:1.5, dur:1.5, color:'#3a6a7a'},
+        {name:'Talla basalto en cantera', start:1, dur:3, color:'#6a5a3a'},
+        {name:'Fabricación armadura 316L', start:3, dur:1.5, color:'#5a4a7a'},
+        {name:'Transporte bloques', start:4.5, dur:0.7, color:'#7a4a3a'},
+        {name:'Montaje escultórico', start:5.2, dur:3, color:'#3a7a5a'},
+        {name:'Instalación eléctrica PZT', start:7.5, dur:1.5, color:'#7a7a3a'},
+        {name:'Dorado 1310 celdas Voronoi', start:8.5, dur:1.5, color:'#7a6a2a'},
+        {name:'Firmware ESP32-S3', start:10, dur:1, color:'#3a5a7a'},
+        {name:'Pruebas & Ajuste', start:11, dur:1, color:'#5a5a5a'},
+        {name:'Inauguración silenciosa', start:12.5, dur:0.5, color:'#ffd700'},
+    ];
+
+    const marginLeft = 195, marginTop = 30, barH = 16, rowH = 22;
+    const totalMonths = 13;
+    const barW = (W - marginLeft - 20) / totalMonths;
+
+    // Grid months
+    ctx.font = '9px Courier New';
+    for (let m = 0; m <= totalMonths; m++) {
+        const x = marginLeft + m * barW;
+        ctx.strokeStyle = '#1a1a2a';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(x, marginTop-10); ctx.lineTo(x, H - 20); ctx.stroke();
+        if (m < totalMonths) {
+            ctx.fillStyle = '#ffd70088';
+            ctx.fillText(`M${m+1}`, x + barW/2 - 8, marginTop - 2);
+        }
+    }
+
+    // Tasks
+    tasks.forEach((t, i) => {
+        const y = marginTop + i * rowH;
+        const x = marginLeft + t.start * barW;
+        const w = t.dur * barW;
+
+        // Name
+        ctx.fillStyle = '#a0a0c0';
+        ctx.font = '8px Courier New';
+        ctx.textAlign = 'right';
+        ctx.fillText(t.name, marginLeft - 5, y + barH - 4);
+
+        // Bar
+        ctx.fillStyle = t.color + '55';
+        ctx.strokeStyle = t.color;
+        ctx.lineWidth = 1;
+        ctx.fillRect(x, y, w, barH);
+        ctx.strokeRect(x, y, w, barH);
+    });
+
+    // Title
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ffd70088';
+    ctx.font = '8px Courier New';
+    ctx.fillText('FIG.8 · DIAGRAMA GANTT · MONO-Ω 1310 · 13 MESES · DIRECTOR Ω', 5, H - 8);
+}
+
+// ═══════════════════════════════════════════════
+// CANVAS VORONOI (1310 celdas)
+// ═══════════════════════════════════════════════
+function drawVoronoi() {
+    const canvas = document.getElementById('voronoi-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#04040a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Generate 1310 points within a monkey silhouette mask
+    const N = 1310;
+    const cx = W / 2, cy = H / 2;
+
+    // Simple monkey silhouette function
+    function inMonkey(x, y) {
+        const nx = (x - cx) / (W * 0.42);
+        const ny = (y - cy) / (H * 0.48);
+        // Head
+        if (nx*nx + (ny+0.35)*(ny+0.35) < 0.22) return true;
+        // Body ellipse
+        if (nx*nx/1.0 + (ny-0.2)*(ny-0.2)/0.45 < 0.55) return true;
+        // Left arm
+        if ((nx+0.6)*(nx+0.6)/0.18 + (ny-0.05)*(ny-0.05)/0.15 < 1) return true;
+        // Right arm
+        if ((nx-0.6)*(nx-0.6)/0.18 + (ny-0.05)*(ny-0.05)/0.15 < 1) return true;
+        return false;
+    }
+
+    const pts = [];
+    let attempts = 0;
+    while (pts.length < N && attempts < 100000) {
+        const x = Math.random() * W;
+        const y = Math.random() * H;
+        if (inMonkey(x, y)) pts.push({x, y});
+        attempts++;
+    }
+
+    // Draw filled Voronoi approximation using canvas pixel approach (efficient)
+    const imgData = ctx.getImageData(0, 0, W, H);
+    const data = imgData.data;
+
+    // Assign colors to each point
+    const colors = pts.map((_, i) => {
+        const hue = (i / N) * 60 + 30; // gold range 30-90
+        const sat = 70 + Math.random() * 30;
+        const lit = 30 + Math.random() * 40;
+        return hslToRgb(hue / 360, sat / 100, lit / 100);
+    });
+
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            if (!inMonkey(x, y)) continue;
+            let minDist = Infinity, minIdx = 0;
+            // Use spatial sampling for performance (check every 4th pixel area)
+            for (let j = 0; j < pts.length; j++) {
+                const dx = x - pts[j].x, dy = y - pts[j].y;
+                const d = dx*dx + dy*dy;
+                if (d < minDist) { minDist = d; minIdx = j; }
+            }
+            const idx = (y * W + x) * 4;
+            const c = colors[minIdx];
+            data[idx] = c[0];
+            data[idx+1] = c[1];
+            data[idx+2] = c[2];
+            data[idx+3] = 220;
+        }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // Draw cell borders (Voronoi edges approximated)
+    // Detect edges: if adjacent pixel belongs to different cell, draw border
+    const cellMap = new Int32Array(W * H).fill(-1);
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            if (!inMonkey(x, y)) continue;
+            let minDist = Infinity, minIdx = 0;
+            for (let j = 0; j < pts.length; j++) {
+                const dx = x - pts[j].x, dy = y - pts[j].y;
+                const d = dx*dx + dy*dy;
+                if (d < minDist) { minDist = d; minIdx = j; }
+            }
+            cellMap[y * W + x] = minIdx;
+        }
+    }
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 0.5;
+    for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+            const c = cellMap[y * W + x];
+            if (c < 0) continue;
+            if (cellMap[y * W + (x+1)] !== c || cellMap[(y+1) * W + x] !== c) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x+1, y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Draw seed points
+    ctx.fillStyle = 'rgba(255,255,200,0.6)';
+    for (const p of pts) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Label
+    ctx.fillStyle = '#ffd70088';
+    ctx.font = '9px Courier New';
+    ctx.fillText(`VORONOI · ${pts.length} CELDAS GENERADAS · MONO-Ω 1310`, 10, H - 10);
+
+    // Hover tooltip
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (W / rect.width);
+        const my = (e.clientY - rect.top) * (H / rect.height);
+        let minD = Infinity, minI = -1;
+        for (let j = 0; j < pts.length; j++) {
+            const d = (mx-pts[j].x)**2 + (my-pts[j].y)**2;
+            if (d < minD) { minD = d; minI = j; }
+        }
+        if (minI >= 0 && Math.sqrt(minD) < 80) {
+            canvas.title = `Celda #${minI + 1} de 1310 · Pan de oro 24K · ${(215/1310*10000).toFixed(0)} cm²`;
+        }
+    });
+}
+
+function hslToRgb(h, s, l) {
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q-p)*6*t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+            return p;
+        };
+        const q = l < 0.5 ? l*(1+s) : l+s-l*s;
+        const p = 2*l - q;
+        r = hue2rgb(p, q, h+1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h-1/3);
+    }
+    return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+    drawAlzado();
+    drawPerfil();
+    drawPlanta();
+    drawSeccion();
+    drawCircuito();
+    drawFases();
+    drawGantt();
+    // Voronoi is expensive — defer
+    setTimeout(drawVoronoi, 100);
+});
+</script>
+</body>
+</html>
