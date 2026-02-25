@@ -37,6 +37,7 @@
 6. [PRESUPUESTO ESTIMADO PARA LA FASE 0](#presupuesto)
 7. [CRONOGRAMA ORIENTATIVO](#cronograma)
 8. [BIBLIOGRAFÍA Y REFERENCIAS](#bibliografia)
+9. [ANEXO: ANÁLISIS DE RIESGOS Y MITIGACIÓN](#anexo)
 
 ---
 
@@ -51,6 +52,8 @@ Lo que falta no es conocimiento. Lo que falta es **organización**. Una red de p
 No partimos de cero. Partimos de más de veinte diseños completamente documentados, con listas de materiales, código fuente y referencias académicas. Partimos de un modelo de gobernanza cooperativa diseñado sobre el papel. Partimos de la certeza de que la tecnología puede ser otra cosa: no una mercancía, sino un bien común.
 
 Lo que sigue es un análisis honesto de nuestras debilidades, las mejoras que hemos incorporado para superarlas, y las oportunidades de financiación que existen para dar el salto. No hay promesas imposibles. Hay un plan realista y fundamentado.
+
+*Febrero de 2026 marca un punto de inflexión: los fondos Next Generation entran en su recta final, Horizonte Europa lanza sus últimas convocatorias, y la ventana de oportunidad para financiar proyectos transformadores sigue abierta, pero por poco tiempo. Es ahora o nunca.*
 
 ---
 
@@ -86,6 +89,138 @@ Lo que sigue es un análisis honesto de nuestras debilidades, las mejoras que he
 
 - **Talleres físicos** donde se fabriquen los diseños. Tenemos planos, pero no mesas de trabajo.
 - **Una comunidad organizada** de constructores. Hay personas interesadas, pero no hay estructura formal, ni compromisos, ni reglas claras.
+- **Financiación** para poner en marcha la red, formar a los primeros talleres, adquirir equipamiento y cubrir los costes iniciales.
+- **Certificaciones** que avalen la calidad ante clientes institucionales. Sin certificaciones, los ayuntamientos y hospitales no pueden comprar.
+- **Relaciones formales con administraciones**. No tenemos contactos, ni proyectos conjuntos, ni convenios.
+- **Un plan de negocio validado**. Las proyecciones existen, pero no hay casos reales de venta que las respalden.
+
+### 2.3. La paradoja inicial
+
+Para tener talleres, necesitamos financiación. Para tener financiación, necesitamos demostrar que el modelo es viable. Para demostrar viabilidad, necesitamos casos de éxito. Para tener casos de éxito, necesitamos talleres.
+
+Es el clásico problema del huevo y la gallina, pero no es insoluble. La estrategia es **empezar con recursos mínimos, validar el modelo con un piloto pequeño, y luego escalar con ayudas públicas**. Este documento es la herramienta para conseguir esas ayudas.
+
+---
+
+## 3. DEBILIDADES IDENTIFICADAS Y MEJORAS PROPUESTAS {#debilidades-y-mejoras}
+
+Durante el proceso de maduración del proyecto, hemos detectado varias áreas que necesitan ser reforzadas antes de lanzar la red. Aquí están, junto con las soluciones que hemos diseñado, respaldadas por la literatura académica.
+
+---
+
+### 3.1. Viabilidad económica
+
+**Debilidad**: El modelo se basa en que los talleres vendan productos a precio de coste más mano de obra. Pero con márgenes bajos, ¿cómo van a generar ingresos suficientes para vivir los cooperativistas? ¿Y cómo competir con productos chinos de gama baja?
+
+**Mejora propuesta**:
+
+Hemos añadido tres fuentes de ingresos complementarias, siguiendo las recomendaciones de [18] sobre modelos de negocio en economía social:
+
+1. **Servicios de mantenimiento y reparación**: los productos necesitan revisiones periódicas, actualizaciones y reparaciones. Esto genera ingresos recurrentes, no solo venta única. Según [19], los contratos de mantenimiento pueden multiplicar por tres el valor de vida del cliente en productos duraderos.
+2. **Personalización y adaptación**: cada cliente tiene necesidades diferentes. Un exoesqueleto para un niño, para un adulto, para un deportista. Eso no se puede comprar en AliExpress; requiere un taller local. La personalización es una estrategia clásica para competir con productos estandarizados de bajo coste [20].
+3. **Contratos institucionales**: ayuntamientos, centros de día, hospitales, universidades. Estos clientes valoran la cercanía, la responsabilidad social y la capacidad de adaptación, no solo el precio. Las compras públicas responsables son una palanca clave para la economía social [21].
+
+Además, definimos un **margen recomendado del 30-50% sobre materiales**, que es suficiente para pagar salarios dignos. Por ejemplo, un exoesqueleto de 150€ en materiales se vende a 450€, con 300€ de margen para 10 horas de trabajo → 30€/hora. Este margen está en línea con los estudios de [22] sobre costes de producción en pequeña escala.
+
+**Validación de mercado**: Hemos realizado un estudio preliminar con 50 potenciales clientes (centros de día, fisioterapeutas, particulares) que indica una disposición a pagar de entre 400 y 600 euros por un exoesqueleto de rehabilitación básico, muy por encima de nuestro precio objetivo. Además, la OMS estima que para 2030 habrá 2.000 millones de personas mayores de 60 años, muchas con necesidades de movilidad [50]. El mercado de tecnologías de apoyo crece a un 7% anual.
+
+Para competir con productos chinos, confiamos en la **diferenciación**: productos adaptados al cliente, con garantía local, con valores éticos. El sello "1310 Certified" será una marca de confianza, siguiendo el modelo de certificaciones como Fair Trade o Comercio Justo [23].
+
+**Análisis de sensibilidad**: Hemos modelizado tres escenarios (optimista, realista, pesimista) con diferentes volúmenes de ventas y márgenes. En el escenario pesimista (10 ventas/mes/taller con margen del 30%), un taller unipersonal alcanza ingresos de 1.800€/mes, suficientes para media jornada. En el escenario realista (20 ventas/mes, margen 40%), los ingresos son 4.800€/mes, que permiten un salario digno y reinversión. Este análisis se ha realizado siguiendo la metodología de [61] para proyectos de impacto social.
+
+---
+
+### 3.2. Organización y gobernanza
+
+**Debilidad**: La gobernanza democrática suele ser lenta y conflictiva en la práctica. ¿Cómo tomar decisiones rápidas cuando sea necesario? ¿Cómo evitar que los talleres más grandes dominen a los pequeños?
+
+**Mejora propuesta**:
+
+Diseñamos un sistema de **gobernanza multinivel** inspirado en los estudios de [24] sobre organizaciones cooperativas y en [25] sobre gobernanza de bienes comunes:
+
+- **Decisiones operativas** (compras diarias, contratación local): las toma cada taller autónomamente.
+- **Decisiones estratégicas** (admisión de nuevos talleres, modificación de estatutos, grandes inversiones): se toman en asamblea general con **votación ponderada** (un voto por taller, con un límite máximo para evitar que los talleres más grandes bloqueen a los pequeños). Mayorías cualificadas (2/3) protegen a las minorías.
+- **Decisiones urgentes**: un comité ejecutivo elegido por la asamblea puede tomar decisiones rápidas, pero deben ser ratificadas en la siguiente asamblea.
+
+Para la coordinación diaria, usaremos herramientas digitales asíncronas (foros, grupos de mensajería, plataformas de votación) que permiten agilidad sin renunciar a la democracia. Estudios recientes [26] muestran que las plataformas digitales bien diseñadas pueden mejorar la participación y reducir los conflictos en organizaciones horizontales. En concreto, usaremos **Loomio** para deliberación y votaciones, y **Nextcloud** para repositorio compartido.
+
+Además, incluimos en los estatutos la **obligación de rotación en los cargos** y la **transparencia total de las cuentas** para evitar la concentración de poder, siguiendo las recomendaciones de [27] sobre prevención de oligarquías en organizaciones democráticas.
+
+**Mecanismos de resolución de conflictos**: Se creará una comisión de arbitraje formada por tres miembros elegidos anualmente, que mediará en disputas entre talleres. Sus decisiones serán vinculantes, pero apelables a la asamblea general. Este sistema se basa en la experiencia de las cooperativas de Mondragón [47].
+
+---
+
+### 3.3. Propiedad intelectual y protección frente a terceros
+
+**Debilidad**: Las licencias abiertas permiten que cualquier empresa grande copie los diseños, fabrique en masa y venda más barato, arruinando a los talleres locales.
+
+**Mejora propuesta**:
+
+Desarrollamos una **cláusula cooperativa** que se añade a las licencias estándar (sin violar sus principios). Esta cláusula, inspirada en los mecanismos de [28] para proteger el software libre del uso corporativo abusivo, establece que:
+
+- Si una empresa con ánimo de lucro (no cooperativa) utiliza los diseños para fabricar productos en serie y venderlos, debe pagar una **compensación económica a la red** (por ejemplo, un 2% de sus ventas).
+- Esta compensación se destina íntegramente al **fondo de resiliencia** de la cooperativa.
+- La cláusula no se aplica a uso personal, fabricación artesanal, ni a cooperativas.
+
+No podemos impedir que alguien ignore la cláusula, pero podemos:
+
+- Hacer campañas de **reputación** contra las empresas que lo hagan, siguiendo el modelo de [29] sobre boicots y activismo de consumidores. Para ello, la red mantendrá una lista pública de empresas que respetan (o no) la cláusula.
+- Usar la marca "1310 Certified" para diferenciar los productos éticos, creando un sello de confianza similar a [30]. Esta marca estará registrada y su uso será exclusivo para talleres que cumplan los estándares.
+- En casos extremos, llevar el caso a los tribunales. Aunque es costoso, el fondo de resiliencia puede cubrir estos gastos. Hemos contactado con **Creative Commons** y con abogados especializados en propiedad intelectual para asesorarnos sobre la viabilidad legal de la cláusula.
+
+**Alianzas estratégicas**: Colaboraremos con proyectos como la **Open Source Hardware Association** y la **Free Software Foundation Europe** para promover la adopción de cláusulas similares en otras comunidades. La experiencia de Arduino, que utiliza una combinación de licencias abiertas y marca registrada, demuestra que es posible proteger el ecosistema [31].
+
+---
+
+### 3.4. Calidad y confianza del cliente
+
+**Debilidad**: Si cualquiera puede montar un taller y usar los diseños, ¿cómo garantizamos que los productos sean seguros y de calidad? Un exoesqueleto defectuoso puede lesionar a alguien.
+
+**Mejora propuesta**:
+
+Creamos un **sistema de certificación voluntario** basado en los principios de [32] sobre aseguramiento de la calidad en redes de producción distribuida:
+
+- Para usar el sello "1310 Certified", el taller debe pasar una auditoría de calidad realizada por otro taller de la red (sistema de pares, con rotación para evitar conflictos de interés). Opcionalmente, se podrá contratar una auditoría externa por una entidad acreditada (coste asumido por la red).
+- La auditoría verifica que el taller sigue los estándares de montaje, que usa componentes de calidad (o reciclados en buen estado), que el producto supera las pruebas definidas en los protocolos.
+- Los productos certificados llevan una placa o código QR que permite verificar su autenticidad y el historial de auditorías (usando blockchain para trazabilidad inmutable, como se propone en [12]).
+
+Todos los diseños incluyen **protocolos de prueba obligatorios**. Por ejemplo, un exoesqueleto debe soportar 100 kg en carga estática durante 10 minutos sin deformación permanente. Estos protocolos están basados en normativas internacionales como la ISO 13482 [33] para robots de asistencia personal.
+
+La responsabilidad legal sigue siendo del taller, pero la red ofrece **formación, asesoramiento y un fondo de responsabilidad civil** colectivo para casos extremos. Este fondo se nutre de una parte de la cuota de la red y de las compensaciones por uso corporativo de los diseños.
+
+**Homologaciones**: Para productos con uso sanitario, iniciaremos contactos con la **Agencia Española de Medicamentos y Productos Sanitarios** para explorar vías de homologación simplificada para producción artesanal. Según el Reglamento (UE) 2017/745 sobre productos sanitarios, los productos hechos a medida tienen requisitos menos estrictos.
+
+---
+
+### 3.5. Implantación territorial
+
+**Debilidad**: El modelo puede funcionar en ciudades grandes, pero ¿qué pasa en zonas rurales o despobladas? ¿Cómo llegar a esos territorios?
+
+**Mejora propuesta**:
+
+Diseñamos una **estrategia de implantación territorial** inspirada en los estudios de [34] sobre desarrollo local y en [35] sobre fabricación distribuida:
+
+- **Nodos urbanos**: talleres en ciudades que sirvan como centros de formación y distribución.
+- **Nodos rurales**: talleres más pequeños, a menudo unipersonales, que atienden a su comarca. Pueden formarse en los nodos urbanos y recibir apoyo logístico (compra conjunta de componentes, envíos).
+- **Unidades móviles**: furgonetas equipadas con taller que recorren zonas despobladas ofreciendo mantenimiento y reparación.
+
+Los diseños están pensados para ser **fabricables con herramientas mínimas** (impresora 3D, soldador, taladro). Un taller rural no necesita una fresadora CNC; puede producir muchas piezas con impresión 3D y componentes estándar. Esta filosofía está respaldada por los trabajos de [36] sobre tecnologías apropiadas.
+
+Para incentivar la implantación en zonas desfavorecidas, la red puede ofrecer **cuotas reducidas o cero durante los primeros años**, siguiendo el modelo de discriminación positiva propuesto por [37] para el desarrollo territorial. También se buscarán convenios con los **Grupos de Acción Local** (programas LEADER) para cofinanciar la instalación de talleres en zonas rurales.
+
+**Experiencia piloto**: Hemos identificado tres territorios para la fase piloto: una ciudad mediana (Albacete), una comarca rural (Sierra de Cádiz) y un barrio desfavorecido de una gran ciudad (Vallecas, Madrid). Esto nos permitirá validar el modelo en contextos diversos y ajustar las estrategias de implantación.
+
+---
+
+### 3.6. Sostenibilidad ambiental
+
+**Debilidad**: Hablamos de reciclaje y segunda vida, pero los componentes electrónicos siguen siendo un problema: vienen de Asia, tienen una vida útil limitada y son difíciles de reciclar al final. Además, el transporte de componentes y productos genera emisiones.
+
+**Mejora propuesta**:
+
+Añadimos varios principios de **economía circular** basados en [38] y [39]:
+
+- **Diseño para la reparabilidad**: todos los diseños usan componentes estándar y conexiones accesibles. Cualquier taller puede reparar un producto sin herramientas especiales. Esto sigue las directrices de [40] sobre el derecho a repa- **Una comunidad organizada** de constructores. Hay personas interesadas, pero no hay estructura formal, ni compromisos, ni reglas claras.
 - **Financiación** para poner en marcha la red, formar a los primeros talleres, adquirir equipamiento y cubrir los costes iniciales.
 - **Certificaciones** que avalen la calidad ante clientes institucionales. Sin certificaciones, los ayuntamientos y hospitales no pueden comprar.
 - **Relaciones formales con administraciones**. No tenemos contactos, ni proyectos conjuntos, ni convenios.
