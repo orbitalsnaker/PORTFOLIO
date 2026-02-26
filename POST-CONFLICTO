@@ -1,0 +1,399 @@
+
+# PLAN DE CONTRATACIÓN Y POSICIONAMIENTO PARA EMPRESA DE LIMPIEZA POST-CONFLICTO CON COMPONENTE DE I+D
+
+**Proyecto:** Empresa de limpieza de zonas de conflicto con recuperación de componentes para investigación y reinversión social in situ
+
+**Fecha:** Febrero 2026
+
+**Autor:** Agencia RONIN / Arquitecto 1310
+
+**Documento para:** Contratación de consultora especializada en licitaciones internacionales y relaciones institucionales
+
+---
+
+## ÍNDICE
+
+1. OBJETIVO DEL PLAN
+2. PERFIL DE LA CONSULTORA REQUERIDA
+3. ANÁLISIS DE ORGANISMOS FINANCIADORES
+   - 3.1. NACIONES UNIDAS (UNOPS, UNMAS, UNGM)
+   - 3.2. OTAN (NSPA, Trust Funds)
+   - 3.3. UNIÓN EUROPEA (DG ECHO, FEDER)
+   - 3.4. FINANCIACIÓN BILATERAL POR PAÍSES
+4. REQUISITOS COMUNES DE ELEGIBILIDAD
+5. MAPA DE REQUISITOS POR ORGANISMO Y NIVEL DE REGISTRO
+6. PLAN DE TRABAJO POR FASES
+7. CRONOGRAMA ESTIMADO
+8. PRESUPUESTO ORIENTATIVO PARA CONSULTORA
+9. ANEXOS: CHECKLIST DE DOCUMENTACIÓN POR ORGANISMO
+
+---
+
+## 1. OBJETIVO DEL PLAN
+
+El presente documento tiene como objetivo establecer una hoja de ruta detallada para que una consultora especializada gestione el registro, habilitación y posicionamiento de una empresa de ingeniería especializada en:
+
+- Limpieza de zonas post-conflicto (desminado, retirada de municiones sin explosionar, descontaminación)
+- Recuperación de componentes electrónicos y metálicos de alta especificación
+- Investigación y desarrollo (I+D) a partir de materiales recuperados
+- Implementación de obra social in situ con parte de los beneficios
+- Trazabilidad radical mediante cadena de hash y blockchain
+
+La empresa no se posiciona como una ONG, sino como un **contratista tecnológico** que ofrece servicios de alto valor añadido a gobiernos y organismos internacionales, con capacidad de I+D propia y un modelo de negocio sostenible.
+
+---
+
+## 2. PERFIL DE LA CONSULTORA REQUERIDA
+
+### 2.1. Características necesarias
+
+| Requisito | Justificación |
+|-----------|---------------|
+| Experiencia demostrable en licitaciones internacionales (ONU, UE, OTAN) | Cada organismo tiene procedimientos específicos (RFQ, ITB, RFP, EOI) que requieren conocimiento experto  |
+| Capacidad de trabajo en inglés y español (deseable francés o alemán) | Toda la documentación oficial debe presentarse en inglés . Alemania y OTAN operan en inglés |
+| Conocimiento del sector de desminado/acción contra minas | Familiaridad con los requisitos técnicos y de seguridad del sector |
+| Red de contactos en organismos internacionales | Aceleración del proceso de posicionamiento |
+| Capacidad de traducción jurada de documentos | Requisito para niveles avanzados de registro  |
+| Experiencia en gestión de proyectos de I+D | Para posicionar correctamente el componente de investigación |
+
+### 2.2. Servicios a contratar (alcance)
+
+1. **Análisis de elegibilidad**: Evaluación de la empresa frente a los requisitos de cada organismo.
+2. **Preparación de documentación corporativa**: Adaptación de estatutos, poderes, certificados.
+3. **Registro en plataformas**: Especialmente UNGM en los niveles requeridos.
+4. **Identificación de oportunidades**: Seguimiento de EOIs, RFPs, ITBs relevantes.
+5. **Redacción de propuestas**: Elaboración de ofertas técnicas y económicas.
+6. **Acompañamiento en auditorías**: Preparación para posibles inspecciones.
+7. **Traducción y legalización de documentos**.
+
+---
+
+## 3. ANÁLISIS DE ORGANISMOS FINANCIADORES
+
+### 3.1. NACIONES UNIDAS (SISTEMA UN)
+
+#### 3.1.1. Estructura de adquisiciones
+
+El sistema de Naciones Unidas adquiere bienes y servicios por aproximadamente **USD 125 millones anuales solo en UNESCO**, y un 80% corresponde a servicios profesionales . El portal único de registro es **UNGM (United Nations Global Marketplace)** .
+
+#### 3.1.2. Agencias relevantes para el proyecto
+
+| Agencia | Relevancia | Notas |
+|---------|------------|-------|
+| **UNOPS** | Oficina de Servicios para Proyectos. Especializada en infraestructura y adquisiciones complejas  | Principal canal para proyectos de desminado y reconstrucción |
+| **UNMAS** | Servicio de las Naciones Unidas de Actividades relativas a las Minas | Financia directamente operaciones de limpieza [citation:busqueda anterior] |
+| **UNDP** | Programa de las Naciones Unidas para el Desarrollo | Gestiona fondos para reconstrucción post-conflicto |
+| **UNICEF** | Puede requerir limpieza de zonas donde opera | Ocasional |
+| **UN Secretariat** | Compras centralizadas de alto valor | Requiere nivel 2 de registro  |
+
+#### 3.1.3. Niveles de registro en UNGM
+
+El registro en UNGM tiene **tres niveles**, acumulativos :
+
+| Nivel | Documentación requerida | Organismos que lo exigen |
+|-------|-------------------------|---------------------------|
+| **Basic** | Información básica de empresa, aceptación del Código de Conducta, códigos UNSPSC  | FAO, UNESCO, UNDP, UNOPS, OMS, etc.  |
+| **Level 1** | Basic + certificado de constitución, tres referencias independientes, información de propietarios/afiliados  | IAEA, IFAD, UN Secretariat, UNHCR, UNICEF, UNRWA, WFP  |
+| **Level 2** | Level 1 + 3 años de actividad, tres cartas de referencia, estados financieros auditados de 3 años  | Mismos que Level 1 |
+
+**Implicación para el proyecto**: Dado el volumen de contratos esperado (>150.000 USD), será necesario alcanzar al menos **Level 1**, probablemente **Level 2** para contratos con UN Secretariat o UNICEF.
+
+#### 3.1.4. Tipos de licitación en Naciones Unidas 
+
+| Tipo | Descripción | Valor típico | Relevancia |
+|------|-------------|--------------|------------|
+| **RFQ (Request for Quotation)** | Solicitud informal de cotización | Hasta 100.000 USD | Para servicios menores o equipamiento estándar |
+| **ITB (Invitation to Bid)** | Licitación formal, precio como factor principal | >100.000 USD | Para servicios claramente definidos (limpieza por metro cuadrado) |
+| **RFP (Request for Proposal)** | Solución compleja, no solo precio | >100.000 USD | **ALTA**: Para proyectos que combinan limpieza + I+D + innovación |
+| **EOI (Expression of Interest)** | Manifestación de interés previa a licitación | Variable | Clave para estar en el radar |
+
+**Estrategia**: Nuestra empresa debe posicionarse para **RFP**, donde la innovación tecnológica (IA, trazabilidad blockchain) y la capacidad de I+D son valoradas, no solo el precio.
+
+#### 3.1.5. Requisitos específicos ONU (documentación)
+
+- **Código de Conducta del Proveedor de la ONU**: Aceptación obligatoria .
+- **Registro en UNGM**: Obligatorio para todas las agencias .
+- **Actualización periódica**: Se recomienda login mensual en UNGM para no perder visibilidad .
+- **Códigos UNSPSC**: Clasificación precisa de productos y servicios (ej. 72141100: servicios de eliminación de minas terrestres) .
+- **Protesta de proveedores**: Existe procedimiento formal en caso de disputas .
+- **Listas de exclusión**: No aparecer en listas de suspendidos (UNPD, Banco Mundial, Lista 1267 de Al-Qaida/Talibán) .
+
+#### 3.1.6. Trazabilidad financiera
+
+La ONU paga mediante **transferencia bancaria** y requiere formulario de proveedor con datos bancarios . Nuestro modelo de trazabilidad radical (blockchain + hash chaining) será un **diferenciador competitivo**, no un requisito, pero encaja con los principios de transparencia de la organización.
+
+---
+
+### 3.2. OTAN (NATO SUPPORT AND PROCUREMENT AGENCY - NSPA)
+
+#### 3.2.1. Estructura
+
+La **NSPA (NATO Support and Procurement Agency)** es la principal agencia de adquisiciones de la OTAN. También operan los **NATO Partnership for Peace (PfP) Trust Funds**, que han financiado múltiples proyectos de desminado [citation:busqueda anterior].
+
+#### 3.2.2. Requisitos de elegibilidad
+
+- La empresa debe estar legalmente constituida en un país miembro de la OTAN o país asociado (depende del fondo).
+- Capacidad técnica demostrada (experiencia previa en proyectos similares).
+- Certificaciones de calidad (ISO 9001 es recomendable, a veces obligatoria).
+- Seguridad: Personal y equipos deben cumplir estándares OTAN.
+- Clasificación de seguridad (depende del proyecto, puede requerirse personal con habilitación).
+
+#### 3.2.3. Proceso de contratación
+
+1. Registro en el sistema de proveedores de NSPA (no es UNGM, es propio).
+2. Publicación de oportunidades en la web de NSPA.
+3. Licitaciones normalmente por invitación (tras EOI) o abiertas.
+4. Evaluación técnica y económica.
+
+#### 3.2.4. Documentación típica requerida
+
+- Cuestionario de información de proveedor.
+- Estados financieros auditados (últimos 3 años).
+- Referencias de proyectos similares.
+- Certificados de calidad.
+- Póliza de seguros (responsabilidad civil, accidentes).
+- Lista de equipos y personal cualificado.
+
+---
+
+### 3.3. UNIÓN EUROPEA
+
+#### 3.3.1. Dirección General de Protección Civil y Ayuda Humanitaria (DG ECHO)
+
+DG ECHO financia proyectos de desminado y acción contra minas, como el caso de Alemania que destinó 70 millones de euros a Siria [citation:busqueda anterior].
+
+#### 3.3.2. Fondo Europeo de Desarrollo Regional (FEDER)
+
+FEDER puede financiar proyectos de I+D y desarrollo tecnológico, incluidos los derivados de la recuperación de componentes.
+
+#### 3.3.3. Requisitos comunes UE
+
+- Registro en el sistema **PIC (Participant Identification Code)** de la Comisión Europea.
+- Los contratistas deben estar establecidos en un Estado miembro de la UE (para ciertos fondos).
+- Capacidad financiera y técnica demostrable.
+- No estar en situación de exclusión (deudas con Hacienda, condenas penales, etc.).
+- Cumplimiento de normativa medioambiental y de seguridad.
+
+#### 3.3.4. Tipos de contratos
+
+- **Contratos de servicios**: Limpieza, consultoría.
+- **Subvenciones**: Para acciones humanitarias específicas (DG ECHO).
+- **Contratos de I+D**: Horizon Europe, programas de innovación.
+
+---
+
+### 3.4. FINANCIACIÓN BILATERAL POR PAÍSES
+
+#### 3.4.1. Alemania
+
+- **Ministerio Federal de Asuntos Exteriores (AA)**: Financia desminado a través de organizaciones implementadoras [citation:busqueda anterior].
+- **KfW Development Bank**: Gestiona fondos de reconstrucción.
+- **GIZ**: Agencia de cooperación técnica, puede contratar servicios especializados.
+
+#### 3.4.2. Canadá
+
+- **Global Affairs Canada**: Financia proyectos de desminado a través de UNMAS y otras agencias [citation:busqueda anterior].
+
+#### 3.4.3. Suiza
+
+- **Departamento Federal de Asuntos Exteriores (FDFA)**: Financia desminado en Ucrania y otros países [citation:busqueda anterior].
+- **Fondo de Desminado Suizo**: Gestionado por el DDPS (Defensa).
+
+#### 3.4.4. Italia
+
+- **Ministerio de Asuntos Exteriores**: Financia proyectos de desminado [citation:busqueda anterior].
+
+#### 3.4.5. Bélgica
+
+- **Contribuciones a fondos fiduciarios de OTAN y UE** [citation:busqueda anterior].
+
+---
+
+## 4. REQUISITOS COMUNES DE ELEGIBILIDAD
+
+A partir del análisis de las diferentes fuentes , los requisitos transversales son:
+
+### 4.1. Requisitos legales
+
+| Requisito | Evidencia |
+|-----------|-----------|
+| Empresa legalmente constituida | Escritura de constitución, registro mercantil |
+| Al menos 3 años de actividad (para nivel 2) | Documentación que acredite fecha de inicio  |
+| No estar en listas de exclusión | Certificado negativo de UNPD, Banco Mundial, Lista 1267  |
+| Poderes de representación suficientes | Nombramiento de apoderados, escritura de poderes |
+
+### 4.2. Requisitos financieros
+
+| Requisito | Evidencia | Umbral típico |
+|-----------|-----------|---------------|
+| Estados financieros auditados | 3 últimos años  | Según licitación |
+| Liquidez suficiente | Certificado bancario o póliza de crédito  | Variable, ej. 630.000 Bs (~90.000 USD) |
+| Seguro de responsabilidad civil | Póliza vigente | Al menos 1-2 millones EUR |
+
+### 4.3. Requisitos técnicos
+
+| Requisito | Evidencia |
+|-----------|-----------|
+| Experiencia en proyectos similares | Contratos anteriores, referencias  |
+| Personal técnico cualificado | CVs, títulos, certificados |
+| Equipamiento adecuado | Listado de maquinaria, vehículos, detectores |
+| Certificaciones de calidad (ISO 9001, etc.) | Certificados vigentes |
+
+### 4.4. Requisitos de integridad
+
+- **Código de Conducta**: Aceptación del correspondiente a cada organismo .
+- **Declaración de no conflicto de intereses**: Estándar en todas las licitaciones.
+- **Transparencia**: Capacidad de auditoría (nuestro modelo de trazabilidad blockchain es un plus).
+
+---
+
+## 5. MAPA DE REQUISITOS POR ORGANISMO Y NIVEL DE REGISTRO
+
+| Organismo | Plataforma | Nivel UNGM requerido | Documentación específica | Contacto |
+|-----------|------------|----------------------|--------------------------|----------|
+| **UNOPS** | UNGM  | Basic (suficiente para la mayoría)  | Registro UNGM, código UNSPSC | procurement@unops.org |
+| **UN Secretariat** | UNGM  | **Level 2** para contratos > umbral  | + referencias, estados financieros | procurement@un.org |
+| **UNICEF** | UNGM  | Level 2  | + referencias, estados financieros | supply@unicef.org |
+| **UNDP** | UNGM  | Basic  | Registro UNGM | procurement@undp.org |
+| **FAO** | UNGM  | Basic  | Registro UNGM | procurement@fao.org |
+| **OTAN - NSPA** | Propio | No aplica | Cuestionario NSPA, certificados, referencias | nspa@nato.int |
+| **DG ECHO** | Sistema propio UE | No aplica | Registro PIC, formularios específicos | echo@ec.europa.eu |
+| **KfW (Alemania)** | Propio | No aplica | Experiencia, capacidad financiera | info@kfw.de |
+
+---
+
+## 6. PLAN DE TRABAJO POR FASES
+
+### FASE 0: PREPARACIÓN CORPORATIVA (MESES 1-2)
+
+**Objetivo**: Poner la empresa en condiciones de registrarse.
+
+| Tarea | Responsable consultora | Documento resultante |
+|-------|------------------------|----------------------|
+| Revisión de estatutos y poderes | Abogado corporativo | Informe de adecuación |
+| Traducción jurada de documentos clave (escritura, poderes) | Traductor jurado | Traducciones certificadas |
+| Apertura de cuenta bancaria empresarial (si no existe) | Gestoría | Certificado bancario |
+| Obtención de certificado de firma digital | Gestoría | Certificado electrónico |
+| Elaboración de CVs corporativos y de equipo técnico | Consultora | Dossier de capacidades |
+
+### FASE 1: REGISTRO EN UNGM (MESES 2-3)
+
+| Tarea | Responsable consultora | Documento resultante |
+|-------|------------------------|----------------------|
+| Registro Basic en UNGM | Consultora | Usuario y contraseña UNGM |
+| Selección de códigos UNSPSC adecuados | Consultora + empresa | Listado de códigos |
+| Registro Level 1 (si procede) | Consultora | Nivel 1 activado |
+| Registro Level 2 (si procede) | Consultora | Nivel 2 activado |
+| Verificación de registros por agencias objetivo | Consultora | Confirmaciones |
+
+### FASE 2: REGISTRO EN OTAN (NSPA) Y OTROS (MES 3)
+
+| Tarea | Responsable consultora | Documento resultante |
+|-------|------------------------|----------------------|
+| Cumplimentación de Vendor Information Questionnaire | Consultora | Cuestionario enviado |
+| Obtención y envío de certificados ISO (si se dispone) | Empresa | Certificados |
+| Elaboración de dossier de proyectos similares | Consultora | Portfolio |
+
+### FASE 3: IDENTIFICACIÓN DE OPORTUNIDADES (CONTINUO)
+
+| Tarea | Responsable consultora | Periodiciadd |
+|-------|------------------------|--------------|
+| Suscripción a alertas de UNGM (Tender Alert Service)  | Consultora | Diaria |
+| Seguimiento de EOIs en UNGM, NSPA, UE | Consultora | Semanal |
+| Análisis de oportunidades relevantes | Consultora | Semanal |
+| Informe mensual de oportunidades | Consultora | Mensual |
+
+### FASE 4: PREPARACIÓN DE PROPUESTAS (POR OPORTUNIDAD)
+
+| Tarea | Responsable consultora | Documento resultante |
+|-------|------------------------|----------------------|
+| Análisis de pliegos (RFQ, ITB, RFP) | Consultora | Matriz de requisitos |
+| Elaboración de propuesta técnica | Consultora + empresa | Propuesta técnica |
+| Elaboración de propuesta económica | Empresa | Propuesta económica |
+| Cumplimentación de formularios administrativos | Consultora | Formularios |
+| Presentación en plazo | Consultora | Acuse de recibo |
+
+---
+
+## 7. CRONOGRAMA ESTIMADO
+
+| Mes | Fase | Hito |
+|-----|------|------|
+| 1 | Fase 0 | Documentación corporativa preparada |
+| 2 | Fase 0 + 1 | Inicio registro UNGM Basic |
+| 3 | Fase 1 + 2 | Registro UNGM Basic completado. Inicio Level 1 y NSPA |
+| 4 | Fase 1 + 2 | Level 1 y NSPA completados. Inicio Level 2 (si necesario) |
+| 5 | Fase 1 | Level 2 completado |
+| 6 | Fase 3 | Primer informe de oportunidades |
+| 6+ | Fase 4 | Presentación de primeras propuestas |
+
+---
+
+## 8. PRESUPUESTO ORIENTATIVO PARA CONSULTORA
+
+| Concepto | Coste estimado (EUR) | Observaciones |
+|----------|----------------------|---------------|
+| **Honorarios fijos (primeros 6 meses)** | 18.000 - 25.000 | Incluye fases 0, 1, 2, 3 inicial |
+| **Traducciones juradas** | 1.000 - 2.000 | Variable según número de documentos |
+| **Legalización de documentos (apostillas)** | 500 - 1.000 | Si aplica |
+| **Mantenimiento mensual (alertas, informes)** | 500 - 800 / mes | A partir del mes 7 |
+| **Preparación de propuestas (por oportunidad)** | 2.000 - 5.000 | Depende de complejidad |
+| **Desplazamientos (si necesarios)** | A concretar | Reuniones con organismos |
+
+**Total estimado primer año**: 30.000 - 50.000 EUR
+
+---
+
+## 9. ANEXOS: CHECKLIST DE DOCUMENTACIÓN POR ORGANISMO
+
+### ANEXO 1: CHECKLIST UNGM BASIC 
+
+- [ ] Nombre de empresa (inglés, coincidente con registro)
+- [ ] Tipo de empresa (SL, SA, etc.)
+- [ ] Número de registro/identificación fiscal
+- [ ] Fecha de constitución
+- [ ] Domicilio social y postal
+- [ ] Contacto principal (nombre, cargo, email, teléfono)
+- [ ] Aceptación del Código de Conducta de la ONU
+- [ ] Declaración de elegibilidad
+- [ ] Códigos UNSPSC seleccionados
+
+### ANEXO 2: CHECKLIST UNGM LEVEL 1 
+
+- [ ] Certificado de constitución (traducido)
+- [ ] Tres referencias independientes (nombre, contacto, relación)
+- [ ] Información de propietarios, afiliados e intermediarios
+
+### ANEXO 3: CHECKLIST UNGM LEVEL 2 
+
+- [ ] Acreditar 3 años en funcionamiento
+- [ ] Tres cartas de referencia recientes
+- [ ] Estados financieros auditados de los últimos 3 años (balance, P&L)
+- [ ] Certificados de calidad (si se tienen)
+
+### ANEXO 4: CHECKLIST OTAN NSPA
+
+- [ ] Vendor Information Questionnaire (propio NSPA)
+- [ ] Estados financieros auditados 3 años
+- [ ] Referencias de proyectos similares
+- [ ] Certificados ISO u otros
+- [ ] Listado de personal técnico con cualificaciones
+- [ ] Listado de equipamiento
+- [ ] Póliza de seguros
+
+### ANEXO 5: CHECKLIST DG ECHO / UE
+
+- [ ] Registro PIC (Participant Identification Code)
+- [ ] Formulario de entidad legal
+- [ ] Cuenta bancaria a nombre de la empresa (formato UE)
+- [ ] Declaración de no exclusión
+- [ ] Capacidad financiera (ratios, liquidez)
+- [ ] Experiencia en proyectos humanitarios/complejos
+
+---
+
+## NOTA FINAL
+
+Este plan es un documento vivo. Deberá adaptarse a medida que la consultora seleccionada identifique requisitos específicos de oportunidades concretas. La estrategia de posicionamiento debe enfatizar el **carácter innovador y tecnológico** de la empresa (IA, trazabilidad blockchain, I+D) para competir en **RFPs** en lugar de solo en precio (ITBs).
+
+**ZEHAHAHAHA.** Ahora a buscar la consultora que entienda que no somos una ONG más, sino un contratista con visión de futuro y memoria de metal.
