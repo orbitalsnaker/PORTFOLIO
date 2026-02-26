@@ -1,122 +1,319 @@
-# PLAN DE CONTRATACIÓN Y POSICIONAMIENTO PARA EMPRESA DE LIMPIEZA POST-CONFLICTO CON COMPONENTE DE I+D
+# PROYECTO AURA: ACCIÓN URGENTE PARA LA REMOCIÓN DE ARTEFACTOS
 
-**Proyecto:** Empresa de ingeniería especializada en limpieza de zonas de conflicto, recuperación de componentes de alta especificación, investigación aplicada y reinversión social in situ.
+**Empresa de ingeniería especializada en limpieza post-conflicto con componente de I+D y cadena de suministro distribuida**
 
-**Fecha:** Febrero 2026 (versión 6.0 integral)
+**Autor:** David Ferrandez Canalis
 
-**Autor:** David Ferrandez Canalis 
+**Fecha:** Marzo 2026
 
-**Documento para:** Contratación de consultora especializada en licitaciones internacionales y relaciones institucionales
-
-
-## ÍNDICE COMPLETO
-
-1. OBJETIVO DEL PLAN
-2. PERFIL DE LA CONSULTORA REQUERIDA
-3. ANÁLISIS DETALLADO DE ORGANISMOS FINANCIADORES
-   - 3.1. NACIONES UNIDAS (UNOPS, UNMAS, UNDP, UNICEF, UN SECRETARIAT)
-   - 3.2. OTAN (NSPA Y FONDOS FIDUCIARIOS)
-   - 3.3. UNIÓN EUROPEA (DG ECHO, FEDER, HORIZON EUROPE)
-   - 3.4. FINANCIACIÓN BILATERAL POR PAÍSES (ALEMANIA, CANADÁ, SUIZA, ITALIA, BÉLGICA, REINO UNIDO, EEUU, PAÍSES BAJOS, JAPÓN, NORUEGA, COLOMBIA)
-   - 3.5. BANCO MUNDIAL Y BANCOS REGIONALES DE DESARROLLO
-   - 3.6. NUEVAS FUENTES DE FINANCIACIÓN IDENTIFICADAS
-4. FUNDAMENTO ACADÉMICO: TECNOLOGÍAS DE BAJO COSTE Y HARDWARE ABIERTO
-   - 4.1. INTRODUCCIÓN: EL PARADIGMA DE LA INNOVACIÓN FRUGAL Y OPEN SOURCE HARDWARE
-   - 4.2. HARDWARE ABIERTO APLICABLE A LIMPIEZA POST-CONFLICTO
-      - 4.2.1. Procesadores y Sistemas en Chip (SoC) Abiertos
-      - 4.2.2. Plataformas de Cómputo Embebido de Bajo Coste
-      - 4.2.3. Sensores y Periféricos de Código Abierto
-      - 4.2.4. Herramientas EDA y Flujos de Diseño Abiertos
-      - 4.2.5. Repositorios y Comunidades de Hardware Libre
-   - 4.3. TECNOLOGÍAS DE BAJO COSTE APLICABLES A LA LIMPIEZA POST-CONFLICTO
-      - 4.3.1. Inteligencia Artificial y Machine Learning para Detección
-      - 4.3.2. Drones y Plataformas Autónomas de Bajo Coste
-      - 4.3.3. Sensores y Equipos de Detección de Bajo Coste
-      - 4.3.4. Gemelos Digitales y Modelización 3D
-   - 4.4. RECUPERACIÓN DE COMPONENTES COMO FUENTE DE I+D
-   - 4.5. ANÁLISIS COMPARATIVO DE EFICIENCIA: TECNOLOGÍAS FRUGALES VS. CONVENCIONALES
-   - 4.6. ALINEACIÓN CON LAS PRIORIDADES DE LOS DONANTES
-   - 4.7. BASES DE DATOS PÚBLICAS Y RECURSOS ABIERTOS PARA ABARATAR COSTES
-5. ESTRATEGIA DE CADENA DE SUMINISTRO DISTRIBUIDA 50/50
-   - 5.1. PRINCIPIOS DE LA CADENA DISTRIBUIDA
-   - 5.2. TALLERES LOCALES EN ZONAS DE CONFLICTO
-   - 5.3. TALLERES DISTRIBUIDOS EN LA UNIÓN EUROPEA (prioridad Sabadell)
-   - 5.4. MODELO DE COORDINACIÓN Y LOGÍSTICA
-   - 5.5. GESTIÓN DE CALIDAD Y CERTIFICACIÓN
-   - 5.6. CUADRO DE CAPACIDAD PRODUCTIVA POR TALLER
-6. ESTRUCTURA ORGANIZATIVA Y EQUIPO INICIAL
-   - 6.1. ORGANIGRAMA DE LA EMPRESA (FASE 1)
-   - 6.2. PERFILES DEL EQUIPO DIRECTIVO
-   - 6.3. PERFILES DEL EQUIPO TÉCNICO Y OPERATIVO
-   - 6.4. POLÍTICA SALARIAL Y CONTRATACIÓN
-7. REQUISITOS COMUNES DE ELEGIBILIDAD Y DOCUMENTACIÓN TRANSVERSAL
-   - 7.1. REQUISITOS LEGALES
-   - 7.2. REQUISITOS FINANCIEROS
-   - 7.3. REQUISITOS TÉCNICOS
-   - 7.4. REQUISITOS DE INTEGRIDAD Y ÉTICA
-8. MAPA DE REQUISITOS POR ORGANISMO Y NIVEL DE REGISTRO
-9. ESTRATEGIA DE DIFERENCIACIÓN Y LÍNEAS DE INGRESO
-   - 9.1. INNOVACIÓN TECNOLÓGICA Y TRAZABILIDAD
-   - 9.2. RECUPERACIÓN DE COMPONENTES E I+D
-   - 9.3. REINVERSIÓN SOCIAL IN SITU
-   - 9.4. NUEVAS LÍNEAS DE INGRESO DERIVADAS
-10. PLAN DE TRABAJO POR FASES (DETALLADO)
-    - 10.1. FASE 0: PREPARACIÓN CORPORATIVA Y DIAGNÓSTICO (MESES 1-2)
-    - 10.2. FASE 1: REGISTRO EN PLATAFORMAS (MESES 2-4)
-    - 10.3. FASE 2: CREACIÓN DE TALLERES Y CADENA DE SUMINISTRO (MESES 3-8)
-    - 10.4. FASE 3: IDENTIFICACIÓN Y SEGUIMIENTO DE OPORTUNIDADES (CONTINUO)
-    - 10.5. FASE 4: PREPARACIÓN Y PRESENTACIÓN DE PROPUESTAS (POR OPORTUNIDAD)
-    - 10.6. FASE 5: ACOMPAÑAMIENTO POST-PRESENTACIÓN Y EJECUCIÓN
-11. CRONOGRAMA ESTIMADO (MENSUAL)
-12. PRESUPUESTO DETALLADO Y PROVISIÓN DE FONDOS
-    - 12.1. COSTES DE ESTRUCTURA Y PERSONAL (PRIMER AÑO)
-    - 12.2. COSTES DE REGISTRO Y CONSULTORÍA
-    - 12.3. INVERSIÓN EN EQUIPAMIENTO Y TALLERES
-    - 12.4. PROVISIÓN PARA IMPREVISTOS Y CONTINGENCIAS
-    - 12.5. CUADRO RESUMEN DE INVERSIÓN INICIAL
-13. GESTIÓN DE RIESGOS Y SOSTENIBILIDAD
-    - 13.1. IDENTIFICACIÓN DE RIESGOS PRINCIPALES
-    - 13.2. SOSTENIBILIDAD DEL MODELO DE NEGOCIO
-14. ALIANZAS LOCALES Y ESTRATEGIA DE IMPLEMENTACIÓN
-    - 14.1. IMPORTANCIA DE LAS ALIANZAS LOCALES
-    - 14.2. CRITERIOS PARA SELECCIONAR SOCIOS LOCALES
-    - 14.3. MODELO DE RELACIÓN
-    - 14.4. ESTRATEGIA DE ENTRADA EN UN NUEVO PAÍS
-15. ANEXOS
-    - A.1: CHECKLIST UNGM NIVELES BASIC, 1 Y 2
-    - A.2: CHECKLIST OTAN NSPA
-    - A.3: CHECKLIST DG ECHO / HORIZON EUROPE
-    - A.4: PLANTILLA DE CURRÍCULUM CORPORATIVO (CAPABILITY STATEMENT)
-    - A.5: PLANTILLA DE REFERENCIAS DE PROYECTOS
-    - A.6: GLOSARIO DE TÉRMINOS Y ACRÓNIMOS
-    - A.7: DIRECTRIZ DE DISEÑO PARA HARDWARE ABIERTO
+**Documento para:** Presentación a inversores, socios tecnológicos y organismos de financiación
 
 
-## 1. OBJETIVO DEL PLAN
+## RESUMEN EJECUTIVO
 
-El presente documento tiene como objetivo proporcionar una hoja de ruta integral y detallada para que una consultora especializada gestione el registro, habilitación, posicionamiento y presentación a licitaciones de una empresa de ingeniería con el siguiente perfil:
+El Proyecto AURA constituye una iniciativa empresarial de ingeniería orientada a abordar el problema global de la contaminación por minas y artefactos explosivos en zonas post-conflicto. La propuesta combina tecnologías de bajo coste basadas en hardware abierto, una cadena de suministro distribuida al 50% entre la Unión Europea y países afectados, y un modelo de reinversión social estructural.
 
-Actividad principal: Servicios de limpieza de zonas post-conflicto que comprenden desminado humanitario, retirada de municiones sin explosionar (UXO), descontaminación de suelos y eliminación de restos explosivos de guerra (ERW).
+El proyecto nace de la constatación de que las técnicas convencionales de desminado son excesivamente lentas y costosas, y de que las organizaciones tradicionales presentan estructuras ineficientes. La oportunidad reside en aplicar los principios de innovación frugal y hardware abierto para reducir costes en un orden de magnitud, mientras se genera empleo local y se transfiere tecnología a las comunidades afectadas.
 
-Actividades complementarias: Recuperación de componentes electrónicos, mecánicos y metálicos de alta especificación procedentes de material bélico, vehículos militares y equipos de comunicación, así como su reutilización en nuevos diseños de hardware abierto.
+El modelo de negocio se basa en la obtención de contratos con organismos internacionales (Naciones Unidas, OTAN, Unión Europea, gobiernos) complementado con líneas de ingresos diversificadas como consultoría tecnológica, formación, venta de equipos y licencias de software. El presupuesto inicial asciende a 1.820.000 euros, con una estructura de personal de 10-12 personas en Sabadell y 30-45 operarios locales en tres países.
 
-Investigación y desarrollo: Análisis, documentación y publicación de hallazgos técnicos; desarrollo de nuevos productos y procesos basados en los componentes recuperados y en plataformas de hardware abierto.
-
-Reinversión social: Destino de un porcentaje fijo de los beneficios de entre el 15% y el 20% a proyectos de desarrollo local en las zonas de intervención que incluyen educación, salud e infraestructuras básicas, ejecutados preferentemente a través de los talleres locales y con participación de las comunidades afectadas.
-
-Valor diferencial: Trazabilidad radical mediante cadena de hash y blockchain de todos los procesos desde la recepción de fondos hasta el impacto final, garantizando transparencia y auditabilidad en tiempo real.
-
-La empresa se posiciona como un contratista tecnológico con vocación social que combina la eficiencia de una empresa privada con los principios de la economía circular, la innovación abierta y la generación de empleo local en zonas afectadas por conflictos. No es una organización no gubernamental, sino una empresa con un modelo de negocio sostenible y ético que genera ingresos a través de contratos públicos y privados y reinvierte parte de sus beneficios en las comunidades donde opera.
+El proyecto ha sido sometido a un análisis exhaustivo de vulnerabilidades, identificando y resolviendo los principales riesgos tecnológicos, geopolíticos, financieros y operativos mediante soluciones basadas en literatura académica y mejores prácticas del sector. El resultado es un plan robusto, resiliente y con altas probabilidades de éxito.
 
 
-## 2. PERFIL DE LA CONSULTORA REQUERIDA
+## 1. INTRODUCCIÓN: EL PROBLEMA Y LA OPORTUNIDAD
 
-### 2.1. Características necesarias
+### 1.1. La magnitud del problema
 
-| Requisito | Justificación | Nivel de exigencia |
-|-----------|---------------|---------------------|
-| Experiencia demostrable en licitaciones internacionales en organismos como Naciones Unidas, OTAN, Unión Europea y Banco Mundial | Cada organismo tiene procedimientos específicos como RFQ, ITB, RFP, EOI y negociación directa que requieren conocimiento experto y acceso a plataformas propias. | Imprescindible con mínimo de 5 años |
-| Conocimiento profundo del sector de acción contra minas y desarme | Familiaridad con estándares técnicos IMAS, protocolos de seguridad, equipamiento especializado y acreditaciones de personal. | Muy deseable |
+Las minas terrestres y los restos explosivos de guerra (ERW) contaminan extensas áreas en más de 60 países, causando miles de víctimas anuales e impidiendo el uso productivo de la tierra. Ucrania, con más de 170.000 kilómetros cuadrados potencialmente contaminados, se ha convertido en el país con mayor densidad de minas del mundo. Colombia, tras décadas de conflicto, enfrenta desafíos similares en regiones rurales. Siria, Irak, Afganistán y otros países completan un panorama desolador.
+
+Los métodos convencionales de desminado presentan limitaciones fundamentales:
+- Costes elevados: entre 50 y 100 euros por metro cuadrado.
+- Lentitud: una hectárea puede requerir semanas de trabajo.
+- Dependencia de equipos importados y costosos.
+- Escasa transferencia tecnológica a las poblaciones locales.
+- Modelos organizativos ineficientes con altos costes de estructura.
+
+### 1.2. La oportunidad: innovación frugal y hardware abierto
+
+El paradigma de la innovación frugal, definido por Prabhu y otros autores como la capacidad de "hacer más con menos", ofrece una alternativa viable. El hardware de código abierto (Open Source Hardware, OSH) aplica los principios del software libre al diseño de dispositivos físicos, permitiendo ahorros superiores al 90% en determinadas aplicaciones.
+
+El proyecto AURA se basa en la premisa de que es posible desarrollar equipos de detección y prospección con prestaciones suficientes utilizando sensores de bajo coste, procesamiento inteligente de señales y diseños abiertos, y que estos equipos pueden fabricarse de forma distribuida, generando empleo y capacidad técnica en las propias zonas afectadas.
+
+### 1.3. Objetivos del proyecto
+
+1. Desarrollar una línea de equipos de detección de minas y UXO basados en hardware abierto, con costes entre el 5% y el 30% de las alternativas comerciales.
+2. Establecer una cadena de suministro distribuida con talleres de fabricación en la Unión Europea (prioridad Sabadell) y talleres de ensamblaje y mantenimiento en países afectados por conflictos.
+3. Obtener contratos de desminado con organismos internacionales que permitan la validación en campo y la generación de ingresos recurrentes.
+4. Desarrollar líneas de negocio complementarias: consultoría tecnológica, formación, venta de equipos y licencias de software.
+5. Reinvertir entre el 15% y el 20% de los beneficios en proyectos de desarrollo local en las zonas de intervención.
+
+
+## 2. FUNDAMENTO TECNOLÓGICO: HARDWARE ABIERTO Y PROCESAMIENTO INTELIGENTE
+
+### 2.1. El ecosistema de hardware abierto
+
+El proyecto AURA se apoya en el ecosistema de hardware abierto existente, pero reconoce sus limitaciones y propone estrategias para superarlas. El análisis de Gupta et al. (2016) sobre oportunidades y desafíos del hardware abierto identifica diferencias fundamentales con el software que deben ser abordadas.
+
+**Limitación identificada:** El hardware abierto carece de la infraestructura de desarrollo barata que permitió el éxito del software libre, y las herramientas de diseño electrónico (EDA) de código abierto presentan menor calidad de resultados (QoR) que las comerciales.
+
+**Solución implementada:**
+- Colaboración con proyectos académicos consolidados: OpenPiton (Universidad de Princeton), OpenROAD (Universidad de Michigan), YOSYS (comunidad open source).
+- Adopción del flujo de diseño validado por el proyecto HEP de Fraunhofer, que ha demostrado la viabilidad de producir chips funcionales utilizando exclusivamente herramientas abiertas.
+- Aceptación de prestaciones iniciales inferiores, compensadas con algoritmos avanzados de procesamiento.
+- Participación en comunidades OSH para contribuir con mejoras y beneficiarse del desarrollo colectivo.
+
+### 2.2. Sensores de bajo coste y procesamiento inteligente
+
+El proyecto desarrollará tres familias de sensores:
+
+**Magnetómetros de bajo coste:**
+- Basados en sensores MEMS comerciales (50-200 euros frente a 15.000-30.000 euros de los magnetómetros de cesio).
+- Compensación de la menor sensibilidad mediante:
+  - Algoritmos de cancelación de ruido adaptativos.
+  - Fusión sensorial con datos de GPR y cámaras multiespectrales.
+  - Redes neuronales convolucionales entrenadas con datos de sensores de alta gama (transfer learning).
+
+**Radar de penetración terrestre (GPR) de bajo coste:**
+- Diseño basado en componentes COTS (500-2.000 euros frente a 20.000-50.000 euros comerciales).
+- Procesamiento de señal en tiempo real mediante FPGAs de bajo coste.
+- Corrección de deriva térmica mediante modelos matemáticos y calibración automática.
+
+**Drones de prospección aeromagnética:**
+- Plataformas comerciales modificadas (500-2.000 euros por unidad).
+- Equipados con magnetómetros MEMS y cámaras multiespectrales.
+- Algoritmos de planificación de rutas autónomas y procesamiento en el borde (edge computing).
+
+### 2.3. Inteligencia artificial para detección y predicción
+
+Los modelos predictivos basados en machine learning permitirán:
+- Analizar datos históricos de conflicto para identificar áreas de alta probabilidad de contaminación, reduciendo el terreno que requiere inspección técnica.
+- Procesar imágenes de drones y satélites para detectar anomalías en el terreno, cráteres de impacto y alteraciones de la vegetación.
+- Clasificar objetivos detectados por sensores, distinguiendo entre chatarra metálica y artefactos explosivos reales.
+
+La validación de estos algoritmos se realizará mediante:
+- Colaboración con universidades para acceso a datasets de entrenamiento.
+- Pruebas de campo comparativas con equipos certificados.
+- Publicación de resultados en revistas científicas para generar credibilidad.
+
+### 2.4. Gemelos digitales y modelización 3D
+
+La creación de gemelos digitales de las áreas de intervención permitirá:
+- Planificar operaciones de limpieza optimizando recursos.
+- Simular escenarios antes del despliegue físico.
+- Documentar el progreso y los resultados de forma visual e inmutable.
+
+Las plataformas abiertas como QGIS y los datos de Copernicus, Landsat y OpenStreetMap proporcionarán la base cartográfica sin coste.
+
+
+## 3. CADENA DE SUMINISTRO DISTRIBUIDA 50/50
+
+### 3.1. Principios de diseño
+
+La cadena de suministro del proyecto se ha diseñado para maximizar la resiliencia ante la fragmentación geopolítica identificada en los análisis de riesgos de 2025. El mundo se está dividiendo en bloques comerciales con reglas divergentes, y las empresas deben adaptarse.
+
+**Objetivos del diseño:**
+- Resiliencia ante disrupciones geopolíticas.
+- Generación de empleo local en zonas afectadas.
+- Transferencia tecnológica bidireccional.
+- Cumplimiento de requisitos de participación local en contratos internacionales.
+- Reducción de costes logísticos.
+
+### 3.2. Estructura de la cadena
+
+| Nivel | Ubicación | Función | Características |
+|-------|-----------|---------|-----------------|
+| N1 - Central | Sabadell (España) | I+D, fabricación de componentes críticos, certificación, formación avanzada | 8 empleos cualificados, 200.000€ inversión |
+| N2 - Taller 1 | Ucrania | Fabricación de componentes no críticos, ensamblaje, mantenimiento | 15 empleos locales, 25.000€ inversión |
+| N2 - Taller 2 | Colombia | Fabricación de componentes no críticos, ensamblaje, mantenimiento | 15 empleos locales, 25.000€ inversión |
+| N2 - Taller 3 | Por definir | Fabricación de componentes no críticos, ensamblaje, mantenimiento | 15 empleos locales, 25.000€ inversión |
+
+### 3.3. Mitigación de riesgos geopolíticos
+
+**Riesgo:** Fragmentación en bloques enfrentados (EEUU-UE vs China-Rusia).
+
+**Soluciones implementadas:**
+- Diversificación de proveedores: Para cada componente crítico se mantendrán al menos dos proveedores en diferentes bloques.
+- Stocks de seguridad: Inventario para 6 meses de componentes sujetos a restricciones comerciales.
+- Nearshoring: Prioridad para proveedores europeos en componentes críticos, aunque más caros.
+- Cadenas paralelas: Capacidad de producción simultánea en bloques diferentes.
+
+**Riesgo:** Inestabilidad en países de operación.
+
+**Soluciones implementadas:**
+- Diseño de talleres locales como unidades autónomas con capacidad de operar desconectadas.
+- Planes de evacuación y protocolos de continuidad.
+- Diversificación geográfica de talleres para no depender de un único país.
+
+**Riesgo:** Volatilidad arancelaria y costes de transporte.
+
+**Soluciones implementadas:**
+- Fabricación local del máximo porcentaje posible de componentes no críticos.
+- Contratos indexados con cláusulas de revisión de precios.
+- Acuerdos marco con operadores logísticos para tarifas preferentes.
+
+### 3.4. Transferencia tecnológica a talleres locales
+
+El proyecto Humanicemos en Colombia ha demostrado que es posible formar a excombatientes en estándares IMAS y convertirlos en operadores de desminado cualificados. Sobre esa base, el proyecto AURA añade:
+
+- **Diseños modulares:** Componentes simples que pueden ser fabricados con tecnologías básicas (impresión 3D, CNC simple).
+- **Documentación visual:** Instrucciones en formato vídeo, pictogramas y traducción a idiomas locales.
+- **Sistemas de calidad automatizados:** Pruebas automáticas para verificar componentes fabricados localmente.
+- **Gemelos digitales de los talleres:** Supervisión remota y asistencia en tiempo real.
+
+**Mitigación de brecha digital:**
+- Interfaces de usuario simplificadas con iconos grandes.
+- Formación oral y práctica con instructores locales.
+- Gamificación del proceso de aprendizaje.
+
+**Mitigación de rotación de personal:**
+- Contratos estables con salarios dignos.
+- Participación en beneficios del taller.
+- Formación continua y carrera profesional.
+- Modelo cooperativo de propiedad compartida (opcional según contexto).
+
+
+## 4. CERTIFICACIÓN Y CUMPLIMIENTO NORMATIVO
+
+### 4.1. El desafío de la certificación IMAS
+
+Las normas IMAS (International Mine Action Standards) son el referente mundial para operaciones de desminado. Los equipos comerciales utilizados actualmente están certificados según estos estándares, mientras que los sensores de bajo coste propuestos carecen de dicha certificación.
+
+**Estrategia para superar esta barrera:**
+
+**Fase 1: Validación comparativa**
+- Realizar pruebas sistemáticas comparando los sensores de bajo coste con equipos certificados en condiciones de campo controladas.
+- Documentar resultados con rigor científico y publicarlos en revistas especializadas (Journal of Conventional Weapons Destruction, The Journal of ERW and Mine Action).
+- Demostrar que, combinados con algoritmos de IA, alcanzan prestaciones equivalentes o superiores.
+
+**Fase 2: Colaboración con organismos certificadores**
+- Establecer contacto con el GICHD (Geneva International Centre for Humanitarian Demining) y UNMAS.
+- Proponer el desarrollo de estándares específicos para tecnologías de bajo coste.
+- Participar en grupos de trabajo sobre innovación en desminado.
+
+**Fase 3: Certificación progresiva**
+- Obtener certificación para aplicaciones específicas (prospección aérea, detección de metales ferrosos).
+- Ampliar gradualmente el alcance a medida que se acumule experiencia.
+
+### 4.2. Acreditación de personal
+
+El proyecto prevé la contratación de personal local sin experiencia previa. La formación en desminado requiere certificaciones IMAS que pueden llevar meses.
+
+**Soluciones implementadas:**
+- Colaboración con UNMAS para acceder a sus programas de formación estandarizados.
+- Utilización del modelo Humanicemos como referencia.
+- Desarrollo de herramientas de formación acelerada:
+  - Realidad virtual para simulación de entornos de riesgo.
+  - Gemelos digitales de campos de minas para práctica remota.
+  - Sistemas de mentorización con supervisores experimentados vía telepresencia.
+- Certificación progresiva por niveles, comenzando por tareas de apoyo.
+
+### 4.3. Calidad y seguridad
+
+- Todos los equipos pasarán pruebas de validación antes del despliegue.
+- Se establecerá un sistema de gestión de calidad con auditorías internas y externas.
+- UNMAS proporcionará supervisión externa de calidad en las operaciones.
+
+
+## 5. ESTRUCTURA ORGANIZATIVA Y EQUIPO
+
+### 5.1. Organigrama
+
+| Posición | Perfil | Experiencia | Función principal |
+|----------|--------|-------------|-------------------|
+| Director General | Ingeniero superior con MBA | >15 años | Dirección estratégica, relaciones institucionales |
+| Director Técnico | Ingeniero industrial/telecomunicaciones | >10 años | I+D, validación, comunidades OSH |
+| Director de Operaciones | Experto en gestión de proyectos internacionales | >10 años | Coordinación de talleres, logística |
+| Director Administrativo-Financiero | Licenciado en ADE/Económicas | >10 años | Gestión financiera, compliance |
+| David Ferrandez Canalis | Arquitecto de sistemas, ingeniero de software/hardware | >10 años | Coordinación técnica entre talleres, desarrollo de firmware, integración de sistemas de trazabilidad |
+| Jefe de I+D | Ingeniero electrónico/informático | >5 años | Desarrollo de hardware y software embebido |
+| Ingeniero de firmware | Desarrollador embebido | >3 años | Programación de sensores y sistemas |
+| Técnicos electrónicos (2) | Formación profesional | >3 años | Montaje y reparación |
+| Técnico mecánico | Formación profesional | >3 años | CNC, impresión 3D |
+| Responsable de contratación | Especialista en licitaciones | >5 años | Gestión de propuestas |
+| Administrativo | Contabilidad y administración | >3 años | Apoyo |
+
+Adicionalmente, se contratarán supervisores de taller en cada país de operación (2-3 personas) y operarios locales (30-45 personas).
+
+### 5.2. Justificación de la estructura
+
+Se ha optado por un Director General con experiencia contrastada para dar solidez institucional y facilitar el acceso a redes de contactos y financiación. David Ferrandez asume el rol de Coordinador Técnico, responsabilizándose de la integración de hardware y software y de la coordinación entre talleres, que es donde reside el valor diferencial de la propuesta.
+
+### 5.3. Política salarial
+
+- Equipo directivo: salarios competitivos con bonus ligados a consecución de contratos.
+- Equipo técnico en Sabadell: salarios de mercado para el sector en Cataluña.
+- Personal local: salarios dignos y superiores a la media local, con contratos formales y cobertura social, priorizando la contratación de personas afectadas por el conflicto.
+
+
+## 6. MODELO DE FINANCIACIÓN Y LÍNEAS DE INGRESO
+
+### 6.1. Fuentes de ingresos diversificadas
+
+Para reducir la dependencia de contratos públicos, el proyecto contempla múltiples líneas de ingresos:
+
+| Línea de negocio | Descripción | Mercado potencial | Madurez |
+|------------------|-------------|-------------------|---------|
+| Contratos de desminado | Servicios de limpieza para organismos internacionales | UNOPS, UNMAS, OTAN, gobiernos | Objetivo principal |
+| Consultoría tecnológica | Asesoría a gobiernos y ONGs en implementación de tecnologías de bajo coste | Ministerios, UNMAS, ONGs internacionales | Año 2 |
+| Formación | Cursos presenciales y online sobre tecnologías de bajo coste, IA, mantenimiento | ONGs locales, gobiernos, universidades | Año 2 |
+| Venta de equipos | Sensores, drones modificados, kits de procesamiento | ONGs, pequeñas empresas de desminado | Año 2-3 |
+| Licencias de software | Algoritmos de ML, plataformas de gestión de datos | Empresas de ingeniería, organismos públicos | Año 3 |
+| Datos geoespaciales | Cartografía procesada, análisis multitemporal | Organismos internacionales, ONGs | Año 2 |
+| Alquiler de equipos | Drones de prospección, magnetómetros, estaciones RTK | ONGs locales, universidades | Año 2 |
+
+### 6.2. Estrategia de captación de contratos
+
+- Registro en UNGM (niveles Basic, 1 y 2), NSPA (OTAN), SAM.gov (USAID) y plataformas nacionales.
+- Identificación sistemática de oportunidades mediante alertas y seguimiento semanal.
+- Preparación de propuestas de alta calidad con énfasis en innovación tecnológica y componente social.
+- Participación en consorcios con socios locales para cumplir requisitos de presencia en país.
+
+### 6.3. Presupuesto detallado
+
+| Partida | Coste |
+|---------|-------|
+| Personal primer año | 939.600 € |
+| Consultoría y registros | 49.300 € |
+| Inversión en equipamiento y talleres | 440.000 € |
+| Provisiones y contingencias | 390.000 € |
+| **TOTAL** | **1.818.900 €** |
+
+**Desglose de provisiones:**
+- Contingencias operativas (10% sobre personal): 94.000 €
+- Contingencias técnicas (15% sobre equipamiento): 66.000 €
+- Fluctuaciones cambiarias (2% sobre total): 30.000 €
+- Litigios y reclamaciones: 50.000 €
+- Fondo de maniobra primeros 6 meses: 150.000 €
+
+### 6.4. Gestión de tesorería
+
+- Línea de crédito con banca ética para cubrir desfases.
+- Factoring de facturas de organismos internacionales.
+- Negociación de anticipos del 30-50% en contratos.
+
+
+## 7. TRAZABILIDAD Y TRANSPARENCIA
+
+### 7.1. Principios del sistema de trazabilidad
+
+El proyecto implementará un sistema de trazabilidad radical que permita auditar cada euro desde el donante hasta el impacto final, generando confianza y protegiendo contra acusaciones de malversación.
+
+### 7.2. Arquitectura técnica
+
+Ante las limitaciones de blockchain tradicional (consumo energético, vulnerabilidades), se opta por una solución híbrida:
+
+- **Hashchains simples:** Registro inmutable de eventos sin necesidad de consenso distribuido.
+- **Múltiples fuentes de verificación:** Cada evento se registra con datos de sensores, GPS, testigos humanos y fotografías.
+- **Sistema de reputación:** Los operadores que introducen datos acumulan reputación basada en la verificabilidad posterior.
+- **Auditorías externas:** Verificación periódica de correspondencia entre la cadena y la realidad física.
+
+### 7.3. Aplicación a la cadena de suministro
+
+- Cada componente tendrá un registro de origen (proveedor, lote, certificado).
+- Cada fase de fabricación generará un hash con los parámetros de calidad.
+- El ensamblaje y distribución quedarán registrados.
+- Las operaciones de desminado documentarán coordenadas, resultados y testigos.
+- La | Conocimiento profundo del sector de acción contra minas y desarme | Familiaridad con estándares técnicos IMAS, protocolos de seguridad, equipamiento especializado y acreditaciones de personal. | Muy deseable |
 | Capacidad de trabajo en inglés con nivel C1 mínimo y español con deseable conocimiento de francés, alemán, árabe o ucraniano | Toda la documentación oficial debe presentarse en inglés y los proyectos en países específicos requieren idiomas locales. | Inglés imprescindible |
 | Red de contactos en organismos internacionales y agencias de cooperación | Acelera el proceso de posicionamiento, permite obtener información no publicada y facilita la participación en consorcios. | Muy deseable |
 | Experiencia en gestión de proyectos de I+D y transferencia tecnológica | Para posicionar correctamente el componente de investigación y articular propuestas en programas como Horizon Europe. | Valor añadido |
