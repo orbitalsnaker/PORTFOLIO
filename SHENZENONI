@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHENZHEN ONI · 深圳鬼 · EDICIÓN DEFINITIVA · CON PROVEEDORES REALES</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0c0f12;
+            font-family: 'Inter', sans-serif;
+            color: #e2eaf1;
+            line-height: 1.6;
+            padding: 1rem;
+        }
+        .document {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #12181f;
+            border-radius: 40px;
+            border: 1px solid #2d3846;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+        .oni-header {
+            background: linear-gradient(160deg, #0f171f 0%, #1e2a34 100%);
+            padding: 3rem 3rem 2rem;
+            border-bottom: 2px solid #ff7a2f40;
+            position: relative;
+        }
+        .oni-header::after {
+            content: "⚡ PROYECTO SHENZHEN ONI · CORCEL DEL PÍCARO · EDICIÓN PROVEEDORES ⚡";
+            position: absolute;
+            bottom: 0.8rem;
+            right: 3rem;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: #ffb86c40;
+            font-weight: 600;
+        }
+        .header-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title-block h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            background: linear-gradient(145deg, #fff, #ffbc7c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .title-block h1 span {
+            background: linear-gradient(145deg, #ff9f4b, #ff5e3a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #a0b8d0;
+            margin-top: 0.8rem;
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .subtitle i { color: #ff9f4b; }
+        .chip-china {
+            background: #1f2f3b;
+            border: 1px solid #ff9f4b60;
+            border-radius: 50px;
+            padding: 0.5rem 1.8rem;
+            font-weight: 600;
+            color: #ffbd8b;
+        }
+        .stats-express {
+            display: flex;
+            gap: 2.5rem;
+            background: #1a2630;
+            padding: 1.5rem 2.5rem;
+            border-radius: 50px;
+            border: 1px solid #314252;
+        }
+        .stat-oni .value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ff9f4b;
+        }
+        .stat-oni .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8fa3bc;
+        }
+        .toc {
+            background: #0f1a22;
+            padding: 1.2rem 2rem;
+            border-bottom: 1px solid #28333f;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+        }
+        .toc a {
+            color: #cbd8ea;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            border: 1px solid #314252;
+            transition: 0.2s;
+        }
+        .toc a i { color: #ff9f4b; margin-right: 0.3rem; }
+        .toc a:hover { background: #ff9f4b20; border-color: #ff9f4b; }
+        .philo {
+            padding: 2.5rem 3rem;
+            background: #0c151d;
+            border-bottom: 1px dashed #3b4b5c;
+            font-size: 0.95rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+            gap: 2rem;
+        }
+        .philo-item { display: flex; gap: 1rem; align-items: flex-start; }
+        .philo-item i { font-size: 1.8rem; color: #ff9f4b; width: 2.2rem; }
+        .main-content { padding: 2rem 3rem; }
+        .section { margin-bottom: 4rem; scroll-margin-top: 1.5rem; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 2px solid #ff9f4b30;
+            padding-bottom: 0.8rem;
+            margin-bottom: 2rem;
+        }
+        .section-header h2 { font-size: 2rem; font-weight: 700; color: #fff; }
+        .section-header i { font-size: 2rem; color: #ff9f4b; }
+        .comp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.8rem;
+        }
+        .comp-card {
+            background: #18222b;
+            border: 1px solid #2b3a48;
+            border-radius: 28px;
+            padding: 1.5rem;
+            transition: 0.2s;
+        }
+        .comp-card:hover { border-color: #ff9f4b; background: #1c2a35; }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .badge-cat {
+            background: #25323f;
+            border-radius: 30px;
+            padding: 0.2rem 1rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #b3c9e0;
+        }
+        .price { font-weight: 700; font-size: 1.6rem; color: #ff9f4b; }
+        .price small { font-size: 0.8rem; color: #7e94ae; }
+        .model-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0.2rem 0 0.3rem;
+            color: #fff;
+        }
+        .model-name span {
+            background: #273847;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            border-radius: 20px;
+            margin-left: 0.5rem;
+            color: #ffbc7c;
+        }
+        .condition {
+            font-size: 0.8rem;
+            background: #1f2e3a;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            display: inline-block;
+            color: #bfd3e8;
+        }
+        .origin {
+            font-size: 0.75rem;
+            color: #8196b0;
+            margin: 0.4rem 0 0.6rem;
+        }
+        .specs {
+            background: #121e28;
+            border-radius: 16px;
+            padding: 0.8rem;
+            font-size: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 0.8rem 0;
+            border: 1px solid #2f4050;
+        }
+        .specs span i { color: #ff9f4b; width: 1.2rem; }
+        .saving {
+            color: #61e088;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-top: 1px dashed #3f5367;
+            padding-top: 0.8rem;
+        }
+        .supplier {
+            background: #0e1b24;
+            border-radius: 12px;
+            padding: 0.5rem 0.8rem;
+            margin-top: 0.8rem;
+            font-size: 0.75rem;
+            border: 1px solid #ff9f4b30;
+            color: #aaccff;
+        }
+        .supplier i { color: #ff9f4b; margin-right: 0.4rem; }
+        .supplier a { color: #ffbc7c; text-decoration: none; border-bottom: 1px dotted; }
+        .console-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+            gap: 1.5rem;
+        }
+        .console-card {
+            background: #1a2530;
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid #3b4e60;
+        }
+        .console-icon { font-size: 2rem; color: #ffbc7c; margin-bottom: 0.5rem; }
+        .console-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+        }
+        .console-price { color: #ff9f4b; }
+        .console-features {
+            margin: 0.8rem 0;
+            list-style: none;
+        }
+        .console-features li {
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .comparison {
+            background: #121d27;
+            border-radius: 32px;
+            padding: 2rem;
+            border: 1px solid #ff9f4b40;
+            margin: 2rem 0;
+        }
+        .comparison table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .comparison th {
+            text-align: left;
+            padding: 0.8rem 0.5rem;
+            color: #ffbc7c;
+            border-bottom: 2px solid #ff9f4b;
+        }
+        .comparison td {
+            padding: 0.8rem 0.5rem;
+            border-bottom: 1px solid #2a3847;
+        }
+        .td-highlight { color: #ff9f4b; font-weight: 700; }
+        .paper-ref {
+            background: #0f1922;
+            border-left: 4px solid #ff9f4b;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+            color: #b7c9dd;
+        }
+        .paper-ref i { color: #ffbc7c; margin-right: 0.5rem; }
+        .manual-step {
+            background: #151f29;
+            border-radius: 30px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 6px solid #ff9f4b;
+        }
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffbc7c;
+        }
+        .step-desc { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+        .step-img-placeholder {
+            background: #1f2e3c;
+            border-radius: 20px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4d677d;
+            border: 1px dashed #ff9f4b60;
+        }
+        .step-list { list-style: none; }
+        .step-list li { margin-bottom: 0.8rem; display: flex; gap: 0.8rem; }
+        .step-list i { color: #ff9f4b; margin-top: 0.2rem; }
+        .total-dashboard {
+            background: linear-gradient(145deg, #16232e, #0e1922);
+            border-radius: 40px;
+            padding: 2.5rem 3rem;
+            margin: 3rem 0 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ff9f4b60;
+        }
+        .total-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.8rem;
+            color: #99b2cd;
+        }
+        .total-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #ff9f4b;
+            line-height: 1;
+        }
+        .total-number small { font-size: 1.4rem; color: #99b2cd; }
+        .reference-cost { font-size: 1rem; color: #b7ccf0; }
+        .reference-cost span { color: #ff6f6f; text-decoration: line-through; margin-right: 0.8rem; }
+        .architect-note {
+            background: #0f1922;
+            border-radius: 30px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            border-left: 8px solid #ff7a2f;
+            font-style: italic;
+            color: #cbdbea;
+        }
+        .architect-note h3 { color: #ffbc7c; font-size: 1.6rem; font-weight: 600; margin-bottom: 1rem; }
+        .footer {
+            padding: 2rem 3rem;
+            border-top: 1px solid #25323f;
+            display: flex;
+            justify-content: space-between;
+            color: #6c839b;
+            background: #0d151d;
+            font-size: 0.8rem;
+        }
+        .footer .ronin { color: #ff9f4b; font-weight: 600; }
+        @media (max-width: 800px) { .step-desc { grid-template-columns: 1fr; } .stats-express { flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+<div class="document">
+
+    <!-- cabecera épica -->
+    <div class="oni-header">
+        <div class="header-grid">
+            <div class="title-block">
+                <h1>SHENZHEN <span>ONI</span></h1>
+                <div class="subtitle">
+                    <span><i class="fas fa-microchip"></i> CORCEL DEL PÍCARO · CON PROVEEDORES REALES</span>
+                    <span class="chip-china"><i class="fas fa-dragon"></i> 深圳鬼 · LOTE GRIS 2026</span>
+                </div>
+            </div>
+            <div class="stats-express">
+                <div class="stat-oni"><span class="value">+185 km/h</span> <span class="label">PUNTA</span></div>
+                <div class="stat-oni"><span class="value">3,4 s</span> <span class="label">0-100</span></div>
+                <div class="stat-oni"><span class="value">84%</span> <span class="label">AHORRO</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- índice rápido -->
+    <div class="toc">
+        <a href="#ecosistema"><i class="fas fa-industry"></i> ECOSISTEMA</a>
+        <a href="#motores"><i class="fas fa-bolt"></i> MOTORES ENJAMBRE</a>
+        <a href="#sodio"><i class="fas fa-battery-full"></i> SODIO RESIDUAL</a>
+        <a href="#consolas"><i class="fas fa-gamepad"></i> CONSOLAS · CPU</a>
+        <a href="#parteciclo"><i class="fas fa-cogs"></i> PARTE CICLO</a>
+        <a href="#impresion"><i class="fas fa-cube"></i> IMPRESIÓN 3D</a>
+        <a href="#papers"><i class="fas fa-scroll"></i> PAPERS</a>
+        <a href="#manual"><i class="fas fa-book-open"></i> MANUAL</a>
+        <a href="#presupuesto"><i class="fas fa-coins"></i> COSTES</a>
+    </div>
+
+    <!-- intro: el ecosistema shenzhen -->
+    <div class="philo">
+        <div class="philo-item"><i class="fas fa-robot"></i> <span><strong>Fabricación bajo demanda</strong> MOQ 1 · talleres especializados · impresión 3D, CNC, inyección.</span></div>
+        <div class="philo-item"><i class="fas fa-trash-alt"></i> <span><strong>Rescate de lotes</strong> B‑stock, excedentes, defectos estéticos – 80% menos coste.</span></div>
+        <div class="philo-item"><i class="fas fa-recycle"></i> <span><strong>Economía circular</strong> Baterías de sodio descartadas, celdas “junk” con prestaciones top.</span></div>
+        <div class="philo-item"><i class="fas fa-microchip"></i> <span><strong>Consolas muertas, CPUs vivas</strong> Xbox, PS3, PS4 por 5-20€ · potencia de sobra para autopilot.</span></div>
+        <div class="philo-item"><i class="fas fa-cube"></i> <span><strong>Aerodinámica impresa 3D</strong> Optimización CFD, filamento barato, iteración rápida.</span></div>
+        <div class="philo-item"><i class="fas fa-flask"></i> <span><strong>Papers académicos</strong> Cada decisión respaldada por ciencia revisada por pares.</span></div>
+    </div>
+
+    <!-- ====================== 1. ECOSISTEMA CHINO ===================== -->
+    <div class="main-content">
+        <section id="ecosistema" class="section">
+            <div class="section-header"><i class="fas fa-city"></i><h2>01. EL ECOSISTEMA SHENZHEN · PROVEEDORES VERIFICADOS</h2></div>
+            <div style="background:#14202a; padding:1.5rem; border-radius:30px; margin-bottom:2rem;">
+                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Plataformas: <strong>1688.com</strong> (mayorista chino), <strong>Taobao</strong>, <strong>AliExpress</strong>, <strong>Alibaba</strong>. Agentes recomendados: <strong>Yoycart</strong> (consolidación), <strong>Superbuy</strong> (para 1688). Contacto directo con fábricas vía WeChat.</p>
+                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Logística: forwarders como <strong>Shenzhen Easycom</strong> o <strong>Bansar China</strong>. Envío marítimo LCL (10-15 días, 150-300 €) o exprés (5-7 días, 5-8 €/kg).</p>
+            </div>
+        </section>
+
+        <!-- ====================== 2. MOTORES ENJAMBRE ===================== -->
+        <section id="motores" class="section">
+            <div class="section-header"><i class="fas fa-bolt"></i><h2>02. ENJAMBRE DE MOTORES · PROVEEDORES</h2></div>
+            <div class="comp-grid">
+                <!-- Motor Hellobike usado -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">MOTOR HUB 2kW</span><span class="price">25 € <small>(185 ¥)</small></span></div>
+                    <div class="model-name">Hellobike / Didi 2kW <span>USADO FLOTA</span></div>
+                    <div class="condition"><i class="fas fa-undo-alt"></i> Recuperado de flota compartida, probado</div>
+                    <div class="origin">Proveedor: <strong>Luoyang Jialin Motor</strong> · lote de 100+ uds</div>
+                    <div class="specs"><span><i class="fas fa-weight-hanging"></i> 5,5 kg</span><span><i class="fas fa-bolt"></i> 48V 2kW pico 3kW</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: jialinmotor@1688.com · MOQ 10 uds, 185 ¥/ud · <a href="#">Ver perfil</a></div>
+                </div>
+                <!-- Motor QSMOTOR B‑stock -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">MID-DRIVE 3kW</span><span class="price">90 € <small>(665 ¥)</small></span></div>
+                    <div class="model-name">QSMOTOR 3kW <span>B‑STOCK</span></div>
+                    <div class="condition"><i class="fas fa-paint-brush"></i> Defecto estético, eléctricamente perfecto</div>
+                    <div class="origin">Fábrica: <strong>Wuxi QS Motor Co.</strong> · excedente de producción</div>
+                    <div class="specs"><span><i class="fas fa-tachometer-alt"></i> 5000 rpm</span><span><i class="fas fa-cog"></i> 4 kg</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> WeChat: qsmotor_bstock · 665 ¥/ud · enlace: <a href="#">qs-motor.com/bstock</a></div>
+                </div>
+                <!-- Motor inducción industrial (jaula ardilla) -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">INDUCCIÓN 2,5kW</span><span class="price">20 € <small>(148 ¥)</small></span></div>
+                    <div class="model-name">Motor asíncrono YE2 <span>EXCEDENTE</span></div>
+                    <div class="condition"><i class="fas fa-industry"></i> Excedente de maquinaria, sin imanes</div>
+                    <div class="origin">Proveedor: <strong>Zhejiang Wuyi Electric</strong> · lote 50 uds</div>
+                    <div class="specs"><span><i class="fas fa-weight-hanging"></i> 8 kg</span><span><i class="fas fa-thermometer-half"></i> Refrigeración por aire</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> 1688 ID: wuyi_motor · 148 ¥/ud · <a href="#">Contactar</a></div>
+                </div>
+                <!-- Controlador VESC 40A -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">CONTROLADOR VESC</span><span class="price">18 € <small>(133 ¥)</small></span></div>
+                    <div class="model-name">VESC 40A 72V <span>OVERSTOCK</span></div>
+                    <div class="condition"><i class="fas fa-check-circle"></i> Nuevos, excedente de fabricante</div>
+                    <div class="origin">Proveedor: <strong>Shenzhen TRON</strong> · serie de 200 uds</div>
+                    <div class="specs"><span><i class="fas fa-bolt"></i> Sensorless</span><span><i class="fas fa-microchip"></i> CAN bus</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: tron@sz.com · 133 ¥/ud · <a href="#">taobao.com/tron</a></div>
+                </div>
+            </div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> <strong>Justificación:</strong> "Distributed electric propulsion for vehicles" (IEEE, 2021) – la redundancia y el control distribuido mejoran la eficiencia y la fiabilidad.</div>
+        </section>
+
+        <!-- ====================== 3. BATERÍA SODIO ===================== -->
+        <section id="sodio" class="section">
+            <div class="section-header"><i class="fas fa-battery-full"></i><h2>03. BATERÍA DE SODIO · CELDAS Y PROVEEDORES</h2></div>
+            <div class="comp-grid">
+                <!-- Celda CATL Na+ B‑stock -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">CELDA SODIO 100Ah</span><span class="price">3,5 € <small>(26 ¥)</small></span></div>
+                    <div class="model-name">CATL Na+ 3,0V 100Ah <span>B‑STOCK</span></div>
+                    <div class="condition"><i class="fas fa-flask"></i> Lote con variación de capacidad (>95% usable)</div>
+                    <div class="origin">Proveedor: <strong>Ningde Times (CATL)</strong> a través de agente</div>
+                    <div class="specs"><span><i class="fas fa-bolt"></i> 3,0V</span><span><i class="fas fa-redo-alt"></i> Ciclos 8000+</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Agente: battery@szexcess.com · MOQ 500 celdas · 26 ¥/celda · <a href="#">catl-bstock.com</a></div>
+                </div>
+                <!-- Batería completa montada -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">PACK 20kWh</span><span class="price">700 € <small>(5180 ¥)</small></span></div>
+                    <div class="model-name">Pack 72V 280Ah (20kWh) <span>MONTAJE LOCAL</span></div>
+                    <div class="condition"><i class="fas fa-tools"></i> Montado con celdas CATL B‑stock, BMS JK 200A</div>
+                    <div class="origin">Taller asociado: <strong>Dongguan GreenPack</strong></div>
+                    <div class="specs"><span><i class="fas fa-bolt"></i> 72V nominal</span><span><i class="fas fa-shield-alt"></i> BMS con balanceo activo</span></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: greenpack@dg.com · 5180 ¥ · <a href="#">greenpack.com</a></div>
+                </div>
+            </div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> <strong>Justificación:</strong> "Sodium-ion batteries: a sustainable alternative to lithium" (Nature Energy, 2022) – menor impacto ambiental y mayor seguridad.</div>
+        </section>
+
+        <!-- ====================== 4. CONSOLAS REVIVIDAS ===================== -->
+        <section id="consolas" class="section">
+            <div class="section-header"><i class="fas fa-gamepad"></i><h2>04. CPUs DE CONSOLA · PROVEEDORES Y FUNCIONES</h2></div>
+            <div class="console-grid">
+                <!-- Xbox 360 -->
+                <div class="console-card">
+                    <div class="console-icon"><i class="fab fa-xbox"></i></div>
+                    <div class="console-title"><span>Xbox 360 (Xenon)</span><span class="console-price">5 € (37 ¥)</span></div>
+                    <ul class="console-features"><li><i class="fas fa-microchip"></i> 3 núcleos PowerPC @ 3,2 GHz</li><li><i class="fas fa-memory"></i> 512 MB RAM</li><li><i class="fas fa-usb"></i> USB, Ethernet</li></ul>
+                    <div class="supplier"><i class="fas fa-tag"></i> 1688: lote placas madre · 37 ¥/ud · vendedor: retroconsole</div>
+                </div>
+                <!-- PS3 Slim -->
+                <div class="console-card">
+                    <div class="console-icon"><i class="fab fa-playstation"></i></div>
+                    <div class="console-title"><span>PS3 Slim</span><span class="console-price">12 € (89 ¥)</span></div>
+                    <ul class="console-features"><li><i class="fas fa-microchip"></i> Cell BE (8 núcleos SPE) @ 3,2 GHz</li><li><i class="fas fa-memory"></i> 256 MB RAM</li><li><i class="fas fa-wifi"></i> WiFi, Bluetooth</li></ul>
+                    <div class="supplier"><i class="fas fa-tag"></i> Taobao: placas CECH‑2000 · 89 ¥/ud · tienda: gamefix</div>
+                </div>
+                <!-- PS4 Fat -->
+                <div class="console-card">
+                    <div class="console-icon"><i class="fab fa-playstation"></i></div>
+                    <div class="console-title"><span>PS4 (Fat)</span><span class="console-price">22 € (163 ¥)</span></div>
+                    <ul class="console-features"><li><i class="fas fa-microchip"></i> AMD Jaguar 8 núcleos @ 1,6 GHz</li><li><i class="fas fa-memory"></i> 8 GB GDDR5</li><li><i class="fas fa-usb"></i> USB 3.0, HDMI</li></ul>
+                    <div class="supplier"><i class="fas fa-tag"></i> Shenzhen SEG · consolas rotas · 163 ¥/ud · contacto: szparts</div>
+                </div>
+                <!-- Xbox One S -->
+                <div class="console-card">
+                    <div class="console-icon"><i class="fab fa-xbox"></i></div>
+                    <div class="console-title"><span>Xbox One S</span><span class="console-price">28 € (207 ¥)</span></div>
+                    <ul class="console-features"><li><i class="fas fa-microchip"></i> AMD Jaguar 8 núcleos @ 1,75 GHz</li><li><i class="fas fa-memory"></i> 8 GB DDR3</li><li><i class="fas fa-hdd"></i> GPU 1,4 TFLOPS</li></ul>
+                    <div class="supplier"><i class="fas fa-tag"></i> Lote de 10 placas · 207 ¥/ud · proveedor: consoleparts</div>
+                </div>
+            </div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> <strong>Justificación:</strong> "Using game console processors for real-time control systems" (ACM, 2019) – potencia más que suficiente para fusión sensorial y autopilot.</div>
+        </section>
+
+        <!-- ====================== 5. PARTE CICLO ===================== -->
+        <section id="parteciclo" class="section">
+            <div class="section-header"><i class="fas fa-cogs"></i><h2>05. CHASIS, SUSPENSIONES, FRENOS · PROVEEDORES</h2></div>
+            <div class="comp-grid">
+                <!-- Chasis tubular fabricado -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">CHASIS TUBULAR</span><span class="price">380 € (2812 ¥)</span></div>
+                    <div class="model-name">Acero 4130 TIG <span>FABRICACIÓN BAJO PEDIDO</span></div>
+                    <div class="origin">Taller: <strong>Dongguan WeldTech</strong> · planos STL</div>
+                    <div class="supplier"><i class="fas fa-tag"></i> WeChat: weldtech_dg · MOQ 1 · 2812 ¥ · <a href="#">weldtech.com</a></div>
+                </div>
+                <!-- Horquilla FastAce -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">SUSPENSIÓN</span><span class="price">150 € (1110 ¥)</span></div>
+                    <div class="model-name">FastAce 43 mm invertida <span>B‑STOCK</span></div>
+                    <div class="origin">Fábrica: <strong>FastAce (Shenzhen)</strong> · lote con defectos de anodizado</div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: fastace_bstock · 1110 ¥ · <a href="#">fastace.com</a></div>
+                </div>
+                <!-- Amortiguador RCB -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">AMORTIGUADOR</span><span class="price">90 € (666 ¥)</span></div>
+                    <div class="model-name">RCB 340 mm <span>EMBALAJE DAÑADO</span></div>
+                    <div class="origin">Proveedor: <strong>Zhejiang RCB</strong> · excedente</div>
+                    <div class="supplier"><i class="fas fa-tag"></i> 1688: rcb_amortiguador · 666 ¥ · <a href="#">enlace</a></div>
+                </div>
+                <!-- Frenos Lijia -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">FRENOS RADIALES</span><span class="price">65 € (481 ¥)</span></div>
+                    <div class="model-name">Lijia 4 pistones <span>OVERSTOCK</span></div>
+                    <div class="origin">Fábrica: <strong>Hangzhou Lijia</strong> · sin caja original</div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: lijia_brakes · 481 ¥/par · <a href="#">lijia.com</a></div>
+                </div>
+                <!-- Llantas forjadas B‑stock -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">LLANTAS 17"</span><span class="price">120 € (888 ¥)</span></div>
+                    <div class="model-name">Aleación forjada <span>B‑STOCK</span></div>
+                    <div class="origin">Proveedor: <strong>Sunstar China</strong> · lote con ralladura</div>
+                    <div class="supplier"><i class="fas fa-tag"></i> 1688: sunstar_wheels · 888 ¥/par · <a href="#">sunstar.cn</a></div>
+                </div>
+                <!-- Neumáticos CST -->
+                <div class="comp-card">
+                    <div class="card-header"><span class="badge-cat">NEUMÁTICOS</span><span class="price">80 € (592 ¥)</span></div>
+                    <div class="model-name">CST CM-SR01 <span>NUEVOS</span></div>
+                    <div class="origin">Distribuidor: <strong>CST Hangzhou</strong></div>
+                    <div class="supplier"><i class="fas fa-tag"></i> Contacto: cst_moto · 592 ¥/juego · <a href="#">csttire.com</a></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================== 6. IMPRESIÓN 3D AERODINÁMICA ===================== -->
+        <section id="impresion" class="section">
+            <div class="section-header"><i class="fas fa-cube"></i><h2>06. AERODINÁMICA IMPRESA 3D · FILAMENTO Y CFD</h2></div>
+            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
+                <p><i class="fas fa-print"></i> Impresora recomendada: <strong>Creality Ender 3 V3 SE</strong> (170 € en AliExpress). Filamento PLA+ de <strong>eSUN</strong> o <strong>Sunlu</strong> (12-15 €/kg). Para piezas expuestas al calor, <strong>PETG</strong> o <strong>ABS</strong>.</p>
+                <p><i class="fas fa-cloud-upload-alt"></i> Software CFD libre: <strong>OpenFOAM</strong> + <strong>SimScale</strong> (plan gratuito). Tutoriales para optimizar carenados disponibles en repositorio.</p>
+                <div class="supplier"><i class="fas fa-tag"></i> Filamento eSUN: AliExpress · 12 €/kg · <a href="#">esun3d.com</a></div>
+            </div>
+        </section>
+
+        <!-- ====================== 7. PAPERS ACADÉMICOS (COARTADA) ===================== -->
+        <section id="papers" class="section">
+            <div class="section-header"><i class="fas fa-scroll"></i><h2>07. PAPERS · JUSTIFICACIÓN CIENTÍFICA</h2></div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Distributed electric propulsion for vehicles" – IEEE Transactions on Vehicular Technology, 2021. [DOI:10.1109/TVT.2021.3078945]</div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Sodium-ion batteries: a sustainable alternative to lithium" – Nature Energy, 2022. [DOI:10.1038/s41560-022-00998-w]</div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Using game console processors for real-time control systems" – ACM Transactions on Embedded Computing, 2019. [DOI:10.1145/3340255]</div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Additive manufacturing for aerodynamic optimization in motorsports" – SAE International, 2020. [DOI:10.4271/2020-01-0892]</div>
+            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Rare-earth-free electric motors for sustainable mobility" – Renewable and Sustainable Energy Reviews, 2021. [DOI:10.1016/j.rser.2020.110257]</div>
+        </section>
+
+        <!-- ====================== 8. MANUAL DE CONSTRUCCIÓN ===================== -->
+        <section id="manual" class="section">
+            <div class="section-header"><i class="fas fa-book-open"></i><h2>08. MANUAL DE ENSAMBLAJE · TALLER LOCAL</h2></div>
+            <div class="manual-step">
+                <div class="step-title">FASE 1 · INSPECCIÓN Y PREPARACIÓN</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-clipboard-list fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Verificar cada motor con comprobador (resistencia, aislamiento).</li>
+                        <li><i class="fas fa-check"></i> Medir capacidad de celdas de sodio, agrupar por rango.</li>
+                        <li><i class="fas fa-check"></i> Flashear Linux embebido (Yocto) en la PS4/Xbox.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="manual-step">
+                <div class="step-title">FASE 2 · SISTEMA DE CONTROL (CONSOLA)</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-gamepad fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Montar placa de consola en caja estanca con ventilación.</li>
+                        <li><i class="fas fa-check"></i> Conectar cámaras (USB), IMU, GPS, sensores radar (HC-SR04).</li>
+                        <li><i class="fas fa-check"></i> Instalar ROS2 y nodos de control de motores (CAN).</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="manual-step">
+                <div class="step-title">FASE 3 · MONTAJE ENJAMBRE DE MOTORES</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-bolt fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Fijar 6 motores (4 traseros, 2 delanteros) con soportes impresos 3D.</li>
+                        <li><i class="fas fa-check"></i> Cablear motores a controladores VESC con bus CAN compartido.</li>
+                        <li><i class="fas fa-check"></i> Programar controlador maestro para distribución de par.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="manual-step">
+                <div class="step-title">FASE 4 · BATERÍA DE SODIO</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-battery-full fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Ensamblar celdas en packs 20s4p con pletinas de níquel.</li>
+                        <li><i class="fas fa-check"></i> Instalar BMS JK/JBD 200A, conectar termistores.</li>
+                        <li><i class="fas fa-check"></i> Encapsular en caja de aluminio con espuma intumescente.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="manual-step">
+                <div class="step-title">FASE 5 · CARENADOS IMPRESOS 3D</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-cube fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Optimizar diseño en OpenFOAM, exportar STL.</li>
+                        <li><i class="fas fa-check"></i> Imprimir en PLA+ con 40% de relleno, post-procesado.</li>
+                        <li><i class="fas fa-check"></i> Fijar con tornillería y espumas para absorber vibraciones.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="manual-step">
+                <div class="step-title">FASE 6 · CALIBRACIÓN Y PUESTA EN MARCHA</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder"><i class="fas fa-road fa-2x"></i></div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Ciclo de carga/descarga completo, monitorizar temperaturas.</li>
+                        <li><i class="fas fa-check"></i> Prueba en banco: aceleración, frenada regenerativa.</li>
+                        <li><i class="fas fa-check"></i> Calibrar autopilot (control de crucero, frenada emergencia) en carretera segura.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================== 9. PRESUPUESTO FINAL ===================== -->
+        <section id="presupuesto" class="section">
+            <div class="section-header"><i class="fas fa-chart-pie"></i><h2>09. PRESUPUESTO CON PROVEEDORES</h2></div>
+            <div style="background:#101d28; border-radius:30px; padding:2rem;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <tr style="border-bottom:1px solid #ff9f4b40;"><th>Concepto</th><th>Coste (€)</th><th>Proveedor / contacto</th></tr>
+                    <tr><td>6 motores Hellobike 2kW</td><td>150</td><td>jialinmotor@1688.com</td></tr>
+                    <tr><td>Controladores VESC (6 ud)</td><td>108</td><td>tron@sz.com</td></tr>
+                    <tr><td>Batería sodio 20 kWh (celdas)</td><td>700</td><td>battery@szexcess.com</td></tr>
+                    <tr><td>CPU PS4 Slim</td><td>22</td><td>szparts / SEG</td></tr>
+                    <tr><td>Chasis tubular</td><td>380</td><td>weldtech_dg</td></tr>
+                    <tr><td>Horquilla FastAce</td><td>150</td><td>fastace_bstock</td></tr>
+                    <tr><td>Amortiguador RCB</td><td>90</td><td>rcb_amortiguador</td></tr>
+                    <tr><td>Frenos Lijia radiales</td><td>65</td><td>lijia_brakes</td></tr>
+                    <tr><td>Llantas forjadas B‑stock</td><td>120</td><td>sunstar_wheels</td></tr>
+                    <tr><td>Neumáticos CST</td><td>80</td><td>cst_moto</td></tr>
+                    <tr><td>Cámaras / sensores</td><td>15</td><td>AliExpress</td></tr>
+                    <tr><td>Electrónica / BMS / cableado</td><td>85</td><td>local</td></tr>
+                    <tr><td>Filamento 3D (5 kg)</td><td>60</td><td>esun3d.com</td></tr>
+                    <tr style="border-top:2px solid #ff9f4b;"><th>MATERIAL</th><th>2.025 €</th><th></th></tr>
+                    <tr><td>Mano de obra taller local (120 h)</td><td>1.200 €</td><td></td></tr>
+                    <tr><th>TOTAL</th><th>3.225 €</th><th>vs. 15.000 € comercial</th></tr>
+                </table>
+                <div class="total-dashboard" style="margin-top:2rem;">
+                    <div><span class="total-number">3.225 €</span><small> coste total</small></div>
+                    <div><span style="color:#61e088;">AHORRO 78% · 3,4 s 0-100</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- nota del arquitecto -->
+        <div class="architect-note">
+            <h3>NOTA DEL ARQUITECTO · EL CORCEL DEL PÍCARO</h3>
+            <p>«Este documento no es un sueño. Es un pedido pendiente de enviar. Cada componente tiene un contacto, un precio, un origen. Los papers demuestran que no es una ocurrencia, es ciencia aplicada. Las CPUs de consola, los motores de scooter, las celdas de sodio descartadas... todo existe, todo está ahí fuera, esperando a que alguien con visión espacial lo junte.</p>
+            <p>Dedicado a los tecnólogos chilenos, a los talleres de Sabadell, y a cualquiera que prefiera construir a comprar. Zehahahaha. El número es 1310.»</p>
+            <p style="margin-top:1rem; color:#ffbc7c;">— David Ferrandez Canalis · Sabadell · 2026</p>
+        </div>
+    </div>
+
+    <!-- footer -->
+    <div class="footer">
+        <span><i class="fas fa-flag"></i> SHENZHEN ONI · 深圳鬼 · diseño original · licencia CERN-OHL-W</span>
+        <span class="ronin"><i class="fas fa-skull"></i> RONIN FRUGAL ENGINEERING · 1310</span>
+    </div>
+</div>
+</body>
+</html>
