@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORCEL DEL PÍCARO · SHENZHEN ONI · EDICIÓN DEFINITIVA</title>
+    <title>CORCEL DEL PÍCARO · SHENZHEN ONI · PLANOS Y MANUALES</title>
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -87,7 +87,7 @@
             position: relative;
         }
         .oni-header::after {
-            content: "⚡ 120 kW · 30 kWh · 250 km · 160 CV ⚡";
+            content: "⚡ PLANOS · MANUALES · PRIOR ART ⚡";
             position: absolute;
             bottom: 0.8rem;
             right: 3rem;
@@ -250,6 +250,58 @@
         .supplier i { color: #ff9f4b; margin-right: 0.4rem; }
         .supplier a { color: #ffbc7c; text-decoration: none; border-bottom: 1px dotted; }
 
+        /* Estilos para planos (ASCII art) */
+        .blueprint {
+            background: #0a121c;
+            border: 2px solid #ff9f4b80;
+            border-radius: 16px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            color: #aaccff;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        .blueprint-title {
+            color: #ffbc7c;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .manual-step {
+            background: #151f29;
+            border-radius: 30px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 6px solid #ff9f4b;
+        }
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffbc7c;
+        }
+        .step-desc { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+        .step-img-placeholder {
+            background: #1f2e3c;
+            border-radius: 20px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4d677d;
+            border: 1px dashed #ff9f4b60;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 0.7rem;
+        }
+        .step-list { list-style: none; }
+        .step-list li { margin-bottom: 0.8rem; display: flex; gap: 0.8rem; }
+        .step-list i { color: #ff9f4b; margin-top: 0.2rem; }
+
         .comparison {
             background: #121d27;
             border-radius: 32px;
@@ -355,343 +407,257 @@
         </div>
     </div>
 
-    <!-- ÍNDICE (20 IDEAS) -->
+    <!-- ÍNDICE AMPLIADO -->
     <div class="toc">
         <a href="#potencia"><i class="fas fa-bolt"></i> 16 MOTORES</a>
         <a href="#bateria"><i class="fas fa-battery-full"></i> HÍBRIDA Na+LFP</a>
-        <a href="#control"><i class="fas fa-microchip"></i> FPGA + 20 MOTORES</a>
-        <a href="#peso"><i class="fas fa-weight-hanging"></i> ALIGERAMIENTO</a>
-        <a href="#suspension"><i class="fas fa-truck"></i> NEUMÁTICA REFINADA</a>
-        <a href="#frenos"><i class="fas fa-brake-warning"></i> REGEN TOTAL</a>
-        <a href="#refri"><i class="fas fa-oil-can"></i> ACEITE DIELÉCTRICO</a>
-        <a href="#iluminacion"><i class="fas fa-lightbulb"></i> LED DE ESTADIO</a>
-        <a href="#instrumentos"><i class="fas fa-tablet-alt"></i> TABLET IP67</a>
-        <a href="#gestos"><i class="fas fa-hand-peace"></i> KINECT + GESTOS</a>
-        <a href="#chasis"><i class="fas fa-cogs"></i> CHASIS MULTIMATERIAL</a>
-        <a href="#ruedas"><i class="fas fa-circle"></i> NEUMÁTICOS MULTICAPA</a>
-        <a href="#transmision"><i class="fas fa-chain"></i> TRANSMISIÓN HÍBRIDA</a>
-        <a href="#carga"><i class="fas fa-plug"></i> CARGA BIDIRECCIONAL</a>
-        <a href="#seguridad"><i class="fas fa-shield-alt"></i> AIRBAG RECICLADO</a>
-        <a href="#sonido"><i class="fas fa-volume-up"></i> SONIDO SINTÉTICO</a>
-        <a href="#asiento"><i class="fas fa-chair"></i> ASIENTO DE AVIÓN</a>
-        <a href="#pintura"><i class="fas fa-paint-brush"></i> PINTURA CONDUCTIVA</a>
-        <a href="#seguros"><i class="fas fa-lock"></i> BLOQUEO GSM</a>
+        <a href="#control"><i class="fas fa-microchip"></i> FPGA</a>
+        <a href="#kit"><i class="fas fa-tools"></i> KIT CONVERSIÓN</a>
+        <a href="#planos-motor"><i class="fas fa-drafting-compass"></i> PLANO MOTOR</a>
+        <a href="#planos-bateria"><i class="fas fa-drafting-compass"></i> PLANO BATERÍA</a>
+        <a href="#planos-fpga"><i class="fas fa-drafting-compass"></i> PLANO FPGA</a>
+        <a href="#manual-motor"><i class="fas fa-book-open"></i> MANUAL MOTOR</a>
+        <a href="#manual-bateria"><i class="fas fa-book-open"></i> MANUAL BATERÍA</a>
+        <a href="#manual-fpga"><i class="fas fa-book-open"></i> MANUAL FPGA</a>
+        <a href="#ideas-ineditas"><i class="fas fa-lightbulb"></i> IDEAS INÉDITAS</a>
         <a href="#papers"><i class="fas fa-scroll"></i> PAPERS</a>
+        <a href="#presupuesto"><i class="fas fa-coins"></i> COSTES</a>
     </div>
 
-    <!-- FILOSOFÍA (20 IDEAS EXPRÉS) -->
+    <!-- FILOSOFÍA EXPRÉS -->
     <div class="philo">
-        <div class="philo-item"><i class="fas fa-bolt"></i> <span><strong>16 motores de imanes permanentes</strong> 7,5 kW c/u → 120 kW (160 CV).</span></div>
-        <div class="philo-item"><i class="fas fa-battery-full"></i> <span><strong>Batería híbrida</strong> sodio (picos) + LFP reciclada (capacidad). 30 kWh, 250 km.</span></div>
-        <div class="philo-item"><i class="fas fa-microchip"></i> <span><strong>FPGA Cyclone V</strong> controla los 16 motores con multiplexación.</span></div>
-        <div class="philo-item"><i class="fas fa-weight-hanging"></i> <span><strong>Aligeramiento</strong> -100 kg: motores de aluminio, chasis optimizado, LFP ligera.</span></div>
-        <div class="philo-item"><i class="fas fa-truck"></i> <span><strong>Suspensión neumática</strong> de camión + amortiguadores Öhlins reciclados.</span></div>
-        <div class="philo-item"><i class="fas fa-brake-warning"></i> <span><strong>Frenada regenerativa total</strong> sin pastillas, por los 16 motores.</span></div>
-        <div class="philo-item"><i class="fas fa-oil-can"></i> <span><strong>Aceite dieléctrico</strong> de transformador, refrigeración y aislamiento.</span></div>
-        <div class="philo-item"><i class="fas fa-lightbulb"></i> <span><strong>LED de estadio</strong> 4x200W, 40.000 lúmenes.</span></div>
-        <div class="philo-item"><i class="fas fa-tablet-alt"></i> <span><strong>Tablet industrial IP67</strong> con GPS, 4G, y software libre.</span></div>
-        <div class="philo-item"><i class="fas fa-hand-peace"></i> <span><strong>Kinect V2</strong> para control gestual y detección de obstáculos.</span></div>
-        <div class="philo-item"><i class="fas fa-cogs"></i> <span><strong>Chasis multimaterial</strong> acero 4130 + fibra de carbono reciclada de aerogeneradores.</span></div>
-        <div class="philo-item"><i class="fas fa-circle"></i> <span><strong>Neumáticos multicapa</strong> recauchutados con banda de rodadura de camión.</span></div>
-        <div class="philo-item"><i class="fas fa-chain"></i> <span><strong>Transmisión híbrida</strong> correa dentada + cadena, relación variable.</span></div>
-        <div class="philo-item"><i class="fas fa-plug"></i> <span><strong>Carga bidireccional</strong> V2L, puede alimentar una casa o herramientas.</span></div>
-        <div class="philo-item"><i class="fas fa-shield-alt"></i> <span><strong>Airbag de coche</strong> reciclado, integrado en el asiento.</span></div>
-        <div class="philo-item"><i class="fas fa-volume-up"></i> <span><strong>Sonido sintético</strong> de motor V8, para que los peatones te oigan (opcional).</span></div>
-        <div class="philo-item"><i class="fas fa-chair"></i> <span><strong>Asiento de avión</strong> butaca clase business reciclada.</span></div>
-        <div class="philo-item"><i class="fas fa-paint-brush"></i> <span><strong>Pintura conductiva</strong> para deshielo y blindaje EMI.</span></div>
-        <div class="philo-item"><i class="fas fa-lock"></i> <span><strong>Bloqueo GSM</strong> rastreador y corta-corriente por SMS.</span></div>
-        <div class="philo-item"><i class="fas fa-scroll"></i> <span><strong>+20 papers</strong> que justifican cada decisión.</span></div>
+        <div class="philo-item"><i class="fas fa-bolt"></i> <span><strong>16 motores IPM</strong> 7,5 kW → 120 kW (160 CV).</span></div>
+        <div class="philo-item"><i class="fas fa-battery-full"></i> <span><strong>Híbrida sodio+LFP</strong> 30 kWh, 250 km.</span></div>
+        <div class="philo-item"><i class="fas fa-microchip"></i> <span><strong>FPGA Cyclone V</strong> controla 16 motores.</span></div>
+        <div class="philo-item"><i class="fas fa-tools"></i> <span><strong>Kit universal</strong> cerebro FPGA (prior art).</span></div>
+        <div class="philo-item"><i class="fas fa-weight-hanging"></i> <span><strong>-100 kg</strong> aligeramiento.</span></div>
+        <div class="philo-item"><i class="fas fa-truck"></i> <span><strong>Suspensión neumática</strong> + Öhlins.</span></div>
+        <div class="philo-item"><i class="fas fa-brake-warning"></i> <span><strong>Regenerativa total</strong> sin pastillas.</span></div>
+        <div class="philo-item"><i class="fas fa-oil-can"></i> <span><strong>Aceite dieléctrico</strong> refrigeración.</span></div>
     </div>
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
 
-        <!-- SECCIÓN 1: ENJAMBRE DE 16 MOTORES (más potencia) -->
-        <section id="potencia" class="section">
-            <div class="section-header"><i class="fas fa-bolt"></i><h2>01. 16 MOTORES DE IMANES PERMANENTES · 120 kW</h2></div>
-            <div class="comp-grid">
-                <!-- Motor de imanes permanentes (IPM) -->
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">IPM 7,5 kW</span><span class="price">35 € <small>(259 ¥)</small></span></div>
-                    <div class="model-name">Yaskawa / servomotor IPM <span>EXCEDENTE INDUSTRIAL</span></div>
-                    <div class="condition"><i class="fas fa-industry"></i> Lote de automatización, probados, 3000 rpm</div>
-                    <div class="origin">Proveedor: <strong>Shenzhen Servo Surplus</strong></div>
-                    <div class="specs"><span><i class="fas fa-weight-hanging"></i> 9 kg</span><span><i class="fas fa-bolt"></i> 7,5 kW cont, 12 kW pico</span></div>
-                    <div class="supplier"><i class="fas fa-tag"></i> WeChat: sz_servo · MOQ 10 uds · 259 ¥/ud</div>
-                </div>
-                <!-- Controlador multieje basado en FPGA -->
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">FPGA MULTIEJE</span><span class="price">45 € <small>(333 ¥)</small></span></div>
-                    <div class="model-name">Cyclone V + driver IGBT <span>MONTAJE PROPIO</span></div>
-                    <div class="condition"><i class="fas fa-microchip"></i> Kit de desarrollo reciclado, con 16 salidas PWM</div>
-                    <div class="origin">Proveedor: <strong>Huaqiangbei FPGA</strong></div>
-                    <div class="specs"><span><i class="fas fa-bolt"></i> 16x 3 kW</span><span><i class="fas fa-code"></i> VHDL abierto</span></div>
-                    <div class="supplier"><i class="fas fa-tag"></i> 1688: fpga_kit · 333 ¥/ud</div>
-                </div>
+        <!-- SECCIÓN 1: MOTORES (con plano y manual) -->
+        <section id="planos-motor" class="section">
+            <div class="section-header"><i class="fas fa-drafting-compass"></i><h2>01. PLANO Y MANUAL DEL MOTOR IPM 7,5 kW</h2></div>
+            <div class="blueprint-title">Plano de conjunto · Motor IPM 7,5 kW (cotas en mm)</div>
+            <div class="blueprint">
+                ╔══════════════════════════════════════════════════════════╗
+                ║                     MOTOR IPM 7,5 kW                    ║
+                ╠══════════════════════════════════════════════════════════╣
+                ║                                                          ║
+                ║        ┌──────────────────────────────────────┐         ║
+                ║        │          CARCASA DE ALUMINIO         │         ║
+                ║        │   ⌀180 (tolerancia H7)              │         ║
+                ║        │   Longitud total: 220                │         ║
+                ║        └──────────────────────────────────────┘         ║
+                ║               ▲                             ▲           ║
+                ║               │                             │           ║
+                ║        ┌──────┴──────┐               ┌──────┴──────┐    ║
+                ║        │ ROTOR IPM   │               │ ESTATOR     │    ║
+                ║        │ imanes NdFeB│               │ bobinas Cu  │    ║
+                ║        │ ⌀120        │               │ ⌀160        │    ║
+                ║        └─────────────┘               └─────────────┘    ║
+                ║                                                          ║
+                ║   EJE: ⌀30mm con chavetero 8x7                          ║
+                ║   Conexión: trifásica, bornes M8                        ║
+                ║   Peso: 9 kg                                            ║
+                ║   Refrigeración: aceite dieléctrico (caudal 5 l/min)    ║
+                ╚══════════════════════════════════════════════════════════╝
             </div>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> <strong>Control de múltiples IPM con FPGA:</strong> "FPGA-based multi-motor control for electric vehicles", IEEE TIE 2021. Multiplexación de 16 motores con una sola FPGA y control vectorial.</div>
-        </section>
 
-        <!-- SECCIÓN 2: BATERÍA HÍBRIDA SODIO + LFP (más autonomía) -->
-        <section id="bateria" class="section">
-            <div class="section-header"><i class="fas fa-battery-full"></i><h2>02. BATERÍA HÍBRIDA · 30 kWh · 250 km</h2></div>
-            <div class="comp-grid">
-                <!-- Celdas de sodio CATL 180 Wh/kg -->
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">SODIO 180Wh/kg</span><span class="price">4 €/celda <small>(30 ¥)</small></span></div>
-                    <div class="model-name">CATL Na+ 3,0V 150Ah <span>B‑STOCK 2025</span></div>
-                    <div class="condition"><i class="fas fa-flask"></i> Lote con <2% de variación, 8.000 ciclos</div>
-                    <div class="origin">Proveedor: <strong>battery@szexcess.com</strong></div>
-                    <div class="specs"><span><i class="fas fa-bolt"></i> 0,45 kWh/celda</span><span><i class="fas fa-weight-hanging"></i> 2,5 kg</span></div>
-                    <div class="supplier"><i class="fas fa-tag"></i> MOQ 200 celdas · 30 ¥/celda</div>
-                </div>
-                <!-- Módulo LFP Nissan Leaf reciclado -->
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">LFP LEAF</span><span class="price">150 € <small>(1110 ¥)</small></span></div>
-                    <div class="model-name">Módulo 2 kWh (8 celdas) <span>RECICLADO</span></div>
-                    <div class="condition"><i class="fas fa-car"></i> Extraído de batería dañada, celdas sanas</div>
-                    <div class="origin">Proveedor: <strong>Battery Recyclers Spain</strong></div>
-                    <div class="specs"><span><i class="fas fa-bolt"></i> 48V, 40Ah</span><span><i class="fas fa-weight-hanging"></i> 15 kg</span></div>
-                    <div class="supplier"><i class="fas fa-tag"></i> Envío desde Madrid · 1110 ¥ (150 €)</div>
-                </div>
-                <!-- BMS dual (sodio + LFP) -->
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">BMS DUAL</span><span class="price">80 € <small>(592 ¥)</small></span></div>
-                    <div class="model-name">Orion Jr + adaptador <span>OVERSTOCK</span></div>
-                    <div class="condition"><i class="fas fa-microchip"></i> Gestiona dos químicas diferentes</div>
-                    <div class="origin">Proveedor: <strong>EV Battery Surplus</strong></div>
-                    <div class="supplier"><i class="fas fa-tag"></i> WeChat: ev_bms · 592 ¥/ud</div>
-                </div>
-            </div>
-            <p><i class="fas fa-calculator"></i> <strong>Configuración:</strong> 10 kWh de sodio (para picos de potencia) + 20 kWh de LFP (para capacidad). Total 30 kWh, peso ~200 kg. Autonomía real: 250 km.</p>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> <strong>Hibridación de baterías:</strong> "Hybrid Li-ion/Na-ion battery systems for EVs", Journal of Power Sources, 2024. Mejor relación potencia/energía.</div>
-        </section>
-
-        <!-- SECCIÓN 3: ALIGERAMIENTO (menos peso) -->
-        <section id="peso" class="section">
-            <div class="section-header"><i class="fas fa-weight-hanging"></i><h2>03. ALIGERAMIENTO ESTRUCTURAL · -100 kg</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">MOTORES ALUMINIO</span><span class="price">+15 €/motor</span></div>
-                    <div class="model-name">Carcasa de aluminio vs hierro <span>SOBREPRECIO</span></div>
-                    <div class="condition">Ahorro: 12 kg/motor → 16 motores = -192 kg brutos, pero pagas 240 € extra.</div>
-                    <div class="supplier">Negociable con proveedor</div>
-                </div>
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">CHASIS TITANIO RECICLADO</span><span class="price">900 € <small>(6660 ¥)</small></span></div>
-                    <div class="model-name">Tubos de titanio aeronáutico <span>DESGUACE A380</span></div>
-                    <div class="condition">Chasis de 12 kg (vs 30 kg acero). Ahorro 18 kg. Coste alto pero brutal.</div>
-                    <div class="origin">Proveedor: <strong>AeroSurplus UK</strong></div>
-                    <div class="supplier">Consultar disponibilidad</div>
-                </div>
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">FIBRA DE CARBONO</span><span class="price">50 € <small>(370 ¥)</small></span></div>
-                    <div class="model-name">Láminas de pala de aerogenerador <span>RECICLADA</span></div>
-                    <div class="condition">Para carenados y refuerzos. Ahorro adicional 10 kg.</div>
-                    <div class="origin">Proveedor: <strong>WindBlade Recycling</strong></div>
-                    <div class="supplier">MOQ 10 m² · 370 ¥/m²</div>
-                </div>
-            </div>
-            <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Con estas medidas, el peso total baja de 400 kg a <strong>300 kg</strong>. La relación peso/potencia pasa a ser bestial.</p>
-        </section>
-
-        <!-- SECCIÓN 4: SUSPENSIÓN NEUMÁTICA REFINADA -->
-        <section id="suspension" class="section">
-            <div class="section-header"><i class="fas fa-truck"></i><h2>04. SUSPENSIÓN NEUMÁTICA + ÖHLINS RECICLADOS</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">BOLSAS DE AIRE</span><span class="price">50 € <small>(370 ¥)</small></span></div>
-                    <div class="model-name">Firestone 1T15C-3 <span>USADO</span></div>
-                    <div class="condition">Regulables en altura, 1500 kg c/u</div>
-                    <div class="origin">gz_truckparts</div>
-                </div>
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">AMORTIGUADORES ÖHLINS</span><span class="price">250 € <small>(1850 ¥)</small></span></div>
-                    <div class="model-name">Öhlins TTX GP <span>SEGUNDA MANO</span></div>
-                    <div class="condition">De moto de competición, reacondicionados</div>
-                    <div class="origin">Proveedor: <strong>RacingParts EU</strong></div>
+            <div id="manual-motor" class="manual-step">
+                <div class="step-title">MANUAL DE MONTAJE · MOTOR IPM</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder">
+                        ┌─────────────┐
+                        │ 1. Colocar  │
+                        │  rotor en   │
+                        │  carcasa    │
+                        └─────────────┘
+                    </div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Limpiar carcasa y rotor con disolvente dieléctrico.</li>
+                        <li><i class="fas fa-check"></i> Insertar rodamientos (SKF 6206-2RS) en alojamientos tras calentamiento a 120°C.</li>
+                        <li><i class="fas fa-check"></i> Colocar rotor en posición, asegurando juego axial &lt;0,2 mm.</li>
+                        <li><i class="fas fa-check"></i> Montar estator prebobinado, centrar con galgas.</li>
+                        <li><i class="fas fa-check"></i> Conexión de bornes (esquema estrella).</li>
+                        <li><i class="fas fa-check"></i> Prueba de aislamiento: >100 MΩ a 500V.</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN 5: FRENADA REGENERATIVA TOTAL -->
-        <section id="frenos" class="section">
-            <div class="section-header"><i class="fas fa-brake-warning"></i><h2>05. FRENADA REGENERATIVA POR TODOS LOS MOTORES</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Con 16 motores IPM, cada uno puede generar hasta 5 kW en frenada. Total 80 kW de potencia de frenado regenerativo. Se eliminan los frenos de disco delanteros y traseros, dejando solo un pequeño freno de estacionamiento.</p>
-                <p><i class="fas fa-tag"></i> Ahorro en discos y pinzas: 200 €. Software de control: <strong>OpenInverter</strong> adaptado.</p>
+        <!-- SECCIÓN 2: BATERÍA HÍBRIDA (con plano y manual) -->
+        <section id="planos-bateria" class="section">
+            <div class="section-header"><i class="fas fa-drafting-compass"></i><h2>02. PLANO Y MANUAL DEL BANCO DE BATERÍAS</h2></div>
+            <div class="blueprint-title">Plano del pack híbrido · 30 kWh (cotas en mm)</div>
+            <div class="blueprint">
+                ╔══════════════════════════════════════════════════════════╗
+                ║            PACK HÍBRIDO SODIO + LFP 30 kWh              ║
+                ╠══════════════════════════════════════════════════════════╣
+                ║                                                          ║
+                ║   ┌─────────────────────────────────────────────────┐   ║
+                ║   │ BLOQUE SODIO (10 kWh)  │ BLOQUE LFP (20 kWh)   │   ║
+                ║   │ 20 celdas CATL 150Ah   │ 10 módulos Leaf (2kWh) │   ║
+                ║   │ 3,0V c/u → 60V nominal │ 48V c/u → 96V nominal  │   ║
+                ║   │ Configuración 20s1p     │ Configuración 2s5p     │   ║
+                ║   └─────────────────────────────────────────────────┘   ║
+                ║                                                          ║
+                ║   BMS dual Orion Jr (comunicación CAN)                   ║
+                ║   Refrigeración: aceite dieléctrico (baño común)        ║
+                ║   Peso total: ~200 kg                                   ║
+                ║   Dimensiones: 800x600x250 mm                           ║
+                ╚══════════════════════════════════════════════════════════╝
             </div>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Regenerative braking with multi-motor systems" – IEEE Transactions on Vehicular Technology, 2023. Recuperación >25% de la energía.</div>
-        </section>
 
-        <!-- SECCIÓN 6: REFRIGERACIÓN POR ACEITE DIELÉCTRICO -->
-        <section id="refri" class="section">
-            <div class="section-header"><i class="fas fa-oil-can"></i><h2>06. REFRIGERACIÓN POR ACEITE DIELÉCTRICO</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Aceite de transformador (excedente de subestaciones) a 20 €/litro. 20 litros bañan los 16 motores y la electrónica de potencia. Permite aumentar la densidad de potencia un 30% sin riesgo térmico.</p>
-                <div class="supplier"><i class="fas fa-tag"></i> <strong>Hangzhou Transformer Oil</strong> · MOQ 20 litros · 20 €/litro</div>
-            </div>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Transformer oil immersion cooling for power electronics" – IEEE TPEL, 2022. Reducción de temperatura de juntura hasta un 40%.</div>
-        </section>
-
-        <!-- SECCIÓN 7: ILUMINACIÓN LED DE ESTADIO (estética brutalista) -->
-        <section id="iluminacion" class="section">
-            <div class="section-header"><i class="fas fa-lightbulb"></i><h2>07. ILUMINACIÓN LED DE ESTADIO · ESTÉTICA PÍCARA</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">PROYECTOR 200W</span><span class="price">10 € <small>(74 ¥)</small></span></div>
-                    <div class="model-name">Osram Stadium Pro <span>EXCEDENTE</span></div>
-                    <div class="condition">4 uds, 10.000 lúmenes c/u. Van montados en soportes de tubo de titanio.</div>
-                    <div class="origin">shenzhen_lighting</div>
-                </div>
-            </div>
-            <p><i class="fas fa-eye"></i> La moto se ve desde el espacio. Ideal para rutas nocturnas y para que te respeten en carretera.</p>
-        </section>
-
-        <!-- SECCIÓN 8: TABLET INDUSTRIAL IP67 -->
-        <section id="instrumentos" class="section">
-            <div class="section-header"><i class="fas fa-tablet-alt"></i><h2>08. CUADRO DE MANDOS CON TABLET INDUSTRIAL</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">TABLET IP67</span><span class="price">50 € <small>(370 ¥)</small></span></div>
-                    <div class="model-name">Trimble Yuma 2 <span>REACONDICIONADA</span></div>
-                    <div class="condition">GPS, 4G, WiFi, batería externa. Software: Android + app propia.</div>
-                    <div class="origin">hk_rugged</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 9: CONTROL POR GESTOS CON KINECT -->
-        <section id="gestos" class="section">
-            <div class="section-header"><i class="fas fa-hand-peace"></i><h2>09. CONTROL POR GESTOS CON KINECT V2</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">KINECT V2</span><span class="price">15 € <small>(111 ¥)</small></span></div>
-                    <div class="model-name">Xbox One Kinect + adaptador <span>USADO</span></div>
-                    <div class="condition">Cámara de profundidad, micrófono array. Para control gestual y detección de peatones.</div>
-                    <div class="origin">Taobao</div>
-                </div>
-            </div>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Gesture control using Kinect for automotive applications" – IEEE THMS, 2018. Reconocimiento en tiempo real.</div>
-        </section>
-
-        <!-- SECCIÓN 10: CHASIS MULTIMATERIAL (ACERO + CARBONO) -->
-        <section id="chasis" class="section">
-            <div class="section-header"><i class="fas fa-cogs"></i><h2>10. CHASIS MULTIMATERIAL · ACERO 4130 + FIBRA DE CARBONO</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">TUBOS 4130</span><span class="price">380 €</span></div>
-                    <div class="model-name">Chasis tubular <span>FABRICACIÓN BAJO PEDIDO</span></div>
-                    <div class="origin">weldtech_dg</div>
-                </div>
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">REFUERZOS CARBONO</span><span class="price">50 €</span></div>
-                    <div class="model-name">Láminas de pala de aerogenerador <span>RECICLADO</span></div>
-                    <div class="condition">Cortadas a medida, encoladas estructuralmente. Ahorran 10 kg.</div>
+            <div id="manual-bateria" class="manual-step">
+                <div class="step-title">MANUAL DE MONTAJE · BATERÍA HÍBRIDA</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder">
+                        ┌─────────────────┐
+                        │ 1. Agrupar      │
+                        │  celdas por     │
+                        │  capacidad      │
+                        └─────────────────┘
+                    </div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Seleccionar celdas de sodio con diferencia &lt;2% (usar comprobador).</li>
+                        <li><i class="fas fa-check"></i> Ensamblar bloques de sodio en serie con pletinas de níquel (soldadura por puntos).</li>
+                        <li><i class="fas fa-check"></i> Conectar módulos LFP en serie-paralelo siguiendo esquema del fabricante.</li>
+                        <li><i class="fas fa-check"></i> Instalar BMS dual: un maestro Orion Jr y dos esclavos.</li>
+                        <li><i class="fas fa-check"></i> Cableado de potencia: sección mínima 50 mm² para 300 A pico.</li>
+                        <li><i class="fas fa-check"></i> Encapsular en caja de acero con espuma intumescente.</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN 11: NEUMÁTICOS MULTICAPA RECAUCHUTADOS -->
-        <section id="ruedas" class="section">
-            <div class="section-header"><i class="fas fa-circle"></i><h2>11. NEUMÁTICOS MULTICAPA RECAUCHUTADOS</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">NEUMÁTICO RECAUCHUTADO</span><span class="price">60 € <small>(444 ¥)</small></span></div>
-                    <div class="model-name">Carcasa de camión + banda deportiva <span>HECHO EN ESPAÑA</span></div>
-                    <div class="condition">Aguantan 500 kg, 200 km/h. Duración 10.000 km.</div>
-                    <div class="origin">Proveedor: <strong>Neumáticos Recauchutados SL</strong></div>
+        <!-- SECCIÓN 3: FPGA KIT UNIVERSAL (plano y manual) -->
+        <section id="planos-fpga" class="section">
+            <div class="section-header"><i class="fas fa-drafting-compass"></i><h2>03. PLANO Y MANUAL DEL CEREBRO FPGA (KIT UNIVERSAL)</h2></div>
+            <div class="blueprint-title">Diagrama de bloques del controlador multieje</div>
+            <div class="blueprint">
+                ╔══════════════════════════════════════════════════════════╗
+                ║           FPGA CYCLONE V · CONTROLADOR MULTIEJE         ║
+                ╠══════════════════════════════════════════════════════════╣
+                ║                                                          ║
+                ║   ┌──────┐      ┌─────────────────────────────┐        ║
+                ║   │ USB  │─────▶│   Microcontrolador ATMEGA   │        ║
+                ║   └──────┘      │   (carga de firmware)       │        ║
+                ║                 └──────────────┬──────────────┘        ║
+                ║                                ▼                        ║
+                ║   ┌─────────────────────────────────────────────┐       ║
+                ║   │              FPGA Cyclone V                 │       ║
+                ║   │   (16 canales PWM, 16 entradas encoder)     │       ║
+                ║   └────┬────┬────┬────┬────┬────┬────┬────┬────┘       ║
+                ║        │    │    │    │    │    │    │    │             ║
+                ║   [16 salidas IGBT]  [CAN]  [ETH]  [USB OTG]          ║
+                ║                                                          ║
+                ║   Conectores: Molex Micro-Fit 3.0 para motores          ║
+                ║   Dimensiones: 150x100x30 mm                            ║
+                ╚══════════════════════════════════════════════════════════╝
+            </div>
+
+            <div id="manual-fpga" class="manual-step">
+                <div class="step-title">MANUAL DE CONFIGURACIÓN · CEREBRO FPGA</div>
+                <div class="step-desc">
+                    <div class="step-img-placeholder">
+                        ┌─────────────────┐
+                        │ 1. Grabar       │
+                        │  firmware       │
+                        └─────────────────┘
+                    </div>
+                    <ul class="step-list">
+                        <li><i class="fas fa-check"></i> Descargar firmware VHDL del repositorio oficial (enlace en anexos).</li>
+                        <li><i class="fas fa-check"></i> Conectar placa por USB y programar con Quartus II (versión libre).</li>
+                        <li><i class="fas fa-check"></i> Configurar parámetros básicos: número de motores, tipo de encoder.</li>
+                        <li><i class="fas fa-check"></i> Conectar buses CAN de cada motor; verificar comunicación.</li>
+                        <li><i class="fas fa-check"></i> Calibrar offsets de corriente con software de calibración.</li>
+                        <li><i class="fas fa-check"></i> Probar en banco con un solo motor antes del montaje final.</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN 12: TRANSMISIÓN HÍBRIDA (CORREA + CADENA) -->
-        <section id="transmision" class="section">
-            <div class="section-header"><i class="fas fa-chain"></i><h2>12. TRANSMISIÓN HÍBRIDA · RELACIÓN VARIABLE</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Un sistema de poleas cónicas (tipo variador de scooter) combinado con una cadena final permite ajustar la relación de transmisión en tiempo real. Controlado por la FPGA, mantiene los motores en su punto óptimo de eficiencia.</p>
-                <div class="supplier"><i class="fas fa-tag"></i> Variador de scooter usado: 30 € · <strong>Guangzhou Scooter Parts</strong></div>
+        <!-- SECCIÓN 4: KIT DE CONVERSIÓN (PRIOR ART) -->
+        <section id="kit" class="section">
+            <div class="section-header"><i class="fas fa-tools"></i><h2>04. KIT DE CONVERSIÓN UNIVERSAL · PRIOR ART</h2></div>
+            <div style="background:#14202a; border-radius:30px; padding:1.5rem; border:2px solid #ff9f4b80;">
+                <p style="font-size:1.2rem; color:#ffbc7c;"><i class="fas fa-exclamation-triangle"></i> <strong>REGISTRO DE PRIOR ART · 2026 · DAVID FERRANDEZ CANALIS</strong></p>
+                <p>El sistema de control basado en FPGA descrito en la sección anterior puede encapsularse como un <strong>producto independiente</strong>: un "cerebro universal" para la conversión de motos térmicas a eléctricas. Este kit incluiría:</p>
+                <ul style="margin-left:2rem; margin-top:1rem;">
+                    <li>Una placa FPGA Cyclone V preprogramada con control vectorial multipropósito.</li>
+                    <li>Hasta 8 salidas para motores (ampliable por apilamiento).</li>
+                    <li>Interfaces CAN, USB y Ethernet para sensores y expansión.</li>
+                    <li>Software de calibración con interfaz gráfica (basado en ROS2).</li>
+                    <li>Esquemas de conexionado para motores de inducción, IPM y DC sin escobillas.</li>
+                </ul>
+                <p><strong>Aplicación:</strong> Convertir cualquier moto clásica (Harley, Honda CB, etc.) en una eléctrica de altas prestaciones. El usuario final solo debe conseguir los motores (pueden ser de segunda mano) y una batería; el cerebro se encarga del resto. Coste estimado del kit: <strong>250 €</strong> (en producción baja, 500 € si se vende como producto empaquetado).</p>
+                <p style="margin-top:1rem;"><i class="fas fa-gavel"></i> <strong>Este documento, publicado en marzo de 2026, constituye prior art frente a cualquier intento de patentar un sistema de control multimotor para vehículos basado en FPGA. La idea ha sido divulgada de forma pública y fehaciente.</strong></p>
+                <div class="supplier"><i class="fas fa-tag"></i> <strong>Contacto para licencias:</strong> david.ferrandez@ronin.engineering · <a href="#">Shenzhen Oni Kit</a></div>
             </div>
         </section>
 
-        <!-- SECCIÓN 13: CARGA BIDIRECCIONAL (V2L) -->
-        <section id="carga" class="section">
-            <div class="section-header"><i class="fas fa-plug"></i><h2>13. CARGA BIDIRECCIONAL · V2L</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Con un inversor reciclado de un Nissan Leaf (150 €), la batería de 30 kWh puede alimentar una casa, herramientas eléctricas o incluso otra moto. El software de control lo gestiona la FPGA.</p>
-                <div class="supplier"><i class="fas fa-tag"></i> Inversor Leaf: <strong>EV Battery Recyclers</strong> · 150 €</div>
+        <!-- SECCIÓN 5: IDEAS INÉDITAS (PRIOR ART) -->
+        <section id="ideas-ineditas" class="section">
+            <div class="section-header"><i class="fas fa-lightbulb"></i><h2>05. IDEAS INÉDITAS · PRIOR ART ADICIONAL</h2></div>
+            <div style="background:#0f1a22; border-radius:30px; padding:2rem;">
+                <p style="color:#ffbc7c; margin-bottom:1rem;">Las siguientes ideas han sido concebidas y divulgadas en este documento con fecha 27 de febrero de 2026. Quedan registradas como prior art frente a eventuales patentes.</p>
+                <ul style="list-style:none;">
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 KIT DE CONVERSIÓN UNIVERSAL FPGA</strong> – Controlador multieje para convertir cualquier moto térmica en eléctrica. Incluye firmware abierto y conexionado estándar.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 BATERÍA HÍBRIDA SODIO-LFP</strong> – Combinación de celdas de sodio para potencia y LFP para capacidad, con BMS dual que gestiona ambas químicas.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 FRENADA REGENERATIVA TOTAL</strong> – Sistema que utiliza todos los motores como generadores, eliminando frenos de disco convencionales.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 REFRIGERACIÓN POR INMERSIÓN EN ACEITE DIELÉCTRICO</strong> – Baño de aceite de transformador para motores y electrónica, permitiendo altas densidades de potencia.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 SUSPENSIÓN NEUMÁTICA CON AMORTIGUADORES ÖHLINS RECICLADOS</strong> – Combinación de bolsas de aire de camión con amortiguadores de competición de segunda mano.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 NEUMÁTICOS MULTICAPA RECAUCHUTADOS</strong> – Uso de carcasas de camión recauchutadas con banda deportiva para soportar altas cargas.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 ASIENTO DE AVIÓN CON AIRBAG INTEGRADO</strong> – Butaca de avión reciclada con airbag de coche incorporado, controlado por la FPGA.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 CONTROL POR GESTOS CON KINECT</strong> – Uso de sensores de profundidad para controlar funciones de la moto sin contacto físico.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 PINTURA CONDUCTIVA PARA DESHIELO Y BLINDAJE EMI</strong> – Revestimiento con nanopartículas de plata que permite calentar superficies y proteger contra interferencias.
+                    </li>
+                    <li style="margin-bottom:1.5rem; border-left:4px solid #ff9f4b; padding-left:1rem;">
+                        <strong style="color:#ff9f4b;">🔹 CARGA BIDIRECCIONAL V2L CON INVERSOR RECICLADO</strong> – Capacidad de alimentar herramientas o una casa desde la batería de la moto.
+                    </li>
+                </ul>
             </div>
         </section>
 
-        <!-- SECCIÓN 14: AIRBAG DE COCHE RECICLADO -->
-        <section id="seguridad" class="section">
-            <div class="section-header"><i class="fas fa-shield-alt"></i><h2>14. AIRBAG INTEGRADO (RECICLADO)</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Un airbag de volante de coche (10 € en desguace) se instala en el asiento, con un sensor de impacto reciclado. Se dispara con una pequeña carga pirotécnica controlada por la FPGA.</p>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 15: SONIDO SINTÉTICO V8 (OPCIONAL) -->
-        <section id="sonido" class="section">
-            <div class="section-header"><i class="fas fa-volume-up"></i><h2>15. SONIDO SINTÉTICO DE MOTOR V8</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Un altavoz Bluetooth reciclado (5 €) y una Raspberry Pi Zero (10 €) reproducen el sonido de un V8 americano sincronizado con el acelerador. Para los nostálgicos del ruido.</p>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 16: ASIENTO DE AVIÓN (CLASE BUSINESS) -->
-        <section id="asiento" class="section">
-            <div class="section-header"><i class="fas fa-chair"></i><h2>16. ASIENTO DE AVIÓN RECICLADO</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">BUTACA BUSINESS</span><span class="price">80 € <small>(592 ¥)</small></span></div>
-                    <div class="model-name">Recaro ex‑avión <span>DESGUACE AERONÁUTICO</span></div>
-                    <div class="condition">Regulable, reclinable, con cinturón de 5 puntos. Pesa 15 kg pero es comodísimo.</div>
-                    <div class="origin">Proveedor: <strong>AeroParts UK</strong></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 17: PINTURA CONDUCTIVA (DESHIELO) -->
-        <section id="pintura" class="section">
-            <div class="section-header"><i class="fas fa-paint-brush"></i><h2>17. PINTURA CONDUCTIVA · DESHIELO Y BLINDAJE</h2></div>
-            <div style="background:#14202a; border-radius:30px; padding:1.5rem;">
-                <p><i class="fas fa-check-circle" style="color:#ff9f4b;"></i> Pintura con nanopartículas de plata (excedente de laboratorio) aplicada sobre el chasis y carenados. Permite hacer pasar corriente para calentar superficies (deshielo) y actúa como blindaje EMI.</p>
-                <div class="supplier"><i class="fas fa-tag"></i> <strong>Nanotech Surplus</strong> · 50 €/litro</div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 18: BLOQUEO GSM (ANTIROBO) -->
-        <section id="seguros" class="section">
-            <div class="section-header"><i class="fas fa-lock"></i><h2>18. BLOQUEO GSM · RASTREADOR Y CORTE REMOTO</h2></div>
-            <div class="comp-grid">
-                <div class="comp-card">
-                    <div class="card-header"><span class="badge-cat">MÓDULO SIM800</span><span class="price">5 € <small>(37 ¥)</small></span></div>
-                    <div class="model-name">GSM/GPRS module <span>EXCEDENTE</span></div>
-                    <div class="condition">Envía SMS con posición, permite cortar la corriente por comando.</div>
-                    <div class="origin">1688: sim800_module</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 19: PAPERS ACADÉMICOS (COARTADA MASIVA) -->
+        <!-- SECCIÓN 6: PAPERS ACADÉMICOS -->
         <section id="papers" class="section">
-            <div class="section-header"><i class="fas fa-scroll"></i><h2>19. PAPERS QUE LO JUSTIFICAN TODO</h2></div>
+            <div class="section-header"><i class="fas fa-scroll"></i><h2>06. PAPERS ACADÉMICOS · JUSTIFICACIÓN</h2></div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Multi‑motor electric vehicle propulsion" – IEEE TVT, 2023. (16 motores, control vectorial)</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Hybrid Na‑ion/LFP battery systems" – Journal of Power Sources, 2024.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "FPGA‑based multi‑motor control" – IEEE TIE, 2021.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Regenerative braking with multi‑motor systems" – IEEE TVT, 2023.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Transformer oil immersion cooling" – IEEE TPEL, 2022.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Gesture control using Kinect" – IEEE THMS, 2018.</div>
-            <div class="paper-ref"><i class="fas fa-file-alt"></i> "Structural optimization of hybrid chassis" – SAE, 2022.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Retreaded tires for high‑performance EVs" – Tire Science and Technology, 2021.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Bidirectional charging for V2L applications" – IEEE TTE, 2023.</div>
             <div class="paper-ref"><i class="fas fa-file-alt"></i> "Recycled airbags for motorcycles" – International Journal of Crashworthiness, 2022.</div>
         </section>
 
-        <!-- PRESUPUESTO FINAL (con todas las mejoras) -->
+        <!-- SECCIÓN 7: PRESUPUESTO FINAL -->
         <section id="presupuesto" class="section">
-            <div class="section-header"><i class="fas fa-chart-pie"></i><h2>20. PRESUPUESTO FINAL · MÁS POTENCIA, MÁS AUTONOMÍA, MÁS BARATO</h2></div>
+            <div class="section-header"><i class="fas fa-chart-pie"></i><h2>07. PRESUPUESTO FINAL (CON PLANOS)</h2></div>
             <div style="background:#101d28; border-radius:30px; padding:2rem;">
                 <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                     <tr style="border-bottom:1px solid #ff9f4b40;"><th>Concepto</th><th>Coste (€)</th><th>Observaciones</th></tr>
@@ -723,11 +689,11 @@
             </div>
         </section>
 
-        <!-- NOTA DEL ARQUITECTO (actualizada) -->
+        <!-- NOTA DEL ARQUITECTO (versión definitiva) -->
         <div class="architect-note">
             <h3>NOTA DEL ARQUITECTO · EL CORCEL DEL PÍCARO (VERSIÓN DEFINITIVA)</h3>
             <p>«Hemos dejado de construir motos para construir <strong>declaraciones de principios</strong>. 16 motores de imanes permanentes, 120 kW, 30 kWh de batería híbrida, chasis de titanio y carbono, suspensión neumática con Öhlins, frenada regenerativa total, control por gestos, asiento de avión, pintura conductiva, carga bidireccional... todo por menos de 5.000 euros.</p>
-            <p>No hay fabricante que pueda replicar esto. No porque no tengan la tecnología, sino porque su modelo de negocio les impide pensar así. Nosotros no tenemos accionistas, tenemos ideas. Zehahahaha. El número es 1310.»</p>
+            <p>Y ahora, además, el <strong>cerebro universal</strong> que puede convertir cualquier moto clásica en una bestia eléctrica. Esto no es un producto, es un arma de destrucción masiva de patentes. Que alguien intente patentar el control multimotor con FPGA después de este documento. Zehahahaha. El número es 1310.»</p>
             <p style="margin-top:1rem; color:#ffbc7c;">— David Ferrandez Canalis · Sabadell · 2026</p>
         </div>
     </div>
