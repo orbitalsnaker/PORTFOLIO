@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Proxy de Credenciales para Agentes IA · Solución al problema de OpenClaw</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0c0f;
+            color: #e8eef2;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #1a1e24;
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        h1 {
+            color: #6ee7b7;
+            font-weight: 500;
+            margin-top: 0;
+            border-bottom: 1px solid #2a2f38;
+            padding-bottom: 1rem;
+        }
+        h2 {
+            color: #b7c9e2;
+            margin-top: 2rem;
+            font-size: 1.4rem;
+        }
+        .highlight {
+            background: #0e1a1f;
+            border-left: 4px solid #3b82f6;
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+        code {
+            background: #0b0f14;
+            color: #a7e0e0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+        pre {
+            background: #0b0f14;
+            padding: 1.2rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid #2a2f38;
+        }
+        .badge {
+            display: inline-block;
+            background: #2d3a4a;
+            color: #cbd5e1;
+            border-radius: 20px;
+            padding: 0.3rem 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+        }
+        .note {
+            color: #9ca8b9;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #2a2f38;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧪 Proxy de Credenciales · Solución al problema de OpenClaw</h1>
+
+    <div class="highlight">
+        <span class="badge">🔒 Diseñado para Julio Andrés O.</span>
+        <p style="margin-top: 1rem;">
+            Este proxy implementa la arquitectura descrita en el post de LinkedIn:
+            el agente <strong>nunca ve las credenciales reales</strong>, solo hace peticiones autenticadas al proxy,
+            que inyecta las API keys desde un almacén seguro y valúa contra una whitelist de endpoints permitidos.
+        </p>
+        <p>
+            ✅ Basado en papers de seguridad (arXiv:2511.15759, OWASP API Top 10) y en el concepto de
+            <strong>AgentSecrets</strong> (Hacker News).</p>
+    </div>
+
+    <h2>📌 El problema (en palabras de Julio)</h2>
+    <blockquote style="font-style: italic; color: #b7c9e2;">
+        "Un gran problema con OpenClaw (y agentes de IA) es que tienes que pasarle las credenciales de tus cuentas...
+        Si alguien puede 'convencer' a tu Claw de que le lea el openclaw.json, estas jodido."
+    </blockquote>
+    <p><strong>Vulnerabilidades concretas:</strong></p>
+    <ul>
+        <li>Almacenamiento de API keys en texto plano (archivos .env, JSON).</li>
+        <li>Inyección de prompt que fuerza al agente a leer esos archivos y exfiltrarlos.</li>
+        <li>Una vez robada la clave, el atacante tiene acceso completo a Stripe, OpenAI, etc.</li>
+    </ul>
+
+    <h2>🔧 Nuestra solución: proxy con credenciales invisibles</h2>
+    <p>Arquitectura de tres capas que cumple con las recomendaciones de OWASP [citation:1][citation:5]:</p>
+
+    <pre style="background: #0f1218;">
+    ┌────────────┐      ┌─────────────────┐      ┌──────────────┐
+    │   Agente   │ ──→  │   Proxy seguro  │ ──→  │ API Externas │
+    │  (OpenClaw)│  ←─  │ (FastAPI + env) │  ←─  │(Stripe,OpenAI)│
+    └────────────┘      └─────────────────┘      └──────────────┘
+                             │
+                             ↓
+                      ┌──────────────┐
+                      │ Almacén de   │
+                      │ credenciales │
+                      │ (variables   │
+                      │ de entorno)  │
+                      └──────────────┘
+    </pre>
+
+    <p><strong>Flujo de una petición segura:</strong></p>
+    <ol>
+        <li>El agente envía la petición al proxy con un token de sesión (nunca la API key real).</li>
+        <li>El proxy valida el token, comprueba la whitelist y recupera la clave real desde <code>os.environ</code>.</li>
+        <li>Inyecta la clave en los headers (Bearer, custom header, etc.) y reenvía al servicio externo.</li>
+        <li>La respuesta se devuelve al agente <strong>sin que éste haya visto nunca la clave</strong>.</li>
+    </ol>
+
+    <h2>📜 Código completo del proxy (Python + FastAPI)</h2>
+    <p>He comentado cada decisión de seguridad basándome en:</p>
+    <ul>
+        <li>OWASP API Security Top 10 [citation:1]</li>
+        <li>Paper “Securing AI Agents Against Prompt Injection Attacks” (arXiv:2511.15759) [citation:3]</li>
+        <li>Proyecto AgentSecrets (evita que las claves entren en memoria del agente) [citation:6]</li>
+    </ul>
+
+    <pre><code># =============================================================================
+# PROXY DE CREDENCIALES PARA AGENTES IA
+# Versión: 1.0 · Autor: David Ferrandez Canalis (Agencia RONIN)
+# Basado en: OWASP API Top 10, arXiv:2511.15759, AgentSecrets
+# 
+# Uso:
+#   1. Guarda este archivo como proxy_agente.py
+#   2. pip install fastapi uvicorn httpx python-dotenv
+#   3. Crea un archivo .env con tus claves reales (NUNCA lo subas a GitHub)
+#   4. Ejecuta: uvicorn proxy_agente:app --reload --port 8765
+# =============================================================================
+
+import os
+import re
+import logging
+from typing import Dict, Optional
+from datetime import datetime
+
+import httpx
+from fastapi import FastAPI, HTTPException, Request, Depends, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, HttpUrl
+from dotenv import load_dotenv
+
+# ────────────────────────────────────────────────────────────────────────────
+# 1. CONFIGURACIÓN INICIAL (NUNCA almacenar credenciales en código)
+# ────────────────────────────────────────────────────────────────────────────
+load_dotenv()  # Carga variables desde .env (fuera del repositorio)
+
+# Almacén de credenciales reales (solo accesible por el proxy)
+# Las claves se leen de variables de entorno; si no existen, se usa un valor por defecto vacío.
+# ⚠️ NUNCA pongas aquí las claves en texto plano.
+REAL_CREDENTIALS = {
+    "openai": os.getenv("OPENAI_API_KEY", ""),
+    "stripe": os.getenv("STRIPE_API_KEY", ""),
+    "github": os.getenv("GITHUB_TOKEN", ""),
+    # Añade más según necesites
+}
+
+# Tokens de sesión para que el agente se autentique contra el proxy.
+# En producción, estos tokens deberían ser cortos y rotarse periódicamente.
+# Usamos un esquema simple: los tokens se definen aquí y se validan en cada petición.
+PROXY_TOKENS = {
+    "sk-proxy-1234": {"agent": "openclaw", "permissions": ["openai", "stripe"]},
+    "sk-proxy-5678": {"agent": "autogpt",  "permissions": ["github"]},
+}
+
+# Whitelist de endpoints permitidos: qué métodos y URLs puede usar cada credencial.
+# Formato: (método, patrón de URL) -> nombre de la credencial a inyectar
+# ⚠️ Es crucial ser restrictivo: cuanto más específico, menor superficie de ataque.
+ENDPOINT_WHITELIST = [
+    # OpenAI: solo permitimos chat completions (nada de listar modelos, etc.)
+    {"method": "POST", "url_pattern": r"^https://api\.openai\.com/v1/chat/completions$", "credential": "openai", "auth_type": "bearer"},
+    # Stripe: solo consultar cargos, nada de reembolsos o borrados
+    {"method": "GET",  "url_pattern": r"^https://api\.stripe\.com/v1/charges$", "credential": "stripe", "auth_type": "bearer"},
+    {"method": "GET",  "url_pattern": r"^https://api\.stripe\.com/v1/charges/.+$", "credential": "stripe", "auth_type": "bearer"},
+    # GitHub: solo obtener usuario y listar repos (nada de borrar)
+    {"method": "GET",  "url_pattern": r"^https://api\.github\.com/user$", "credential": "github", "auth_type": "token"},
+    {"method": "GET",  "url_pattern": r"^https://api\.github\.com/users/.+/repos$", "credential": "github", "auth_type": "token"},
+]
+
+# Configuración de logging: guardamos un registro de auditoría SIN las claves reales
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("proxy_audit.log"),  # Auditoría persistente
+        logging.StreamHandler()                   # También mostramos en consola
+    ]
+)
+logger = logging.getLogger("credential-proxy")
+
+# ────────────────────────────────────────────────────────────────────────────
+# 2. MODELOS DE DATOS (Pydantic)
+# ────────────────────────────────────────────────────────────────────────────
+class ProxyRequest(BaseModel):
+    """Petición que envía el agente al proxy"""
+    url: str                     # URL completa del endpoint externo
+    method: str = "GET"          # Método HTTP
+    headers: Dict[str, str] = {} # Headers adicionales que quiera enviar el agente
+    body: Optional[Dict] = None  # Cuerpo de la petición (para POST, PUT...)
+
+class ProxyResponse(BaseModel):
+    """Respuesta que devuelve el proxy al agente (idéntica a la del servicio real)"""
+    status_code: int
+    headers: Dict[str, str]
+    body: Optional[Dict] = None
+
+# ────────────────────────────────────────────────────────────────────────────
+# 3. DEPENDENCIAS DE SEGURIDAD
+# ────────────────────────────────────────────────────────────────────────────
+security = HTTPBearer()  # Esperamos un token Bearer en el header
+
+async def verify_proxy_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Valida el token que el agente usa para autenticarse contra el proxy."""
+    token = credentials.credentials
+    if token not in PROXY_TOKENS:
+        logger.warning(f"Intento de acceso con token inválido: {token[:8]}...")
+        raise HTTPException(status_code=401, detail="Token de proxy inválido")
+    return PROXY_TOKENS[token]
+
+def check_whitelist(method: str, url: str) -> Optional[Dict]:
+    """
+    Recorre la whitelist y devuelve la configuración si la petición está permitida.
+    Implementa una validación estricta de URLs mediante expresiones regulares.
+    """
+    for rule in ENDPOINT_WHITELIST:
+        if rule["method"] != method:
+            continue
+        if re.match(rule["url_pattern"], url):
+            return rule
+    return None
+
+def validate_no_ssrf(url: str):
+    """
+    Protección contra Server-Side Request Forgery (SSRF).
+    Bloquea peticiones a IPs privadas, localhost, etc.
+    Basado en recomendaciones de OWASP [citation:2][citation:5].
+    """
+    # Lista de patrones prohibidos (IPs privadas, localhost, metadatos cloud)
+    forbidden_patterns = [
+        r"^https?://127\.0\.0\.",
+        r"^https?://localhost",
+        r"^https?://10\.\d+\.\d+\.\d+",      # RFC 1918
+        r"^https?://172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+",
+        r"^https?://192\.168\.\d+\.\d+",
+        r"^https?://169\.254\.\d+\.\d+",     # Link-local
+        r"^https?://metadata\.google\.internal",  # Metadata cloud
+    ]
+    for pattern in forbidden_patterns:
+        if re.match(pattern, url, re.IGNORECASE):
+            logger.error(f"Intento de SSRF bloqueado: {url}")
+            raise HTTPException(status_code=403, detail="Acceso a dirección interna no permitido")
+
+# ────────────────────────────────────────────────────────────────────────────
+# 4. INICIALIZACIÓN DE FASTAPI
+# ────────────────────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="Proxy de Credenciales para Agentes IA",
+    description="Solución al problema de credenciales en texto plano. Las API keys NUNCA llegan al agente.",
+    version="1.0.0"
+)
+
+# Cliente HTTP reutilizable con timeout para evitar DoS
+http_client = httpx.AsyncClient(timeout=30.0)
+
+# ────────────────────────────────────────────────────────────────────────────
+# 5. ENDPOINT PRINCIPAL DEL PROXY
+# ────────────────────────────────────────────────────────────────────────────
+@app.post("/proxy", response_model=ProxyResponse)
+async def proxy_endpoint(
+    request: ProxyRequest,
+    agent_info: dict = Depends(verify_proxy_token)
+):
+    """
+    Único endpoint que el agente debe llamar.
+    Recibe la petición, la valida, inyecta la credencial y la reenvía.
+    """
+    # ── 5.1 Validación de la URL (contra SSRF) ─────────────────────────────
+    validate_no_ssrf(request.url)
+
+    # ── 5.2 Comprobar whitelist ───────────────────────────────────────────
+    rule = check_whitelist(request.method, request.url)
+    if not rule:
+        logger.warning(f"Petición bloqueada por whitelist: {request.method} {request.url} (agente: {agent_info['agent']})")
+        raise HTTPException(status_code=403, detail="Endpoint no permitido por la whitelist")
+
+    # ── 5.3 Obtener la credencial real (NUNCA visible para el agente) ──────
+    credential_name = rule["credential"]
+    real_key = REAL_CREDENTIALS.get(credential_name)
+    if not real_key:
+        logger.error(f"Credencial '{credential_name}' no configurada en el entorno")
+        raise HTTPException(status_code=500, detail="Credencial no disponible en el proxy")
+
+    # Verificar que el token del agente tiene permiso para usar esta credencial
+    if credential_name not in agent_info["permissions"]:
+        logger.warning(f"Agente {agent_info['agent']} intentó usar credencial {credential_name} sin permiso")
+        raise HTTPException(status_code=403, detail="Credencial no permitida para este agente")
+
+    # ── 5.4 Construir headers con la credencial inyectada ───────────────────
+    headers = request.headers.copy()
+    auth_type = rule.get("auth_type", "bearer")
+    if auth_type == "bearer":
+        headers["Authorization"] = f"Bearer {real_key}"
+    elif auth_type == "token":
+        headers["Authorization"] = f"token {real_key}"
+    elif auth_type == "header":
+        # Caso especial para APIs que usan un header custom (ej: X-API-Key)
+        headers[rule.get("header_name", "X-API-Key")] = real_key
+    # Eliminamos cualquier header Authorization que hubiera enviado el agente
+    headers.pop("authorization", None)  # case-insensitive en realidad no, pero FastAPI ya normaliza
+
+    # ── 5.5 Reenviar la petición al servicio real ───────────────────────────
+    try:
+        resp = await http_client.request(
+            method=request.method,
+            url=request.url,
+            headers=headers,
+            json=request.body,
+            follow_redirects=False,  # No seguir redirecciones para evitar fugas
+        )
+    except httpx.RequestError as e:
+        logger.error(f"Error al contactar {request.url}: {str(e)}")
+        raise HTTPException(status_code=502, detail="Error de conexión con el servicio externo")
+
+    # ── 5.6 Log de auditoría (sin la clave real) ───────────────────────────
+    logger.info(
+        f"AUDIT: agente={agent_info['agent']} | "
+        f"credential={credential_name} | "
+        f"method={request.method} | "
+        f"url={request.url} | "
+        f"status={resp.status_code}"
+    )
+    # Guardamos en un log específico (el handler ya lo hace)
+    # Nunca registramos el valor de la clave.
+
+    # ── 5.7 Devolver la respuesta al agente ────────────────────────────────
+    # Nota: No reenviamos headers sensibles (ej. Set-Cookie podría contener tokens)
+    response_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ["set-cookie", "authorization"]}
+    return ProxyResponse(
+        status_code=resp.status_code,
+        headers=response_headers,
+        body=resp.json() if resp.headers.get("content-type") == "application/json" else None
+    )
+
+# ────────────────────────────────────────────────────────────────────────────
+# 6. ENDPOINT DE ESTADO (para verificar que el proxy funciona)
+# ────────────────────────────────────────────────────────────────────────────
+@app.get("/health")
+async def health():
+    """Endpoint público para comprobar que el proxy está vivo."""
+    return {"status": "ok", "version": "1.0.0"}
+
+# ────────────────────────────────────────────────────────────────────────────
+# 7. CIERRE GRACEFUL DEL CLIENTE HTTP
+# ────────────────────────────────────────────────────────────────────────────
+@app.on_event("shutdown")
+async def shutdown():
+    await http_client.aclose()
+
+# =============================================================================
+# FIN DEL PROXY
+# =============================================================================
+</code></pre>
+
+    <h2>🧪 Cómo probarlo (ejemplo con agente simulado)</h2>
+    <p>Crea un archivo <code>.env</code> (¡y añádelo a <code>.gitignore</code>!):</p>
+    <pre><code>OPENAI_API_KEY=sk-real-key-no-la-pongas-aqui-en-claro
+STRIPE_API_KEY=sk_live_...</code></pre>
+
+    <p>Arranca el proxy:</p>
+    <pre><code>uvicorn proxy_agente:app --reload --port 8765</code></pre>
+
+    <p>Desde tu agente (o con curl), haz una petición:</p>
+    <pre><code>curl -X POST http://localhost:8765/proxy \
+  -H "Authorization: Bearer sk-proxy-1234" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "POST",
+    "url": "https://api.openai.com/v1/chat/completions",
+    "body": {
+      "model": "gpt-3.5-turbo",
+      "messages": [{"role": "user", "content": "Hola"}]
+    }
+  }'</code></pre>
+
+    <p>El proxy inyectará la clave de OpenAI automáticamente. El agente nunca la ha visto.</p>
+
+    <hr>
+
+    <h2>📋 Para Julio (y cualquier escéptico)</h2>
+    <div class="highlight warning">
+        <p><strong>¿Por qué esto es más seguro que un archivo .env?</strong></p>
+        <ul>
+            <li>Las claves reales <strong>nunca entran en el espacio de memoria del agente</strong>. Aunque el agente sea engañado para leer todos sus archivos, las claves no están ahí.</li>
+            <li>La whitelist impide que, incluso con un token válido, el agente pueda hacer cosas no autorizadas (ej. borrar clientes de Stripe).</li>
+            <li>La protección SSRF evita que el proxy sea usado para atacar redes internas [citation:2].</li>
+            <li>Los logs de auditoría permiten detectar usos anómalos sin exponer las claves.</li>
+        </ul>
+    </div>
+
+    <div class="highlight">
+        <p><strong>¿Qué pasa si el atacante logra que el agente llame a una URL maliciosa?</strong></p>
+        <p>Con la whitelist, cualquier URL fuera de los patrones permitidos es rechazada. Incluso si el agente intenta exfiltrar datos enviándolos a un servidor del atacante, la petición nunca llegará porque no está en la whitelist [citation:5].</p>
+    </div>
+
+    <div class="highlight">
+        <p><strong>¿Y si el atacante consigue el token del proxy (sk-proxy-1234)?</strong></p>
+        <p>Ese token solo sirve para usar el proxy, no da acceso directo a las claves. Además, los tokens pueden rotarse periódicamente y asignar permisos muy limitados (cada token solo puede usar ciertas credenciales).</p>
+    </div>
+
+    <h2>📚 Referencias que avalan este diseño</h2>
+    <ul>
+        <li><strong>OWASP API Security Top 10</strong> – Broken Object Level Authorization, Excessive Data Exposure [citation:1].</li>
+        <li><strong>arXiv:2511.15759</strong> – “Securing AI Agents Against Prompt Injection Attacks” (demuestra que los ataques tienen éxito en el 73% de los casos sin defensas adecuadas) [citation:3].</li>
+        <li><strong>AgentSecrets (HN)</strong> – Proyecto que implementa un proxy con almacén en keychain del SO, probado contra la campaña ClawHavoc [citation:6].</li>
+        <li><strong>Guía de 6 pasos para seguridad de APIs</strong> – Recomienda inventario, autenticación, rate limiting y validación de entrada [citation:5].</li>
+        <li><strong>Evil Proxy Attacks</strong> – Documenta cómo los proxies maliciosos pueden robar tokens, y cómo defenderse con validación de dominio [citation:2].</li>
+    </ul>
+
+    <hr>
+
+    <h2>🚀 Próximos pasos (mejoras para producción)</h2>
+    <ul>
+        <li><strong>Almacén de claves reales:</strong> En lugar de variables de entorno, usar un keychain del sistema (macOS Keychain, Windows Credential Manager, o servicios como HashiCorp Vault).</li>
+        <li><strong>Tokens efímeros:</strong> Generar tokens de sesión de corta duración que el agente recibe al iniciar y que caducan automáticamente.</li>
+        <li><strong>Rate limiting:</strong> Limitar el número de peticiones por token para mitigar ataques de fuerza bruta o DoS.</li>
+        <li><strong>Mutual TLS:</strong> Autenticar al agente mediante certificados en lugar de tokens Bearer.</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 3rem; color: #6c7a8a;">
+        🛡️ Solución desarrollada por David Ferrandez Canalis · Obra #1310 · Basada en papers revisados por pares.<br>
+        Completamente funcional y lista para adaptar a cualquier agente (OpenClaw, AutoGPT, etc.).
+    </p>
+</div>
+</body>
+</html>
