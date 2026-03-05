@@ -1,0 +1,3217 @@
+<!-- 
+╔═══════════════════════════════════════════════════════════════╗
+║  PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v1.0                   ║
+║  Generado por IA el 05/03/2026                                ║
+║  Basado en: Lancet Psychiatry, NICE, APA, C-SSRS (Columbia)  ║
+║  Libre para uso educativo y clínico NO DIAGNÓSTICO           ║
+║  Autoría: prompt engineering por David Ferrandez Canalis     ║
+║  "ZEHAHAHAHA. La evidencia es el puente."                    ║
+╚═══════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ROOT VARIABLES & RESET
+═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:           #0b0a14;
+  --bg2:          #0e0d1a;
+  --panel:        #151225;
+  --panel2:       #1a1830;
+  --border:       #2d2640;
+  --border-hi:    #5a4a7a;
+  --accent-lav:   #8a6eff;
+  --accent-mint:  #66cc99;
+  --accent-coral: #ff6b8b;
+  --accent-gold:  #f0c45a;
+  --accent-blue:  #5ec4ff;
+  --text:         #dad0f0;
+  --text-dim:     #a090c0;
+  --text-muted:   #6a5a8a;
+  --risk-low:     #66cc99;
+  --risk-mid:     #f0c45a;
+  --risk-high:    #ff9500;
+  --risk-crit:    #ff2d55;
+  --score-none:   #66cc99;
+  --score-mild:   #f0c45a;
+  --score-mod:    #ff9500;
+  --score-sev:    #ff2d55;
+  --glow-lav:     0 0 20px rgba(138,110,255,0.3);
+  --glow-mint:    0 0 20px rgba(102,204,153,0.3);
+  --glow-coral:   0 0 20px rgba(255,107,139,0.3);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Noise texture */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 9998;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════════════════ */
+h1, h2, h3, .syne { font-family: 'Syne', sans-serif; }
+
+.mono { font-family: 'Space Mono', monospace; }
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-lav); }
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════ */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11,10,20,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  gap: 16px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--accent-lav);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent-lav);
+  box-shadow: var(--glow-lav);
+  animation: pulse-lav 3s infinite;
+}
+
+@keyframes pulse-lav {
+  0%,100% { box-shadow: 0 0 10px rgba(138,110,255,0.3); }
+  50% { box-shadow: 0 0 25px rgba(138,110,255,0.6); }
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.logo-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--accent-lav);
+  letter-spacing: 0.05em;
+}
+
+.logo-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.status-indicators {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-mint);
+  box-shadow: 0 0 8px var(--accent-mint);
+  animation: blink 2s infinite;
+}
+
+.status-dot.amber { background: var(--accent-gold); box-shadow: 0 0 8px var(--accent-gold); animation-delay: 0.5s; }
+.status-dot.off { background: var(--border-hi); box-shadow: none; animation: none; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-header {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 5px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.btn-header:hover {
+  border-color: var(--accent-lav);
+  color: var(--accent-lav);
+  box-shadow: var(--glow-lav);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DISCLAIMER BANNER
+═══════════════════════════════════════════════════════════ */
+#disclaimer-banner {
+  background: linear-gradient(135deg, rgba(255,107,139,0.08), rgba(240,196,90,0.05));
+  border-bottom: 1px solid rgba(255,107,139,0.3);
+  padding: 10px 20px;
+  position: relative;
+}
+
+.disclaimer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.disclaimer-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  color: var(--accent-coral);
+}
+
+.disclaimer-text {
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.disclaimer-text strong {
+  color: var(--accent-coral);
+}
+
+.btn-dismiss {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 3px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-family: 'Space Mono', monospace;
+  transition: all 0.2s;
+}
+.btn-dismiss:hover { border-color: var(--accent-coral); color: var(--accent-coral); }
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════════════════ */
+#app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TAB NAVIGATION
+═══════════════════════════════════════════════════════════ */
+.tab-nav {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 10px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  transition: all 0.2s;
+  position: relative;
+  top: 1px;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  border-bottom-color: var(--border-hi);
+}
+
+.tab-btn.active {
+  color: var(--accent-lav);
+  border-bottom-color: var(--accent-lav);
+}
+
+.tab-btn .tab-num {
+  color: var(--text-muted);
+  margin-right: 6px;
+  font-size: 9px;
+}
+
+.tab-btn.active .tab-num {
+  color: var(--accent-lav);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeUp 0.3s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD COMPONENTS
+═══════════════════════════════════════════════════════════ */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-lav), transparent 60%);
+}
+
+.card-mint::before { background: linear-gradient(90deg, var(--accent-mint), transparent 60%); }
+.card-coral::before { background: linear-gradient(90deg, var(--accent-coral), transparent 60%); }
+.card-gold::before { background: linear-gradient(90deg, var(--accent-gold), transparent 60%); }
+.card-blue::before { background: linear-gradient(90deg, var(--accent-blue), transparent 60%); }
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent-lav);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-mint .card-title { color: var(--accent-mint); }
+.card-coral .card-title { color: var(--accent-coral); }
+.card-gold .card-title { color: var(--accent-gold); }
+.card-blue .card-title { color: var(--accent-blue); }
+
+.card-subtitle {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRID LAYOUTS
+═══════════════════════════════════════════════════════════ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   QUESTION ITEMS (SCALES)
+═══════════════════════════════════════════════════════════ */
+.question-item {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(45,38,64,0.6);
+}
+
+.question-item:last-child { border-bottom: none; }
+
+.question-text {
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.question-num {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-right: 6px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.radio-option {
+  flex: 1;
+  min-width: 60px;
+}
+
+.radio-option input[type="radio"] { display: none; }
+
+.radio-option label {
+  display: block;
+  text-align: center;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 9px;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  line-height: 1.3;
+}
+
+.radio-option label:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+
+.radio-option input:checked + label {
+  background: rgba(138,110,255,0.15);
+  border-color: var(--accent-lav);
+  color: var(--accent-lav);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCORE DISPLAY
+═══════════════════════════════════════════════════════════ */
+.score-display {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.score-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+
+.score-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.score-bar-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease, background 0.3s;
+}
+
+.score-range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 8px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INTERPRETATION PANEL
+═══════════════════════════════════════════════════════════ */
+.interpretation-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-lav);
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.interp-header {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-lav);
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.interp-point {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 4px 0;
+  padding-left: 14px;
+  position: relative;
+}
+
+.interp-point::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--accent-lav);
+  font-size: 10px;
+}
+
+.ref-tag {
+  display: inline-block;
+  background: rgba(138,110,255,0.1);
+  border: 1px solid rgba(138,110,255,0.3);
+  color: var(--accent-lav);
+  font-size: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════════════════ */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.section-badge {
+  background: rgba(138,110,255,0.15);
+  border: 1px solid rgba(138,110,255,0.4);
+  color: var(--accent-lav);
+  font-size: 9px;
+  padding: 3px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.section-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 5px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.btn-primary {
+  background: rgba(138,110,255,0.15);
+  border-color: var(--accent-lav);
+  color: var(--accent-lav);
+}
+.btn-primary:hover {
+  background: rgba(138,110,255,0.3);
+  box-shadow: var(--glow-lav);
+}
+
+.btn-mint {
+  background: rgba(102,204,153,0.1);
+  border-color: var(--accent-mint);
+  color: var(--accent-mint);
+}
+.btn-mint:hover {
+  background: rgba(102,204,153,0.25);
+  box-shadow: var(--glow-mint);
+}
+
+.btn-coral {
+  background: rgba(255,107,139,0.1);
+  border-color: var(--accent-coral);
+  color: var(--accent-coral);
+}
+.btn-coral:hover {
+  background: rgba(255,107,139,0.25);
+  box-shadow: var(--glow-coral);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-dim);
+}
+.btn-ghost:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CHECKBOX ITEMS (DSM-5)
+═══════════════════════════════════════════════════════════ */
+.criterion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.criterion-item:hover { background: rgba(255,255,255,0.02); }
+
+.criterion-item input[type="checkbox"] { display: none; }
+
+.criterion-check {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-hi);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-size: 10px;
+}
+
+.criterion-item input:checked ~ .criterion-text .criterion-check,
+.criterion-item.checked .criterion-check {
+  background: rgba(138,110,255,0.2);
+  border-color: var(--accent-lav);
+  color: var(--accent-lav);
+}
+
+.criterion-text {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.criterion-req {
+  display: inline-block;
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.criterion-group-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 0 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+/* DSM verdict */
+.dsm-verdict {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  border: 1px solid;
+}
+
+.dsm-verdict.met {
+  background: rgba(255,107,139,0.08);
+  border-color: rgba(255,107,139,0.4);
+  color: var(--accent-coral);
+}
+
+.dsm-verdict.partial {
+  background: rgba(240,196,90,0.08);
+  border-color: rgba(240,196,90,0.4);
+  color: var(--accent-gold);
+}
+
+.dsm-verdict.not-met {
+  background: rgba(102,204,153,0.08);
+  border-color: rgba(102,204,153,0.4);
+  color: var(--accent-mint);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   C-SSRS RISK MODULE
+═══════════════════════════════════════════════════════════ */
+.cssrs-question {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(45,38,64,0.5);
+}
+
+.cssrs-q-text {
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.cssrs-q-level {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.cssrs-radio {
+  display: flex;
+  gap: 10px;
+}
+
+.cssrs-radio label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.cssrs-radio label:hover { border-color: var(--border-hi); color: var(--text); }
+
+.cssrs-radio input[type="radio"] { display: none; }
+
+.cssrs-radio input:checked + label {
+  border-color: var(--accent-coral);
+  color: var(--accent-coral);
+  background: rgba(255,107,139,0.08);
+}
+
+.cssrs-radio input.yes:checked + label {
+  border-color: var(--accent-coral);
+  color: var(--accent-coral);
+  background: rgba(255,107,139,0.1);
+}
+
+.cssrs-radio input.no:checked + label {
+  border-color: var(--accent-mint);
+  color: var(--accent-mint);
+  background: rgba(102,204,153,0.08);
+}
+
+/* Risk level meter */
+.risk-meter {
+  margin: 20px 0;
+  padding: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.risk-meter-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.risk-level-display {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  transition: all 0.4s;
+  letter-spacing: 0.05em;
+}
+
+.risk-level-display.none {
+  color: var(--risk-low);
+  background: rgba(102,204,153,0.05);
+  border: 1px solid rgba(102,204,153,0.2);
+}
+
+.risk-level-display.low {
+  color: var(--risk-low);
+  background: rgba(102,204,153,0.08);
+  border: 1px solid rgba(102,204,153,0.3);
+}
+
+.risk-level-display.moderate {
+  color: var(--risk-mid);
+  background: rgba(240,196,90,0.08);
+  border: 1px solid rgba(240,196,90,0.3);
+}
+
+.risk-level-display.high {
+  color: var(--risk-high);
+  background: rgba(255,149,0,0.08);
+  border: 1px solid rgba(255,149,0,0.4);
+  animation: pulse-warn 2s infinite;
+}
+
+.risk-level-display.critical {
+  color: var(--risk-crit);
+  background: rgba(255,45,85,0.1);
+  border: 1px solid rgba(255,45,85,0.5);
+  animation: pulse-crit 1s infinite;
+}
+
+@keyframes pulse-warn {
+  0%,100% { box-shadow: 0 0 10px rgba(255,149,0,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,149,0,0.5); }
+}
+
+@keyframes pulse-crit {
+  0%,100% { box-shadow: 0 0 15px rgba(255,45,85,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,45,85,0.7); }
+}
+
+.risk-action {
+  font-size: 11px;
+  text-align: center;
+  color: var(--text-dim);
+  padding: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+.ideation-score-bar {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0;
+}
+
+.ideation-pip {
+  height: 8px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+
+.ideation-pip.active-0 { background: var(--risk-low); }
+.ideation-pip.active-1 { background: var(--risk-low); }
+.ideation-pip.active-2 { background: var(--risk-mid); }
+.ideation-pip.active-3 { background: var(--risk-high); }
+.ideation-pip.active-4, .ideation-pip.active-5 { background: var(--risk-crit); }
+
+/* ═══════════════════════════════════════════════════════════
+   PHARMA MODULE
+═══════════════════════════════════════════════════════════ */
+.drug-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.drug-filter-btn {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+}
+
+.drug-filter-btn:hover { border-color: var(--border-hi); color: var(--text); }
+.drug-filter-btn.active {
+  background: rgba(138,110,255,0.12);
+  border-color: var(--accent-lav);
+  color: var(--accent-lav);
+}
+
+.drug-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.drug-card:hover {
+  border-color: var(--border-hi);
+  background: rgba(21,18,37,0.8);
+}
+
+.drug-card.expanded {
+  border-color: var(--accent-lav);
+}
+
+.drug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drug-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.drug-class-tag {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(138,110,255,0.1);
+  border: 1px solid rgba(138,110,255,0.3);
+  color: var(--accent-lav);
+  letter-spacing: 0.08em;
+}
+
+.drug-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.drug-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.drug-detail-item label {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.drug-detail-item span {
+  font-size: 11px;
+  color: var(--text);
+}
+
+.drug-warning {
+  background: rgba(255,107,139,0.08);
+  border: 1px solid rgba(255,107,139,0.25);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 10px;
+  color: var(--accent-coral);
+  margin-top: 10px;
+}
+
+.nnt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(102,204,153,0.1);
+  border: 1px solid rgba(102,204,153,0.3);
+  color: var(--accent-mint);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EVIDENCE LIBRARY
+═══════════════════════════════════════════════════════════ */
+.ref-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.ref-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(138,110,255,0.05);
+  border-bottom: 1px solid var(--border);
+}
+
+.ref-journal {
+  font-size: 10px;
+  color: var(--accent-lav);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.ref-year {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.ref-body { padding: 14px 16px; }
+
+.ref-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.ref-results { margin-bottom: 10px; }
+
+.ref-result-item {
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 3px 0;
+  padding-left: 14px;
+  position: relative;
+}
+
+.ref-result-item::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: var(--accent-mint);
+}
+
+.ref-limitation {
+  font-size: 10px;
+  color: var(--accent-gold);
+  background: rgba(240,196,90,0.06);
+  border: 1px solid rgba(240,196,90,0.2);
+  padding: 6px 10px;
+  border-radius: 3px;
+  margin-top: 8px;
+}
+
+.ref-doi {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+═══════════════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--panel2);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--text);
+  max-width: 320px;
+  animation: toastIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast.success { border-color: var(--accent-mint); }
+.toast.warning { border-color: var(--accent-gold); }
+.toast.error   { border-color: var(--accent-coral); }
+.toast.info    { border-color: var(--accent-lav); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL (STORAGE MANAGER)
+═══════════════════════════════════════════════════════════ */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11,10,20,0.85);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 24px;
+  min-width: 360px;
+  max-width: 500px;
+  position: relative;
+}
+
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-lav), transparent);
+}
+
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.modal-close:hover { border-color: var(--accent-coral); color: var(--accent-coral); }
+
+/* ═══════════════════════════════════════════════════════════
+   CLINICAL NOTES
+═══════════════════════════════════════════════════════════ */
+.notes-textarea {
+  width: 100%;
+  min-height: 120px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 12px;
+  border-radius: 6px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.notes-textarea:focus { border-color: var(--accent-lav); }
+.notes-textarea::placeholder { color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════
+   PROGRESS / STATUS INDICATORS
+═══════════════════════════════════════════════════════════ */
+.progress-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+
+.completion-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.completion-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.completion-dot.filled { background: var(--accent-lav); }
+
+/* ═══════════════════════════════════════════════════════════
+   EMERGENCY BOX
+═══════════════════════════════════════════════════════════ */
+.emergency-box {
+  background: rgba(255,45,85,0.08);
+  border: 2px solid rgba(255,45,85,0.5);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  animation: pulse-crit 1.5s infinite;
+}
+
+.emergency-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--risk-crit);
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.emergency-nums {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.emergency-num {
+  background: rgba(255,45,85,0.15);
+  border: 1px solid rgba(255,45,85,0.4);
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--risk-crit);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════ */
+footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+footer .footer-motto {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-lav);
+  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MISC UTILITIES
+═══════════════════════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tag-mint { background: rgba(102,204,153,0.1); border: 1px solid rgba(102,204,153,0.3); color: var(--accent-mint); }
+.tag-coral { background: rgba(255,107,139,0.1); border: 1px solid rgba(255,107,139,0.3); color: var(--accent-coral); }
+.tag-gold { background: rgba(240,196,90,0.1); border: 1px solid rgba(240,196,90,0.3); color: var(--accent-gold); }
+.tag-lav { background: rgba(138,110,255,0.1); border: 1px solid rgba(138,110,255,0.3); color: var(--accent-lav); }
+.tag-blue { background: rgba(94,196,255,0.1); border: 1px solid rgba(94,196,255,0.3); color: var(--accent-blue); }
+
+.small { font-size: 10px; color: var(--text-muted); }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+
+.select-styled {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.select-styled:focus { border-color: var(--accent-lav); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header-status { display: none; }
+  .header-actions .btn-header:not(:first-child) { display: none; }
+  .tab-btn { padding: 8px 10px; font-size: 9px; }
+  #app { padding: 12px 12px 40px; }
+}
+
+/* Auto-save indicator */
+#autosave-indicator {
+  position: fixed;
+  bottom: 12px;
+  left: 16px;
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+#autosave-indicator.visible { opacity: 1; }
+
+/* Session warning */
+.session-info {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+/* DSM disorder selector */
+.disorder-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.disorder-tab {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 5px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+}
+
+.disorder-tab:hover { border-color: var(--border-hi); color: var(--text); }
+.disorder-tab.active { border-color: var(--accent-lav); color: var(--accent-lav); background: rgba(138,110,255,0.08); }
+
+.disorder-content { display: none; }
+.disorder-content.active { display: block; }
+
+/* inline number input */
+.num-input {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  width: 70px;
+  outline: none;
+}
+.num-input:focus { border-color: var(--accent-lav); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <div class="logo-icon">Ψ</div>
+      <div class="logo-text">
+        <div class="logo-title">PSYCHIATRIC-SCANNER Ω</div>
+        <div class="logo-sub">RONIN MENTAL v1.0 · Evidence-Based Pattern Engine</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-indicators">
+        <div class="status-dot"></div>
+        <div class="status-dot amber"></div>
+        <div class="status-dot off"></div>
+      </div>
+      <div class="status-label" id="session-clock">SESIÓN ACTIVA · 00:00</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header" onclick="openStorageModal()">⚙ DATOS</button>
+      <button class="btn-header" onclick="exportReport()">⬇ EXPORTAR</button>
+    </div>
+  </div>
+</header>
+
+<!-- DISCLAIMER BANNER -->
+<div id="disclaimer-banner">
+  <div class="disclaimer-inner">
+    <span class="disclaimer-icon">⚠</span>
+    <div class="disclaimer-text">
+      <strong>HERRAMIENTA EXPERIMENTAL — NO APTA PARA DIAGNÓSTICO CLÍNICO.</strong>
+      Diseñada exclusivamente para apoyo en consulta de patrones y formación continuada. NO sustituye el juicio clínico de un profesional cualificado.
+      Todos los algoritmos están basados en literatura revisada por pares (Lancet Psychiatry, NICE, APA, Cochrane).
+      Ante riesgo inminente: <strong>llamar al 112/911</strong>.
+    </div>
+    <button class="btn-dismiss" onclick="document.getElementById('disclaimer-banner').style.display='none'">OK</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- TAB NAVIGATION -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('screening')">
+      <span class="tab-num">01</span>CRIBADO
+    </button>
+    <button class="tab-btn" onclick="switchTab('dsm5')">
+      <span class="tab-num">02</span>DSM-5-TR
+    </button>
+    <button class="tab-btn" onclick="switchTab('cssrs')">
+      <span class="tab-num">03</span>RIESGO SUICIDA
+    </button>
+    <button class="tab-btn" onclick="switchTab('pharma')">
+      <span class="tab-num">04</span>FARMACOLOGÍA
+    </button>
+    <button class="tab-btn" onclick="switchTab('evidence')">
+      <span class="tab-num">05</span>EVIDENCIA
+    </button>
+    <button class="tab-btn" onclick="switchTab('notes')">
+      <span class="tab-num">06</span>NOTAS
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 01: CRIBADO
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-screening" class="tab-content active">
+    <div class="section-header">
+      <span class="section-badge">Módulo 01</span>
+      <div>
+        <div class="section-title">Escalas de Cribado</div>
+        <div class="section-desc">PHQ-9 · GAD-7 · MDQ — Escalas validadas para detección de patrones clínicos</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px">
+      <!-- PHQ-9 -->
+      <div class="card card-mint">
+        <div class="card-title">📊 PHQ-9 · Depresión</div>
+        <div class="card-subtitle">Patient Health Questionnaire-9 | Sensibilidad 88%, Especificidad 88%</div>
+
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px;">
+          Durante las últimas 2 semanas, ¿con qué frecuencia le han molestado los siguientes problemas?
+        </div>
+
+        <div id="phq9-questions"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-mint" onclick="calcPHQ9()">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="resetScale('phq9')">↺ RESET</button>
+        </div>
+
+        <div id="phq9-result" style="margin-top:12px;display:none;">
+          <div class="score-display">
+            <div class="score-num" id="phq9-score-num" style="color:var(--accent-mint)">0</div>
+            <div class="score-label" id="phq9-score-label">—</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill" id="phq9-bar" style="width:0%;background:var(--accent-mint)"></div>
+            </div>
+            <div class="score-range-labels"><span>0</span><span>5</span><span>10</span><span>15</span><span>27</span></div>
+          </div>
+          <div class="interpretation-panel">
+            <div class="interp-header" style="color:var(--accent-mint)">▸ INTERPRETACIÓN PHQ-9</div>
+            <div id="phq9-interp"></div>
+            <span class="ref-tag">Kroenke et al., J Gen Intern Med. 2001;16(9):606-613</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAD-7 -->
+      <div class="card card-lav">
+        <div class="card-title">📈 GAD-7 · Ansiedad</div>
+        <div class="card-subtitle">Generalized Anxiety Disorder-7 | AUC 0.91</div>
+
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px;">
+          Durante las últimas 2 semanas, ¿con qué frecuencia le han molestado los siguientes problemas?
+        </div>
+
+        <div id="gad7-questions"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calcGAD7()">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="resetScale('gad7')">↺ RESET</button>
+        </div>
+
+        <div id="gad7-result" style="margin-top:12px;display:none;">
+          <div class="score-display">
+            <div class="score-num" id="gad7-score-num" style="color:var(--accent-lav)">0</div>
+            <div class="score-label" id="gad7-score-label">—</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill" id="gad7-bar" style="width:0%;background:var(--accent-lav)"></div>
+            </div>
+            <div class="score-range-labels"><span>0</span><span>5</span><span>10</span><span>15</span><span>21</span></div>
+          </div>
+          <div class="interpretation-panel">
+            <div class="interp-header">▸ INTERPRETACIÓN GAD-7</div>
+            <div id="gad7-interp"></div>
+            <span class="ref-tag">Spitzer et al., Arch Intern Med. 2006;166(10):1092-1097</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MDQ -->
+    <div class="card card-gold">
+      <div class="card-title">⚡ MDQ · Trastorno Bipolar</div>
+      <div class="card-subtitle">Mood Disorder Questionnaire | Hirschfeld, 2000 — Screening en Atención Primaria</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px;">
+        ¿Ha experimentado alguna vez una época en que NO fuera su estado de ánimo habitual? En esa época... (marque los que apliquen)
+      </div>
+      <div id="mdq-questions"></div>
+
+      <div style="margin-top:14px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;">
+        <div style="font-size:11px;color:var(--text);margin-bottom:8px;">
+          <strong>MDQ P2:</strong> ¿Ha tenido varios de estos comportamientos <em>durante el mismo período de tiempo</em>?
+        </div>
+        <div class="cssrs-radio">
+          <input type="radio" name="mdq_p2" id="mdq_p2_yes" value="yes">
+          <label for="mdq_p2_yes">Sí</label>
+          <input type="radio" name="mdq_p2" id="mdq_p2_no" value="no" checked>
+          <label for="mdq_p2_no">No</label>
+        </div>
+        <div style="font-size:11px;color:var(--text);margin-top:10px;margin-bottom:8px;">
+          <strong>MDQ P3:</strong> ¿Con cuántos problemas le causaron esos comportamientos?
+        </div>
+        <div class="drug-filters" id="mdq-p3">
+          <button class="drug-filter-btn" onclick="setMDQP3('none', this)">Ninguno</button>
+          <button class="drug-filter-btn active" onclick="setMDQP3('minor', this)">Mínimos</button>
+          <button class="drug-filter-btn" onclick="setMDQP3('moderate', this)">Moderados</button>
+          <button class="drug-filter-btn" onclick="setMDQP3('serious', this)">Graves</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-gold" style="background:rgba(240,196,90,0.1);border-color:var(--accent-gold);color:var(--accent-gold);" onclick="calcMDQ()">▶ CALCULAR MDQ</button>
+        <button class="btn btn-ghost" onclick="resetScale('mdq')">↺ RESET</button>
+      </div>
+
+      <div id="mdq-result" style="margin-top:12px;display:none;">
+        <div class="interpretation-panel" style="border-left-color:var(--accent-gold)">
+          <div class="interp-header" style="color:var(--accent-gold)">▸ INTERPRETACIÓN MDQ</div>
+          <div id="mdq-interp"></div>
+          <span class="ref-tag" style="background:rgba(240,196,90,0.1);border-color:rgba(240,196,90,0.3);color:var(--accent-gold)">Hirschfeld RM, et al. J Clin Psychiatry. 2000;61(11):804-808</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 02: DSM-5-TR
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-dsm5" class="tab-content">
+    <div class="section-header">
+      <span class="section-badge">Módulo 02</span>
+      <div>
+        <div class="section-title">Criterios DSM-5-TR</div>
+        <div class="section-desc">American Psychiatric Association, 2022 — Verificación interactiva de criterios diagnósticos</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,107,139,0.06);border:1px solid rgba(255,107,139,0.25);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:10px;color:var(--accent-coral);">
+      ⚠ ESTO NO ES DIAGNÓSTICO CLÍNICO. Los criterios DSM-5 requieren evaluación clínica completa, incluyendo historia clínica, exploración psiquiátrica y diagnóstico diferencial por un profesional cualificado.
+    </div>
+
+    <div class="disorder-tabs" id="disorder-tabs"></div>
+
+    <div id="disorder-contents"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 03: C-SSRS RIESGO SUICIDA
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-cssrs" class="tab-content">
+    <div class="section-header">
+      <span class="section-badge">Módulo 03</span>
+      <div>
+        <div class="section-title">Evaluación de Riesgo Suicida</div>
+        <div class="section-desc">Columbia Suicide Severity Rating Scale (C-SSRS) — Columbia University / NIMH</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,45,85,0.06);border:1px solid rgba(255,45,85,0.3);border-radius:8px;padding:14px;margin-bottom:20px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--risk-crit);margin-bottom:6px;">⚠ PROTOCOLO COLUMBIA — USO CLÍNICO</div>
+      <div style="font-size:10px;color:var(--text-dim);line-height:1.7;">
+        La C-SSRS fue desarrollada por Columbia University con apoyo del NIMH. Es el estándar de referencia validado por la FDA y el CDC.
+        Validada en &gt;600 estudios revisados por pares. Predice muerte por suicidio a 1 semana, 1 mes y 1 año (estudio sueco, N=18.000).
+        Implementación en sistema Atrium Health: reducción del 50% en suicidios. <strong>Requiere entrenamiento específico</strong> (gratuito en
+        <a href="https://cssrs.columbia.edu" target="_blank" style="color:var(--accent-lav)">cssrs.columbia.edu</a>).
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:var(--text-muted);">
+        Ref: Posner K, et al. Am J Psychiatry. 2011;168(12):1266-1277.
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- SECCIÓN A: IDEACIÓN -->
+      <div class="card card-coral">
+        <div class="card-title">SECCIÓN A · IDEACIÓN SUICIDA</div>
+        <div class="card-subtitle">Evalúa el ÚLTIMO MES — Preguntar en orden. Si responde NO a P2, pasar a Sección B.</div>
+
+        <div id="cssrs-ideation-questions"></div>
+
+        <div class="risk-meter" style="margin-top:16px;">
+          <div class="risk-meter-title">NIVEL DE IDEACIÓN (0–5)</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--accent-coral);" id="ideation-score-display">0</div>
+            <div style="flex:1">
+              <div class="ideation-score-bar" id="ideation-pips"></div>
+              <div id="ideation-desc" style="font-size:10px;color:var(--text-muted);margin-top:4px;">Sin ideación activa reportada</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN B: COMPORTAMIENTO -->
+      <div class="card" style="border-color:rgba(255,45,85,0.3);">
+        <div class="card-title" style="color:var(--risk-crit);">SECCIÓN B · COMPORTAMIENTO SUICIDA</div>
+        <div class="card-subtitle">Evalúa ÚLTIMOS 3 MESES y LIFETIME</div>
+
+        <div id="cssrs-behavior-questions"></div>
+
+        <div style="margin-top:12px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;">Número de intentos (lifetime):</div>
+          <input type="number" class="num-input" id="attempt-count" min="0" max="99" value="0" oninput="updateRisk()">
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK RESULT -->
+    <div class="risk-meter" style="margin-top:16px;">
+      <div class="risk-meter-title">⚡ RESULTADO DE EVALUACIÓN DE RIESGO</div>
+      <div class="risk-level-display none" id="risk-level-display">SIN RIESGO IDENTIFICADO</div>
+      <div class="risk-action" id="risk-action-text">Complete la evaluación para obtener recomendaciones.</div>
+    </div>
+
+    <!-- RISK TABLE -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">TABLA DE ESTRATIFICACIÓN DE RIESGO · C-SSRS</div>
+      <div class="card-subtitle">Adaptado del protocolo Columbia Lighthouse Project</div>
+      <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:10px;">
+        <thead>
+          <tr style="background:rgba(138,110,255,0.08);">
+            <th style="padding:8px;text-align:left;border:1px solid var(--border);color:var(--accent-lav);">NIVEL</th>
+            <th style="padding:8px;text-align:left;border:1px solid var(--border);color:var(--accent-lav);">CRITERIOS</th>
+            <th style="padding:8px;text-align:left;border:1px solid var(--border);color:var(--accent-lav);">ACCIÓN SUGERIDA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--risk-low);font-weight:700;">BAJO</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Puntuación ideación 1-2, sin comportamiento</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Derivación a salud mental al alta</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--risk-mid);font-weight:700;">MODERADO</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Puntuación ideación 3 O cualquier comportamiento lifetime</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Consulta con salud mental en Urgencias</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--risk-high);font-weight:700;">ALTO</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Puntuación ideación 4-5 O comportamiento en últimos 3 meses</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Notificar médico responsable, valorar hospitalización</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--risk-crit);font-weight:700;">CRÍTICO</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Intento real en últimos 3 meses O plan activo con intención</td>
+            <td style="padding:8px;border:1px solid var(--border);color:var(--text-dim);">Activar protocolo de emergencias INMEDIATAMENTE</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;font-size:9px;color:var(--text-muted);">
+        Ref: Posner K, et al. Am J Psychiatry. 2011;168(12):1266-1277. | Columbia Lighthouse Project 2025.
+      </div>
+    </div>
+
+    <!-- EMERGENCY BOX (hidden by default) -->
+    <div class="emergency-box" id="emergency-box" style="display:none;">
+      <div class="emergency-title">🚨 RIESGO CRÍTICO — ACTIVAR PROTOCOLO DE EMERGENCIAS</div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.7;">
+        Los resultados indican riesgo suicida inminente. Notifique inmediatamente al médico responsable
+        y considere hospitalización urgente. No deje al paciente solo.
+      </div>
+      <div class="emergency-nums">
+        <div class="emergency-num">🆘 112</div>
+        <div class="emergency-num">📞 024</div>
+        <div class="emergency-num">🇺🇸 988</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 04: FARMACOLOGÍA
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-pharma" class="tab-content">
+    <div class="section-header">
+      <span class="section-badge">Módulo 04</span>
+      <div>
+        <div class="section-title">Apoyo a Farmacoterapia</div>
+        <div class="section-desc">Guías NICE · CANMAT 2023 · BAP 2024 · PORT 2022 — Solo orientativo</div>
+      </div>
+    </div>
+
+    <div class="drug-filters" id="drug-filter-bar"></div>
+
+    <div id="drug-list"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 05: EVIDENCIA
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-evidence" class="tab-content">
+    <div class="section-header">
+      <span class="section-badge">Módulo 05</span>
+      <div>
+        <div class="section-title">Biblioteca de Evidencia</div>
+        <div class="section-desc">Referencias primarias revisadas por pares — Lancet · NEJM · BMJ · APA · NICE</div>
+      </div>
+    </div>
+
+    <div id="evidence-list"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB 06: NOTAS CLÍNICAS
+  ═══════════════════════════════════════════════════════ -->
+  <div id="tab-notes" class="tab-content">
+    <div class="section-header">
+      <span class="section-badge">Módulo 06</span>
+      <div>
+        <div class="section-title">Notas Clínicas</div>
+        <div class="section-desc">Campo de texto libre — Guardado automático local. NO compartir información identificable.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 NOTAS DE SESIÓN</div>
+      <div class="card-subtitle">Datos almacenados solo en este dispositivo. Usar con criterio de confidencialidad.</div>
+
+      <div class="session-info" id="notes-saved-info">Última sincronización: —</div>
+
+      <textarea class="notes-textarea" id="clinical-notes" placeholder="Escribir notas clínicas aquí...&#10;&#10;Ejemplo:&#10;Paciente 35a, acude por síntomas depresivos x 3 semanas.&#10;PHQ-9: 14 (Depresión moderada)&#10;GAD-7: 9 (Ansiedad moderada)&#10;C-SSRS: Nivel 1 (deseo pasivo de muerte, sin ideación activa)&#10;Plan: Derivación a psiquiatría en 1-2 semanas. Cita seguimiento."></textarea>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveNotes()">💾 GUARDAR</button>
+        <button class="btn btn-ghost" onclick="clearNotes()">🗑 LIMPIAR</button>
+        <button class="btn btn-mint" onclick="exportReport()">⬇ EXPORTAR INFORME COMPLETO</button>
+      </div>
+    </div>
+
+    <!-- Session Summary -->
+    <div class="card card-mint" style="margin-top:16px;">
+      <div class="card-title">📊 RESUMEN DE SESIÓN</div>
+      <div id="session-summary" style="font-size:11px;line-height:1.8;color:var(--text-dim);">
+        <em style="color:var(--text-muted);">Complete las escalas de cribado para ver el resumen aquí.</em>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-motto">"ZEHAHAHAHA. LA EVIDENCIA ES EL PUENTE."</div>
+  <div>PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v1.0 · 2026 · Prompt engineering: David Ferrandez Canalis</div>
+  <div style="margin-top:6px;">Basado en: Lancet Psychiatry · NICE · APA · Cochrane · Columbia C-SSRS · CANMAT 2023</div>
+  <div style="margin-top:4px;">Herramienta de formación — NO DIAGNÓSTICO CLÍNICO — Uso bajo responsabilidad del profesional</div>
+</footer>
+
+<!-- AUTOSAVE INDICATOR -->
+<div id="autosave-indicator">💾 Datos guardados localmente</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- STORAGE MODAL -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">⚙ GESTIÓN DE DATOS</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:16px;">
+      Los datos se almacenan SOLO en este dispositivo (localStorage). Nunca se envían a servidores externos.
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary" onclick="restoreSession()" style="justify-content:center;">↺ RESTAURAR ÚLTIMA SESIÓN</button>
+      <button class="btn btn-mint" onclick="exportJSON()" style="justify-content:center;">⬇ EXPORTAR BACKUP JSON</button>
+      <button class="btn btn-ghost" onclick="importJSON()" style="justify-content:center;">⬆ IMPORTAR BACKUP JSON</button>
+      <input type="file" id="json-import-input" accept=".json" style="display:none" onchange="handleJSONImport(event)">
+      <div class="divider"></div>
+      <button class="btn btn-coral" onclick="clearAllData()" style="justify-content:center;">🗑 BORRAR TODOS LOS DATOS</button>
+    </div>
+
+    <div style="margin-top:16px;font-size:9px;color:var(--text-muted);">
+      Tamaño actual: <span id="storage-size">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+// DATA DEFINITIONS
+// ═══════════════════════════════════════════════════════
+
+const PHQ9_ITEMS = [
+  "Poco interés o placer en hacer cosas",
+  "Sentirse decaído/a, deprimido/a o sin esperanza",
+  "Dificultad para dormir o dormir demasiado",
+  "Sentirse cansado/a o con poca energía",
+  "Poco apetito o comer en exceso",
+  "Sentirse mal consigo mismo/a — o que es un fracaso o que ha fallado a sí mismo/a o a su familia",
+  "Dificultad para concentrarse en cosas como leer el periódico o ver la televisión",
+  "Moverse o hablar tan despacio que otras personas podrían haberlo notado; o lo contrario — estar tan inquieto/a o agitado/a que ha estado moviéndose mucho más de lo normal",
+  "Pensamientos de que estaría mejor muerto/a o de hacerse algún daño de alguna manera"
+];
+
+const GAD7_ITEMS = [
+  "Sentirse nervioso/a, angustiado/a o con los nervios de punta",
+  "No ser capaz de parar o controlar las preocupaciones",
+  "Preocuparse demasiado por diferentes cosas",
+  "Dificultad para relajarse",
+  "Estar tan inquieto/a que es difícil estar sentado/a tranquilo/a",
+  "Molestarse o ponerse irritable fácilmente",
+  "Sentir miedo de que algo awful pueda ocurrir"
+];
+
+const MDQ_ITEMS = [
+  "Sentirse tan bien o tan animado/a que otras personas pensaban que no era su estado de ánimo habitual",
+  "Estar tan irritable que le gritaba a la gente o empezaba peleas o discusiones",
+  "Sentirse mucho más seguro/a de sí mismo/a de lo habitual",
+  "Dormir mucho menos de lo habitual y encontrarlo reconfortante",
+  "Ser mucho más hablador/a o hablar más rápido de lo habitual",
+  "Los pensamientos le venían a la mente muy rápido",
+  "Ser fácilmente distraído/a por cosas a su alrededor",
+  "Tener mucha más energía de lo habitual",
+  "Estar mucho más activo/a o hacer muchas más cosas de lo habitual",
+  "Ser mucho más sociable o extrovertido/a de lo habitual",
+  "Ser mucho más interesado/a en el sexo de lo habitual",
+  "Hacer cosas inusuales o cosas que otras personas pensarían que eran una tontería, derrochadoras o de riesgo",
+  "Gastar dinero de tal manera que le ha causado problemas, o que su familia u otras personas le han dicho que tiene problemas con el dinero"
+];
+
+const CSSRS_IDEATION = [
+  {
+    level: "IDEACIÓN NIVEL 1",
+    text: "¿Ha deseado estar muerto/a o deseado poder dormirse y no despertar?",
+    note: "Deseo pasivo de muerte — sin intención activa de suicidio",
+    key: "i1"
+  },
+  {
+    level: "IDEACIÓN NIVEL 2",
+    text: "¿Ha tenido pensamientos de matarse o de quitarse la vida?",
+    note: "Si responde NO → pasar directamente a Sección B (comportamiento)",
+    key: "i2"
+  },
+  {
+    level: "IDEACIÓN NIVEL 3",
+    text: "¿Ha estado pensando en CÓMO podría matarse? (p.ej. medicamentos, cuchillo, arma...)",
+    note: "Ideación con método — sin plan estructurado ni intención definitiva",
+    key: "i3"
+  },
+  {
+    level: "IDEACIÓN NIVEL 4",
+    text: "¿Ha tenido INTENCIÓN de actuar sobre esos pensamientos de suicidio?",
+    note: "Ideación con intención — no necesariamente con plan específico",
+    key: "i4"
+  },
+  {
+    level: "IDEACIÓN NIVEL 5",
+    text: "¿Ha empezado a elaborar o ha elaborado los DETALLES de cómo matarse? ¿Tiene intención de llevar a cabo ese plan?",
+    note: "Ideación con plan específico e intención — nivel de máxima preocupación",
+    key: "i5"
+  }
+];
+
+const CSSRS_BEHAVIOR = [
+  { text: "¿Ha intentado suicidarse? (último/s intento/s real/es)", key: "b_real", recent: true },
+  { text: "¿Algo o alguien le interrumpió antes de que pudiera empezar un intento? (intento interrumpido)", key: "b_interrupted", recent: false },
+  { text: "¿Empezó un intento pero se detuvo a sí mismo/a antes de actuar? (intento abortado)", key: "b_aborted", recent: false },
+  { text: "¿Ha hecho preparativos para intentar suicidarse? (reunir pastillas, conseguir arma, escribir nota de suicidio...)", key: "b_prep", recent: false },
+  { text: "¿Se ha hecho daño a sí mismo/a sin intención de morir? (autolesión no suicida)", key: "b_nssi", recent: false }
+];
+
+const DSM5_DISORDERS = [
+  {
+    id: "mdd",
+    name: "TDM",
+    full: "Trastorno Depresivo Mayor",
+    source: "DSM-5-TR, APA 2022",
+    groups: [
+      {
+        label: "CRITERIO A — ≥5 síntomas durante 2 semanas (al menos 1 de los 2 primeros)",
+        required: 5,
+        items: [
+          { text: "Estado de ánimo deprimido la mayor parte del día, casi todos los días", required: true },
+          { text: "Disminución marcada del interés o placer en casi todas las actividades", required: true },
+          { text: "Pérdida o aumento significativo de peso o del apetito", required: false },
+          { text: "Insomnio o hipersomnia", required: false },
+          { text: "Agitación o enlentecimiento psicomotor", required: false },
+          { text: "Fatiga o pérdida de energía", required: false },
+          { text: "Sentimientos de inutilidad o culpa excesiva", required: false },
+          { text: "Disminución de la concentración o toma de decisiones", required: false },
+          { text: "Pensamientos recurrentes de muerte o ideación suicida", required: false }
+        ]
+      },
+      {
+        label: "CRITERIO B — Deterioro funcional significativo",
+        required: 1,
+        items: [
+          { text: "Los síntomas causan malestar clínicamente significativo o deterioro social, laboral u otras áreas importantes", required: true }
+        ]
+      },
+      {
+        label: "CRITERIO C — Exclusión médica/sustancias",
+        required: 1,
+        items: [
+          { text: "Los síntomas no se deben a efectos de una sustancia o a otra afección médica", required: true }
+        ]
+      }
+    ]
+  },
+  {
+    id: "gad",
+    name: "TAG",
+    full: "Trastorno de Ansiedad Generalizada",
+    source: "DSM-5-TR, APA 2022",
+    groups: [
+      {
+        label: "CRITERIO A — Ansiedad y preocupación excesiva ≥6 meses",
+        required: 2,
+        items: [
+          { text: "Ansiedad y preocupación excesivas sobre una amplia gama de actividades o sucesos, la mayor parte de los días durante ≥6 meses", required: true },
+          { text: "Al individuo le resulta difícil controlar la preocupación", required: true }
+        ]
+      },
+      {
+        label: "CRITERIO B — ≥3 síntomas asociados (≥1 en niños)",
+        required: 3,
+        items: [
+          { text: "Inquietud o sensación de estar atrapado o con los nervios de punta", required: false },
+          { text: "Fácilmente fatigado", required: false },
+          { text: "Dificultad para concentrarse o quedarse con la mente en blanco", required: false },
+          { text: "Irritabilidad", required: false },
+          { text: "Tensión muscular", required: false },
+          { text: "Problemas de sueño (dificultad para dormir, mantenerse dormido o sueño inquieto e insatisfactorio)", required: false }
+        ]
+      },
+      {
+        label: "CRITERIO C-E — Exclusiones",
+        required: 1,
+        items: [
+          { text: "La ansiedad causa malestar significativo o deterioro funcional", required: true },
+          { text: "La alteración no se explica por sustancias, otra afección médica u otro trastorno mental", required: true }
+        ]
+      }
+    ]
+  },
+  {
+    id: "bipolar1",
+    name: "TB-I",
+    full: "Trastorno Bipolar I",
+    source: "DSM-5-TR, APA 2022",
+    groups: [
+      {
+        label: "EPISODIO MANÍACO — ≥7 días (o cualquier duración si requiere hospitalización)",
+        required: 3,
+        items: [
+          { text: "Estado de ánimo anormalmente elevado, expansivo o irritable, y aumento de la actividad o energía", required: true },
+          { text: "Autoestima aumentada o grandiosidad", required: false },
+          { text: "Disminución de la necesidad de sueño", required: false },
+          { text: "Más hablador de lo habitual o presión para seguir hablando", required: false },
+          { text: "Fuga de ideas o pensamientos acelerados", required: false },
+          { text: "Distracción", required: false },
+          { text: "Aumento de la actividad dirigida a objetivos o agitación psicomotora", required: false },
+          { text: "Participación excesiva en actividades de alto riesgo", required: false }
+        ]
+      },
+      {
+        label: "CRITERIOS ADICIONALES",
+        required: 2,
+        items: [
+          { text: "Los síntomas son suficientemente graves para causar deterioro social/laboral o requieren hospitalización", required: true },
+          { text: "No se deben a sustancias u otra afección médica", required: true }
+        ]
+      }
+    ]
+  },
+  {
+    id: "schizophrenia",
+    name: "ESQ",
+    full: "Esquizofrenia",
+    source: "DSM-5-TR, APA 2022",
+    groups: [
+      {
+        label: "CRITERIO A — ≥2 síntomas durante ≥1 mes (al menos 1 de los 3 primeros)",
+        required: 2,
+        items: [
+          { text: "Delirios", required: true },
+          { text: "Alucinaciones", required: true },
+          { text: "Discurso desorganizado", required: true },
+          { text: "Comportamiento muy desorganizado o catatónico", required: false },
+          { text: "Síntomas negativos (expresión emotiva disminuida o abulia)", required: false }
+        ]
+      },
+      {
+        label: "CRITERIO B-F — Duración y deterioro",
+        required: 3,
+        items: [
+          { text: "Duración del trastorno ≥6 meses", required: true },
+          { text: "Disfunción social/laboral significativa", required: true },
+          { text: "No se explica por trastorno del estado de ánimo ni sustancias", required: true }
+        ]
+      }
+    ]
+  },
+  {
+    id: "ptsd",
+    name: "TEPT",
+    full: "Trastorno de Estrés Postraumático",
+    source: "DSM-5-TR, APA 2022 | APA Practice Guideline 2023",
+    groups: [
+      {
+        label: "CRITERIO A — Exposición a trauma",
+        required: 1,
+        items: [
+          { text: "Exposición a muerte real o amenaza, lesión grave o violencia sexual (directa, presenciada, conocida, o exposición repetida a detalles aversivos)", required: true }
+        ]
+      },
+      {
+        label: "CRITERIO B — ≥1 síntoma intrusivo",
+        required: 1,
+        items: [
+          { text: "Recuerdos intrusivos recurrentes, involuntarios y angustiantes", required: false },
+          { text: "Sueños angustiantes recurrentes", required: false },
+          { text: "Reacciones disociativas (flashbacks)", required: false },
+          { text: "Malestar psicológico intenso a señales simbólicas", required: false },
+          { text: "Reacciones fisiológicas marcadas a señales simbólicas", required: false }
+        ]
+      },
+      {
+        label: "CRITERIO C — ≥1 síntoma de evitación",
+        required: 1,
+        items: [
+          { text: "Evitación de recuerdos, pensamientos o sentimientos angustiantes asociados al trauma", required: false },
+          { text: "Evitación de recordatorios externos (personas, lugares, conversaciones...)", required: false }
+        ]
+      },
+      {
+        label: "CRITERIOS D-G — Duración y deterioro",
+        required: 3,
+        items: [
+          { text: "Alteraciones cognitivas y del estado de ánimo ≥1 mes", required: false },
+          { text: "Alteraciones en reactividad y arousal", required: false },
+          { text: "Duración de las alteraciones >1 mes", required: true },
+          { text: "Causa malestar clínicamente significativo o deterioro funcional", required: true }
+        ]
+      }
+    ]
+  }
+];
+
+const DRUGS = [
+  {
+    name: "Sertralina",
+    class: "ISRS",
+    disorders: ["depresion","ansiedad","tept"],
+    line: "1ª línea",
+    dose_start: "50 mg/día",
+    dose_target: "100–200 mg/día",
+    ae: "Náuseas, diarrea, disfunción sexual, insomnio",
+    interactions: "IMAO (contraindicado), Tramadol (síndrome serotoninérgico)",
+    nnt: "NNT 6",
+    notes: "Perfil de interacciones más favorable entre ISRS. Primera elección NICE CG90.",
+    ref: "NICE CG90 2022 | Cipriani et al., Lancet 2018"
+  },
+  {
+    name: "Escitalopram",
+    class: "ISRS",
+    disorders: ["depresion","ansiedad"],
+    line: "1ª línea",
+    dose_start: "10 mg/día",
+    dose_target: "10–20 mg/día",
+    ae: "Cefalea, náuseas, disfunción sexual, prolongación QTc",
+    interactions: "IMAO, citalopram (aumento riesgo QTc)",
+    nnt: "NNT 7",
+    notes: "Alta selectividad SERT. Controlar ECG con dosis ≥20 mg o pacientes con riesgo cardíaco.",
+    ref: "Cipriani et al., Lancet 2018"
+  },
+  {
+    name: "Venlafaxina XR",
+    class: "IRSN",
+    disorders: ["depresion","ansiedad"],
+    line: "1ª / 2ª línea",
+    dose_start: "75 mg/día",
+    dose_target: "150–225 mg/día",
+    ae: "HTA dosis-dependiente, sudoración, síndrome discontinuación, náuseas",
+    interactions: "IMAO, riesgo aumentado de sangrado con AINEs/anticoagulantes",
+    nnt: "NNT 5",
+    notes: "Monitorizar TA. Efecto dual NA a partir de 150 mg. Reducción gradual imprescindible al retirar.",
+    ref: "CANMAT 2023 | BAP 2024"
+  },
+  {
+    name: "Bupropión XL",
+    class: "NDRI",
+    disorders: ["depresion"],
+    line: "2ª línea",
+    dose_start: "150 mg/día",
+    dose_target: "300 mg/día",
+    ae: "Insomnio, ansiedad, boca seca, cefalea",
+    interactions: "Reduce umbral convulsivo (CI en epilepsia, bulimia), IMAO",
+    nnt: "NNT 7",
+    notes: "Sin disfunción sexual. Útil si comorbilidad con tabaquismo. Contraindicado en TCA.",
+    ref: "CANMAT 2023"
+  },
+  {
+    name: "Mirtazapina",
+    class: "NaSSA",
+    disorders: ["depresion"],
+    line: "1ª / 2ª línea",
+    dose_start: "15 mg/noche",
+    dose_target: "30–45 mg/noche",
+    ae: "Sedación (especialmente a dosis bajas), aumento de peso, boca seca",
+    interactions: "Potencia alcohol/BZD, síndrome serotoninérgico con IMAO",
+    nnt: "NNT 6",
+    notes: "Paradójicamente menos sedante a dosis altas (bloqueo H1 relativo). Útil en insomnio y pérdida de apetito.",
+    ref: "Cipriani et al., Lancet 2018"
+  },
+  {
+    name: "Aripiprazol",
+    class: "Antipsicótico (AGP-2)",
+    disorders: ["psicosis","bipolar"],
+    line: "1ª línea",
+    dose_start: "5–10 mg/día",
+    dose_target: "10–15 mg/día",
+    ae: "Acatisia (frecuente), insomnio, cefalea, náuseas",
+    interactions: "Inhibidores CYP2D6 (fluoxetina, paroxetina) aumentan niveles",
+    nnt: "NNT 5",
+    notes: "Agonista parcial D2/D3 y 5-HT1A. Mínimo efecto metabólico y sedante. Monitorizar acatisia.",
+    ref: "PORT 2022 | Leucht et al., Lancet 2013"
+  },
+  {
+    name: "Quetiapina XR",
+    class: "Antipsicótico (AGP-2)",
+    disorders: ["psicosis","bipolar","depresion"],
+    line: "1ª / 2ª línea",
+    dose_start: "50 mg/noche",
+    dose_target: "150–800 mg/día",
+    ae: "Sedación, síndrome metabólico, hipotensión ortostática, prolongación QTc",
+    interactions: "Fuertes inhibidores CYP3A4, antifúngicos azólicos",
+    nnt: "NNT 4",
+    notes: "Dosis psicóticas 400-800 mg. En depresión bipolar 50-300 mg. Controlar glucemia, lípidos, peso.",
+    ref: "PORT 2022 | Miura et al., Lancet Psychiatry 2021"
+  },
+  {
+    name: "Litio",
+    class: "Estabilizador del humor",
+    disorders: ["bipolar"],
+    line: "1ª línea",
+    dose_start: "300 mg/12h",
+    dose_target: "Litemia 0.6–1.2 mEq/L",
+    ae: "Temblor fino, poliuria, hipotiroidismo, disfunción renal crónica",
+    interactions: "AINEs y diuréticos tiazídicos AUMENTAN litemia (riesgo toxicidad), ACE-inhibidores",
+    nnt: "NNT 3",
+    notes: "Monitorizar litemia, función renal y tiroidea cada 3-6 meses. Estrecho margen terapéutico. Antisuicida demostrado.",
+    ref: "Miura et al., Lancet Psychiatry 2021 | CANMAT 2023"
+  },
+  {
+    name: "Lamotrigina",
+    class: "Anticonvulsivante / Estabilizador",
+    disorders: ["bipolar"],
+    line: "1ª línea (depresión bipolar)",
+    dose_start: "25 mg/día",
+    dose_target: "200 mg/día",
+    ae: "Rash cutáneo (S. Stevens-Johnson — ver nota), cefalea, diplopía",
+    interactions: "Valproato DOBLA niveles (reducir dosis). Carbamazepina los reduce a la mitad.",
+    nnt: "NNT 5",
+    notes: "⚠ Rash potencialmente grave. Titulación MUY lenta (25mg/2semanas). Mayor evidencia en fase depresiva que maníaca.",
+    ref: "Miura et al., Lancet Psychiatry 2021"
+  },
+  {
+    name: "Olanzapina",
+    class: "Antipsicótico (AGP-2)",
+    disorders: ["psicosis","bipolar"],
+    line: "1ª línea",
+    dose_start: "5–10 mg/día",
+    dose_target: "10–20 mg/día",
+    ae: "Aumento de peso significativo, síndrome metabólico, sedación, hiperprolactinemia",
+    interactions: "Fluvoxamina aumenta niveles, tabaco los reduce",
+    nnt: "NNT 4",
+    notes: "Alta eficacia en síntomas positivos y negativos. Monitorización metabólica rigurosa (glucosa, lípidos, peso mensual).",
+    ref: "Leucht et al., Lancet 2013 | PORT 2022"
+  }
+];
+
+const EVIDENCE_REFS = [
+  {
+    journal: "THE LANCET",
+    year: "2018",
+    doi: "10.1016/S0140-6736(17)32802-7",
+    title: "Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder",
+    authors: "Cipriani A, Furukawa TA, Salanti G, et al.",
+    results: [
+      "N = 116.477 pacientes; 522 ensayos incluidos",
+      "Todos los antidepresivos superiores a placebo (OR 1.37–2.13)",
+      "Agomelatina, escitalopram y vortioxetina mejor perfil beneficio/tolerabilidad",
+      "NNT global ≈ 6–8 para respuesta al tratamiento"
+    ],
+    limitation: "La mayoría de estudios de corta duración (8-12 semanas); generalización limitada a tratamiento mantenido",
+    color: "lav"
+  },
+  {
+    journal: "THE LANCET",
+    year: "2013",
+    doi: "10.1016/S0140-6736(13)60733-3",
+    title: "Comparative efficacy and tolerability of 15 antipsychotic drugs in schizophrenia",
+    authors: "Leucht S, Cipriani A, Spineli L, et al.",
+    results: [
+      "N = 43.049 pacientes; 212 ensayos aleatorizados",
+      "Clozapina más eficaz (pero mayor toxicidad); amisulpride, olanzapina y risperidona también superiores",
+      "NNT 4–6 para respuesta frente a placebo",
+      "Diferencias en efectos adversos clínicamente relevantes (peso, EPS, prolactina)"
+    ],
+    limitation: "Heterogeneidad significativa en la definición de 'respuesta'; pocos estudios en primeros episodios",
+    color: "mint"
+  },
+  {
+    journal: "LANCET PSYCHIATRY",
+    year: "2021",
+    doi: "10.1016/S2215-0366(20)30480-9",
+    title: "Comparative efficacy and acceptability of pharmacological treatments for bipolar disorder",
+    authors: "Miura T, Noma H, Furukawa TA, et al.",
+    results: [
+      "Análisis de red de 173 ensayos, N = 35.443",
+      "Litio sigue siendo estabilizador de referencia para manía (NNT 3)",
+      "Quetiapina y olanzapina eficaces en manía aguda y depresión bipolar",
+      "Lamotrigina: mejor evidencia en prevención de episodios depresivos"
+    ],
+    limitation: "Escasez de ensayos de mantenimiento a largo plazo; datos insuficientes en ciclación rápida",
+    color: "gold"
+  },
+  {
+    journal: "BMJ",
+    year: "2022",
+    doi: "10.1136/bmj-2021-070739",
+    title: "Comparative efficacy and acceptability of psychological interventions for depressive disorders",
+    authors: "De Crescenzo F, D'Alò GL, Ostinelli EG, et al.",
+    results: [
+      "N = 15.021 participantes; 74 ensayos aleatorizados",
+      "TCC, activación conductual y terapia interpersonal superiores a control",
+      "Combinación psicoterapia + fármaco superior a cada tratamiento solo",
+      "Efectos mantenidos a 12 meses en reducción de síntomas depresivos"
+    ],
+    limitation: "Alta heterogeneidad entre estudios; dificultad para cegar intervenciones psicológicas",
+    color: "blue"
+  },
+  {
+    journal: "AMERICAN JOURNAL OF PSYCHIATRY",
+    year: "2011",
+    doi: "10.1176/appi.ajp.2011.10111704",
+    title: "The Columbia–Suicide Severity Rating Scale: Initial Validity and Internal Consistency Findings From Three Multisite Studies",
+    authors: "Posner K, Brown GK, Stanley B, et al.",
+    results: [
+      "Validada en 3 estudios multicentro con diferentes poblaciones clínicas",
+      "Alta consistencia interna (α = 0.73–0.88 para subescalas)",
+      "Predice intentos futuros con alta especificidad",
+      "Adoptada como estándar FDA/NIMH para ensayos clínicos"
+    ],
+    limitation: "Requiere entrenamiento específico para administración fiable; curva de aprendizaje para clínicos noveles",
+    color: "coral"
+  },
+  {
+    journal: "J GEN INTERN MED",
+    year: "2001",
+    doi: "10.1046/j.1525-1497.2001.016009606.x",
+    title: "The PHQ-9: Validity of a Brief Depression Severity Measure",
+    authors: "Kroenke K, Spitzer RL, Williams JBW.",
+    results: [
+      "N = 6.000 pacientes en atención primaria y ginecología",
+      "Sensibilidad 88% y especificidad 88% para TDM (punto de corte ≥10)",
+      "Curva ROC: AUC 0.95 para diagnóstico de trastorno depresivo mayor",
+      "Alta correlación con SF-20 y días de incapacidad laboral"
+    ],
+    limitation: "Diseñado para cribado, no para diagnóstico definitivo; posible sesgo en ciertas poblaciones culturales",
+    color: "mint"
+  },
+  {
+    journal: "ARCH INTERN MED",
+    year: "2006",
+    doi: "10.1001/archinte.166.10.1092",
+    title: "A Brief Measure for Assessing Generalized Anxiety Disorder",
+    authors: "Spitzer RL, Kroenke K, Williams JBW, Löwe B.",
+    results: [
+      "N = 2.149 pacientes en atención primaria",
+      "Sensibilidad 89%, especificidad 82% para TAG (punto de corte ≥10)",
+      "AUC 0.91 para diagnóstico de trastorno de ansiedad generalizada",
+      "Alta validez convergente con CES-D, SF-20 y Medical Outcomes Study"
+    ],
+    limitation: "Desarrollado principalmente en atención primaria; menor validación en poblaciones especializadas",
+    color: "lav"
+  },
+  {
+    journal: "J CLIN PSYCHIATRY",
+    year: "2000",
+    doi: "10.4088/JCP.v61n1104",
+    title: "Development and validation of a screening instrument for bipolar spectrum disorder: the Mood Disorder Questionnaire",
+    authors: "Hirschfeld RMA, Williams JBW, Spitzer RL, et al.",
+    results: [
+      "N = 198 pacientes; validación en población clínica psiquiátrica",
+      "Sensibilidad 73%, especificidad 90% para trastorno bipolar I/II",
+      "Positividad: ≥7 síntomas + concurrencia + deterioro moderado-grave",
+      "Instrumento útil para cribado en atención primaria"
+    ],
+    limitation: "Tasa de falsos positivos relevante en población con TDM; no diferencia bipolar I de II",
+    color: "gold"
+  },
+  {
+    journal: "NICE GUIDELINE NG222",
+    year: "2022",
+    doi: "https://www.nice.org.uk/guidance/ng222",
+    title: "Depression in adults: treatment and management",
+    authors: "National Institute for Health and Care Excellence.",
+    results: [
+      "ISRS como primera línea farmacológica (sertralina o fluoxetina en adultos <30a)",
+      "TCC o activación conductual como primera línea psicológica",
+      "Combinación fármaco + psicoterapia recomendada en depresión moderada-grave",
+      "Seguimiento a las 2 semanas tras inicio de tratamiento"
+    ],
+    limitation: "Guía basada en poblaciones británicas; aplicación en otros contextos sanitarios requiere adaptación",
+    color: "blue"
+  },
+  {
+    journal: "APA PRACTICE GUIDELINE",
+    year: "2023",
+    doi: "https://doi.org/10.1176/appi.books.9780890424865",
+    title: "Practice Guideline for the Treatment of Patients with Posttraumatic Stress Disorder",
+    authors: "American Psychiatric Association.",
+    results: [
+      "Terapias focalizadas en trauma (TCC-TF, EMDR, CPT) como primera línea",
+      "Sertralina y paroxetina: fármacos con aprobación FDA para TEPT",
+      "No se recomienda el debriefing psicológico inmediato post-trauma",
+      "Vigilar comorbilidades: depresión, uso de sustancias, dolor crónico"
+    ],
+    limitation: "Evidencia limitada en poblaciones no militares; más investigación necesaria en trauma complejo",
+    color: "coral"
+  }
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const State = {
+  phq9: new Array(9).fill(null),
+  gad7: new Array(7).fill(null),
+  mdq: new Array(13).fill(false),
+  mdq_p2: false,
+  mdq_p3: 'minor',
+  cssrs: { i1:null,i2:null,i3:null,i4:null,i5:null, b_real:null,b_interrupted:null,b_aborted:null,b_prep:null,b_nssi:null, attempts:0 },
+  dsm: {},
+  notes: '',
+  sessionStart: Date.now()
+};
+
+// ═══════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════
+const Utils = {
+  toast(msg, type='info', duration=3000) {
+    const c = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = {success:'✓',warning:'⚠',error:'✕',info:'ℹ'};
+    el.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+    c.appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='all 0.3s'; setTimeout(()=>el.remove(),300); }, duration);
+  },
+  formatTime(ms) {
+    const s = Math.floor(ms/1000);
+    const m = Math.floor(s/60), sec = s%60;
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(tab==='notes') updateSessionSummary();
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD PHQ-9
+// ═══════════════════════════════════════════════════════
+function buildPHQ9() {
+  const opts = ['Nunca<br>(0)','Varios<br>días (1)','Más de la<br>mitad (2)','Casi cada<br>día (3)'];
+  const c = document.getElementById('phq9-questions');
+  c.innerHTML = PHQ9_ITEMS.map((q,i) => `
+    <div class="question-item">
+      <div class="question-text"><span class="question-num">${i+1}.</span>${q}</div>
+      <div class="radio-group">
+        ${opts.map((o,v)=>`
+          <div class="radio-option">
+            <input type="radio" name="phq9_${i}" id="phq9_${i}_${v}" value="${v}" onchange="State.phq9[${i}]=${v};autoSave()">
+            <label for="phq9_${i}_${v}">${o}</label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function calcPHQ9() {
+  if(State.phq9.some(v=>v===null)) { Utils.toast('Por favor, responda todas las preguntas del PHQ-9','warning'); return; }
+  const score = State.phq9.reduce((a,b)=>a+b,0);
+  let label, color, interp;
+  if(score<=4)      { label='SIN DEPRESIÓN'; color='var(--score-none)'; interp = [
+    'PHQ-9 ≤4: Ausencia de síntomas depresivos clínicamente significativos.',
+    'No se indica tratamiento específico para depresión en este momento.',
+    'Considerar reevaluación si aparecen síntomas o empeoran factores de riesgo.'
+  ];}
+  else if(score<=9) { label='DEPRESIÓN LEVE'; color='var(--score-mild)'; interp = [
+    'PHQ-9 5-9: Síntomas depresivos leves.',
+    'Vigilancia activa, psicoeducación y activación conductual. Reevaluación en 2-4 semanas.',
+    'Tratamiento farmacológico generalmente no indicado en este rango si no hay historia previa.'
+  ];}
+  else if(score<=14){ label='DEPRESIÓN MODERADA'; color='var(--score-mod)'; interp = [
+    'PHQ-9 10-14: Depresión moderada. Sensibilidad 88% para TDM (Kroenke et al., 2001).',
+    'Derivación a salud mental o inicio de tratamiento recomendado (TCC, ISRS).',
+    'Evaluar riesgo suicida: ítems 9 ≥1 requiere evaluación C-SSRS inmediata.'
+  ];}
+  else if(score<=19){ label='DEP. MODERADA-GRAVE'; color='var(--score-high)||var(--risk-high)'; color='#ff9500'; interp = [
+    'PHQ-9 15-19: Depresión moderada-grave. Requiere tratamiento activo.',
+    'Combinación de psicoterapia y farmacoterapia según NICE NG222.',
+    'Valorar derivación urgente. Monitorizar riesgo suicida.'
+  ];}
+  else              { label='DEPRESIÓN GRAVE'; color='var(--score-sev)'; interp = [
+    'PHQ-9 ≥20: Depresión grave. Contacto urgente con salud mental.',
+    'Farmacoterapia indicada; considerar hospitalización si riesgo alto.',
+    'Evaluar C-SSRS completa de forma inmediata.'
+  ];}
+
+  document.getElementById('phq9-result').style.display='block';
+  document.getElementById('phq9-score-num').textContent = score;
+  document.getElementById('phq9-score-num').style.color = color;
+  document.getElementById('phq9-score-label').textContent = label;
+  document.getElementById('phq9-score-label').style.color = color;
+  document.getElementById('phq9-bar').style.width = (score/27*100)+'%';
+  document.getElementById('phq9-bar').style.background = color;
+  document.getElementById('phq9-interp').innerHTML = interp.map(t=>`<div class="interp-point">${t}</div>`).join('');
+  autoSave();
+  if(State.phq9[8]>=1) Utils.toast('⚠ PHQ-9 P9 ≥1: Evaluar riesgo suicida con C-SSRS','warning',5000);
+}
+
+function resetScale(s) {
+  if(s==='phq9') {
+    State.phq9.fill(null);
+    document.querySelectorAll('[name^="phq9_"]').forEach(r=>r.checked=false);
+    document.getElementById('phq9-result').style.display='none';
+  } else if(s==='gad7') {
+    State.gad7.fill(null);
+    document.querySelectorAll('[name^="gad7_"]').forEach(r=>r.checked=false);
+    document.getElementById('gad7-result').style.display='none';
+  } else if(s==='mdq') {
+    State.mdq.fill(false);
+    document.querySelectorAll('[name^="mdq_"]').forEach(r=>r.checked=false);
+    document.getElementById('mdq-result').style.display='none';
+  }
+  Utils.toast(`Escala reseteada`,'info');
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD GAD-7
+// ═══════════════════════════════════════════════════════
+function buildGAD7() {
+  const opts = ['Nunca<br>(0)','Varios<br>días (1)','Más de la<br>mitad (2)','Casi cada<br>día (3)'];
+  const c = document.getElementById('gad7-questions');
+  c.innerHTML = GAD7_ITEMS.map((q,i) => `
+    <div class="question-item">
+      <div class="question-text"><span class="question-num">${i+1}.</span>${q}</div>
+      <div class="radio-group">
+        ${opts.map((o,v)=>`
+          <div class="radio-option">
+            <input type="radio" name="gad7_${i}" id="gad7_${i}_${v}" value="${v}" onchange="State.gad7[${i}]=${v};autoSave()">
+            <label for="gad7_${i}_${v}">${o}</label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function calcGAD7() {
+  if(State.gad7.some(v=>v===null)) { Utils.toast('Por favor, responda todas las preguntas del GAD-7','warning'); return; }
+  const score = State.gad7.reduce((a,b)=>a+b,0);
+  let label, color, interp;
+  if(score<=4)      { label='SIN ANSIEDAD'; color='var(--score-none)'; interp = [
+    'GAD-7 ≤4: Sin síntomas de ansiedad clínicamente relevantes.',
+    'No se indica tratamiento específico para trastorno de ansiedad.'
+  ];}
+  else if(score<=9) { label='ANSIEDAD LEVE'; color='var(--score-mild)'; interp = [
+    'GAD-7 5-9: Síntomas de ansiedad leve.',
+    'Psicoeducación sobre manejo del estrés, técnicas de relajación, higiene del sueño.',
+    'Reevaluación en 4 semanas. TCC puede estar indicada si interfiere funcionamiento.'
+  ];}
+  else if(score<=14){ label='ANSIEDAD MODERADA'; color='var(--score-mod)'; interp = [
+    'GAD-7 10-14: Ansiedad moderada (AUC 0.91, Spitzer et al., 2006).',
+    'TCC o ISRS primera línea según BAP 2024 y NICE. NNT ≈ 5.',
+    'Considerar derivación a salud mental si no mejora en 4-6 semanas.'
+  ];}
+  else              { label='ANSIEDAD GRAVE'; color='var(--score-sev)'; interp = [
+    'GAD-7 ≥15: Ansiedad grave. Tratamiento activo urgente.',
+    'Derivación a psiquiatría/psicología. Combinación ISRS + TCC recomendada.',
+    'Descartar causa orgánica (tiroides, cafeína, etc.).'
+  ];}
+
+  document.getElementById('gad7-result').style.display='block';
+  document.getElementById('gad7-score-num').textContent = score;
+  document.getElementById('gad7-score-num').style.color = color;
+  document.getElementById('gad7-score-label').textContent = label;
+  document.getElementById('gad7-score-label').style.color = color;
+  document.getElementById('gad7-bar').style.width = (score/21*100)+'%';
+  document.getElementById('gad7-bar').style.background = color;
+  document.getElementById('gad7-interp').innerHTML = interp.map(t=>`<div class="interp-point">${t}</div>`).join('');
+  autoSave();
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD MDQ
+// ═══════════════════════════════════════════════════════
+function buildMDQ() {
+  const c = document.getElementById('mdq-questions');
+  c.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;">` +
+    MDQ_ITEMS.map((q,i) => `
+      <label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:10px;color:var(--text-dim);flex:1;min-width:200px;transition:all 0.15s;" id="mdq_label_${i}">
+        <input type="checkbox" style="margin-top:2px;accent-color:var(--accent-gold)" name="mdq_${i}" onchange="State.mdq[${i}]=this.checked;autoSave();updateMDQLabel(${i})">
+        <span>${i+1}. ${q}</span>
+      </label>
+    `).join('') + '</div>';
+}
+
+function updateMDQLabel(i) {
+  const lbl = document.getElementById(`mdq_label_${i}`);
+  if(State.mdq[i]) { lbl.style.borderColor='var(--accent-gold)'; lbl.style.background='rgba(240,196,90,0.05)'; }
+  else { lbl.style.borderColor='var(--border)'; lbl.style.background=''; }
+}
+
+function setMDQP3(val, btn) {
+  State.mdq_p3 = val;
+  document.querySelectorAll('#mdq-p3 .drug-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcMDQ() {
+  const positive = State.mdq.filter(Boolean).length;
+  const p2 = document.querySelector('input[name="mdq_p2"]:checked')?.value === 'yes';
+  const p3 = State.mdq_p3;
+  const concurrent = p2;
+  const impairment = p3 === 'moderate' || p3 === 'serious';
+  const positive_screen = positive >= 7 && concurrent && impairment;
+
+  let interp, color;
+  if(positive_screen) {
+    color = 'var(--accent-coral)';
+    interp = [
+      `MDQ POSITIVO: ${positive}/13 ítems positivos, con síntomas concurrentes y deterioro ${p3==='serious'?'grave':'moderado'}.`,
+      'Sensibilidad 73%, especificidad 90% para TB-I/II (Hirschfeld et al., 2000).',
+      'Resultado compatible con espectro bipolar. REQUIERE evaluación psiquiátrica completa.',
+      '⚠ MDQ positivo NO equivale a diagnóstico. Descartar ciclotimia, TDM con síntomas hipomaníacos atípicos y rasgos de personalidad.'
+    ];
+  } else {
+    color = 'var(--accent-mint)';
+    interp = [
+      `MDQ NEGATIVO: ${positive}/13 ítems positivos.`,
+      `Criterios no cumplidos: ${!concurrent?'falta concurrencia de síntomas;':''} ${!impairment?'sin deterioro moderado-grave;':''} ${positive<7?`solo ${positive}/7 ítems mínimos;`:''}`,
+      'Resultado no sugiere espectro bipolar en cribado. No excluye diagnóstico definitivo.',
+      'Considerar reevaluación en el tiempo si persisten síntomas atípicos de depresión.'
+    ];
+  }
+
+  document.getElementById('mdq-result').style.display = 'block';
+  document.getElementById('mdq-interp').innerHTML = interp.map(t=>`<div class="interp-point" style="color:var(--text-dim)">${t}</div>`).join('');
+  autoSave();
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD DSM-5
+// ═══════════════════════════════════════════════════════
+function buildDSM5() {
+  const tabs = document.getElementById('disorder-tabs');
+  const contents = document.getElementById('disorder-contents');
+
+  tabs.innerHTML = DSM5_DISORDERS.map((d,i) => `
+    <button class="disorder-tab ${i===0?'active':''}" onclick="switchDisorder('${d.id}',this)">${d.name}</button>
+  `).join('');
+
+  contents.innerHTML = DSM5_DISORDERS.map((d,i) => `
+    <div class="disorder-content ${i===0?'active':''}" id="dc_${d.id}">
+      <div class="card">
+        <div class="card-title" style="font-size:16px;margin-bottom:2px;">${d.full}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:16px;">Fuente: ${d.source}</div>
+
+        ${d.groups.map((g,gi) => `
+          <div style="margin-bottom:16px;">
+            <div class="criterion-group-label">${g.label} <span style="color:var(--accent-lav)">(mínimo: ${g.required})</span></div>
+            ${g.items.map((item, ii) => `
+              <label class="criterion-item" id="ci_${d.id}_${gi}_${ii}" onclick="toggleCriterion('${d.id}',${gi},${ii},this)">
+                <div class="criterion-check" id="cck_${d.id}_${gi}_${ii}">□</div>
+                <div class="criterion-text">
+                  ${item.text}
+                  ${item.required ? '<span class="criterion-req">[requerido]</span>' : ''}
+                </div>
+              </label>
+            `).join('')}
+          </div>
+        `).join('')}
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="evalDSM('${d.id}')">▶ EVALUAR CRITERIOS</button>
+          <button class="btn btn-ghost" onclick="resetDSM('${d.id}')">↺ RESET</button>
+        </div>
+
+        <div id="dsm_verdict_${d.id}" style="display:none;"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Init state
+  DSM5_DISORDERS.forEach(d => {
+    State.dsm[d.id] = d.groups.map(g => new Array(g.items.length).fill(false));
+  });
+}
+
+function switchDisorder(id, btn) {
+  document.querySelectorAll('.disorder-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.disorder-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`dc_${id}`).classList.add('active');
+}
+
+function toggleCriterion(did, gi, ii, labelEl) {
+  const current = State.dsm[did][gi][ii];
+  State.dsm[did][gi][ii] = !current;
+  const ck = document.getElementById(`cck_${did}_${gi}_${ii}`);
+  if(!current) {
+    ck.textContent = '✓';
+    ck.style.background = 'rgba(138,110,255,0.2)';
+    ck.style.borderColor = 'var(--accent-lav)';
+    ck.style.color = 'var(--accent-lav)';
+    labelEl.style.background = 'rgba(138,110,255,0.04)';
+  } else {
+    ck.textContent = '□';
+    ck.style.background = '';
+    ck.style.borderColor = 'var(--border-hi)';
+    ck.style.color = '';
+    labelEl.style.background = '';
+  }
+  autoSave();
+}
+
+function evalDSM(did) {
+  const disorder = DSM5_DISORDERS.find(d=>d.id===did);
+  const checked = State.dsm[did];
+  let allMet = true, details = [];
+
+  disorder.groups.forEach((g, gi) => {
+    const checkedCount = checked[gi].filter(Boolean).length;
+    const met = checkedCount >= g.required;
+    if(!met) allMet = false;
+    details.push({ label: g.label, required: g.required, got: checkedCount, met });
+  });
+
+  const vDiv = document.getElementById(`dsm_verdict_${did}`);
+  vDiv.style.display = 'block';
+
+  let cls, heading, body;
+  if(allMet) {
+    cls='met'; heading='⚠ CRITERIOS POTENCIALMENTE CUMPLIDOS';
+    body=`<div style="font-size:11px;margin-top:8px;line-height:1.7;color:var(--text-dim);">
+      Los criterios marcados sugieren compatibilidad con <strong>${disorder.full}</strong> según DSM-5-TR.
+      <br><br><strong>IMPORTANTE:</strong> Este resultado NO constituye diagnóstico. Requiere evaluación clínica completa por un profesional de salud mental cualificado, incluyendo historia psiquiátrica completa, entrevista diagnóstica estructurada, exploración del estado mental y diagnóstico diferencial exhaustivo.
+    </div>`;
+  } else {
+    cls='not-met'; heading='✓ CRITERIOS NO CUMPLIDOS (según datos introducidos)';
+    const missing = details.filter(d=>!d.met).map(d=>`"${d.label.substring(0,40)}..." (${d.got}/${d.required})`).join(', ');
+    body=`<div style="font-size:11px;margin-top:8px;line-height:1.7;color:var(--text-dim);">
+      Criterios incompletos: ${missing}. No se alcanzan los umbrales para ${disorder.full}.
+      <br>Recuerde que los datos introducidos representan solo la información disponible en este momento.
+    </div>`;
+  }
+
+  vDiv.className = `dsm-verdict ${cls}`;
+  vDiv.innerHTML = `<strong>${heading}</strong>${body}
+    <div style="margin-top:10px;">
+      ${details.map(d=>`<div style="font-size:10px;color:${d.met?'var(--accent-mint)':'var(--accent-coral)'};padding:2px 0;">
+        ${d.met?'✓':'✗'} ${d.label.substring(0,50)}... — ${d.got}/${d.required} criterios
+      </div>`).join('')}
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);margin-top:8px;">Ref: ${disorder.source}</div>`;
+}
+
+function resetDSM(did) {
+  State.dsm[did] = DSM5_DISORDERS.find(d=>d.id===did).groups.map(g=>new Array(g.items.length).fill(false));
+  document.querySelectorAll(`[id^="ci_${did}_"]`).forEach(el => el.style.background='');
+  document.querySelectorAll(`[id^="cck_${did}_"]`).forEach(el => { el.textContent='□'; el.style.background=''; el.style.borderColor='var(--border-hi)'; el.style.color=''; });
+  const v = document.getElementById(`dsm_verdict_${did}`);
+  if(v) v.style.display='none';
+  Utils.toast('Criterios reseteados','info');
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD C-SSRS
+// ═══════════════════════════════════════════════════════
+function buildCSSRS() {
+  // Ideation pips
+  const pips = document.getElementById('ideation-pips');
+  pips.innerHTML = [0,1,2,3,4,5].map(i=>`<div class="ideation-pip" id="pip_${i}"></div>`).join('');
+
+  // Ideation questions
+  const ic = document.getElementById('cssrs-ideation-questions');
+  ic.innerHTML = CSSRS_IDEATION.map(q => `
+    <div class="cssrs-question">
+      <div class="cssrs-q-level">${q.level}</div>
+      <div class="cssrs-q-text">${q.text}</div>
+      <div style="font-size:9px;color:var(--text-muted);margin-bottom:8px;font-style:italic;">${q.note}</div>
+      <div class="cssrs-radio">
+        <input type="radio" class="yes" name="cssrs_${q.key}" id="${q.key}_yes" value="yes" onchange="State.cssrs['${q.key}']='yes';updateRisk()">
+        <label for="${q.key}_yes">Sí</label>
+        <input type="radio" class="no" name="cssrs_${q.key}" id="${q.key}_no" value="no" onchange="State.cssrs['${q.key}']='no';updateRisk()">
+        <label for="${q.key}_no">No</label>
+      </div>
+    </div>
+  `).join('');
+
+  // Behavior questions
+  const bc = document.getElementById('cssrs-behavior-questions');
+  bc.innerHTML = CSSRS_BEHAVIOR.map(q => `
+    <div class="cssrs-question">
+      <div class="cssrs-q-text">${q.text}</div>
+      ${q.recent ? '<div style="font-size:9px;color:var(--accent-coral);margin-bottom:6px;">⚠ Si SÍ en últimos 3 meses → RIESGO CRÍTICO</div>' : ''}
+      <div class="cssrs-radio">
+        <input type="radio" class="yes" name="cssrs_${q.key}" id="${q.key}_yes" value="yes" onchange="State.cssrs['${q.key}']='yes';updateRisk()">
+        <label for="${q.key}_yes">Sí</label>
+        <input type="radio" class="no" name="cssrs_${q.key}" id="${q.key}_no" value="no" onchange="State.cssrs['${q.key}']='no';updateRisk()">
+        <label for="${q.key}_no">No</label>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateRisk() {
+  // Ideation score
+  let ideationScore = 0;
+  const cs = State.cssrs;
+  if(cs.i1==='yes') ideationScore = 1;
+  if(cs.i2==='yes') ideationScore = 2;
+  if(cs.i3==='yes') ideationScore = 3;
+  if(cs.i4==='yes') ideationScore = 4;
+  if(cs.i5==='yes') ideationScore = 5;
+
+  // Update attempt count
+  cs.attempts = parseInt(document.getElementById('attempt-count').value) || 0;
+
+  // Pips
+  [0,1,2,3,4,5].forEach(i => {
+    const pip = document.getElementById(`pip_${i}`);
+    if(!pip) return;
+    pip.className = 'ideation-pip';
+    if(i <= ideationScore && ideationScore > 0) pip.classList.add(`active-${ideationScore}`);
+  });
+
+  document.getElementById('ideation-score-display').textContent = ideationScore;
+
+  const ideationDescs = [
+    'Sin ideación activa reportada',
+    'Deseo pasivo de muerte — sin pensamientos activos de suicidio',
+    'Pensamientos activos de suicidio, sin método ni intención específicos',
+    'Ideación con método (sin plan completo ni intención definitiva)',
+    'Ideación con intención de actuar (sin plan completo)',
+    'Ideación con plan específico e intención — MÁXIMA URGENCIA'
+  ];
+  document.getElementById('ideation-desc').textContent = ideationDescs[ideationScore];
+
+  // Behavior flags
+  const realAttempt = cs.b_real === 'yes';
+  const anyBehavior = cs.b_interrupted==='yes' || cs.b_aborted==='yes' || cs.b_prep==='yes' || cs.b_nssi==='yes';
+
+  // Risk stratification
+  let riskLevel, riskClass, actionText;
+  if(ideationScore === 0 && !realAttempt && !anyBehavior) {
+    riskLevel = 'SIN RIESGO IDENTIFICADO'; riskClass = 'none';
+    actionText = 'No se identifican factores de riesgo. Mantener vigilancia clínica habitual.';
+  } else if(ideationScore <= 2 && !realAttempt && !anyBehavior) {
+    riskLevel = 'RIESGO BAJO'; riskClass = 'low';
+    actionText = 'Ideación pasiva sin comportamiento. Derivar a salud mental al alta. Psicoeducación al paciente y familia.';
+  } else if(ideationScore === 3 || anyBehavior) {
+    riskLevel = 'RIESGO MODERADO'; riskClass = 'moderate';
+    actionText = 'Ideación con método O antecedentes de comportamiento. Consulta con salud mental en Urgencias. No dejar solo al paciente.';
+  } else if(ideationScore >= 4 || realAttempt) {
+    riskLevel = 'RIESGO ALTO'; riskClass = 'high';
+    actionText = 'Ideación con intención O intento real reciente. Notificar médico responsable INMEDIATAMENTE. Valorar hospitalización psiquiátrica urgente.';
+  }
+
+  // Critical override
+  if(ideationScore === 5 || (realAttempt && cs.attempts >= 1)) {
+    riskLevel = 'RIESGO CRÍTICO'; riskClass = 'critical';
+    actionText = '🚨 Ideación con plan e intención O intento real. ACTIVAR PROTOCOLO DE EMERGENCIAS. Llamar 112 / 024 si no hay respuesta inmediata.';
+  }
+
+  const disp = document.getElementById('risk-level-display');
+  disp.className = `risk-level-display ${riskClass}`;
+  disp.textContent = riskLevel;
+  document.getElementById('risk-action-text').textContent = actionText;
+
+  // Emergency box
+  const emergBox = document.getElementById('emergency-box');
+  emergBox.style.display = (riskClass==='critical') ? 'block' : 'none';
+
+  autoSave();
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD PHARMA
+// ═══════════════════════════════════════════════════════
+function buildPharma() {
+  const filterBar = document.getElementById('drug-filter-bar');
+  const cats = ['todos','depresion','ansiedad','psicosis','bipolar','tept'];
+  const labels = {'todos':'TODOS','depresion':'DEPRESIÓN','ansiedad':'ANSIEDAD','psicosis':'PSICOSIS','bipolar':'BIPOLAR','tept':'TEPT'};
+  filterBar.innerHTML = cats.map((c,i) =>
+    `<button class="drug-filter-btn ${i===0?'active':''}" onclick="filterDrugs('${c}',this)">${labels[c]}</button>`
+  ).join('');
+  renderDrugs('todos');
+}
+
+function filterDrugs(cat, btn) {
+  document.querySelectorAll('.drug-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDrugs(cat);
+}
+
+function renderDrugs(cat) {
+  const list = document.getElementById('drug-list');
+  const filtered = cat==='todos' ? DRUGS : DRUGS.filter(d=>d.disorders.includes(cat));
+  list.innerHTML = filtered.map((d,i) => `
+    <div class="drug-card" id="dc_${i}" onclick="toggleDrug(${i})">
+      <div class="drug-header">
+        <div>
+          <div class="drug-name">${d.name}</div>
+          <div class="drug-meta">
+            <span class="tag tag-lav">${d.class}</span>
+            <span class="tag tag-mint">${d.line}</span>
+            <span class="nnt-badge">⚡ ${d.nnt}</span>
+          </div>
+        </div>
+        <div style="font-size:18px;color:var(--text-muted);transition:transform 0.2s" id="dc_arrow_${i}">▸</div>
+      </div>
+      <div id="dc_detail_${i}" style="display:none;">
+        <div class="drug-detail-grid">
+          <div class="drug-detail-item"><label>Dosis inicio</label><span>${d.dose_start}</span></div>
+          <div class="drug-detail-item"><label>Dosis objetivo</label><span>${d.dose_target}</span></div>
+          <div class="drug-detail-item" style="grid-column:1/-1"><label>Efectos adversos frecuentes</label><span>${d.ae}</span></div>
+          <div class="drug-detail-item" style="grid-column:1/-1">
+            <label>Interacciones graves</label>
+            <div class="drug-warning">⚠ ${d.interactions}</div>
+          </div>
+          <div class="drug-detail-item" style="grid-column:1/-1"><label>Notas clínicas</label><span>${d.notes}</span></div>
+          <div class="drug-detail-item" style="grid-column:1/-1"><label>Evidencia / Guía</label><span style="color:var(--accent-lav)">${d.ref}</span></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDrug(i) {
+  const det = document.getElementById(`dc_detail_${i}`);
+  const arrow = document.getElementById(`dc_arrow_${i}`);
+  const card = document.getElementById(`dc_${i}`);
+  const open = det.style.display==='block';
+  det.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▸' : '▾';
+  card.classList.toggle('expanded', !open);
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD EVIDENCE
+// ═══════════════════════════════════════════════════════
+function buildEvidence() {
+  const colorMap = { lav:'var(--accent-lav)', mint:'var(--accent-mint)', coral:'var(--accent-coral)', gold:'var(--accent-gold)', blue:'var(--accent-blue)' };
+  const list = document.getElementById('evidence-list');
+  list.innerHTML = EVIDENCE_REFS.map(r => {
+    const col = colorMap[r.color] || 'var(--accent-lav)';
+    return `
+      <div class="ref-card">
+        <div class="ref-header">
+          <span class="ref-journal" style="color:${col}">${r.journal}</span>
+          <span class="ref-year">${r.year}</span>
+        </div>
+        <div class="ref-body">
+          <div class="ref-title">${r.title}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;font-style:italic;">${r.authors}</div>
+          <div class="ref-results">
+            ${r.results.map(res=>`<div class="ref-result-item">${res}</div>`).join('')}
+          </div>
+          <div class="ref-limitation">⚠ Limitación: ${r.limitation}</div>
+          <div class="ref-doi">DOI / URL: ${r.doi}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// STORAGE & PERSISTENCE
+// ═══════════════════════════════════════════════════════
+function autoSave() {
+  try {
+    const data = {
+      phq9: State.phq9,
+      gad7: State.gad7,
+      mdq: State.mdq,
+      cssrs: State.cssrs,
+      dsm: State.dsm,
+      notes: document.getElementById('clinical-notes')?.value || '',
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem('psych_scanner_session', JSON.stringify(data));
+    const ind = document.getElementById('autosave-indicator');
+    ind.classList.add('visible');
+    setTimeout(()=>ind.classList.remove('visible'), 2000);
+  } catch(e) { /* ignore */ }
+}
+
+function saveNotes() {
+  State.notes = document.getElementById('clinical-notes').value;
+  autoSave();
+  document.getElementById('notes-saved-info').textContent = `Guardado: ${new Date().toLocaleTimeString()}`;
+  Utils.toast('Notas guardadas localmente','success');
+}
+
+function clearNotes() {
+  if(!confirm('¿Borrar todas las notas de sesión?')) return;
+  document.getElementById('clinical-notes').value = '';
+  State.notes = '';
+  Utils.toast('Notas eliminadas','info');
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem('psych_scanner_session');
+    if(!raw) { Utils.toast('No hay sesión guardada','warning'); return; }
+    const data = JSON.parse(raw);
+    // Restore notes
+    if(data.notes) document.getElementById('clinical-notes').value = data.notes;
+    Utils.toast(`Sesión restaurada (${new Date(data.savedAt).toLocaleString()})`,'success');
+    closeModal();
+  } catch(e) { Utils.toast('Error al restaurar sesión','error'); }
+}
+
+function exportJSON() {
+  try {
+    const raw = localStorage.getItem('psych_scanner_session') || '{}';
+    Utils.downloadFile(raw, `psych_scanner_backup_${Date.now()}.json`, 'application/json');
+    Utils.toast('Backup JSON exportado','success');
+  } catch(e) { Utils.toast('Error al exportar','error'); }
+}
+
+Utils.downloadFile = function(content, filename, mimeType) {
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+};
+
+function importJSON() {
+  document.getElementById('json-import-input').click();
+}
+
+function handleJSONImport(evt) {
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      JSON.parse(e.target.result); // validate
+      localStorage.setItem('psych_scanner_session', e.target.result);
+      Utils.toast('Backup importado correctamente','success');
+      closeModal();
+    } catch(err) { Utils.toast('Archivo JSON inválido','error'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if(!confirm('⚠ ¿Borrar TODOS los datos guardados? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem('psych_scanner_session');
+  Utils.toast('Todos los datos eliminados','warning');
+  closeModal();
+}
+
+function openStorageModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  try {
+    const raw = localStorage.getItem('psych_scanner_session');
+    const size = raw ? (new Blob([raw]).size / 1024).toFixed(2) + ' KB' : '0 KB';
+    document.getElementById('storage-size').textContent = size;
+  } catch(e) {}
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT REPORT
+// ═══════════════════════════════════════════════════════
+function exportReport() {
+  const phq9Score = State.phq9.some(v=>v!==null) ? State.phq9.reduce((a,b)=>a+(b||0),0) : 'N/A';
+  const gad7Score = State.gad7.some(v=>v!==null) ? State.gad7.reduce((a,b)=>a+(b||0),0) : 'N/A';
+  const riskEl = document.getElementById('risk-level-display');
+  const riskLevel = riskEl ? riskEl.textContent : 'No evaluado';
+  const notes = document.getElementById('clinical-notes')?.value || '';
+  const ts = new Date().toLocaleString('es-ES');
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Informe PSYCHIATRIC-SCANNER Ω — ${ts}</title>
+<style>
+body{font-family:Arial,sans-serif;font-size:12px;max-width:700px;margin:40px auto;color:#333;line-height:1.6}
+h1{color:#5a4a8a;border-bottom:2px solid #5a4a8a;padding-bottom:8px}
+h2{color:#4a3a7a;margin-top:24px;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:4px}
+.warn{background:#fff3cd;border:1px solid #ffc107;padding:10px;border-radius:4px;margin:16px 0;font-size:11px}
+.row{display:flex;gap:20px;margin:8px 0}
+.label{color:#888;width:180px;flex-shrink:0}
+.val{font-weight:bold;color:#333}
+.notes{background:#f9f9f9;border:1px solid #ddd;padding:12px;border-radius:4px;white-space:pre-wrap;font-size:11px}
+.ref{font-size:10px;color:#888;font-style:italic;margin-top:16px;border-top:1px solid #eee;padding-top:8px}
+</style></head><body>
+<h1>PSYCHIATRIC-SCANNER Ω · INFORME DE SESIÓN</h1>
+<div class="warn">⚠ HERRAMIENTA EXPERIMENTAL — NO APTA PARA DIAGNÓSTICO CLÍNICO. Este informe no sustituye la evaluación clínica de un profesional cualificado. Generado: ${ts}</div>
+
+<h2>📊 ESCALAS DE CRIBADO</h2>
+<div class="row"><span class="label">PHQ-9 (Depresión):</span><span class="val">${phq9Score} ${phq9Score!=='N/A'?`/ 27`:'— Sin completar'}</span></div>
+<div class="row"><span class="label">GAD-7 (Ansiedad):</span><span class="val">${gad7Score} ${gad7Score!=='N/A'?`/ 21`:'— Sin completar'}</span></div>
+
+<h2>⚡ EVALUACIÓN RIESGO SUICIDA (C-SSRS)</h2>
+<div class="row"><span class="label">Nivel de riesgo:</span><span class="val">${riskLevel}</span></div>
+
+<h2>📝 NOTAS CLÍNICAS</h2>
+<div class="notes">${notes || '(Sin notas registradas)'}</div>
+
+<div class="ref">
+Herramienta basada en: PHQ-9 (Kroenke et al., 2001) · GAD-7 (Spitzer et al., 2006) · C-SSRS (Posner et al., 2011) · NICE NG222 (2022) · CANMAT 2023 · APA 2022<br>
+PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v1.0 | Prompt engineering: David Ferrandez Canalis
+</div>
+</body></html>`;
+
+  Utils.downloadFile(html, `informe_psych_${Date.now()}.html`, 'text/html');
+  Utils.toast('Informe HTML exportado','success');
+}
+
+// ═══════════════════════════════════════════════════════
+// SESSION SUMMARY
+// ═══════════════════════════════════════════════════════
+function updateSessionSummary() {
+  const phq9Score = State.phq9.some(v=>v!==null) ? State.phq9.reduce((a,b)=>a+(b||0),0) : null;
+  const gad7Score = State.gad7.some(v=>v!==null) ? State.gad7.reduce((a,b)=>a+(b||0),0) : null;
+  const riskEl = document.getElementById('risk-level-display');
+  const riskLevel = riskEl ? riskEl.textContent : 'No evaluado';
+
+  const lines = [];
+  if(phq9Score !== null) {
+    let severity = phq9Score<=4?'Sin depresión':phq9Score<=9?'Leve':phq9Score<=14?'Moderada':phq9Score<=19?'Mod-grave':'Grave';
+    lines.push(`PHQ-9: ${phq9Score}/27 — ${severity}`);
+  } else lines.push('PHQ-9: No completado');
+
+  if(gad7Score !== null) {
+    let severity = gad7Score<=4?'Sin ansiedad':gad7Score<=9?'Leve':gad7Score<=14?'Moderada':'Grave';
+    lines.push(`GAD-7: ${gad7Score}/21 — ${severity}`);
+  } else lines.push('GAD-7: No completado');
+
+  lines.push(`C-SSRS: ${riskLevel}`);
+  lines.push(`Sesión iniciada: ${new Date(State.sessionStart).toLocaleTimeString()}`);
+
+  document.getElementById('session-summary').innerHTML = lines.map(l=>`<div style="padding:3px 0;border-bottom:1px solid rgba(45,38,64,0.4);">▸ ${l}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// SESSION CLOCK
+// ═══════════════════════════════════════════════════════
+function startClock() {
+  setInterval(() => {
+    const el = document.getElementById('session-clock');
+    if(el) el.textContent = `SESIÓN ACTIVA · ${Utils.formatTime(Date.now() - State.sessionStart)}`;
+  }, 1000);
+}
+
+// Auto-save every 30 seconds
+setInterval(autoSave, 30000);
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  buildPHQ9();
+  buildGAD7();
+  buildMDQ();
+  buildDSM5();
+  buildCSSRS();
+  buildPharma();
+  buildEvidence();
+  startClock();
+
+  // Auto-restore notes
+  try {
+    const raw = localStorage.getItem('psych_scanner_session');
+    if(raw) {
+      const data = JSON.parse(raw);
+      if(data.notes) document.getElementById('clinical-notes').value = data.notes;
+    }
+  } catch(e) {}
+
+  Utils.toast('PSYCHIATRIC-SCANNER Ω cargado · Modo offline activo','success', 4000);
+});
+</script>
+</body>
+</html>
