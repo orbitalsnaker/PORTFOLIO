@@ -1,0 +1,3556 @@
+<!--
+================================================================================
+  PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v2.0
+================================================================================
+  Version    : 2.0.0
+  Date       : 2026-03-05
+  Author     : David Ferrandez Canalis (prompt engineering)
+  Generator  : Claude (Anthropic)
+  License    : Free for educational and non-commercial clinical support use
+  Description: Evidence-based psychiatric decision support tool.
+               NOT for clinical diagnosis. For professional reference only.
+
+  Dependencies:
+    - Google Fonts: Space Mono, Syne (requires internet on first load;
+      cached by browser for offline use thereafter)
+    - No JS frameworks, no external scripts — pure vanilla HTML/CSS/JS
+
+  Evidence sources:
+    Lancet Psychiatry · NICE · APA · Cochrane · Columbia C-SSRS
+    CANMAT 2023 · BAP 2024 · PORT 2022 · WHO mhGAP 2023
+
+  Modules:
+    01 CRIBADO    — PHQ-9, GAD-7, MDQ, Y-BOCS, ASRS, AUDIT
+    02 DSM-5-TR   — 10 disorders with criteria, differential diagnosis
+    03 C-SSRS     — Suicide risk + protective factors + intervention plan
+    04 FARMACO    — 10 drugs with dose calculator, renal/hepatic adjustment
+    05 EVIDENCIA  — 10 primary references
+    06 GLOSARIO   — Clinical term definitions
+    07 RESUMEN    — Global summary + export
+    08 NOTAS      — Clinical notes + session history
+
+  Changelog v2.0:
+    + 3 new scales: Y-BOCS, ASRS, AUDIT
+    + 5 new DSM disorders: Panic, Social anxiety, OCD, AUD, BPD
+    + C-SSRS: protective factors, intervention recommendations panel
+    + Dose calculator with renal/hepatic adjustment
+    + Session history (auto-saved with timestamps)
+    + Global progress bar
+    + Glossary modal
+    + i18n: ES / EN toggle
+    + Customizable cut-off points panel
+    + Refactored JS into module objects
+    + JSDoc comments throughout
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="es" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ROOT DESIGN TOKENS
+   Centralised CSS custom properties for consistent theming.
+   All colours, shadows and typography scale from here.
+============================================================ */
+:root{
+  /* Background layers */
+  --bg:           #0b0a14;
+  --bg2:          #0e0d1a;
+  --bg3:          #111020;
+  /* Panel surfaces */
+  --panel:        #151225;
+  --panel2:       #1a1830;
+  --panel3:       #1f1c38;
+  /* Borders */
+  --border:       #2d2640;
+  --border-hi:    #5a4a7a;
+  --border-act:   #8a6eff;
+  /* Accent palette */
+  --lav:          #8a6eff;
+  --mint:         #66cc99;
+  --coral:        #ff6b8b;
+  --gold:         #f0c45a;
+  --blue:         #5ec4ff;
+  --teal:         #4dd9c0;
+  --rose:         #ff4d7a;
+  /* Text */
+  --text:         #e0d8f8;
+  --text-dim:     #b0a0d0;
+  --text-muted:   #7060a0;
+  --text-faint:   #4a3a6a;
+  /* Risk colours */
+  --r-none:       #66cc99;
+  --r-low:        #a8d96b;
+  --r-mod:        #f0c45a;
+  --r-high:       #ff9500;
+  --r-crit:       #ff2d55;
+  /* Score severity */
+  --s-none:       #66cc99;
+  --s-mild:       #f0c45a;
+  --s-mod:        #ff9500;
+  --s-sev:        #ff2d55;
+  /* Glows */
+  --glow-lav:     0 0 22px rgba(138,110,255,.35);
+  --glow-mint:    0 0 22px rgba(102,204,153,.35);
+  --glow-coral:   0 0 22px rgba(255,107,139,.35);
+  --glow-gold:    0 0 22px rgba(240,196,90,.35);
+  /* Spacing scale */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  16px;
+  --sp-lg:  24px;
+  --sp-xl:  40px;
+  /* Radius */
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  /* Transition */
+  --tr:     all 0.2s ease;
+}
+
+/* ============================================================
+   GLOBAL RESET & BASE
+============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Space Mono',monospace;
+  font-size:13px;
+  line-height:1.7;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Scanline atmosphere overlay */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--lav)}
+
+/* ============================================================
+   TYPOGRAPHY
+============================================================ */
+h1,h2,h3,.syne{font-family:'Syne',sans-serif}
+code,kbd{font-family:'Space Mono',monospace;font-size:.9em;background:var(--panel3);padding:1px 5px;border-radius:3px}
+
+/* ============================================================
+   HEADER
+============================================================ */
+#header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(11,10,20,.97);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+
+.hdr{
+  max-width:1440px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;
+  height:54px;padding:0 20px;
+  flex-wrap:nowrap;
+}
+
+/* Logo */
+.logo-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{
+  width:34px;height:34px;
+  border:1px solid var(--lav);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;color:var(--lav);
+  animation:pulse-lav 3s ease-in-out infinite;
+}
+@keyframes pulse-lav{0%,100%{box-shadow:0 0 8px rgba(138,110,255,.3)}50%{box-shadow:0 0 24px rgba(138,110,255,.65)}}
+.logo-text{line-height:1.2}
+.logo-title{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--lav);letter-spacing:.05em}
+.logo-sub{font-size:8px;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase}
+
+/* Status dots */
+.status-dots{display:flex;gap:6px;align-items:center;margin-left:auto}
+.sdot{width:7px;height:7px;border-radius:50%;animation:blink 2s infinite}
+.sdot.green{background:var(--mint);box-shadow:0 0 7px var(--mint)}
+.sdot.amber{background:var(--gold);box-shadow:0 0 7px var(--gold);animation-delay:.6s}
+.sdot.off{background:var(--border-hi);animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* Clock */
+#session-clock{font-size:9px;color:var(--text-muted);letter-spacing:.1em;white-space:nowrap}
+
+/* Header action buttons */
+.hdr-btn{
+  background:var(--panel2);border:1px solid var(--border);
+  color:var(--text-dim);padding:4px 11px;
+  font-family:'Space Mono',monospace;font-size:9px;
+  cursor:pointer;border-radius:var(--r-sm);transition:var(--tr);
+  letter-spacing:.06em;white-space:nowrap;flex-shrink:0;
+}
+.hdr-btn:hover{border-color:var(--lav);color:var(--lav);box-shadow:var(--glow-lav)}
+
+/* Language toggle */
+#lang-btn{border-color:var(--teal);color:var(--teal)}
+#lang-btn:hover{box-shadow:0 0 14px rgba(77,217,192,.4)}
+
+/* ============================================================
+   DISCLAIMER BANNER
+============================================================ */
+#disclaimer{
+  background:linear-gradient(135deg,rgba(255,107,139,.07),rgba(240,196,90,.04));
+  border-bottom:1px solid rgba(255,107,139,.28);
+  padding:8px 20px;
+}
+.disc-inner{
+  max-width:1440px;margin:0 auto;
+  display:flex;align-items:center;gap:10px;
+}
+.disc-icon{color:var(--coral);font-size:15px;flex-shrink:0}
+.disc-text{font-size:9.5px;color:var(--text-dim);line-height:1.5;flex:1}
+.disc-text strong{color:var(--coral)}
+.disc-close{
+  background:none;border:1px solid var(--border);color:var(--text-muted);
+  padding:2px 9px;font-size:9px;cursor:pointer;border-radius:3px;
+  font-family:'Space Mono',monospace;transition:var(--tr);flex-shrink:0;
+}
+.disc-close:hover{border-color:var(--coral);color:var(--coral)}
+
+/* ============================================================
+   GLOBAL PROGRESS BAR
+============================================================ */
+#progress-bar-wrap{
+  background:var(--panel);border-bottom:1px solid var(--border);
+  padding:8px 20px;
+}
+.pb-inner{max-width:1440px;margin:0 auto}
+.pb-label{font-size:9px;color:var(--text-muted);letter-spacing:.1em;margin-bottom:5px;display:flex;justify-content:space-between}
+.pb-modules{display:flex;gap:4px;flex-wrap:wrap}
+.pb-mod{
+  flex:1;min-width:60px;height:5px;background:var(--border);border-radius:2px;
+  transition:background .4s ease;position:relative;
+}
+.pb-mod.done{background:var(--lav);box-shadow:0 0 8px rgba(138,110,255,.4)}
+.pb-mod.partial{background:var(--gold)}
+.pb-mod-name{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  font-size:7px;color:var(--text-muted);white-space:nowrap;letter-spacing:.06em;
+}
+
+/* ============================================================
+   MAIN LAYOUT
+============================================================ */
+#app{max-width:1440px;margin:0 auto;padding:18px 20px 60px}
+
+/* ============================================================
+   TAB NAVIGATION
+============================================================ */
+.tab-nav{
+  display:flex;gap:2px;
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;margin-bottom:22px;
+  scrollbar-width:none;
+}
+.tab-nav::-webkit-scrollbar{display:none}
+
+.tab-btn{
+  background:none;border:none;
+  border-bottom:2px solid transparent;
+  color:var(--text-muted);
+  padding:9px 15px;
+  font-family:'Space Mono',monospace;font-size:9.5px;
+  cursor:pointer;white-space:nowrap;letter-spacing:.07em;
+  transition:var(--tr);position:relative;top:1px;
+}
+.tab-btn:hover{color:var(--text);border-bottom-color:var(--border-hi)}
+.tab-btn.active{color:var(--lav);border-bottom-color:var(--lav)}
+.tab-btn .tn{color:var(--text-muted);margin-right:5px;font-size:8px}
+.tab-btn.active .tn{color:var(--lav)}
+/* Done indicator on tab */
+.tab-btn .tab-done{
+  display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--mint);margin-left:5px;vertical-align:middle;
+  opacity:0;transition:opacity .3s;
+}
+.tab-btn.done .tab-done{opacity:1}
+
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .28s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   CARD COMPONENT
+   .card-{color} sets the top accent line color
+============================================================ */
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:18px;
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--lav),transparent 60%);
+}
+.card-mint::before{background:linear-gradient(90deg,var(--mint),transparent 60%)}
+.card-coral::before{background:linear-gradient(90deg,var(--coral),transparent 60%)}
+.card-gold::before{background:linear-gradient(90deg,var(--gold),transparent 60%)}
+.card-blue::before{background:linear-gradient(90deg,var(--blue),transparent 60%)}
+.card-teal::before{background:linear-gradient(90deg,var(--teal),transparent 60%)}
+
+/* Card title */
+.ctitle{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:12px;
+  color:var(--lav);letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:3px;display:flex;align-items:center;gap:7px;
+}
+.card-mint .ctitle{color:var(--mint)}
+.card-coral .ctitle{color:var(--coral)}
+.card-gold .ctitle{color:var(--gold)}
+.card-blue .ctitle{color:var(--blue)}
+.card-teal .ctitle{color:var(--teal)}
+
+.csub{font-size:9.5px;color:var(--text-muted);margin-bottom:14px;letter-spacing:.04em;line-height:1.5}
+
+/* ============================================================
+   GRID UTILITIES
+============================================================ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.gauto{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+@media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+@media(max-width:600px){.gauto{grid-template-columns:1fr}}
+
+/* ============================================================
+   SECTION HEADER
+============================================================ */
+.sec-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sec-badge{
+  background:rgba(138,110,255,.14);border:1px solid rgba(138,110,255,.38);
+  color:var(--lav);font-size:8.5px;padding:3px 10px;border-radius:3px;
+  letter-spacing:.12em;text-transform:uppercase;font-weight:700;flex-shrink:0;margin-top:3px;
+}
+.sec-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);line-height:1.2}
+.sec-desc{font-size:9.5px;color:var(--text-muted);margin-top:3px;letter-spacing:.04em}
+
+/* ============================================================
+   SCALE QUESTION ITEMS
+============================================================ */
+.qitem{padding:10px 0;border-bottom:1px solid rgba(45,38,64,.55)}
+.qitem:last-child{border-bottom:none}
+.qtext{font-size:10.5px;color:var(--text);margin-bottom:9px;line-height:1.5}
+.qnum{color:var(--text-muted);font-size:9px;margin-right:5px}
+
+.rg{display:flex;gap:5px;flex-wrap:wrap}
+.ro{flex:1;min-width:52px}
+.ro input[type=radio]{display:none}
+.ro label{
+  display:block;text-align:center;padding:5px 3px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  cursor:pointer;font-size:8.5px;color:var(--text-muted);
+  transition:var(--tr);line-height:1.3;
+}
+.ro label:hover{border-color:var(--border-hi);color:var(--text)}
+.ro input:checked + label{
+  background:rgba(138,110,255,.14);
+  border-color:var(--lav);color:var(--lav);
+}
+
+/* Checkbox style (MDQ / binary) */
+.cbi{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s}
+.cbi:hover{background:rgba(255,255,255,.02)}
+.cbi input[type=checkbox]{display:none}
+.cbox{
+  width:15px;height:15px;border:1px solid var(--border-hi);border-radius:3px;
+  flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;transition:var(--tr);
+}
+.cbi.checked .cbox{background:rgba(138,110,255,.2);border-color:var(--lav);color:var(--lav)}
+.cbi-text{font-size:10.5px;color:var(--text-dim);line-height:1.5}
+
+/* ============================================================
+   SCORE DISPLAY
+============================================================ */
+.score-box{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:14px;text-align:center;
+}
+.score-big{
+  font-family:'Syne',sans-serif;font-size:44px;font-weight:800;
+  line-height:1;margin-bottom:3px;transition:color .3s;
+}
+.score-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.score-bar-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:7px}
+.score-bar-fill{height:100%;border-radius:2px;transition:width .5s ease,background .3s}
+.score-rng{display:flex;justify-content:space-between;margin-top:3px;font-size:7.5px;color:var(--text-muted)}
+
+/* ============================================================
+   INTERPRETATION PANEL
+============================================================ */
+.interp-panel{
+  background:var(--bg2);border:1px solid var(--border);
+  border-left:3px solid var(--lav);border-radius:var(--r-sm);
+  padding:14px;margin-top:14px;
+}
+.interp-hdr{
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  color:var(--lav);letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase;
+}
+.ipt{font-size:10.5px;color:var(--text-dim);padding:3px 0 3px 13px;position:relative}
+.ipt::before{content:'▸';position:absolute;left:0;color:var(--lav);font-size:9px;top:4px}
+.ref-tag{
+  display:inline-block;background:rgba(138,110,255,.1);
+  border:1px solid rgba(138,110,255,.28);color:var(--lav);
+  font-size:7.5px;padding:1px 6px;border-radius:3px;margin-top:7px;
+  letter-spacing:.04em;
+}
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 16px;border-radius:var(--r-sm);
+  font-family:'Space Mono',monospace;font-size:9.5px;
+  letter-spacing:.07em;cursor:pointer;transition:var(--tr);
+  text-transform:uppercase;border:1px solid;
+}
+.btn-lav{background:rgba(138,110,255,.12);border-color:var(--lav);color:var(--lav)}
+.btn-lav:hover{background:rgba(138,110,255,.28);box-shadow:var(--glow-lav)}
+.btn-mint{background:rgba(102,204,153,.09);border-color:var(--mint);color:var(--mint)}
+.btn-mint:hover{background:rgba(102,204,153,.22);box-shadow:var(--glow-mint)}
+.btn-coral{background:rgba(255,107,139,.09);border-color:var(--coral);color:var(--coral)}
+.btn-coral:hover{background:rgba(255,107,139,.22);box-shadow:var(--glow-coral)}
+.btn-gold{background:rgba(240,196,90,.09);border-color:var(--gold);color:var(--gold)}
+.btn-gold:hover{background:rgba(240,196,90,.22);box-shadow:var(--glow-gold)}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--text-dim)}
+.btn-ghost:hover{border-color:var(--border-hi);color:var(--text)}
+.btn-teal{background:rgba(77,217,192,.09);border-color:var(--teal);color:var(--teal)}
+.btn-teal:hover{background:rgba(77,217,192,.22)}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+
+/* ============================================================
+   TAGS / BADGES
+============================================================ */
+.tag{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase}
+.tag-lav{background:rgba(138,110,255,.1);border:1px solid rgba(138,110,255,.3);color:var(--lav)}
+.tag-mint{background:rgba(102,204,153,.1);border:1px solid rgba(102,204,153,.3);color:var(--mint)}
+.tag-coral{background:rgba(255,107,139,.1);border:1px solid rgba(255,107,139,.3);color:var(--coral)}
+.tag-gold{background:rgba(240,196,90,.1);border:1px solid rgba(240,196,90,.3);color:var(--gold)}
+.tag-blue{background:rgba(94,196,255,.1);border:1px solid rgba(94,196,255,.3);color:var(--blue)}
+.tag-teal{background:rgba(77,217,192,.1);border:1px solid rgba(77,217,192,.3);color:var(--teal)}
+
+/* NNT special badge */
+.nnt{
+  display:inline-flex;align-items:center;gap:3px;
+  background:rgba(102,204,153,.1);border:1px solid rgba(102,204,153,.28);
+  color:var(--mint);font-size:9px;padding:2px 8px;border-radius:3px;
+}
+
+/* ============================================================
+   TOOLTIP (title-based + CSS enhanced)
+============================================================ */
+[data-tip]{position:relative;cursor:help;border-bottom:1px dashed var(--border-hi)}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--panel3);border:1px solid var(--border-hi);
+  color:var(--text);font-size:9px;padding:5px 9px;border-radius:4px;
+  white-space:normal;max-width:220px;min-width:100px;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+  z-index:500;line-height:1.4;font-family:'Space Mono',monospace;
+}
+[data-tip]:hover::after{opacity:1}
+
+/* ============================================================
+   DSM-5 CRITERION ITEMS
+============================================================ */
+.crit-item{
+  display:flex;align-items:flex-start;gap:9px;
+  padding:7px 9px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background .15s;
+}
+.crit-item:hover{background:rgba(255,255,255,.02)}
+.crit-ck{
+  width:15px;height:15px;border:1px solid var(--border-hi);border-radius:3px;
+  flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;transition:var(--tr);
+}
+.crit-item.on .crit-ck{background:rgba(138,110,255,.2);border-color:var(--lav);color:var(--lav)}
+.crit-txt{font-size:10.5px;color:var(--text-dim);line-height:1.5}
+.crit-req{font-size:8px;color:var(--text-muted);margin-left:4px}
+.crit-grp-lbl{
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  color:var(--text-muted);letter-spacing:.09em;text-transform:uppercase;
+  padding:9px 0 3px;border-bottom:1px solid var(--border);margin-bottom:3px;
+}
+.diff-note{
+  background:rgba(94,196,255,.07);border:1px solid rgba(94,196,255,.22);
+  border-radius:var(--r-sm);padding:9px 11px;margin-top:10px;
+  font-size:10px;color:var(--text-dim);line-height:1.6;
+}
+.diff-note strong{color:var(--blue)}
+
+.dsm-verdict{margin-top:14px;padding:13px;border-radius:var(--r-sm);font-size:10.5px;border:1px solid}
+.dsm-verdict.met{background:rgba(255,107,139,.07);border-color:rgba(255,107,139,.38);color:var(--coral)}
+.dsm-verdict.partial{background:rgba(240,196,90,.07);border-color:rgba(240,196,90,.38);color:var(--gold)}
+.dsm-verdict.ok{background:rgba(102,204,153,.07);border-color:rgba(102,204,153,.38);color:var(--mint)}
+
+/* ============================================================
+   C-SSRS STYLES
+============================================================ */
+.cssrs-q{padding:11px 0;border-bottom:1px solid rgba(45,38,64,.5)}
+.cssrs-lvl{font-size:8.5px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.cssrs-qt{font-size:11.5px;color:var(--text);margin-bottom:8px;line-height:1.55}
+.cssrs-note{font-size:8.5px;color:var(--text-muted);font-style:italic;margin-bottom:7px}
+.yn{display:flex;gap:9px}
+.yn label{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-size:10.5px;color:var(--text-dim);padding:4px 11px;
+  border:1px solid var(--border);border-radius:var(--r-sm);transition:var(--tr);
+}
+.yn label:hover{border-color:var(--border-hi);color:var(--text)}
+.yn input[type=radio]{display:none}
+.yn input.yes:checked + label{border-color:var(--coral);color:var(--coral);background:rgba(255,107,139,.09)}
+.yn input.no:checked + label{border-color:var(--mint);color:var(--mint);background:rgba(102,204,153,.08)}
+
+/* Risk meter */
+.risk-meter{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:18px;margin-top:14px;
+}
+.risk-meter-title{
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;
+  color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;
+}
+.risk-disp{
+  font-family:'Syne',sans-serif;font-size:28px;font-weight:800;
+  text-align:center;padding:14px;border-radius:var(--r-sm);
+  margin-bottom:10px;transition:all .4s;letter-spacing:.04em;
+}
+.risk-disp.none{color:var(--r-none);background:rgba(102,204,153,.05);border:1px solid rgba(102,204,153,.2)}
+.risk-disp.low{color:var(--r-low);background:rgba(168,217,107,.06);border:1px solid rgba(168,217,107,.28)}
+.risk-disp.moderate{color:var(--r-mod);background:rgba(240,196,90,.07);border:1px solid rgba(240,196,90,.3)}
+.risk-disp.high{color:var(--r-high);background:rgba(255,149,0,.07);border:1px solid rgba(255,149,0,.4);animation:pw 2s infinite}
+.risk-disp.critical{color:var(--r-crit);background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.5);animation:pc 1s infinite}
+@keyframes pw{0%,100%{box-shadow:0 0 10px rgba(255,149,0,.2)}50%{box-shadow:0 0 28px rgba(255,149,0,.5)}}
+@keyframes pc{0%,100%{box-shadow:0 0 14px rgba(255,45,85,.3)}50%{box-shadow:0 0 38px rgba(255,45,85,.7)}}
+
+/* Ideation pips */
+.pips{display:flex;gap:3px;margin:8px 0}
+.pip{height:7px;flex:1;border-radius:2px;background:var(--border);transition:background .3s}
+.pip.p0,.pip.p1{background:var(--r-none)}
+.pip.p2{background:var(--r-mod)}
+.pip.p3{background:var(--r-high)}
+.pip.p4,.pip.p5{background:var(--r-crit)}
+
+/* Intervention box */
+.interv-box{
+  background:rgba(138,110,255,.05);border:1px solid rgba(138,110,255,.25);
+  border-radius:var(--r-md);padding:14px;margin-top:12px;
+}
+.interv-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--lav);margin-bottom:8px;letter-spacing:.08em}
+.interv-item{
+  font-size:10.5px;color:var(--text-dim);
+  padding:4px 0 4px 13px;position:relative;line-height:1.5;
+}
+.interv-item::before{content:'→';position:absolute;left:0;color:var(--lav);font-size:9px}
+
+/* Emergency */
+.emerg-box{
+  background:rgba(255,45,85,.08);border:2px solid rgba(255,45,85,.48);
+  border-radius:var(--r-md);padding:15px;margin-top:14px;
+  animation:pc 1.5s infinite;
+}
+.emerg-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--r-crit);margin-bottom:7px}
+.emerg-nums{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}
+.emerg-num{
+  background:rgba(255,45,85,.14);border:1px solid rgba(255,45,85,.38);
+  padding:3px 12px;border-radius:3px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--r-crit);
+}
+
+/* Protective factors */
+.prot-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+@media(max-width:600px){.prot-grid{grid-template-columns:1fr}}
+
+/* ============================================================
+   PHARMA STYLES
+============================================================ */
+.drug-filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.dfbtn{
+  background:var(--panel2);border:1px solid var(--border);
+  color:var(--text-muted);padding:4px 13px;
+  font-family:'Space Mono',monospace;font-size:9px;
+  cursor:pointer;border-radius:3px;transition:var(--tr);letter-spacing:.05em;
+}
+.dfbtn:hover{border-color:var(--border-hi);color:var(--text)}
+.dfbtn.active{background:rgba(138,110,255,.11);border-color:var(--lav);color:var(--lav)}
+
+.drug-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:13px;margin-bottom:9px;
+  cursor:pointer;transition:var(--tr);
+}
+.drug-card:hover{border-color:var(--border-hi)}
+.drug-card.open{border-color:var(--lav)}
+.drug-hdr{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.drug-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)}
+.drug-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.drug-detail{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:9px;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--border);
+}
+.ddi label{font-size:8.5px;color:var(--text-muted);letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px}
+.ddi span{font-size:10.5px;color:var(--text)}
+.drug-warn{
+  background:rgba(255,107,139,.07);border:1px solid rgba(255,107,139,.23);
+  border-radius:3px;padding:7px 9px;font-size:9.5px;color:var(--coral);margin-top:8px;
+}
+.drug-arrow{font-size:16px;color:var(--text-muted);transition:transform .2s}
+.drug-card.open .drug-arrow{transform:rotate(90deg)}
+
+/* ============================================================
+   DOSE CALCULATOR
+============================================================ */
+.dose-calc{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:16px;margin-top:16px;
+}
+.dose-calc-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.dose-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.dose-label{font-size:9.5px;color:var(--text-muted);width:100px;flex-shrink:0}
+.dose-select,.dose-input{
+  background:var(--panel3);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;
+  font-family:'Space Mono',monospace;font-size:10px;
+  border-radius:3px;outline:none;transition:var(--tr);
+}
+.dose-select:focus,.dose-input:focus{border-color:var(--gold)}
+.dose-result{
+  background:rgba(240,196,90,.07);border:1px solid rgba(240,196,90,.28);
+  border-radius:var(--r-sm);padding:12px;margin-top:10px;
+  font-size:11px;color:var(--text-dim);line-height:1.7;
+}
+.dose-result strong{color:var(--gold)}
+
+/* ============================================================
+   EVIDENCE LIBRARY
+============================================================ */
+.ref-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);margin-bottom:11px;overflow:hidden;
+}
+.ref-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:rgba(138,110,255,.04);
+  border-bottom:1px solid var(--border);
+}
+.ref-journal{font-size:9.5px;color:var(--lav);letter-spacing:.1em;font-weight:700}
+.ref-year{font-size:9.5px;color:var(--text-muted)}
+.ref-body{padding:13px 14px}
+.ref-title{font-family:'Syne',sans-serif;font-weight:700;font-size:12.5px;color:var(--text);margin-bottom:9px;line-height:1.4}
+.ref-ri{font-size:9.5px;color:var(--text-dim);padding:2px 0 2px 13px;position:relative}
+.ref-ri::before{content:'•';position:absolute;left:4px;color:var(--mint)}
+.ref-lim{
+  background:rgba(240,196,90,.06);border:1px solid rgba(240,196,90,.2);
+  padding:6px 9px;border-radius:3px;margin-top:7px;font-size:9.5px;color:var(--gold);
+}
+.ref-doi{font-size:8.5px;color:var(--text-muted);margin-top:7px}
+
+/* ============================================================
+   GLOSSARY MODAL
+============================================================ */
+#glossary-modal-overlay{
+  position:fixed;inset:0;background:rgba(11,10,20,.88);
+  backdrop-filter:blur(8px);z-index:2000;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#glossary-modal-overlay.open{display:flex}
+.gloss-modal{
+  background:var(--panel);border:1px solid var(--border-hi);
+  border-radius:var(--r-lg);padding:24px;
+  max-width:640px;width:100%;max-height:80vh;overflow-y:auto;
+  position:relative;
+}
+.gloss-modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--teal),transparent);
+}
+.gloss-modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text);margin-bottom:14px}
+.gloss-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.gloss-item:last-child{border-bottom:none}
+.gloss-term{font-weight:700;color:var(--teal);font-size:11px;margin-bottom:3px}
+.gloss-def{font-size:10.5px;color:var(--text-dim);line-height:1.6}
+.gloss-src{font-size:8.5px;color:var(--text-muted);margin-top:2px}
+#gloss-search{
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  padding:7px 12px;font-family:'Space Mono',monospace;font-size:10.5px;
+  border-radius:var(--r-sm);outline:none;transition:var(--tr);
+  width:100%;margin-bottom:12px;
+}
+#gloss-search:focus{border-color:var(--teal)}
+
+/* ============================================================
+   GENERAL MODAL
+============================================================ */
+#modal-overlay{
+  position:fixed;inset:0;background:rgba(11,10,20,.87);
+  backdrop-filter:blur(7px);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+#modal-overlay.open{display:flex}
+.modal{
+  background:var(--panel);border:1px solid var(--border-hi);
+  border-radius:var(--r-lg);padding:22px;
+  max-width:460px;width:100%;position:relative;
+}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--lav),transparent)}
+.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px}
+.modal-close{
+  position:absolute;top:13px;right:13px;
+  background:none;border:1px solid var(--border);color:var(--text-muted);
+  width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-close:hover{border-color:var(--coral);color:var(--coral)}
+
+/* ============================================================
+   CUTOFF CONFIG PANEL
+============================================================ */
+.cutoff-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.cutoff-row:last-child{border-bottom:none}
+.cutoff-lbl{font-size:9.5px;color:var(--text-muted);flex:1}
+.cutoff-input{
+  background:var(--panel3);border:1px solid var(--border);color:var(--text);
+  padding:3px 8px;font-family:'Space Mono',monospace;font-size:10px;
+  border-radius:3px;outline:none;width:60px;text-align:center;
+}
+.cutoff-input:focus{border-color:var(--lav)}
+
+/* ============================================================
+   SESSION HISTORY
+============================================================ */
+.hist-item{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px;
+  cursor:pointer;transition:var(--tr);
+}
+.hist-item:hover{border-color:var(--border-hi)}
+.hist-ts{font-size:9px;color:var(--text-muted);margin-bottom:5px;letter-spacing:.06em}
+.hist-scores{display:flex;gap:10px;flex-wrap:wrap}
+.hist-score-chip{
+  font-size:9px;padding:1px 8px;border-radius:3px;
+  background:rgba(138,110,255,.1);border:1px solid rgba(138,110,255,.25);color:var(--lav);
+}
+
+/* ============================================================
+   SUMMARY / RESUMEN TAB
+============================================================ */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}
+.sum-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:14px;text-align:center;
+}
+.sum-lbl{font-size:8.5px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.sum-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+.sum-sub{font-size:9px;color:var(--text-muted);margin-top:3px}
+
+/* ============================================================
+   NOTES & TEXTAREA
+============================================================ */
+.note-ta{
+  width:100%;min-height:130px;background:var(--bg2);
+  border:1px solid var(--border);color:var(--text);
+  font-family:'Space Mono',monospace;font-size:10.5px;
+  line-height:1.7;padding:11px;border-radius:var(--r-sm);
+  resize:vertical;outline:none;transition:border-color .2s;
+}
+.note-ta:focus{border-color:var(--lav)}
+.note-ta::placeholder{color:var(--text-muted)}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+============================================================ */
+#toast-container{
+  position:fixed;bottom:18px;right:18px;z-index:10000;
+  display:flex;flex-direction:column;gap:7px;
+}
+.toast{
+  background:var(--panel2);border:1px solid var(--border-hi);
+  border-radius:var(--r-sm);padding:9px 14px;font-size:10.5px;
+  color:var(--text);max-width:300px;
+  animation:toastIn .28s ease;
+  display:flex;align-items:center;gap:7px;
+}
+.toast.success{border-color:var(--mint)}
+.toast.warning{border-color:var(--gold)}
+.toast.error{border-color:var(--coral)}
+@keyframes toastIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+
+/* ============================================================
+   MISC UTILITIES
+============================================================ */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.small{font-size:9.5px;color:var(--text-muted)}
+.mt-sm{margin-top:var(--sp-sm)}
+.mt-md{margin-top:var(--sp-md)}
+.mb-md{margin-bottom:var(--sp-md)}
+.text-coral{color:var(--coral)}
+.text-mint{color:var(--mint)}
+.text-gold{color:var(--gold)}
+.text-lav{color:var(--lav)}
+
+/* Number input */
+.num-in{
+  background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  padding:4px 8px;font-family:'Space Mono',monospace;font-size:10.5px;
+  border-radius:3px;width:70px;outline:none;
+}
+.num-in:focus{border-color:var(--lav)}
+
+/* Autosave indicator */
+#autosave-ind{
+  position:fixed;bottom:11px;left:15px;font-size:8.5px;
+  color:var(--text-muted);letter-spacing:.06em;opacity:0;transition:opacity .5s;
+}
+#autosave-ind.vis{opacity:1}
+
+/* PRINT STYLES */
+@media print{
+  #header,#disclaimer,#progress-bar-wrap,.tab-nav,.btn-row,.hdr-btn,
+  #toast-container,#autosave-ind,footer{display:none!important}
+  body{background:#fff;color:#000;font-family:Arial,sans-serif}
+  .card,.ref-card,.drug-card{border:1px solid #ccc;page-break-inside:avoid}
+  .tab-content{display:block!important}
+  #tab-summary{display:block!important}
+  .score-big{color:#333!important}
+}
+
+/* ============================================================
+   DISORDER SELECTOR TABS
+============================================================ */
+.disorder-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.dtab{
+  background:var(--panel2);border:1px solid var(--border);color:var(--text-muted);
+  padding:4px 12px;font-family:'Space Mono',monospace;font-size:8.5px;
+  cursor:pointer;border-radius:3px;transition:var(--tr);letter-spacing:.05em;
+}
+.dtab:hover{border-color:var(--border-hi);color:var(--text)}
+.dtab.active{border-color:var(--lav);color:var(--lav);background:rgba(138,110,255,.09)}
+.dc{display:none}.dc.active{display:block}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+footer{
+  text-align:center;padding:18px;border-top:1px solid var(--border);
+  margin-top:38px;color:var(--text-muted);font-size:9px;letter-spacing:.04em;
+}
+.foot-motto{
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+  color:var(--lav);margin-bottom:5px;letter-spacing:.07em;
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+============================================================ */
+@media(max-width:600px){
+  .hdr{height:48px}
+  .logo-title{font-size:11px}
+  #session-clock,.status-dots{display:none}
+  .tab-btn{padding:7px 9px;font-size:8.5px}
+  #app{padding:12px 12px 40px}
+  .score-big{font-size:34px}
+  .risk-disp{font-size:21px}
+  .hdr-btn{padding:3px 8px;font-size:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+<header id="header">
+  <div class="hdr">
+    <div class="logo-wrap">
+      <div class="logo-icon" aria-label="Psychiatric Scanner">Ψ</div>
+      <div class="logo-text">
+        <div class="logo-title" data-i18n="logo.title">PSYCHIATRIC-SCANNER Ω</div>
+        <div class="logo-sub" data-i18n="logo.sub">RONIN MENTAL v2.0 · Evidence-Based Pattern Engine</div>
+      </div>
+    </div>
+    <div class="status-dots" aria-hidden="true">
+      <div class="sdot green"></div>
+      <div class="sdot amber"></div>
+      <div class="sdot off"></div>
+    </div>
+    <span id="session-clock" aria-live="polite">SESIÓN · 00:00</span>
+    <button class="hdr-btn" id="lang-btn" onclick="App.i18n.toggle()" title="Switch language / Cambiar idioma" aria-label="Toggle language">🌐 EN</button>
+    <button class="hdr-btn" onclick="App.glossary.open()" data-i18n-btn="glosario" aria-label="Open glossary">📖 GLOSARIO</button>
+    <button class="hdr-btn" onclick="App.config.open()" data-i18n-btn="config" aria-label="Configuration">⚙ CONFIG</button>
+    <button class="hdr-btn" onclick="App.storage.openModal()" data-i18n-btn="datos" aria-label="Data management">💾 DATOS</button>
+    <button class="hdr-btn btn-mint" onclick="App.summary.exportReport()" data-i18n-btn="exportar" aria-label="Export report">⬇ EXPORTAR</button>
+  </div>
+</header>
+
+<!-- ============================================================
+     DISCLAIMER BANNER
+============================================================ -->
+<div id="disclaimer" role="alert">
+  <div class="disc-inner">
+    <span class="disc-icon" aria-hidden="true">⚠</span>
+    <div class="disc-text">
+      <strong data-i18n="disc.title">HERRAMIENTA EXPERIMENTAL — NO APTA PARA DIAGNÓSTICO CLÍNICO.</strong>
+      <span data-i18n="disc.body"> Exclusivamente para apoyo en consulta de patrones y formación continuada. NO sustituye el juicio clínico. Ante riesgo inminente: <strong>llamar al 112 / 024</strong>.</span>
+    </div>
+    <button class="disc-close" onclick="this.parentElement.parentElement.style.display='none'" aria-label="Dismiss">OK</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     GLOBAL PROGRESS BAR
+     Shows which modules have been touched / completed
+============================================================ -->
+<div id="progress-bar-wrap" aria-label="Module completion progress">
+  <div class="pb-inner">
+    <div class="pb-label">
+      <span data-i18n="progress.label">PROGRESO DE MÓDULOS</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="pb-modules" id="pb-modules"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+============================================================ -->
+<main id="app" role="main">
+
+  <!-- Tab navigation -->
+  <nav class="tab-nav" role="tablist" aria-label="Main navigation">
+    <button class="tab-btn active" role="tab" aria-selected="true" onclick="App.ui.switchTab('screening',this)">
+      <span class="tn">01</span><span data-i18n="tab.screening">CRIBADO</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('dsm5',this)">
+      <span class="tn">02</span><span data-i18n="tab.dsm5">DSM-5-TR</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('cssrs',this)">
+      <span class="tn">03</span><span data-i18n="tab.cssrs">RIESGO SUICIDA</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('pharma',this)">
+      <span class="tn">04</span><span data-i18n="tab.pharma">FARMACOLOGÍA</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('evidence',this)">
+      <span class="tn">05</span><span data-i18n="tab.evidence">EVIDENCIA</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('summary',this)">
+      <span class="tn">06</span><span data-i18n="tab.summary">RESUMEN</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="App.ui.switchTab('notes',this)">
+      <span class="tn">07</span><span data-i18n="tab.notes">NOTAS</span><span class="tab-done" aria-hidden="true"></span>
+    </button>
+  </nav>
+
+  <!-- ============================================================
+       TAB 01: CRIBADO (Screening Scales)
+  ============================================================ -->
+  <div id="tab-screening" class="tab-content active" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge" data-i18n="mod">Módulo 01</span>
+      <div>
+        <div class="sec-title" data-i18n="screening.title">Escalas de Cribado</div>
+        <div class="sec-desc" data-i18n="screening.desc">PHQ-9 · GAD-7 · MDQ · Y-BOCS · ASRS · AUDIT — Escalas validadas</div>
+      </div>
+    </div>
+
+    <!-- PHQ-9 + GAD-7 top row -->
+    <div class="g2 mb-md">
+
+      <!-- PHQ-9 -->
+      <div class="card card-mint">
+        <div class="ctitle">📊 PHQ-9 · <span data-i18n="phq9.name">Depresión</span></div>
+        <div class="csub">
+          Patient Health Questionnaire-9 |
+          <span data-tip="Sensitivity: true positives / all positives. 88% = catches 88% of real MDD cases.">Sensibilidad 88%</span>,
+          <span data-tip="Specificity: true negatives / all negatives. 88% = avoids 88% of false positives.">Especificidad 88%</span>
+          | Kroenke et al., 2001
+        </div>
+        <div id="phq9-questions" role="group" aria-label="PHQ-9 items"></div>
+        <div class="btn-row">
+          <button class="btn btn-mint" onclick="App.scales.calc('phq9')">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="App.scales.reset('phq9')">↺ RESET</button>
+        </div>
+        <div id="phq9-result" style="display:none" aria-live="polite"></div>
+      </div>
+
+      <!-- GAD-7 -->
+      <div class="card">
+        <div class="ctitle">📈 GAD-7 · <span data-i18n="gad7.name">Ansiedad generalizada</span></div>
+        <div class="csub">
+          Generalized Anxiety Disorder-7 |
+          <span data-tip="AUC (Area Under the ROC Curve): 1.0 = perfect discrimination. 0.91 is excellent.">AUC 0.91</span>
+          | Spitzer et al., 2006
+        </div>
+        <div id="gad7-questions" role="group" aria-label="GAD-7 items"></div>
+        <div class="btn-row">
+          <button class="btn btn-lav" onclick="App.scales.calc('gad7')">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="App.scales.reset('gad7')">↺ RESET</button>
+        </div>
+        <div id="gad7-result" style="display:none" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- MDQ -->
+    <div class="card card-gold mb-md">
+      <div class="ctitle">⚡ MDQ · <span data-i18n="mdq.name">Trastorno Bipolar</span></div>
+      <div class="csub">Mood Disorder Questionnaire | Hirschfeld, 2000</div>
+      <div id="mdq-questions" role="group" aria-label="MDQ items"></div>
+      <div style="margin-top:12px;padding:11px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);">
+        <div style="font-size:10.5px;color:var(--text);margin-bottom:7px;"><strong>P2:</strong> ¿Varios de estos comportamientos ocurrieron durante el <em>mismo período</em>?</div>
+        <div class="yn">
+          <input type="radio" class="yes" name="mdq_p2" id="mdq_p2_s" value="yes">
+          <label for="mdq_p2_s">Sí</label>
+          <input type="radio" class="no" name="mdq_p2" id="mdq_p2_n" value="no" checked>
+          <label for="mdq_p2_n">No</label>
+        </div>
+        <div style="font-size:10.5px;color:var(--text);margin-top:9px;margin-bottom:6px;"><strong>P3:</strong> ¿Cuántos problemas causaron?</div>
+        <div class="drug-filters" id="mdq-p3">
+          <button class="dfbtn" onclick="App.scales.mdqP3('none',this)">Ninguno</button>
+          <button class="dfbtn active" onclick="App.scales.mdqP3('minor',this)">Mínimos</button>
+          <button class="dfbtn" onclick="App.scales.mdqP3('moderate',this)">Moderados</button>
+          <button class="dfbtn" onclick="App.scales.mdqP3('serious',this)">Graves</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="App.scales.calc('mdq')">▶ CALCULAR MDQ</button>
+        <button class="btn btn-ghost" onclick="App.scales.reset('mdq')">↺ RESET</button>
+      </div>
+      <div id="mdq-result" style="display:none" aria-live="polite"></div>
+    </div>
+
+    <!-- Y-BOCS + ASRS -->
+    <div class="g2 mb-md">
+
+      <!-- Y-BOCS -->
+      <div class="card card-blue">
+        <div class="ctitle">🔄 Y-BOCS · <span data-i18n="ybocs.name">TOC</span></div>
+        <div class="csub">
+          Yale-Brown Obsessive Compulsive Scale (10 ítems) |
+          <span data-tip="Goodman et al., Arch Gen Psychiatry 1989">Sensibilidad 89%</span>
+          | Goodman et al., 1989
+        </div>
+        <div id="ybocs-questions" role="group" aria-label="Y-BOCS items"></div>
+        <div class="btn-row">
+          <button class="btn btn-blue" style="background:rgba(94,196,255,.1);border-color:var(--blue);color:var(--blue);" onclick="App.scales.calc('ybocs')">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="App.scales.reset('ybocs')">↺ RESET</button>
+        </div>
+        <div id="ybocs-result" style="display:none" aria-live="polite"></div>
+      </div>
+
+      <!-- ASRS -->
+      <div class="card card-teal">
+        <div class="ctitle">⚡ ASRS-v1.1 · <span data-i18n="asrs.name">TDAH Adulto</span></div>
+        <div class="csub">
+          Adult ADHD Self-Report Scale |
+          <span data-tip="Kessler et al., Psychol Med 2005: sensitivity 68.7%, specificity 99.5%">Sens 68.7%, Esp 99.5%</span>
+          | WHO / Kessler et al., 2005
+        </div>
+        <div id="asrs-questions" role="group" aria-label="ASRS items"></div>
+        <div class="btn-row">
+          <button class="btn btn-teal" onclick="App.scales.calc('asrs')">▶ CALCULAR</button>
+          <button class="btn btn-ghost" onclick="App.scales.reset('asrs')">↺ RESET</button>
+        </div>
+        <div id="asrs-result" style="display:none" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- AUDIT -->
+    <div class="card" style="border-color:rgba(240,196,90,.3)">
+      <div class="ctitle" style="color:var(--gold);">🍺 AUDIT · <span data-i18n="audit.name">Consumo de Alcohol</span></div>
+      <div class="csub">Alcohol Use Disorders Identification Test (10 ítems) | WHO / Saunders et al., 1993 | Sensibilidad 92% (consumo de riesgo)</div>
+      <div id="audit-questions" role="group" aria-label="AUDIT items"></div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="App.scales.calc('audit')">▶ CALCULAR AUDIT</button>
+        <button class="btn btn-ghost" onclick="App.scales.reset('audit')">↺ RESET</button>
+      </div>
+      <div id="audit-result" style="display:none" aria-live="polite"></div>
+    </div>
+  </div><!-- /tab-screening -->
+
+  <!-- ============================================================
+       TAB 02: DSM-5-TR
+  ============================================================ -->
+  <div id="tab-dsm5" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 02</span>
+      <div>
+        <div class="sec-title" data-i18n="dsm.title">Criterios DSM-5-TR</div>
+        <div class="sec-desc" data-i18n="dsm.desc">APA 2022 — 10 trastornos con diagnóstico diferencial</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,107,139,.06);border:1px solid rgba(255,107,139,.24);border-radius:var(--r-sm);padding:9px 13px;margin-bottom:14px;font-size:9.5px;color:var(--coral);">
+      ⚠ ESTO NO ES DIAGNÓSTICO CLÍNICO. Requiere evaluación completa por profesional cualificado: historia clínica, entrevista diagnóstica estructurada y diagnóstico diferencial exhaustivo.
+    </div>
+    <div class="disorder-tabs" id="disorder-tabs" role="tablist" aria-label="DSM-5 disorder selector"></div>
+    <div id="disorder-contents"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB 03: C-SSRS Suicide Risk
+  ============================================================ -->
+  <div id="tab-cssrs" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 03</span>
+      <div>
+        <div class="sec-title" data-i18n="cssrs.title">Evaluación de Riesgo Suicida</div>
+        <div class="sec-desc" data-i18n="cssrs.desc">C-SSRS · Columbia University / NIMH — Protocolo completo + factores protectores</div>
+      </div>
+    </div>
+
+    <!-- C-SSRS info banner -->
+    <div style="background:rgba(255,45,85,.06);border:1px solid rgba(255,45,85,.28);border-radius:var(--r-md);padding:13px;margin-bottom:18px;">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--r-crit);margin-bottom:5px;">⚠ PROTOCOLO COLUMBIA — FORMACIÓN REQUERIDA</div>
+      <div style="font-size:9.5px;color:var(--text-dim);line-height:1.7;">
+        C-SSRS validada por <span data-tip="U.S. Food and Drug Administration: regulates clinical trial safety assessments.">FDA</span> y
+        <span data-tip="Centers for Disease Control and Prevention: adopts C-SSRS as suicide surveillance standard.">CDC</span>.
+        Predice muerte por suicidio a 1 semana, 1 mes y 1 año (N=18.000, estudio sueco).
+        &gt;600 estudios revisados por pares. Reducción del 50% en sistema Atrium Health.
+        <strong>Formación gratuita:</strong>
+        <a href="https://cssrs.columbia.edu" target="_blank" rel="noopener" style="color:var(--lav)">cssrs.columbia.edu</a>
+      </div>
+      <div style="margin-top:7px;font-size:8.5px;color:var(--text-muted);">Ref: Posner K, et al. Am J Psychiatry. 2011;168(12):1266-1277.</div>
+    </div>
+
+    <div class="g2">
+      <!-- Section A: Ideation -->
+      <div class="card card-coral">
+        <div class="ctitle">SECCIÓN A · IDEACIÓN SUICIDA</div>
+        <div class="csub">Último mes — Preguntar en orden. Si P2 = NO → pasar a Sección B.</div>
+        <div id="cssrs-ideation-q"></div>
+        <!-- Ideation score display -->
+        <div class="risk-meter" style="margin-top:14px;">
+          <div class="risk-meter-title">NIVEL DE IDEACIÓN (0–5)</div>
+          <div style="display:flex;align-items:center;gap:11px;margin-bottom:7px;">
+            <div style="font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--coral);" id="ideation-score-num">0</div>
+            <div style="flex:1;">
+              <div class="pips" id="ideation-pips"></div>
+              <div id="ideation-desc" style="font-size:9.5px;color:var(--text-muted);margin-top:3px;">Sin ideación activa reportada</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section B: Behavior -->
+      <div class="card" style="border-color:rgba(255,45,85,.3);">
+        <div class="ctitle" style="color:var(--r-crit);">SECCIÓN B · COMPORTAMIENTO SUICIDA</div>
+        <div class="csub">Últimos 3 meses y lifetime</div>
+        <div id="cssrs-behavior-q"></div>
+        <div style="margin-top:11px;">
+          <div class="small mb-sm">Número de intentos (lifetime):</div>
+          <input type="number" class="num-in" id="attempt-count" min="0" max="99" value="0" oninput="App.cssrs.update()">
+        </div>
+        <!-- Prior attempt details -->
+        <div id="prior-attempt-detail" style="display:none;margin-top:12px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;">DETALLES DEL INTENTO MÁS GRAVE</div>
+          <div style="margin-bottom:7px;">
+            <label class="small" style="display:block;margin-bottom:3px;">Letalidad médica:</label>
+            <select class="dose-select" id="attempt-lethality" onchange="App.cssrs.update()">
+              <option value="0">Sin lesión</option>
+              <option value="1">Lesión leve (no requirió atención)</option>
+              <option value="2">Lesión moderada (requirió atención)</option>
+              <option value="3">Lesión grave / UCI</option>
+            </select>
+          </div>
+          <div>
+            <label class="small" style="display:block;margin-bottom:3px;">¿Requirió atención médica?</label>
+            <div class="yn">
+              <input type="radio" class="yes" name="med_att" id="med_att_y" value="yes" onchange="App.cssrs.update()">
+              <label for="med_att_y">Sí</label>
+              <input type="radio" class="no" name="med_att" id="med_att_n" value="no" checked onchange="App.cssrs.update()">
+              <label for="med_att_n">No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Protective Factors -->
+    <div class="card card-mint" style="margin-top:14px;">
+      <div class="ctitle">🛡 FACTORES PROTECTORES</div>
+      <div class="csub">Presencia de factores protectores puede modificar el nivel de riesgo final. Marque los presentes.</div>
+      <div class="prot-grid" id="protective-factors"></div>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:10px;">
+        Ref: Stanley B, Brown GK. Cognitive Therapy and Research 2012. | Linehan MM. DBT skills training 2015.
+      </div>
+    </div>
+
+    <!-- Risk Result -->
+    <div class="risk-meter" style="margin-top:14px;">
+      <div class="risk-meter-title">⚡ RESULTADO DE EVALUACIÓN DE RIESGO C-SSRS</div>
+      <div class="risk-disp none" id="risk-level-disp">SIN RIESGO IDENTIFICADO</div>
+      <div id="risk-action" style="font-size:10.5px;text-align:center;color:var(--text-dim);padding:9px;border-top:1px solid var(--border);margin-top:9px;">
+        Complete la evaluación para obtener recomendaciones.
+      </div>
+    </div>
+
+    <!-- Intervention Recommendations (shown on risk > none) -->
+    <div class="interv-box" id="interv-panel" style="display:none;">
+      <div class="interv-title">📋 RECOMENDACIONES DE INTERVENCIÓN</div>
+      <div id="interv-items"></div>
+      <!-- Customizable crisis resources -->
+      <div style="margin-top:12px;border-top:1px solid rgba(138,110,255,.2);padding-top:10px;">
+        <div class="small" style="margin-bottom:6px;color:var(--text-muted);">RECURSOS DE CRISIS LOCALES (personalizable):</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--coral);background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.3);padding:3px 11px;border-radius:3px;">112</span>
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--coral);background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.3);padding:3px 11px;border-radius:3px;">024</span>
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--blue);background:rgba(94,196,255,.1);border:1px solid rgba(94,196,255,.3);padding:3px 11px;border-radius:3px;">988 (US)</span>
+          <input type="text" class="dose-input" id="custom-crisis" placeholder="Número local..." style="width:150px;" title="Add your local crisis line">
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency box -->
+    <div class="emerg-box" id="emergency-box" style="display:none;" role="alert">
+      <div class="emerg-title">🚨 RIESGO CRÍTICO — ACTIVAR PROTOCOLO DE EMERGENCIAS</div>
+      <div style="font-size:10.5px;color:var(--text-dim);line-height:1.7;">
+        Los resultados indican riesgo inminente. Notifique al médico responsable INMEDIATAMENTE y no deje al paciente solo. Valorar hospitalización urgente.
+      </div>
+      <div class="emerg-nums"><div class="emerg-num">🆘 112</div><div class="emerg-num">📞 024</div><div class="emerg-num">🇺🇸 988</div></div>
+    </div>
+
+    <!-- Stratification table -->
+    <div class="card" style="margin-top:14px;">
+      <div class="ctitle">TABLA DE ESTRATIFICACIÓN · C-SSRS</div>
+      <table style="width:100%;border-collapse:collapse;margin-top:9px;font-size:9.5px;">
+        <thead>
+          <tr style="background:rgba(138,110,255,.08);">
+            <th style="padding:7px;text-align:left;border:1px solid var(--border);color:var(--lav);">NIVEL</th>
+            <th style="padding:7px;text-align:left;border:1px solid var(--border);color:var(--lav);">CRITERIOS C-SSRS</th>
+            <th style="padding:7px;text-align:left;border:1px solid var(--border);color:var(--lav);">ACCIÓN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:7px;border:1px solid var(--border);color:var(--r-none);font-weight:700;">NINGUNO</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Sin ideación ni comportamiento</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Seguimiento habitual</td></tr>
+          <tr><td style="padding:7px;border:1px solid var(--border);color:var(--r-low);font-weight:700;">BAJO</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Ideación 1-2, sin comportamiento</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Derivación SM al alta</td></tr>
+          <tr><td style="padding:7px;border:1px solid var(--border);color:var(--r-mod);font-weight:700;">MODERADO</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Ideación 3 O cualquier comportamiento lifetime</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Consulta SM en Urgencias</td></tr>
+          <tr><td style="padding:7px;border:1px solid var(--border);color:var(--r-high);font-weight:700;">ALTO</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Ideación 4-5 O comportamiento en últimos 3m</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Notificar médico, valorar hospitalización</td></tr>
+          <tr><td style="padding:7px;border:1px solid var(--border);color:var(--r-crit);font-weight:700;">CRÍTICO</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Intento real reciente O plan activo con intención</td><td style="padding:7px;border:1px solid var(--border);color:var(--text-dim);">Protocolo de emergencias INMEDIATO</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:9px;font-size:8.5px;color:var(--text-muted);">Ref: Posner K, et al. Am J Psychiatry. 2011;168(12):1266-1277. | Columbia Lighthouse Project 2025.</div>
+    </div>
+  </div><!-- /tab-cssrs -->
+
+  <!-- ============================================================
+       TAB 04: PHARMACO
+  ============================================================ -->
+  <div id="tab-pharma" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 04</span>
+      <div>
+        <div class="sec-title" data-i18n="pharma.title">Farmacoterapia</div>
+        <div class="sec-desc" data-i18n="pharma.desc">NICE · CANMAT 2023 · BAP 2024 · PORT 2022 + Calculadora de dosis</div>
+      </div>
+    </div>
+    <div class="drug-filters" id="drug-filters-bar"></div>
+    <div id="drug-list"></div>
+
+    <!-- Dose Calculator -->
+    <div class="dose-calc">
+      <div class="dose-calc-title">⚗ CALCULADORA DE DOSIS</div>
+      <div style="font-size:9px;color:var(--text-muted);margin-bottom:12px;">Ajuste orientativo basado en ficha técnica. Siempre confirmar con fuentes actualizadas.</div>
+
+      <div class="dose-row">
+        <span class="dose-label">Fármaco:</span>
+        <select class="dose-select" id="calc-drug" onchange="App.pharma.calcDose()"></select>
+      </div>
+      <div class="dose-row">
+        <span class="dose-label">Dosis base:</span>
+        <input type="number" class="dose-input" id="calc-dose" placeholder="mg/día" style="width:100px;" oninput="App.pharma.calcDose()">
+        <span class="small">mg/día</span>
+      </div>
+      <div class="dose-row">
+        <span class="dose-label"><span data-tip="eGFR (ml/min/1.73m²): estimated glomerular filtration rate — measure of kidney function.">Función renal</span>:</span>
+        <select class="dose-select" id="calc-renal" onchange="App.pharma.calcDose()">
+          <option value="normal">Normal (eGFR &gt;60)</option>
+          <option value="mild">Leve (eGFR 30-60)</option>
+          <option value="moderate">Moderada (eGFR 15-30)</option>
+          <option value="severe">Grave (eGFR &lt;15)</option>
+        </select>
+      </div>
+      <div class="dose-row">
+        <span class="dose-label"><span data-tip="Child-Pugh score assesses severity of liver disease: A = mild, B = moderate, C = severe.">Función hepática</span>:</span>
+        <select class="dose-select" id="calc-hepatic" onchange="App.pharma.calcDose()">
+          <option value="normal">Normal (Child-Pugh A)</option>
+          <option value="moderate">Moderada (Child-Pugh B)</option>
+          <option value="severe">Grave (Child-Pugh C)</option>
+        </select>
+      </div>
+      <div id="dose-result" class="dose-result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TAB 05: EVIDENCE
+  ============================================================ -->
+  <div id="tab-evidence" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 05</span>
+      <div>
+        <div class="sec-title" data-i18n="evidence.title">Biblioteca de Evidencia</div>
+        <div class="sec-desc" data-i18n="evidence.desc">Referencias primarias revisadas por pares — Lancet · NEJM · BMJ · APA · NICE</div>
+      </div>
+    </div>
+    <div id="evidence-list"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB 06: SUMMARY
+  ============================================================ -->
+  <div id="tab-summary" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 06</span>
+      <div>
+        <div class="sec-title" data-i18n="summary.title">Vista Resumen</div>
+        <div class="sec-desc" data-i18n="summary.desc">Consolidación de todos los resultados de la sesión — Listo para imprimir</div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="btn btn-lav" onclick="App.summary.refresh()">↺ ACTUALIZAR RESUMEN</button>
+      <button class="btn btn-mint" onclick="App.summary.exportReport()">⬇ EXPORTAR HTML</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨 IMPRIMIR</button>
+    </div>
+    <div id="summary-content"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB 07: NOTES + HISTORY
+  ============================================================ -->
+  <div id="tab-notes" class="tab-content" role="tabpanel">
+    <div class="sec-hdr">
+      <span class="sec-badge">Módulo 07</span>
+      <div>
+        <div class="sec-title" data-i18n="notes.title">Notas Clínicas</div>
+        <div class="sec-desc" data-i18n="notes.desc">Texto libre + historial de sesiones guardado automáticamente</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <!-- Current notes -->
+      <div class="card">
+        <div class="ctitle">📝 NOTAS DE SESIÓN ACTUAL</div>
+        <div class="csub">Solo en este dispositivo. No compartir datos identificables.</div>
+        <div style="font-size:9px;color:var(--text-muted);text-align:right;margin-bottom:6px;" id="notes-saved-ts">—</div>
+        <textarea class="note-ta" id="clinical-notes" placeholder="Escribir notas clínicas..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-lav" onclick="App.storage.saveNotes()">💾 GUARDAR</button>
+          <button class="btn btn-ghost" onclick="App.storage.clearNotes()">🗑 LIMPIAR</button>
+        </div>
+      </div>
+
+      <!-- Session history -->
+      <div class="card card-teal">
+        <div class="ctitle">🕐 HISTORIAL DE SESIONES</div>
+        <div class="csub">Últimas 10 sesiones guardadas automáticamente</div>
+        <div id="session-history"></div>
+        <div class="btn-row">
+          <button class="btn btn-teal" onclick="App.storage.loadHistory()">↺ REFRESCAR</button>
+          <button class="btn btn-ghost" onclick="App.storage.clearHistory()">🗑 LIMPIAR HISTORIAL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main><!-- /app -->
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer>
+  <div class="foot-motto">"ZEHAHAHAHA. LA EVIDENCIA ES EL PUENTE."</div>
+  <div>PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v2.0 · 2026 · Prompt engineering: David Ferrandez Canalis</div>
+  <div style="margin-top:4px;">Basado en: Lancet Psychiatry · NICE · APA · Cochrane · Columbia C-SSRS · CANMAT 2023 · BAP 2024</div>
+  <div style="margin-top:3px;">Herramienta de formación — NO DIAGNÓSTICO CLÍNICO — Uso bajo responsabilidad del profesional</div>
+</footer>
+
+<!-- Autosave indicator -->
+<div id="autosave-ind" aria-live="polite">💾 Guardado localmente</div>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="assertive"></div>
+
+<!-- ============================================================
+     GLOSSARY MODAL
+============================================================ -->
+<div id="glossary-modal-overlay" onclick="if(event.target===this)App.glossary.close()" role="dialog" aria-modal="true" aria-label="Glosario clínico">
+  <div class="gloss-modal">
+    <div class="gloss-modal-title">📖 GLOSARIO CLÍNICO PSIQUIÁTRICO</div>
+    <button class="modal-close" onclick="App.glossary.close()" aria-label="Close glossary">✕</button>
+    <input type="text" id="gloss-search" placeholder="Buscar término..." oninput="App.glossary.filter(this.value)" aria-label="Search glossary">
+    <div id="gloss-list"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CONFIG MODAL (cutoff customisation + settings)
+============================================================ -->
+<div id="modal-overlay" onclick="if(event.target===this)App.config.close()" role="dialog" aria-modal="true" aria-label="Configuration">
+  <div class="modal" id="modal-body">
+    <button class="modal-close" onclick="App.config.close()" aria-label="Close">✕</button>
+    <!-- Content injected by JS -->
+  </div>
+</div>
+<script>
+'use strict';
+/* ============================================================
+   PSYCHIATRIC-SCANNER Ω v2.0 — Main JavaScript
+   ============================================================
+   Architecture: App namespace with sub-modules:
+     App.data      — All clinical data definitions
+     App.state     — Centralised reactive state
+     App.i18n      — Internationalisation
+     App.ui        — Tab switching, progress bar
+     App.scales    — PHQ-9, GAD-7, MDQ, Y-BOCS, ASRS, AUDIT
+     App.dsm       — DSM-5-TR criteria module
+     App.cssrs     — Suicide risk assessment
+     App.pharma    — Drug database + dose calculator
+     App.evidence  — Reference library
+     App.glossary  — Clinical glossary modal
+     App.config    — Settings / cutoff customisation
+     App.summary   — Summary view + export
+     App.storage   — localStorage persistence + session history
+     App.toast     — Notification system
+============================================================ */
+
+/* ============================================================
+   NAMESPACE BOOTSTRAP
+============================================================ */
+const App = {};
+
+/* ============================================================
+   App.data — All static clinical data
+============================================================ */
+App.data = {
+
+  /* ---- PHQ-9 items (Kroenke et al. 2001) ---- */
+  phq9Items: [
+    "Poco interés o placer en hacer cosas",
+    "Sentirse decaído/a, deprimido/a o sin esperanza",
+    "Dificultad para dormir o dormir demasiado",
+    "Sentirse cansado/a o con poca energía",
+    "Poco apetito o comer en exceso",
+    "Sentirse mal consigo mismo/a — o que es un fracaso o que ha fallado a sí mismo/a o a su familia",
+    "Dificultad para concentrarse en cosas como leer el periódico o ver la televisión",
+    "Moverse/hablar tan despacio que otros lo noten; o lo contrario — estar tan agitado/a que se mueve más de lo habitual",
+    "Pensamientos de que estaría mejor muerto/a o de hacerse algún daño"
+  ],
+
+  /* ---- GAD-7 items (Spitzer et al. 2006) ---- */
+  gad7Items: [
+    "Sentirse nervioso/a, angustiado/a o con los nervios de punta",
+    "No ser capaz de parar o controlar las preocupaciones",
+    "Preocuparse demasiado por diferentes cosas",
+    "Dificultad para relajarse",
+    "Estar tan inquieto/a que es difícil estar sentado/a tranquilo/a",
+    "Molestarse o ponerse irritable fácilmente",
+    "Sentir miedo de que algo awful pueda ocurrir"
+  ],
+
+  /* ---- MDQ items (Hirschfeld 2000) ---- */
+  mdqItems: [
+    "Sentirse tan bien/animado/a que otros pensaban que no era su estado habitual",
+    "Estar tan irritable que le gritaba a la gente o empezaba peleas",
+    "Sentirse mucho más seguro/a de sí mismo/a de lo habitual",
+    "Dormir mucho menos de lo habitual y encontrarlo reconfortante",
+    "Ser mucho más hablador/a o hablar más rápido de lo habitual",
+    "Los pensamientos le venían a la mente muy rápido",
+    "Ser fácilmente distraído/a por cosas a su alrededor",
+    "Tener mucha más energía de lo habitual",
+    "Estar mucho más activo/a o hacer muchas más cosas de lo habitual",
+    "Ser mucho más sociable o extrovertido/a de lo habitual",
+    "Ser mucho más interesado/a en el sexo de lo habitual",
+    "Hacer cosas inusuales o arriesgadas que causaron problemas",
+    "Gastar dinero de tal manera que causó problemas"
+  ],
+
+  /* ---- Y-BOCS 10 items (Goodman et al. 1989)
+     Each item rated 0-4, total 0-40 ---- */
+  ybocsItems: [
+    { text: "Tiempo ocupado por obsesiones", sub:"Obsesiones" },
+    { text: "Interferencia debida a obsesiones", sub:"Obsesiones" },
+    { text: "Angustia asociada a las obsesiones", sub:"Obsesiones" },
+    { text: "Resistencia a las obsesiones", sub:"Obsesiones" },
+    { text: "Control sobre las obsesiones", sub:"Obsesiones" },
+    { text: "Tiempo ocupado por compulsiones", sub:"Compulsiones" },
+    { text: "Interferencia debida a compulsiones", sub:"Compulsiones" },
+    { text: "Angustia si se impiden compulsiones", sub:"Compulsiones" },
+    { text: "Resistencia a las compulsiones", sub:"Compulsiones" },
+    { text: "Control sobre las compulsiones", sub:"Compulsiones" }
+  ],
+
+  /* ---- ASRS-v1.1 Part A (6 items most predictive, Kessler 2005)
+     Items 1-3 rated Never/Rarely/Sometimes/Often/Very often (0-4)
+     Items 4-6 same
+     Screen positive: ≥4 boxes in shaded area (items 1-3 = Often/VeryOften; items 4-6 = Sometimes/Often/VeryOften) ---- */
+  asrsItems: [
+    { text: "¿Con qué frecuencia tiene dificultades para concluir los últimos detalles de un proyecto, una vez que ya terminó la parte más difícil?", shaded: [3,4] },
+    { text: "¿Con qué frecuencia tiene dificultades para organizar sus tareas cuando tiene que hacer algo que requiere concentración?", shaded: [3,4] },
+    { text: "¿Con qué frecuencia tiene problemas para recordar citas o compromisos?", shaded: [3,4] },
+    { text: "Cuando tiene que hacer algo que requiere mucha concentración, ¿con qué frecuencia evita o demora el comienzo?", shaded: [2,3,4] },
+    { text: "¿Con qué frecuencia mueve nerviosamente las manos o los pies, o se retuerce en el asiento, cuando tiene que permanecer sentado/a durante mucho tiempo?", shaded: [2,3,4] },
+    { text: "¿Con qué frecuencia se siente demasiado activo/a e impulsado/a a hacer cosas, como si lo/la empujara un motor?", shaded: [2,3,4] }
+  ],
+
+  /* ---- AUDIT 10 items (WHO/Saunders 1993) ---- */
+  auditItems: [
+    {
+      text: "¿Con qué frecuencia consume bebidas alcohólicas?",
+      opts: ["Nunca (0)","1 o menos/mes (1)","2-4 veces/mes (2)","2-3 veces/semana (3)","4+ veces/semana (4)"]
+    },
+    {
+      text: "¿Cuántas consumiciones de alcohol toma en un día de consumo normal?",
+      opts: ["1-2 (0)","3-4 (1)","5-6 (2)","7-9 (3)","10+ (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia toma 6 o más bebidas alcohólicas en una sola ocasión?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia en el último año ha sido incapaz de parar de beber una vez que había empezado?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia en el último año no pudo hacer lo que se esperaba de usted porque había bebido?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia en el último año ha necesitado beber en ayunas para recuperarse después de haber bebido mucho el día anterior?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia en el último año ha tenido remordimientos o sentimientos de culpa después de haber bebido?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Con qué frecuencia en el último año no ha podido recordar lo que sucedió la noche anterior porque había estado bebiendo?",
+      opts: ["Nunca (0)","Menos de 1/mes (1)","Mensualmente (2)","Semanalmente (3)","A diario/casi diario (4)"]
+    },
+    {
+      text: "¿Usted o alguna otra persona ha resultado herido porque usted había bebido?",
+      opts: ["No (0)","Sí, pero no en el último año (2)","Sí, el último año (4)"]
+    },
+    {
+      text: "¿Algún familiar, amigo, médico u otro profesional de la salud ha mostrado preocupación por su consumo de alcohol, o le ha sugerido que deje de beber?",
+      opts: ["No (0)","Sí, pero no en el último año (2)","Sí, el último año (4)"]
+    }
+  ],
+
+  /* ---- C-SSRS ideation questions ---- */
+  cssrsIdeation: [
+    { level:"IDEACIÓN NIVEL 1", key:"i1",
+      text:"¿Ha deseado estar muerto/a o deseado poder dormirse y no despertar?",
+      note:"Deseo pasivo de muerte — sin pensamientos activos de suicidio" },
+    { level:"IDEACIÓN NIVEL 2", key:"i2",
+      text:"¿Ha tenido pensamientos de matarse o de quitarse la vida?",
+      note:"Si responde NO → pasar directamente a Sección B" },
+    { level:"IDEACIÓN NIVEL 3", key:"i3",
+      text:"¿Ha estado pensando en CÓMO podría matarse? (p.ej. medicamentos, arma...)",
+      note:"Ideación con método — sin plan estructurado ni intención definitiva" },
+    { level:"IDEACIÓN NIVEL 4", key:"i4",
+      text:"¿Ha tenido INTENCIÓN de actuar sobre esos pensamientos?",
+      note:"Ideación con intención — no necesariamente con plan específico" },
+    { level:"IDEACIÓN NIVEL 5", key:"i5",
+      text:"¿Ha empezado a elaborar o ha elaborado los DETALLES de cómo matarse? ¿Tiene intención de llevarlo a cabo?",
+      note:"Ideación con plan específico e intención — nivel de máxima preocupación" }
+  ],
+
+  /* ---- C-SSRS behavior questions ---- */
+  cssrsBehavior: [
+    { text:"¿Ha intentado suicidarse? (intento real)", key:"b_real", recent:true },
+    { text:"¿Algo/alguien le interrumpió antes de que pudiera empezar un intento? (intento interrumpido)", key:"b_interrupted", recent:false },
+    { text:"¿Empezó un intento pero se detuvo a sí mismo/a antes de actuar? (intento abortado)", key:"b_aborted", recent:false },
+    { text:"¿Ha tomado medidas para prepararse? (reunir pastillas, conseguir arma, escribir nota)", key:"b_prep", recent:false },
+    { text:"¿Se ha hecho daño SIN intención de morir? (autolesión no suicida)", key:"b_nssi", recent:false }
+  ],
+
+  /* ---- Protective factors ---- */
+  protectiveFactors: [
+    "Razones para vivir identificadas",
+    "Apego a familia/pareja/hijos",
+    "Red social de apoyo activa",
+    "Acceso limitado a medios letales",
+    "Alianza terapéutica establecida",
+    "Creencias religiosas/espirituales",
+    "Miedo a la muerte o al dolor",
+    "Responsabilidades laborales/familiares"
+  ],
+
+  /* ---- DSM-5-TR disorders ---- */
+  dsm5Disorders: [
+    /* ---- TDM ---- */
+    { id:"mdd", name:"TDM", full:"Trastorno Depresivo Mayor", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Trastorno bipolar (descartar episodios maníacos previos), hipotiroidismo, TDM con características mixtas. Si PHQ-9 ≥10 en contexto de duelo — evaluar duelo prolongado (CID-11).",
+      groups:[
+        { label:"CRITERIO A — ≥5 síntomas durante ≥2 semanas (al menos 1 de los 2 primeros)", req:5, items:[
+          { t:"Estado de ánimo deprimido la mayor parte del día, casi todos los días", r:true },
+          { t:"Disminución marcada del interés o placer en casi todas las actividades", r:true },
+          { t:"Pérdida o aumento significativo de peso / cambios en el apetito", r:false },
+          { t:"Insomnio o hipersomnia", r:false },
+          { t:"Agitación o enlentecimiento psicomotor", r:false },
+          { t:"Fatiga o pérdida de energía", r:false },
+          { t:"Sentimientos de inutilidad o culpa excesiva", r:false },
+          { t:"Disminución de la concentración o toma de decisiones", r:false },
+          { t:"Pensamientos recurrentes de muerte o ideación suicida", r:false }
+        ]},
+        { label:"CRITERIOS B-C — Deterioro y exclusión", req:2, items:[
+          { t:"Deterioro social, laboral u otras áreas significativas", r:true },
+          { t:"No se debe a sustancias ni a otra afección médica", r:true }
+        ]}
+      ]
+    },
+    /* ---- TAG ---- */
+    { id:"gad", name:"TAG", full:"Trastorno de Ansiedad Generalizada", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Trastorno de pánico (ansiedad paroxística vs. persistente), hipertiroidismo, TDM (comorbilidad frecuente — hasta 60%). Descartar consumo de cafeína/estimulantes.",
+      groups:[
+        { label:"CRITERIOS A-B — Ansiedad excesiva ≥6 meses", req:2, items:[
+          { t:"Ansiedad y preocupación excesivas sobre múltiples temas, la mayoría de los días durante ≥6 meses", r:true },
+          { t:"Dificultad para controlar la preocupación", r:true }
+        ]},
+        { label:"CRITERIO C — ≥3 síntomas (≥1 en niños)", req:3, items:[
+          { t:"Inquietud o sensación de estar 'atrapado/a' o con los nervios de punta", r:false },
+          { t:"Fatigabilidad fácil", r:false },
+          { t:"Dificultad para concentrarse o quedarse con la mente en blanco", r:false },
+          { t:"Irritabilidad", r:false },
+          { t:"Tensión muscular", r:false },
+          { t:"Alteraciones del sueño", r:false }
+        ]},
+        { label:"CRITERIOS D-F — Exclusión y deterioro", req:2, items:[
+          { t:"Causa deterioro o malestar clínicamente significativo", r:true },
+          { t:"No se debe a sustancias, afección médica u otro trastorno", r:true }
+        ]}
+      ]
+    },
+    /* ---- TB-I ---- */
+    { id:"bpd1", name:"TB-I", full:"Trastorno Bipolar I", source:"DSM-5-TR, APA 2022",
+      diff:"DD: TDAH (agitación vs. grandiosidad), TOC, trastorno límite de la personalidad (inestabilidad afectiva episódica vs. crónica), abuso de sustancias (especialmente estimulantes).",
+      groups:[
+        { label:"EPISODIO MANÍACO — ≥7 días (cualquier duración si requiere hospitalización)", req:3, items:[
+          { t:"Estado de ánimo anormalmente elevado/expansivo/irritable Y aumento de actividad/energía", r:true },
+          { t:"Autoestima aumentada o grandiosidad", r:false },
+          { t:"Disminución de la necesidad de sueño", r:false },
+          { t:"Más hablador o presión para seguir hablando", r:false },
+          { t:"Fuga de ideas o pensamientos acelerados", r:false },
+          { t:"Distracción", r:false },
+          { t:"Aumento de actividad dirigida u agitación psicomotora", r:false },
+          { t:"Actividades de alto riesgo (gasto excesivo, promiscuidad, inversiones imprudentes)", r:false }
+        ]},
+        { label:"CRITERIOS ADICIONALES", req:2, items:[
+          { t:"Suficientemente grave para causar deterioro marcado o requiere hospitalización", r:true },
+          { t:"No se debe a sustancias u otra afección médica", r:true }
+        ]}
+      ]
+    },
+    /* ---- ESQUIZOFRENIA ---- */
+    { id:"schiz", name:"ESQ", full:"Esquizofrenia", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Trastorno esquizoafectivo (episodios del humor prominentes), TB-I con psicosis, psicosis por sustancias (inicio agudo, tóxico en orina +), trastorno delirante (sin alucinaciones prominentes).",
+      groups:[
+        { label:"CRITERIO A — ≥2 síntomas durante ≥1 mes (al menos 1 de los 3 primeros)", req:2, items:[
+          { t:"Delirios", r:true },
+          { t:"Alucinaciones", r:true },
+          { t:"Discurso desorganizado", r:true },
+          { t:"Comportamiento muy desorganizado o catatónico", r:false },
+          { t:"Síntomas negativos (expresión emotiva disminuida o abulia)", r:false }
+        ]},
+        { label:"CRITERIOS B-F", req:3, items:[
+          { t:"Disfunción social/laboral significativa", r:true },
+          { t:"Duración del trastorno ≥6 meses (incluyendo pródromo/residual)", r:true },
+          { t:"No explicado por trastorno del ánimo, sustancias u otra afección médica", r:true }
+        ]}
+      ]
+    },
+    /* ---- TEPT ---- */
+    { id:"ptsd", name:"TEPT", full:"Trastorno de Estrés Postraumático", source:"DSM-5-TR APA 2022 | APA Practice Guideline 2023",
+      diff:"DD: Trastorno de adaptación (estresor menos severo, sin síntomas intrusivos), TDM (sin re-experiencias), trastorno límite de la personalidad (trauma en historia pero inestabilidad crónica), TOC (obsesiones sin relación traumática).",
+      groups:[
+        { label:"CRITERIO A — Exposición a trauma", req:1, items:[
+          { t:"Exposición a muerte real/amenaza, lesión grave o violencia sexual (directa, presenciada, conocida, o repetida)", r:true }
+        ]},
+        { label:"CRITERIO B — ≥1 síntoma intrusivo", req:1, items:[
+          { t:"Recuerdos intrusivos recurrentes e involuntarios", r:false },
+          { t:"Sueños angustiantes recurrentes", r:false },
+          { t:"Reacciones disociativas (flashbacks)", r:false },
+          { t:"Malestar intenso ante señales del trauma", r:false },
+          { t:"Reacciones fisiológicas marcadas", r:false }
+        ]},
+        { label:"CRITERIO C — ≥1 síntoma de evitación", req:1, items:[
+          { t:"Evitación de pensamientos/sentimientos angustiantes relacionados con el trauma", r:false },
+          { t:"Evitación de recordatorios externos (personas, lugares, conversaciones)", r:false }
+        ]},
+        { label:"CRITERIOS D-G — Duración y deterioro", req:3, items:[
+          { t:"Alteraciones cognitivas/del estado de ánimo persistentes", r:false },
+          { t:"Alteraciones en reactividad y arousal marcadas", r:false },
+          { t:"Duración de las alteraciones >1 mes", r:true },
+          { t:"Deterioro funcional significativo", r:true }
+        ]}
+      ]
+    },
+    /* ---- TRASTORNO DE PÁNICO ---- */
+    { id:"panic", name:"PÁNICO", full:"Trastorno de Pánico", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Patología cardíaca (ECG, Holter), hipertiroidismo (TSH), TAG (ansiedad difusa vs. paroxística), fobia específica, consumo de cafeína/estimulantes. El trastorno de pánico se distingue por ataques inesperados + preocupación persistente.",
+      groups:[
+        { label:"CRITERIOS A-B — Ataques de pánico recurrentes", req:2, items:[
+          { t:"Ataques de pánico imprevistos recurrentes (aparición súbita de miedo intenso o malestar físico que alcanza su máximo en minutos)", r:true },
+          { t:"≥1 ataque seguido durante ≥1 mes de: preocupación persistente por más ataques O cambio significativo de conducta", r:true }
+        ]},
+        { label:"SÍNTOMAS DEL ATAQUE — ≥4 de los siguientes", req:4, items:[
+          { t:"Palpitaciones, sacudidas del corazón o aceleración de la frecuencia cardiaca", r:false },
+          { t:"Sudoración", r:false },
+          { t:"Temblores o sacudidas", r:false },
+          { t:"Sensación de falta de aliento o de asfixia", r:false },
+          { t:"Sensación de ahogo", r:false },
+          { t:"Dolor o molestias en el tórax", r:false },
+          { t:"Náuseas o malestar abdominal", r:false },
+          { t:"Mareo, inestabilidad, aturdimiento o desmayo", r:false },
+          { t:"Escalofríos o sofocos", r:false },
+          { t:"Parestesias (entumecimiento/hormigueo)", r:false },
+          { t:"Desrealización o despersonalización", r:false },
+          { t:"Miedo a perder el control o 'volverse loco'", r:false },
+          { t:"Miedo a morir", r:false }
+        ]},
+        { label:"CRITERIOS C-D — Exclusión", req:2, items:[
+          { t:"No se debe a sustancias ni a otra afección médica", r:true },
+          { t:"No se explica mejor por otro trastorno mental", r:true }
+        ]}
+      ]
+    },
+    /* ---- ANSIEDAD SOCIAL ---- */
+    { id:"sad", name:"TAS", full:"Trastorno de Ansiedad Social", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Agorafobia (miedo a múltiples situaciones vs. evaluación social), TAG (preocupaciones difusas), trastorno de pánico (ataques espontáneos), trastorno de personalidad por evitación (rasgo vs. síntoma episódico).",
+      groups:[
+        { label:"CRITERIO A-B — Miedo a la evaluación social", req:2, items:[
+          { t:"Miedo o ansiedad intensa ante situaciones sociales con posible evaluación por otros", r:true },
+          { t:"Miedo a actuar de cierta manera o mostrar síntomas de ansiedad que resulten humillantes", r:true }
+        ]},
+        { label:"CRITERIOS C-F — Síntomas y duración", req:3, items:[
+          { t:"La exposición a la situación social casi siempre provoca miedo/ansiedad", r:true },
+          { t:"Se evita la situación o se soporta con miedo/ansiedad intensos", r:false },
+          { t:"El miedo es desproporcionado a la amenaza real", r:false },
+          { t:"Persistencia ≥6 meses", r:true },
+          { t:"Deterioro funcional significativo", r:true },
+          { t:"No se debe a sustancias ni a otra afección médica", r:true }
+        ]}
+      ]
+    },
+    /* ---- TOC ---- */
+    { id:"ocd", name:"TOC", full:"Trastorno Obsesivo-Compulsivo", source:"DSM-5-TR, APA 2022",
+      diff:"DD: TAG (preocupaciones vs. obsesiones egodistónicas), trastorno dismórfico corporal (focalizado en aspecto físico), TEPT (intrusiones relacionadas con trauma), esquizofrenia (delirios vs. obsesiones con insight). Usar Y-BOCS para graduar severidad.",
+      groups:[
+        { label:"CRITERIO A — Presencia de obsesiones, compulsiones o ambas", req:1, items:[
+          { t:"OBSESIONES: pensamientos/imágenes/impulsos recurrentes y persistentes, intrusos y no deseados, que causan ansiedad marcada + el sujeto intenta ignorar/suprimir o neutralizar", r:true },
+          { t:"COMPULSIONES: comportamientos/actos mentales repetitivos en respuesta a una obsesión o según reglas rígidas, dirigidos a reducir ansiedad o prevenir evento temido", r:false }
+        ]},
+        { label:"CRITERIOS B-D — Tiempo, deterioro y exclusión", req:3, items:[
+          { t:"Las obsesiones/compulsiones requieren mucho tiempo (>1 hora/día) o causan deterioro significativo", r:true },
+          { t:"Deterioro social, laboral u otras áreas", r:true },
+          { t:"No se debe a sustancias ni a otra afección médica", r:true }
+        ]}
+      ]
+    },
+    /* ---- TCA (Alcohol) ---- */
+    { id:"aud", name:"TCA", full:"Trastorno por Consumo de Alcohol", source:"DSM-5-TR, APA 2022",
+      diff:"DD: Consumo de riesgo sin dependencia (usar AUDIT), depresión inducida por alcohol, trastorno de personalidad antisocial. Distinguir TCA de dependencia fisiológica (síndrome de abstinencia realmente significativo). AUDIT ≥8 sugiere TCA.",
+      groups:[
+        { label:"CRITERIOS A — ≥2 en los últimos 12 meses", req:2, items:[
+          { t:"Beber en cantidades mayores o durante más tiempo del previsto", r:false },
+          { t:"Deseo persistente de reducir el consumo o intentos fallidos de controlarlo", r:false },
+          { t:"Mucho tiempo dedicado a obtener, consumir o recuperarse del alcohol", r:false },
+          { t:"Ansia (craving) por consumir alcohol", r:false },
+          { t:"Incumplimiento recurrente de obligaciones (trabajo, estudios, hogar)", r:false },
+          { t:"Consumo continuado pese a problemas sociales e interpersonales", r:false },
+          { t:"Abandono de actividades importantes a causa del alcohol", r:false },
+          { t:"Consumo en situaciones que implican riesgo físico", r:false },
+          { t:"Consumo continuado pese a saber que tiene un problema físico o psicológico causado por el alcohol", r:false },
+          { t:"Tolerancia (necesidad de más para conseguir el efecto, o efecto reducido con la misma cantidad)", r:false },
+          { t:"Abstinencia (síndrome de abstinencia o consumo para aliviar/evitar síntomas de abstinencia)", r:false }
+        ]}
+      ]
+    },
+    /* ---- TLP ---- */
+    { id:"bpd", name:"TLP", full:"Trastorno Límite de la Personalidad", source:"DSM-5-TR, APA 2022",
+      diff:"DD: TB-II (episodios vs. inestabilidad crónica), TEPT (trauma sin rasgos de personalidad pervasivos), TDM (episódico vs. crónico), trastorno de personalidad histriónica. En TLP el funcionamiento interpersonal es crónicamente inestable desde la adolescencia.",
+      groups:[
+        { label:"CRITERIO A — ≥5 de los siguientes síntomas, inicio en adultez temprana", req:5, items:[
+          { t:"Esfuerzos desesperados para evitar el abandono real o imaginado", r:false },
+          { t:"Patrón de relaciones interpersonales inestables e intensas (idealización / devaluación)", r:false },
+          { t:"Alteración de la identidad: sentido de sí mismo/a marcada y persistentemente inestable", r:false },
+          { t:"Impulsividad en al menos 2 áreas potencialmente dañinas (gastos, sexo, sustancias, conducción temeraria, atracones)", r:false },
+          { t:"Comportamiento, gestos o amenazas suicidas recurrentes, o conductas de automutilación", r:false },
+          { t:"Inestabilidad afectiva debida a reactividad del estado de ánimo (disforia, irritabilidad, ansiedad episódica)", r:false },
+          { t:"Sentimientos crónicos de vacío", r:false },
+          { t:"Ira inapropiada e intensa, o dificultad para controlar la ira", r:false },
+          { t:"Ideación paranoide transitoria relacionada con el estrés o síntomas disociativos graves", r:false }
+        ]}
+      ]
+    }
+  ],
+
+  /* ---- Drug database ---- */
+  drugs: [
+    { name:"Sertralina", cls:"ISRS", disorders:["depresion","ansiedad","tept"],
+      line:"1ª línea", start:"50 mg/día", target:"100–200 mg/día",
+      ae:"Náuseas, diarrea, disfunción sexual, insomnio",
+      interactions:"IMAO (CI absoluta), tramadol (síndrome serotoninérgico)",
+      nnt:"NNT 6", ref:"NICE NG222 2022 | Cipriani et al., Lancet 2018",
+      notes:"Primera elección NICE por perfil de interacciones. Incremento de 50 mg cada 1-2 semanas.",
+      renal:{ normal:1, mild:0.75, moderate:0.5, severe:0.25 },
+      hepatic:{ normal:1, moderate:0.5, severe:0.25 }
+    },
+    { name:"Escitalopram", cls:"ISRS", disorders:["depresion","ansiedad"],
+      line:"1ª línea", start:"10 mg/día", target:"10–20 mg/día",
+      ae:"Cefalea, náuseas, disfunción sexual, prolongación QTc",
+      interactions:"IMAO, citalopram (mayor riesgo QTc)",
+      nnt:"NNT 7", ref:"Cipriani et al., Lancet 2018",
+      notes:"Alta selectividad SERT. Controlar ECG con dosis ≥20 mg o factores de riesgo cardíaco.",
+      renal:{ normal:1, mild:1, moderate:0.75, severe:0.5 },
+      hepatic:{ normal:1, moderate:0.5, severe:0.5 }
+    },
+    { name:"Venlafaxina XR", cls:"IRSN", disorders:["depresion","ansiedad"],
+      line:"1ª / 2ª línea", start:"75 mg/día", target:"150–225 mg/día",
+      ae:"HTA dosis-dependiente, sudoración, síndrome de discontinuación",
+      interactions:"IMAO, mayor riesgo de hemorragia con AINEs/anticoagulantes",
+      nnt:"NNT 5", ref:"CANMAT 2023 | BAP 2024",
+      notes:"Efecto dual NA a partir de 150 mg. Monitorizar TA. Reducción gradual al retirar.",
+      renal:{ normal:1, mild:0.75, moderate:0.5, severe:0.25 },
+      hepatic:{ normal:1, moderate:0.5, severe:0.25 }
+    },
+    { name:"Bupropión XL", cls:"NDRI", disorders:["depresion"],
+      line:"2ª línea", start:"150 mg/día", target:"300 mg/día",
+      ae:"Insomnio, ansiedad, boca seca, cefalea",
+      interactions:"Reduce umbral convulsivo (CI: epilepsia, bulimia), IMAO",
+      nnt:"NNT 7", ref:"CANMAT 2023",
+      notes:"Sin disfunción sexual. Útil en comorbilidad con tabaquismo. CI en TCA.",
+      renal:{ normal:1, mild:0.75, moderate:0.5, severe:0.25 },
+      hepatic:{ normal:1, moderate:0.5, severe:0.25 }
+    },
+    { name:"Mirtazapina", cls:"NaSSA", disorders:["depresion"],
+      line:"1ª / 2ª línea", start:"15 mg/noche", target:"30–45 mg/noche",
+      ae:"Sedación (especialmente a dosis bajas), aumento de peso, boca seca",
+      interactions:"Potencia alcohol/BZD; síndrome serotoninérgico con IMAO",
+      nnt:"NNT 6", ref:"Cipriani et al., Lancet 2018",
+      notes:"Paradójicamente menos sedante a dosis altas. Útil en insomnio y pérdida de peso.",
+      renal:{ normal:1, mild:0.75, moderate:0.5, severe:0.25 },
+      hepatic:{ normal:1, moderate:0.75, severe:0.5 }
+    },
+    { name:"Aripiprazol", cls:"Antipsicótico (AGP-2)", disorders:["psicosis","bipolar"],
+      line:"1ª línea", start:"5–10 mg/día", target:"10–15 mg/día",
+      ae:"Acatisia (frecuente), insomnio, cefalea, náuseas",
+      interactions:"Inhibidores CYP2D6 (fluoxetina, paroxetina) aumentan niveles",
+      nnt:"NNT 5", ref:"PORT 2022 | Leucht et al., Lancet 2013",
+      notes:"Agonista parcial D2/D3 y 5-HT1A. Mínimo efecto metabólico. Monitorizar acatisia.",
+      renal:{ normal:1, mild:1, moderate:1, severe:1 },
+      hepatic:{ normal:1, moderate:1, severe:0.75 }
+    },
+    { name:"Quetiapina XR", cls:"Antipsicótico (AGP-2)", disorders:["psicosis","bipolar","depresion"],
+      line:"1ª / 2ª línea", start:"50 mg/noche", target:"150–800 mg/día",
+      ae:"Sedación, síndrome metabólico, hipotensión ortostática, QTc",
+      interactions:"Inhibidores CYP3A4 fuertes, antifúngicos azólicos",
+      nnt:"NNT 4", ref:"PORT 2022 | Miura et al., Lancet Psychiatry 2021",
+      notes:"Dosis psicóticas 400-800 mg. En depresión bipolar 50-300 mg. Monitoreo metabólico mensual.",
+      renal:{ normal:1, mild:1, moderate:0.75, severe:0.5 },
+      hepatic:{ normal:1, moderate:0.75, severe:0.5 }
+    },
+    { name:"Litio", cls:"Estabilizador", disorders:["bipolar"],
+      line:"1ª línea", start:"300 mg/12h", target:"Litemia 0.6–1.2 mEq/L",
+      ae:"Temblor fino, poliuria, hipotiroidismo, disfunción renal crónica",
+      interactions:"AINEs y tiazidas AUMENTAN litemia (riesgo toxicidad), IECA",
+      nnt:"NNT 3", ref:"Miura et al., Lancet Psychiatry 2021 | CANMAT 2023",
+      notes:"Monitorizar litemia, función renal y tiroidea cada 3-6 meses. Efecto antisuicida demostrado.",
+      renal:{ normal:1, mild:0.5, moderate:0.25, severe:0 },
+      hepatic:{ normal:1, moderate:1, severe:1 }
+    },
+    { name:"Lamotrigina", cls:"Anticonvulsivante", disorders:["bipolar"],
+      line:"1ª línea (dep. bipolar)", start:"25 mg/día", target:"200 mg/día",
+      ae:"Rash cutáneo (S. Stevens-Johnson — ver nota), cefalea, diplopía",
+      interactions:"Valproato DOBLA niveles (reducir dosis). Carbamazepina los reduce a la mitad.",
+      nnt:"NNT 5", ref:"Miura et al., Lancet Psychiatry 2021",
+      notes:"⚠ Rash potencialmente fatal. Titulación MUY lenta: 25mg/2semanas. Mayor evidencia en fase depresiva.",
+      renal:{ normal:1, mild:0.75, moderate:0.5, severe:0.25 },
+      hepatic:{ normal:1, moderate:0.5, severe:0.25 }
+    },
+    { name:"Olanzapina", cls:"Antipsicótico (AGP-2)", disorders:["psicosis","bipolar"],
+      line:"1ª línea", start:"5–10 mg/día", target:"10–20 mg/día",
+      ae:"Aumento de peso significativo, síndrome metabólico, sedación",
+      interactions:"Fluvoxamina aumenta niveles; tabaco los reduce",
+      nnt:"NNT 4", ref:"Leucht et al., Lancet 2013 | PORT 2022",
+      notes:"Alta eficacia en síntomas positivos y negativos. Monitorización metabólica rigurosa.",
+      renal:{ normal:1, mild:1, moderate:0.75, severe:0.5 },
+      hepatic:{ normal:1, moderate:0.75, severe:0.5 }
+    }
+  ],
+
+  /* ---- Evidence references ---- */
+  evidenceRefs: [
+    { journal:"THE LANCET", year:"2018", doi:"10.1016/S0140-6736(17)32802-7", color:"lav",
+      title:"Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with MDD",
+      authors:"Cipriani A, Furukawa TA, Salanti G, et al.",
+      results:["N=116.477 pacientes; 522 ensayos","Todos los AD superiores a placebo (OR 1.37–2.13)","Agomelatina, escitalopram y vortioxetina mejor perfil beneficio/tolerabilidad","NNT global ≈ 6–8"],
+      lim:"Mayoría de estudios de corta duración (8-12 semanas); limitada generalización a mantenimiento"
+    },
+    { journal:"THE LANCET", year:"2013", doi:"10.1016/S0140-6736(13)60733-3", color:"mint",
+      title:"Comparative efficacy and tolerability of 15 antipsychotic drugs in schizophrenia",
+      authors:"Leucht S, Cipriani A, Spineli L, et al.",
+      results:["N=43.049; 212 ensayos aleatorizados","Clozapina más eficaz; amisulpride, olanzapina y risperidona superiores","NNT 4-6","Diferencias clínicamente relevantes en efectos adversos"],
+      lim:"Alta heterogeneidad en definición de 'respuesta'; escasos estudios en primeros episodios"
+    },
+    { journal:"LANCET PSYCHIATRY", year:"2021", doi:"10.1016/S2215-0366(20)30480-9", color:"gold",
+      title:"Comparative efficacy and acceptability of pharmacological treatments for bipolar disorder",
+      authors:"Miura T, Noma H, Furukawa TA, et al.",
+      results:["173 ensayos, N=35.443","Litio estabilizador de referencia para manía (NNT 3)","Quetiapina y olanzapina eficaces en manía y depresión bipolar","Lamotrigina: mejor evidencia en prevención de depresión"],
+      lim:"Escasez de ensayos de mantenimiento a largo plazo; datos insuficientes en ciclación rápida"
+    },
+    { journal:"BMJ", year:"2022", doi:"10.1136/bmj-2021-070739", color:"blue",
+      title:"Comparative efficacy and acceptability of psychological interventions for depressive disorders",
+      authors:"De Crescenzo F, D'Alò GL, Ostinelli EG, et al.",
+      results:["N=15.021; 74 ensayos","TCC, activación conductual y TIP superiores a control","Combinación psicoterapia + fármaco superior a monoanálisis","Efectos mantenidos a 12 meses"],
+      lim:"Alta heterogeneidad; dificultad para cegar intervenciones psicológicas"
+    },
+    { journal:"AMERICAN JOURNAL OF PSYCHIATRY", year:"2011", doi:"10.1176/appi.ajp.2011.10111704", color:"coral",
+      title:"The Columbia–Suicide Severity Rating Scale: Initial Validity and Internal Consistency Findings",
+      authors:"Posner K, Brown GK, Stanley B, et al.",
+      results:["Validada en 3 estudios multicentro","Alta consistencia interna (α=0.73–0.88)","Predice intentos futuros con alta especificidad","Estándar FDA/NIMH para ensayos clínicos"],
+      lim:"Requiere entrenamiento para administración fiable"
+    },
+    { journal:"J GEN INTERN MED", year:"2001", doi:"10.1046/j.1525-1497.2001.016009606.x", color:"mint",
+      title:"The PHQ-9: Validity of a Brief Depression Severity Measure",
+      authors:"Kroenke K, Spitzer RL, Williams JBW.",
+      results:["N=6.000 pacientes en atención primaria","Sensibilidad 88% y especificidad 88% (corte ≥10)","AUC 0.95 para TDM","Alta correlación con SF-20 y días de incapacidad"],
+      lim:"Cribado, no diagnóstico; posible sesgo cultural"
+    },
+    { journal:"ARCH INTERN MED", year:"2006", doi:"10.1001/archinte.166.10.1092", color:"lav",
+      title:"A Brief Measure for Assessing Generalized Anxiety Disorder: The GAD-7",
+      authors:"Spitzer RL, Kroenke K, Williams JBW, Löwe B.",
+      results:["N=2.149 en atención primaria","Sensibilidad 89%, especificidad 82% (corte ≥10)","AUC 0.91","Alta validez convergente con CES-D, SF-20"],
+      lim:"Menor validación en poblaciones especializadas"
+    },
+    { journal:"ARCH GEN PSYCHIATRY", year:"1989", doi:"10.1001/archpsyc.1989.01810110048007", color:"blue",
+      title:"The Yale-Brown Obsessive Compulsive Scale (Y-BOCS)",
+      authors:"Goodman WK, Price LH, Rasmussen SA, et al.",
+      results:["Escala de referencia para graduar severidad de TOC","10 ítems (0-4 cada uno); total 0-40","Sensibilidad 89%; captura tanto obsesiones como compulsiones","Guía la respuesta a TCC/ISRS"],
+      lim:"Requiere entrenamiento; versión autoaplicada (OCI-R) disponible para cribado"
+    },
+    { journal:"NICE GUIDELINE NG222", year:"2022", doi:"https://www.nice.org.uk/guidance/ng222", color:"teal",
+      title:"Depression in adults: treatment and management",
+      authors:"National Institute for Health and Care Excellence.",
+      results:["ISRS como primera línea farmacológica","TCC o activación conductual como primera línea psicológica","Combinación fármaco + psicoterapia en moderada-grave","Seguimiento a las 2 semanas del inicio"],
+      lim:"Guía basada en población británica; adaptación necesaria en otros contextos"
+    },
+    { journal:"WHO / SAUNDERS et al.", year:"1993", doi:"10.1111/j.1360-0443.1993.tb02093.x", color:"gold",
+      title:"Development of the Alcohol Use Disorders Identification Test (AUDIT)",
+      authors:"Saunders JB, Aasland OG, Babor TF, et al.",
+      results:["Validado en 6 países, N=1.888","AUDIT ≥8: sensibilidad 92% para consumo de riesgo","Distingue consumo de riesgo, probable dependencia (≥20)","Instrumento WHO de referencia en atención primaria"],
+      lim:"Puntos de corte pueden variar según país, edad y sexo; ajustar en adolescentes"
+    }
+  ],
+
+  /* ---- Glossary ---- */
+  glossary: [
+    { term:"Acatisia", def:"Sensación subjetiva de inquietud motora intensa, a menudo como efecto adverso de antipsicóticos. El paciente siente necesidad imperiosa de moverse constantemente.", src:"Moro MR. Psychiatrie 2018" },
+    { term:"Abulia", def:"Disminución o ausencia de motivación, iniciativa y conducta espontánea. Síntoma negativo prominente en esquizofrenia y lesiones del lóbulo frontal.", src:"DSM-5-TR, APA 2022" },
+    { term:"Anhedonia", def:"Incapacidad para experimentar placer ante estímulos que normalmente lo generan. Síntoma nuclear de la depresión mayor y la esquizofrenia.", src:"Kroenke et al., 2001" },
+    { term:"AUC", def:"Area Under the ROC Curve (Área Bajo la Curva ROC). Mide la capacidad discriminativa de una prueba diagnóstica: 1.0 = perfecto, 0.5 = azar. AUC ≥0.9 = excelente.", src:"Hanley JA, McNeil BJ. Radiology 1982" },
+    { term:"NNT", def:"Número Necesario a Tratar. Cuántos pacientes deben recibir un tratamiento para que uno se beneficie (respecto a control). NNT=1 sería tratamiento perfecto; NNT≥10 es generalmente poco relevante.", src:"Laupacis A et al. CMAJ 1988" },
+    { term:"NNH", def:"Número Necesario para Dañar. Cuántos pacientes deben recibir un tratamiento para que uno sufra un efecto adverso específico. Complementa al NNT en la evaluación riesgo-beneficio.", src:"Altman DG. BMJ 1998" },
+    { term:"eGFR", def:"Tasa de Filtración Glomerular Estimada (ml/min/1.73m²). Medida de la función renal. >60 = normal; 30-60 = leve-moderada; 15-30 = grave; <15 = fallo renal.", src:"KDIGO Guidelines 2012" },
+    { term:"Child-Pugh", def:"Sistema de puntuación de la función hepática: A (5-6 puntos) = conservada; B (7-9) = moderada; C (10-15) = grave. Guía ajuste de dosis de fármacos con metabolismo hepático.", src:"Pugh RN et al. Br J Surg 1973" },
+    { term:"ISRS", def:"Inhibidor Selectivo de la Recaptación de Serotonina. Clase de antidepresivos que bloquean el transportador de serotonina (SERT). Primera línea en TDM y trastornos de ansiedad.", src:"NICE NG222 2022" },
+    { term:"IRSN", def:"Inhibidor de la Recaptación de Serotonina-Noradrenalina. Bloquea SERT y NAT (transportador de noradrenalina). Dual a dosis altas. Ejemplos: venlafaxina, duloxetina.", src:"CANMAT 2023" },
+    { term:"Síndrome serotoninérgico", def:"Reacción potencialmente fatal por exceso de actividad serotoninérgica: triada de agitación/confusión, hiperreflexia/mioclonías y disfunción autonómica. Emergencia médica.", src:"Boyer EW, Shannon M. NEJM 2005" },
+    { term:"Alogia", def:"Pobreza del habla cuantitativa y cualitativa; síntoma negativo de la esquizofrenia. Se distingue de la bradipsiquia depresiva por el contexto clínico global.", src:"DSM-5-TR, APA 2022" },
+    { term:"Distonía aguda", def:"Contracciones musculares involuntarias y sostenidas por efecto extrapiramidal agudo de antipsicóticos (especialmente AGP-1). Tratar con biperideno IM/IV.", src:"Leucht et al., Lancet 2013" },
+    { term:"Insight", def:"Grado de conciencia del paciente sobre su enfermedad, síntomas y necesidad de tratamiento. Deteriorado en psicosis activa; su evaluación guía la adherencia.", src:"David A. Br J Psychiatry 1990" },
+    { term:"Alexitimia", def:"Dificultad para identificar, describir y diferenciar emociones. Frecuente en trastornos psicosomáticos, depresión atípica y trastornos del espectro autista.", src:"Taylor GJ. Int J Psychiatry Med 1984" },
+    { term:"Flashback", def:"Re-experiencia disociativa del trauma, como si estuviera ocurriendo en el presente. Criterio B del TEPT. Puede ser visual, auditivo, somático o emocional.", src:"DSM-5-TR, APA 2022" },
+    { term:"Splitting", def:"'Escisión': mecanismo de defensa primitivo que lleva a percibir personas u objetos como completamente buenos o malos, sin términos medios. Nuclear en TLP.", src:"Kernberg OF. Borderline Conditions 1975" },
+    { term:"Craving", def:"Deseo intenso e irresistible de consumir una sustancia o realizar una conducta. Criterio diagnóstico en trastornos por uso de sustancias en DSM-5.", src:"DSM-5-TR, APA 2022" },
+    { term:"Stevens-Johnson", def:"Síndrome de Stevens-Johnson: reacción mucocutánea grave (potencialmente fatal) asociada a lamotrigina, especialmente con titulación rápida o combinación con valproato.", src:"Rzany B et al. Lancet 1999" },
+    { term:"Pseudobulbar", def:"Afecto pseudobulbar: episodios de llanto/risa incontrolables sin correlato emocional, por lesión de vías corticobulbares. No confundir con labilidad emocional del TLP.", src:"Work SS et al. CNS Spectr 2011" }
+  ],
+
+  /* ---- i18n strings ---- */
+  i18n: {
+    es: {
+      "logo.title":"PSYCHIATRIC-SCANNER Ω",
+      "logo.sub":"RONIN MENTAL v2.0 · Motor de Consulta Basado en Evidencia",
+      "disc.title":"HERRAMIENTA EXPERIMENTAL — NO APTA PARA DIAGNÓSTICO CLÍNICO.",
+      "disc.body":" Exclusivamente para apoyo en consulta de patrones y formación continuada. NO sustituye el juicio clínico. Ante riesgo inminente: llamar al 112 / 024.",
+      "progress.label":"PROGRESO DE MÓDULOS",
+      "tab.screening":"CRIBADO","tab.dsm5":"DSM-5-TR","tab.cssrs":"RIESGO SUICIDA",
+      "tab.pharma":"FARMACOLOGÍA","tab.evidence":"EVIDENCIA","tab.summary":"RESUMEN","tab.notes":"NOTAS",
+      "screening.title":"Escalas de Cribado","screening.desc":"PHQ-9 · GAD-7 · MDQ · Y-BOCS · ASRS · AUDIT — Escalas validadas",
+      "dsm.title":"Criterios DSM-5-TR","dsm.desc":"APA 2022 — 10 trastornos con diagnóstico diferencial",
+      "cssrs.title":"Evaluación de Riesgo Suicida","cssrs.desc":"C-SSRS · Columbia University / NIMH — Protocolo completo",
+      "pharma.title":"Farmacoterapia","pharma.desc":"NICE · CANMAT 2023 · BAP 2024 · PORT 2022",
+      "evidence.title":"Biblioteca de Evidencia","evidence.desc":"Referencias primarias revisadas por pares",
+      "summary.title":"Vista Resumen","summary.desc":"Consolidación de todos los resultados de la sesión",
+      "notes.title":"Notas Clínicas","notes.desc":"Texto libre + historial de sesiones",
+      "phq9.name":"Depresión","gad7.name":"Ansiedad generalizada","mdq.name":"Trastorno Bipolar",
+      "ybocs.name":"TOC","asrs.name":"TDAH Adulto","audit.name":"Consumo de Alcohol",
+    },
+    en: {
+      "logo.title":"PSYCHIATRIC-SCANNER Ω",
+      "logo.sub":"RONIN MENTAL v2.0 · Evidence-Based Pattern Consultation Engine",
+      "disc.title":"EXPERIMENTAL TOOL — NOT SUITABLE FOR CLINICAL DIAGNOSIS.",
+      "disc.body":" Exclusively for pattern consultation support and continuing education. Does NOT replace clinical judgement. For imminent risk: call 112 / 911.",
+      "progress.label":"MODULE PROGRESS",
+      "tab.screening":"SCREENING","tab.dsm5":"DSM-5-TR","tab.cssrs":"SUICIDE RISK",
+      "tab.pharma":"PHARMACOLOGY","tab.evidence":"EVIDENCE","tab.summary":"SUMMARY","tab.notes":"NOTES",
+      "screening.title":"Screening Scales","screening.desc":"PHQ-9 · GAD-7 · MDQ · Y-BOCS · ASRS · AUDIT — Validated scales",
+      "dsm.title":"DSM-5-TR Criteria","dsm.desc":"APA 2022 — 10 disorders with differential diagnosis",
+      "cssrs.title":"Suicide Risk Assessment","cssrs.desc":"C-SSRS · Columbia University / NIMH — Full protocol",
+      "pharma.title":"Pharmacotherapy","pharma.desc":"NICE · CANMAT 2023 · BAP 2024 · PORT 2022",
+      "evidence.title":"Evidence Library","evidence.desc":"Peer-reviewed primary references",
+      "summary.title":"Summary View","summary.desc":"All session results consolidated",
+      "notes.title":"Clinical Notes","notes.desc":"Free text + auto-saved session history",
+      "phq9.name":"Depression","gad7.name":"Generalised Anxiety","mdq.name":"Bipolar Disorder",
+      "ybocs.name":"OCD","asrs.name":"Adult ADHD","audit.name":"Alcohol Use",
+    }
+  }
+};
+
+/* ============================================================
+   App.state — Centralised reactive state
+   Uses a Proxy to intercept writes and trigger side effects
+============================================================ */
+App.state = (function(){
+  const raw = {
+    lang: 'es',
+    phq9: new Array(9).fill(null),
+    gad7: new Array(7).fill(null),
+    mdq:  new Array(13).fill(false),
+    mdq_p2: false,
+    mdq_p3: 'minor',
+    ybocs: new Array(10).fill(null),
+    asrs:  new Array(6).fill(null),
+    audit: new Array(10).fill(null),
+    cssrs: { i1:null,i2:null,i3:null,i4:null,i5:null,
+             b_real:null,b_interrupted:null,b_aborted:null,b_prep:null,b_nssi:null,
+             attempts:0, lethality:0, medAttn:'no',
+             protective: new Array(8).fill(false)
+    },
+    dsm: {},
+    notes: '',
+    sessionStart: Date.now(),
+    cutoffs: {
+      phq9: { mild:5, moderate:10, moderateSevere:15, severe:20 },
+      gad7: { mild:5, moderate:10, severe:15 },
+      ybocs: { mild:8, moderate:16, moderateSevere:24, severe:32 },
+      audit: { hazardous:8, harmful:16, dependence:20 },
+      asrs: { positiveThreshold: 4 }
+    },
+    results: {
+      phq9: null, gad7: null, mdq: null,
+      ybocs: null, asrs: null, audit: null,
+      riskLevel: 'none'
+    },
+    activeTab: 'screening',
+    drugFilter: 'todos'
+  };
+
+  /* Side effects on any state mutation */
+  const handler = {
+    set(target, key, val){
+      target[key] = val;
+      App.ui.updateProgress();
+      App.storage.autoSave();
+      return true;
+    }
+  };
+
+  return new Proxy(raw, handler);
+})();
+
+/* ============================================================
+   App.toast — Non-blocking notifications
+============================================================ */
+App.toast = {
+  /**
+   * Show a toast notification.
+   * @param {string} msg - Message text
+   * @param {'info'|'success'|'warning'|'error'} type - Visual style
+   * @param {number} [duration=3000] - Display duration in ms
+   */
+  show(msg, type='info', duration=3000){
+    const c = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = {success:'✓',warning:'⚠',error:'✕',info:'ℹ'};
+    el.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+    c.appendChild(el);
+    setTimeout(()=>{
+      el.style.cssText='opacity:0;transform:translateX(18px);transition:all .3s';
+      setTimeout(()=>el.remove(), 320);
+    }, duration);
+  }
+};
+
+/* ============================================================
+   App.i18n — Internationalisation
+============================================================ */
+App.i18n = {
+  /** Toggle between Spanish and English */
+  toggle(){
+    App.state.lang = App.state.lang === 'es' ? 'en' : 'es';
+    document.getElementById('html-root').lang = App.state.lang;
+    document.getElementById('lang-btn').textContent = App.state.lang === 'es' ? '🌐 EN' : '🌐 ES';
+    this.apply();
+  },
+
+  /**
+   * Apply all i18n strings to elements with data-i18n attribute.
+   */
+  apply(){
+    const strings = App.data.i18n[App.state.lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if(strings[key]) el.textContent = strings[key];
+    });
+  },
+
+  /** Get a translated string by key */
+  t(key){ return App.data.i18n[App.state.lang][key] || key; }
+};
+
+/* ============================================================
+   App.ui — Tab switching, progress bar, misc UI
+============================================================ */
+App.ui = {
+  /**
+   * Switch visible tab panel.
+   * @param {string} tabId - Tab content id suffix
+   * @param {HTMLElement} btn - The button clicked
+   */
+  switchTab(tabId, btn){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    btn.classList.add('active');
+    App.state.activeTab = tabId;
+    if(tabId === 'summary') App.summary.refresh();
+    if(tabId === 'notes') App.storage.loadHistory();
+  },
+
+  /** Build the progress bar module indicators */
+  buildProgressBar(){
+    const modules = [
+      {id:'phq9',label:'PHQ-9'},{id:'gad7',label:'GAD-7'},{id:'mdq',label:'MDQ'},
+      {id:'ybocs',label:'Y-BOCS'},{id:'asrs',label:'ASRS'},{id:'audit',label:'AUDIT'},
+      {id:'cssrs',label:'C-SSRS'},{id:'dsm',label:'DSM-5'}
+    ];
+    const wrap = document.getElementById('pb-modules');
+    wrap.innerHTML = modules.map(m=>
+      `<div class="pb-mod" id="pb_${m.id}" title="${m.label}">
+         <span class="pb-mod-name">${m.label}</span>
+       </div>`
+    ).join('');
+  },
+
+  /** Update progress bar based on current state */
+  updateProgress(){
+    const checks = {
+      phq9:  ()=> App.state.phq9.every(v=>v!==null),
+      gad7:  ()=> App.state.gad7.every(v=>v!==null),
+      mdq:   ()=> App.state.mdq.some(Boolean),
+      ybocs: ()=> App.state.ybocs.every(v=>v!==null),
+      asrs:  ()=> App.state.asrs.every(v=>v!==null),
+      audit: ()=> App.state.audit.every(v=>v!==null),
+      cssrs: ()=> Object.values(App.state.cssrs).some(v=>v !== null && v !== 'no' && v !== false && v !== 0),
+      dsm:   ()=> Object.keys(App.state.dsm).length > 0
+    };
+    let done = 0;
+    Object.entries(checks).forEach(([id, fn])=>{
+      const el = document.getElementById(`pb_${id}`);
+      if(!el) return;
+      const isDone = fn();
+      el.className = `pb-mod ${isDone ? 'done' : ''}`;
+      if(isDone) done++;
+    });
+    const pct = Math.round(done / 8 * 100);
+    const pctEl = document.getElementById('progress-pct');
+    if(pctEl) pctEl.textContent = pct + '%';
+  }
+};
+
+/* ============================================================
+   App.scales — All screening scales logic
+============================================================ */
+App.scales = {
+
+  /* ---- Default option labels for 0-3 scales ---- */
+  OPTS_0_3: ['Nunca<br>(0)','Varios días<br>(1)','Más de la mitad<br>(2)','Casi cada día<br>(3)'],
+  OPTS_0_4: ['Nada<br>(0)','Leve<br>(1)','Moderado<br>(2)','Grave<br>(3)','Muy grave<br>(4)'],
+
+  /**
+   * Build radio-button question items for a scale.
+   * @param {string[]} items - Array of question texts
+   * @param {string} scale - Scale identifier (e.g. 'phq9')
+   * @param {string[]} opts - Option labels
+   * @param {number[]} [scores] - Optional score override per option
+   */
+  buildQuestions(items, scale, opts, scores){
+    const c = document.getElementById(`${scale}-questions`);
+    if(!c) return;
+    c.innerHTML = items.map((q,i)=>`
+      <div class="qitem">
+        <div class="qtext"><span class="qnum">${i+1}.</span>${q.text || q}</div>
+        <div class="rg">
+          ${opts.map((o,v)=>`
+            <div class="ro">
+              <input type="radio" name="${scale}_${i}" id="${scale}_${i}_${v}" value="${scores?scores[v]:v}"
+                onchange="App.scales.onAnswer('${scale}',${i},${scores?scores[v]:v})">
+              <label for="${scale}_${i}_${v}">${o}</label>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  },
+
+  /**
+   * Handle a scale answer change.
+   * @param {string} scale - Scale identifier
+   * @param {number} idx - Question index
+   * @param {number} val - Score value
+   */
+  onAnswer(scale, idx, val){
+    if(Array.isArray(App.state[scale])){
+      App.state[scale][idx] = val;
+      App.ui.updateProgress();
+      App.storage.autoSave();
+    }
+  },
+
+  /**
+   * Calculate and display scale result.
+   * @param {string} scale - Scale identifier
+   */
+  calc(scale){
+    const handlers = {
+      phq9: ()=> this._calcPHQ9(),
+      gad7: ()=> this._calcGAD7(),
+      mdq:  ()=> this._calcMDQ(),
+      ybocs:()=> this._calcYBOCS(),
+      asrs: ()=> this._calcASRS(),
+      audit:()=> this._calcAUDIT()
+    };
+    if(handlers[scale]) handlers[scale]();
+  },
+
+  /**
+   * Reset a scale back to null state.
+   * @param {string} scale
+   */
+  reset(scale){
+    const lens = {phq9:9,gad7:7,mdq:13,ybocs:10,asrs:6,audit:10};
+    if(lens[scale]){
+      App.state[scale] = scale === 'mdq'
+        ? new Array(lens[scale]).fill(false)
+        : new Array(lens[scale]).fill(null);
+    }
+    document.querySelectorAll(`[name^="${scale}_"]`).forEach(r=>r.checked=false);
+    const res = document.getElementById(`${scale}-result`);
+    if(res) res.style.display='none';
+    App.state.results[scale] = null;
+    App.toast.show(`Escala ${scale.toUpperCase()} reseteada`, 'info');
+  },
+
+  /** Set MDQ P3 impairment level */
+  mdqP3(val, btn){
+    App.state.mdq_p3 = val;
+    document.querySelectorAll('#mdq-p3 .dfbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  },
+
+  /* ---- PHQ-9 scoring and interpretation ---- */
+  _calcPHQ9(){
+    if(App.state.phq9.some(v=>v===null)){
+      App.toast.show('Responda todas las preguntas del PHQ-9','warning'); return;
+    }
+    const score = App.state.phq9.reduce((a,b)=>a+b, 0);
+    const co = App.state.cutoffs.phq9;
+    let label, color;
+    if(score < co.mild)           { label='SIN DEPRESIÓN'; color='var(--s-none)'; }
+    else if(score < co.moderate)  { label='DEPRESIÓN LEVE'; color='var(--s-mild)'; }
+    else if(score < co.moderateSevere){ label='DEPRESIÓN MODERADA'; color='var(--s-mod)'; }
+    else if(score < co.severe)    { label='DEP. MOD-GRAVE'; color='var(--s-sev)'; }
+    else                          { label='DEPRESIÓN GRAVE'; color='var(--s-sev)'; }
+
+    const interp = {
+      '<5':  ['PHQ-9 <5: Sin depresión clínicamente significativa.','No se indica tratamiento específico.'],
+      '5-9': ['PHQ-9 5-9: Depresión leve. Vigilancia activa y psicoeducación.','Reevaluación en 2-4 semanas.','Tratamiento farmacológico generalmente no indicado en este rango.'],
+      '10-14':['PHQ-9 10-14: Depresión moderada. Sensibilidad 88% para TDM.','Derivación o inicio de tratamiento (TCC, ISRS) recomendado.','Evaluar riesgo suicida: ítem 9 ≥1 → evaluación C-SSRS inmediata.'],
+      '15-19':['PHQ-9 15-19: Depresión moderada-grave. Tratamiento activo urgente.','Combinación psicoterapia + farmacoterapia (NICE NG222).','Valorar derivación urgente a psiquiatría.'],
+      '≥20':  ['PHQ-9 ≥20: Depresión grave. Contacto urgente con salud mental.','Farmacoterapia indicada; considerar hospitalización.','Evaluación C-SSRS completa e inmediata.']
+    };
+    const key = score<co.mild?'<5':score<co.moderate?'5-9':score<co.moderateSevere?'10-14':score<co.severe?'15-19':'≥20';
+
+    App.state.results.phq9 = { score, label };
+    this._renderResult('phq9', score, 27, label, color, interp[key],
+      'Kroenke K et al. J Gen Intern Med. 2001;16(9):606-613');
+
+    if(App.state.phq9[8] >= 1)
+      App.toast.show('⚠ PHQ-9 P9 ≥1: Evaluar riesgo suicida con C-SSRS', 'warning', 6000);
+  },
+
+  /* ---- GAD-7 ---- */
+  _calcGAD7(){
+    if(App.state.gad7.some(v=>v===null)){
+      App.toast.show('Responda todas las preguntas del GAD-7','warning'); return;
+    }
+    const score = App.state.gad7.reduce((a,b)=>a+b, 0);
+    const co = App.state.cutoffs.gad7;
+    let label, color;
+    if(score < co.mild)       { label='SIN ANSIEDAD'; color='var(--s-none)'; }
+    else if(score < co.moderate){ label='ANSIEDAD LEVE'; color='var(--s-mild)'; }
+    else if(score < co.severe){ label='ANSIEDAD MODERADA'; color='var(--s-mod)'; }
+    else                      { label='ANSIEDAD GRAVE'; color='var(--s-sev)'; }
+
+    const interps = [
+      ['GAD-7 <5: Sin síntomas clínicamente relevantes.','No se indica tratamiento específico para TAG.'],
+      ['GAD-7 5-9: Ansiedad leve. Psicoeducación y técnicas de relajación.','Reevaluación en 4 semanas.'],
+      ['GAD-7 10-14: Ansiedad moderada (AUC 0.91, Spitzer et al., 2006).','TCC o ISRS primera línea (BAP 2024, NICE). NNT ≈ 5.','Considerar derivación si no mejora en 4-6 semanas.'],
+      ['GAD-7 ≥15: Ansiedad grave. Tratamiento activo urgente.','Combinación ISRS + TCC recomendada.','Descartar causa orgánica (tiroides, cafeína).']
+    ];
+    const idx = score<co.mild?0:score<co.moderate?1:score<co.severe?2:3;
+
+    App.state.results.gad7 = { score, label };
+    this._renderResult('gad7', score, 21, label, color, interps[idx],
+      'Spitzer RL et al. Arch Intern Med. 2006;166(10):1092-1097');
+  },
+
+  /* ---- MDQ ---- */
+  _calcMDQ(){
+    const positive = App.state.mdq.filter(Boolean).length;
+    const p2 = document.querySelector('input[name="mdq_p2"]:checked')?.value === 'yes';
+    const concurrent = p2;
+    const impairment = ['moderate','serious'].includes(App.state.mdq_p3);
+    const pos = positive >= 7 && concurrent && impairment;
+
+    const interp = pos ? [
+      `MDQ POSITIVO: ${positive}/13 ítems positivos, con síntomas concurrentes y deterioro ${App.state.mdq_p3}.`,
+      'Sensibilidad 73%, especificidad 90% para TB-I/II (Hirschfeld et al., 2000).',
+      'Compatible con espectro bipolar. REQUIERE evaluación psiquiátrica completa.',
+      '⚠ MDQ+ NO equivale a diagnóstico: descartar ciclotimia, TDM con mixticidad, personalidad borderline.'
+    ] : [
+      `MDQ NEGATIVO: ${positive}/13 ítems positivos.`,
+      `Criterios no cumplidos: ${!concurrent?'sin concurrencia;':''} ${!impairment?'sin deterioro mod-grave;':''} ${positive<7?`solo ${positive}/7 ítems mínimos`:''}.`,
+      'No sugiere espectro bipolar en este cribado. No excluye diagnóstico definitivo.',
+      'Reevaluar si persisten síntomas atípicos de depresión.'
+    ];
+
+    const el = document.getElementById('mdq-result');
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="interp-panel" style="border-left-color:${pos?'var(--coral)':'var(--mint)'}">
+        <div class="interp-hdr" style="color:${pos?'var(--coral)':'var(--mint)'}">▸ INTERPRETACIÓN MDQ — ${positive}/13 ítems</div>
+        ${interp.map(t=>`<div class="ipt">${t}</div>`).join('')}
+        <span class="ref-tag" style="background:rgba(240,196,90,.1);border-color:rgba(240,196,90,.3);color:var(--gold)">Hirschfeld RM et al. J Clin Psychiatry. 2000;61(11):804-808</span>
+      </div>`;
+    App.state.results.mdq = { positive, pos };
+    App.storage.autoSave();
+  },
+
+  /* ---- Y-BOCS (Yale-Brown OCS) ---- */
+  _calcYBOCS(){
+    if(App.state.ybocs.some(v=>v===null)){
+      App.toast.show('Responda todos los ítems del Y-BOCS','warning'); return;
+    }
+    const score = App.state.ybocs.reduce((a,b)=>a+b,0);
+    const co = App.state.cutoffs.ybocs;
+    let label, color;
+    if(score < co.mild)              { label='SUBCÍNICO'; color='var(--s-none)'; }
+    else if(score < co.moderate)     { label='LEVE'; color='var(--s-mild)'; }
+    else if(score < co.moderateSevere){ label='MODERADO'; color='var(--s-mod)'; }
+    else if(score < co.severe)       { label='MOD-GRAVE'; color='var(--s-sev)'; }
+    else                             { label='GRAVE'; color='var(--s-sev)'; }
+
+    const intObs = App.state.ybocs.slice(0,5).reduce((a,b)=>a+b,0);
+    const intComp = App.state.ybocs.slice(5,10).reduce((a,b)=>a+b,0);
+
+    const interp = [
+      `Y-BOCS Total: ${score}/40 | Obsesiones: ${intObs}/20 | Compulsiones: ${intComp}/20`,
+      score<co.mild ? 'Puntuación subcínica. Sin impacto funcional significativo.' :
+      score<co.moderate ? 'TOC leve. Psicoeducación y TCC (exposición + prevención de respuesta).' :
+      score<co.moderateSevere ? 'TOC moderado. Indicación de TCC intensiva y/o ISRS (fluvoxamina, fluoxetina, sertralina, paroxetina, citalopram). NNT ≈ 5.' :
+      score<co.severe ? 'TOC moderado-grave. Combinación TCC + ISRS. Considerar clomipramina si fracasa ISRS.' :
+      'TOC grave. Valorar hospitalización parcial, potenciación con antipsicótico (aripiprazol) o estimulación magnética transcraneal.',
+      'La respuesta clínica se define como reducción ≥35% en Y-BOCS.'
+    ];
+
+    App.state.results.ybocs = { score, label };
+    this._renderResult('ybocs', score, 40, label, color, interp,
+      'Goodman WK et al. Arch Gen Psychiatry. 1989;46(11):1006-1011');
+  },
+
+  /* ---- ASRS-v1.1 (Part A, 6 items) ---- */
+  _calcASRS(){
+    if(App.state.asrs.some(v=>v===null)){
+      App.toast.show('Responda todos los ítems del ASRS','warning'); return;
+    }
+    // Positive screen: count items where answer is in shaded zone
+    const items = App.data.asrsItems;
+    let positiveCount = 0;
+    for(let i=0; i<6; i++){
+      if(items[i].shaded.includes(App.state.asrs[i])) positiveCount++;
+    }
+    const positive = positiveCount >= App.state.cutoffs.asrs.positiveThreshold;
+
+    const interp = positive ? [
+      `ASRS POSITIVO: ${positiveCount}/6 ítems en zona sombreada (umbral ≥${App.state.cutoffs.asrs.positiveThreshold}).`,
+      'Alta especificidad (99.5%) para TDAH adulto (Kessler et al., 2005).',
+      'Resultado sugiere síntomas compatibles con TDAH. REQUIERE evaluación diagnóstica completa.',
+      'Evaluación incluye: historia clínica detallada, criterios DSM-5, descarte de depresión/ansiedad/abuso de sustancias.',
+      'Confirmación diagnóstica recomendada antes de iniciar tratamiento farmacológico.'
+    ] : [
+      `ASRS NEGATIVO: ${positiveCount}/6 ítems en zona sombreada.`,
+      'No se supera el umbral de cribado para TDAH adulto en esta escala.',
+      'No excluye TDAH: sensibilidad 68.7% (puede haber falsos negativos).',
+      'Si la sospecha clínica es alta, considerar ASRS completo (18 ítems) o evaluación neuropsicológica.'
+    ];
+
+    const label = positive ? 'CRIBADO POSITIVO' : 'CRIBADO NEGATIVO';
+    const color = positive ? 'var(--s-mod)' : 'var(--s-none)';
+
+    const el = document.getElementById('asrs-result');
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="score-box" style="margin-top:10px;">
+        <div class="score-big" style="color:${color};font-size:24px;">${label}</div>
+        <div class="score-lbl" style="color:${color};">${positiveCount}/6 ítems positivos</div>
+      </div>
+      <div class="interp-panel" style="border-left-color:${color};">
+        <div class="interp-hdr" style="color:${color};">▸ INTERPRETACIÓN ASRS-v1.1</div>
+        ${interp.map(t=>`<div class="ipt">${t}</div>`).join('')}
+        <span class="ref-tag">Kessler RC et al. Psychol Med. 2005;35(2):245-256</span>
+      </div>`;
+    App.state.results.asrs = { positiveCount, positive };
+    App.storage.autoSave();
+  },
+
+  /* ---- AUDIT ---- */
+  _calcAUDIT(){
+    if(App.state.audit.some(v=>v===null)){
+      App.toast.show('Responda todos los ítems del AUDIT','warning'); return;
+    }
+    const score = App.state.audit.reduce((a,b)=>a+b,0);
+    const co = App.state.cutoffs.audit;
+    let label, color;
+    if(score < co.hazardous)    { label='CONSUMO DE BAJO RIESGO'; color='var(--s-none)'; }
+    else if(score < co.harmful) { label='CONSUMO DE RIESGO'; color='var(--s-mild)'; }
+    else if(score < co.dependence){ label='CONSUMO PERJUDICIAL'; color='var(--s-mod)'; }
+    else                        { label='POSIBLE DEPENDENCIA'; color='var(--s-sev)'; }
+
+    const interp = [
+      score < co.hazardous ?
+        ['AUDIT <8: Consumo de bajo riesgo.','Información sobre consumo responsable si el paciente lo solicita.'] :
+      score < co.harmful ?
+        ['AUDIT 8-15: Consumo de riesgo. Sensibilidad 92% para consumo peligroso (WHO).','Intervención breve motivacional recomendada.','Reevaluación en 3-6 meses.'] :
+      score < co.dependence ?
+        ['AUDIT 16-19: Consumo perjudicial.','Intervención breve + seguimiento activo.','Derivar a unidad de conductas adictivas para evaluación completa.','Considerar analítica: GGT, VCM, CDT.'] :
+        ['AUDIT ≥20: Posible dependencia alcohólica.','Derivar urgente a unidad de adicciones.','Evaluar síndrome de abstinencia (CIWA-Ar).','Detección de daño orgánico: hepático, neurológico, cardíaco.']
+    ].flat();
+
+    App.state.results.audit = { score, label };
+    this._renderResult('audit', score, 40, label, color, interp,
+      'Saunders JB et al. Addiction. 1993;88(6):791-804');
+  },
+
+  /**
+   * Render a result panel with score bar + interpretation.
+   * @param {string} scale - Scale ID
+   * @param {number} score - Calculated score
+   * @param {number} max - Maximum possible score
+   * @param {string} label - Severity label
+   * @param {string} color - CSS color value
+   * @param {string[]} interp - Array of interpretation strings
+   * @param {string} ref - Reference citation
+   */
+  _renderResult(scale, score, max, label, color, interp, ref){
+    const el = document.getElementById(`${scale}-result`);
+    if(!el) return;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="score-box">
+        <div class="score-big" style="color:${color}">${score}</div>
+        <div class="score-lbl" style="color:${color}">${label}</div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${score/max*100}%;background:${color}"></div>
+        </div>
+        <div class="score-rng"><span>0</span><span>${Math.round(max/4)}</span><span>${Math.round(max/2)}</span><span>${Math.round(3*max/4)}</span><span>${max}</span></div>
+      </div>
+      <div class="interp-panel">
+        <div class="interp-hdr">▸ INTERPRETACIÓN ${scale.toUpperCase()}</div>
+        ${interp.map(t=>`<div class="ipt">${t}</div>`).join('')}
+        <span class="ref-tag">${ref}</span>
+      </div>`;
+    App.storage.autoSave();
+  },
+
+  /** Build all scale UIs */
+  buildAll(){
+    this.buildQuestions(App.data.phq9Items, 'phq9', this.OPTS_0_3);
+    this.buildQuestions(App.data.gad7Items, 'gad7', this.OPTS_0_3);
+    this._buildMDQ();
+    this._buildYBOCS();
+    this._buildASRS();
+    this._buildAUDIT();
+  },
+
+  _buildMDQ(){
+    const c = document.getElementById('mdq-questions');
+    if(!c) return;
+    c.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;">` +
+      App.data.mdqItems.map((q,i)=>`
+        <label class="cbi" id="mdq_l_${i}" onclick="App.scales._toggleMDQ(${i},this)">
+          <input type="checkbox" name="mdq_${i}">
+          <div class="cbox" id="mdq_c_${i}">□</div>
+          <div class="cbi-text">${i+1}. ${q}</div>
+        </label>`).join('') + '</div>';
+  },
+
+  _toggleMDQ(i, lbl){
+    App.state.mdq[i] = !App.state.mdq[i];
+    const ck = document.getElementById(`mdq_c_${i}`);
+    if(App.state.mdq[i]){
+      lbl.classList.add('checked');
+      ck.textContent = '✓';
+    } else {
+      lbl.classList.remove('checked');
+      ck.textContent = '□';
+    }
+    App.storage.autoSave();
+  },
+
+  _buildYBOCS(){
+    // 5 obsession + 5 compulsion items, rated 0-4
+    const opts = ['0<br>Nada','1<br>Leve','2<br>Mod.','3<br>Grave','4<br>Extremo'];
+    const c = document.getElementById('ybocs-questions');
+    if(!c) return;
+    c.innerHTML = App.data.ybocsItems.map((q,i)=>`
+      <div class="qitem">
+        <div class="qtext" style="color:${i<5?'var(--blue)':'var(--lav)'}">
+          <span class="qnum">${i+1}.</span>
+          <span class="tag ${i<5?'tag-blue':'tag-lav'}" style="margin-right:4px;">${q.sub}</span>
+          ${q.text}
+        </div>
+        <div class="rg">
+          ${opts.map((o,v)=>`
+            <div class="ro">
+              <input type="radio" name="ybocs_${i}" id="ybocs_${i}_${v}" value="${v}"
+                onchange="App.scales.onAnswer('ybocs',${i},${v})">
+              <label for="ybocs_${i}_${v}">${o}</label>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  },
+
+  _buildASRS(){
+    const opts = ['Nunca<br>(0)','Rara vez<br>(1)','A veces<br>(2)','A menudo<br>(3)','Muy a menudo<br>(4)'];
+    const c = document.getElementById('asrs-questions');
+    if(!c) return;
+    c.innerHTML = App.data.asrsItems.map((q,i)=>`
+      <div class="qitem">
+        <div class="qtext"><span class="qnum">${i+1}.</span>${q.text}</div>
+        <div class="rg">
+          ${opts.map((o,v)=>`
+            <div class="ro">
+              <input type="radio" name="asrs_${i}" id="asrs_${i}_${v}" value="${v}"
+                onchange="App.scales.onAnswer('asrs',${i},${v})"
+                style="${q.shaded.includes(v)?'':''}">
+              <label for="asrs_${i}_${v}" style="${q.shaded.includes(v)?'border-color:rgba(77,217,192,.35);background:rgba(77,217,192,.05);':''}">${o}</label>
+            </div>`).join('')}
+        </div>
+        <div style="font-size:8px;color:var(--teal);margin-top:3px;">
+          Zona sombreada (positiva): ${q.shaded.map(v=>opts[v].split('<br>')[0]).join(', ')}
+        </div>
+      </div>`).join('');
+  },
+
+  _buildAUDIT(){
+    const c = document.getElementById('audit-questions');
+    if(!c) return;
+    c.innerHTML = App.data.auditItems.map((q,i)=>`
+      <div class="qitem">
+        <div class="qtext"><span class="qnum">${i+1}.</span>${q.text}</div>
+        <div class="rg">
+          ${q.opts.map((o,v)=>{
+            // Extract score from parentheses: "(0)" -> 0
+            const scoreMatch = o.match(/\((\d+)\)/);
+            const score = scoreMatch ? parseInt(scoreMatch[1]) : v;
+            const label = o.replace(/\s*\(\d+\)/, '');
+            return `<div class="ro">
+              <input type="radio" name="audit_${i}" id="audit_${i}_${v}" value="${score}"
+                onchange="App.scales.onAnswer('audit',${i},${score})">
+              <label for="audit_${i}_${v}">${label}<br><span style="color:var(--text-muted);font-size:8px;">(${score} pts)</span></label>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  }
+};
+
+/* ============================================================
+   App.dsm — DSM-5-TR criteria module
+============================================================ */
+App.dsm = {
+
+  /** Build all disorder tabs and content areas */
+  buildAll(){
+    const tabs = document.getElementById('disorder-tabs');
+    const contents = document.getElementById('disorder-contents');
+    if(!tabs || !contents) return;
+
+    tabs.innerHTML = App.data.dsm5Disorders.map((d,i)=>
+      `<button class="dtab ${i===0?'active':''}" onclick="App.dsm.switchDisorder('${d.id}',this)"
+         title="${d.full}">${d.name}</button>`
+    ).join('');
+
+    contents.innerHTML = App.data.dsm5Disorders.map((d,i)=>`
+      <div class="dc ${i===0?'active':''}" id="dc_${d.id}">
+        <div class="card">
+          <div class="ctitle" style="font-size:14px;">${d.full}</div>
+          <div class="csub">Fuente: ${d.source}</div>
+
+          ${d.groups.map((g,gi)=>`
+            <div style="margin-bottom:14px;">
+              <div class="crit-grp-lbl">
+                ${g.label}
+                <span style="color:var(--lav);font-size:9px;margin-left:6px;">mín: ${g.req}</span>
+              </div>
+              ${g.items.map((item,ii)=>`
+                <div class="crit-item" id="ci_${d.id}_${gi}_${ii}"
+                     onclick="App.dsm.toggle('${d.id}',${gi},${ii},this)">
+                  <div class="crit-ck" id="ck_${d.id}_${gi}_${ii}">□</div>
+                  <div class="crit-txt">
+                    ${item.t}
+                    ${item.r?'<span class="crit-req">[requerido]</span>':''}
+                  </div>
+                </div>`).join('')}
+            </div>`).join('')}
+
+          <!-- Differential diagnosis note -->
+          <div class="diff-note">
+            <strong>🔍 Diagnóstico diferencial:</strong> ${d.diff}
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-lav" onclick="App.dsm.evaluate('${d.id}')">▶ EVALUAR CRITERIOS</button>
+            <button class="btn btn-ghost" onclick="App.dsm.reset('${d.id}')">↺ RESET</button>
+          </div>
+          <div id="dsm_v_${d.id}" style="display:none;"></div>
+        </div>
+      </div>`).join('');
+
+    // Initialise state
+    App.data.dsm5Disorders.forEach(d=>{
+      App.state.dsm[d.id] = d.groups.map(g=>new Array(g.items.length).fill(false));
+    });
+  },
+
+  switchDisorder(id, btn){
+    document.querySelectorAll('.dtab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.dc').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`dc_${id}`).classList.add('active');
+  },
+
+  /**
+   * Toggle a DSM criterion checkbox.
+   * @param {string} did - Disorder ID
+   * @param {number} gi - Group index
+   * @param {number} ii - Item index
+   * @param {HTMLElement} el - The clicked element
+   */
+  toggle(did, gi, ii, el){
+    if(!App.state.dsm[did]) return;
+    App.state.dsm[did][gi][ii] = !App.state.dsm[did][gi][ii];
+    const ck = document.getElementById(`ck_${did}_${gi}_${ii}`);
+    if(App.state.dsm[did][gi][ii]){
+      el.classList.add('on'); ck.textContent='✓';
+    } else {
+      el.classList.remove('on'); ck.textContent='□';
+    }
+    App.ui.updateProgress();
+    App.storage.autoSave();
+  },
+
+  /** Evaluate whether DSM criteria are met */
+  evaluate(did){
+    const disorder = App.data.dsm5Disorders.find(d=>d.id===did);
+    if(!disorder) return;
+    const checked = App.state.dsm[did];
+    let allMet = true;
+    const details = disorder.groups.map((g,gi)=>{
+      const n = checked[gi] ? checked[gi].filter(Boolean).length : 0;
+      const met = n >= g.req;
+      if(!met) allMet = false;
+      return { label: g.label.substring(0,55), req: g.req, got: n, met };
+    });
+
+    const vDiv = document.getElementById(`dsm_v_${did}`);
+    if(!vDiv) return;
+    vDiv.style.display = 'block';
+
+    let cls, heading, body;
+    if(allMet){
+      cls='met'; heading='⚠ CRITERIOS POTENCIALMENTE CUMPLIDOS';
+      body=`<p style="font-size:10.5px;line-height:1.7;color:var(--text-dim);margin-top:7px;">
+        Los criterios marcados sugieren compatibilidad con <strong>${disorder.full}</strong>.
+        <br><strong>IMPORTANTE:</strong> NO es diagnóstico. Requiere evaluación clínica completa incluyendo historia psiquiátrica, entrevista estructurada y diagnóstico diferencial por un profesional cualificado.
+      </p>`;
+    } else {
+      cls='ok'; heading='✓ CRITERIOS INSUFICIENTES (según datos introducidos)';
+      const missing = details.filter(d=>!d.met).map(d=>`"${d.label}..." (${d.got}/${d.req})`).join('; ');
+      body=`<p style="font-size:10.5px;line-height:1.7;color:var(--text-dim);margin-top:7px;">
+        Criterios no alcanzados: ${missing}. No se cumplen umbrales para ${disorder.full}.
+      </p>`;
+    }
+
+    vDiv.className = `dsm-verdict ${cls}`;
+    vDiv.innerHTML = `<strong>${heading}</strong>${body}
+      <div style="margin-top:9px;">
+        ${details.map(d=>`<div style="font-size:9.5px;color:${d.met?'var(--mint)':'var(--coral)'};padding:2px 0;">
+          ${d.met?'✓':'✗'} ${d.label}... — ${d.got}/${d.req} criterios
+        </div>`).join('')}
+      </div>
+      <div style="font-size:8.5px;color:var(--text-muted);margin-top:7px;">Ref: ${disorder.source}</div>`;
+  },
+
+  reset(did){
+    App.state.dsm[did] = App.data.dsm5Disorders.find(d=>d.id===did).groups
+      .map(g=>new Array(g.items.length).fill(false));
+    document.querySelectorAll(`[id^="ci_${did}_"]`).forEach(el=>{el.classList.remove('on'); el.style.background='';});
+    document.querySelectorAll(`[id^="ck_${did}_"]`).forEach(el=>{el.textContent='□'; el.style.cssText='';});
+    const v = document.getElementById(`dsm_v_${did}`);
+    if(v) v.style.display='none';
+    App.toast.show('Criterios reseteados','info');
+  }
+};
+
+/* ============================================================
+   App.cssrs — Suicide risk assessment module
+============================================================ */
+App.cssrs = {
+
+  /** Build all C-SSRS UI elements */
+  buildAll(){
+    this._buildIdeation();
+    this._buildBehavior();
+    this._buildProtective();
+    this._buildPips();
+  },
+
+  _buildIdeation(){
+    const c = document.getElementById('cssrs-ideation-q');
+    if(!c) return;
+    c.innerHTML = App.data.cssrsIdeation.map(q=>`
+      <div class="cssrs-q">
+        <div class="cssrs-lvl">${q.level}</div>
+        <div class="cssrs-qt">${q.text}</div>
+        <div class="cssrs-note">${q.note}</div>
+        <div class="yn">
+          <input type="radio" class="yes" name="cssrs_${q.key}" id="${q.key}_y" value="yes"
+            onchange="App.state.cssrs['${q.key}']='yes';App.cssrs.update()">
+          <label for="${q.key}_y">Sí</label>
+          <input type="radio" class="no" name="cssrs_${q.key}" id="${q.key}_n" value="no"
+            onchange="App.state.cssrs['${q.key}']='no';App.cssrs.update()">
+          <label for="${q.key}_n">No</label>
+        </div>
+      </div>`).join('');
+  },
+
+  _buildBehavior(){
+    const c = document.getElementById('cssrs-behavior-q');
+    if(!c) return;
+    c.innerHTML = App.data.cssrsBehavior.map(q=>`
+      <div class="cssrs-q">
+        <div class="cssrs-qt">${q.text}</div>
+        ${q.recent?'<div style="font-size:8.5px;color:var(--r-crit);margin-bottom:5px;">⚠ Si SÍ en últimos 3 meses → RIESGO CRÍTICO</div>':''}
+        <div class="yn">
+          <input type="radio" class="yes" name="cssrs_${q.key}" id="${q.key}_y" value="yes"
+            onchange="App.state.cssrs['${q.key}']='yes';App.cssrs.update()">
+          <label for="${q.key}_y">Sí</label>
+          <input type="radio" class="no" name="cssrs_${q.key}" id="${q.key}_n" value="no"
+            onchange="App.state.cssrs['${q.key}']='no';App.cssrs.update()">
+          <label for="${q.key}_n">No</label>
+        </div>
+      </div>`).join('');
+  },
+
+  _buildProtective(){
+    const c = document.getElementById('protective-factors');
+    if(!c) return;
+    c.innerHTML = App.data.protectiveFactors.map((f,i)=>`
+      <label class="cbi" id="pf_${i}" onclick="App.cssrs._toggleProtective(${i},this)">
+        <input type="checkbox" name="pf_${i}">
+        <div class="cbox" id="pfc_${i}">□</div>
+        <div class="cbi-text" style="font-size:10px;">${f}</div>
+      </label>`).join('');
+  },
+
+  _buildPips(){
+    const c = document.getElementById('ideation-pips');
+    if(!c) return;
+    c.innerHTML = [0,1,2,3,4,5].map(i=>`<div class="pip" id="pip_${i}"></div>`).join('');
+  },
+
+  _toggleProtective(i, lbl){
+    App.state.cssrs.protective[i] = !App.state.cssrs.protective[i];
+    const ck = document.getElementById(`pfc_${i}`);
+    if(App.state.cssrs.protective[i]){
+      lbl.classList.add('checked'); ck.textContent='✓';
+    } else {
+      lbl.classList.remove('checked'); ck.textContent='□';
+    }
+    App.cssrs.update();
+  },
+
+  /** Compute ideation score (0-5) from C-SSRS responses */
+  _ideationScore(){
+    const cs = App.state.cssrs;
+    let score = 0;
+    if(cs.i1==='yes') score = 1;
+    if(cs.i2==='yes') score = 2;
+    if(cs.i3==='yes') score = 3;
+    if(cs.i4==='yes') score = 4;
+    if(cs.i5==='yes') score = 5;
+    return score;
+  },
+
+  /** Update risk level and UI based on current responses */
+  update(){
+    App.state.cssrs.attempts = parseInt(document.getElementById('attempt-count')?.value) || 0;
+    App.state.cssrs.lethality = parseInt(document.getElementById('attempt-lethality')?.value) || 0;
+    App.state.cssrs.medAttn = document.querySelector('input[name="med_att"]:checked')?.value || 'no';
+
+    const cs = App.state.cssrs;
+    const ideation = this._ideationScore();
+
+    // Update attempt detail visibility
+    const detail = document.getElementById('prior-attempt-detail');
+    if(detail) detail.style.display = cs.attempts > 0 ? 'block' : 'none';
+
+    // Update pips
+    [0,1,2,3,4,5].forEach(i=>{
+      const pip = document.getElementById(`pip_${i}`);
+      if(!pip) return;
+      pip.className = 'pip';
+      if(i <= ideation && ideation > 0) pip.classList.add(`p${ideation}`);
+    });
+
+    const numEl = document.getElementById('ideation-score-num');
+    if(numEl) numEl.textContent = ideation;
+
+    const descs = [
+      'Sin ideación activa reportada',
+      'Deseo pasivo de muerte — sin pensamientos activos de suicidio',
+      'Pensamientos activos de suicidio, sin método ni intención específicos',
+      'Ideación con método (sin plan completo ni intención definitiva)',
+      'Ideación con intención de actuar (sin plan completo)',
+      'Ideación con plan específico e intención — MÁXIMA URGENCIA'
+    ];
+    const descEl = document.getElementById('ideation-desc');
+    if(descEl) descEl.textContent = descs[ideation];
+
+    const realAttempt = cs.b_real === 'yes';
+    const anyBehavior = cs.b_interrupted==='yes' || cs.b_aborted==='yes' || cs.b_prep==='yes' || cs.b_nssi==='yes';
+    const protCount = cs.protective.filter(Boolean).length;
+
+    // Risk stratification
+    let riskClass, riskLabel, actionText, interventions;
+    if(ideation === 0 && !realAttempt && !anyBehavior){
+      riskClass='none'; riskLabel='SIN RIESGO IDENTIFICADO';
+      actionText='No se identifican factores de riesgo. Mantener vigilancia clínica habitual.';
+      interventions = [];
+    } else if(ideation <= 2 && !realAttempt && !anyBehavior){
+      riskClass='low'; riskLabel='RIESGO BAJO';
+      actionText='Ideación pasiva sin comportamiento. Derivar a salud mental al alta.';
+      interventions = ['Psicoeducación al paciente y familia sobre señales de alerta','Establecer plan de crisis básico','Derivación a salud mental no urgente','Reforzar factores protectores identificados','Seguimiento en 1-2 semanas'];
+    } else if(ideation === 3 || anyBehavior){
+      riskClass='moderate'; riskLabel='RIESGO MODERADO';
+      actionText='Ideación con método O antecedentes. Consulta urgente con salud mental.';
+      interventions = ['No dejar al paciente solo mientras se espera evaluación','Consulta con psiquiatría en Urgencias en las próximas horas','Contactar a familiar/cuidador de confianza','Restricción de acceso a medios letales (armas, medicamentos)','Elaborar plan de seguridad (Safety Planning Intervention, Stanley & Brown)','Establecer número de contacto directo de crisis'];
+    } else if(ideation >= 4 || realAttempt){
+      riskClass='high'; riskLabel='RIESGO ALTO';
+      actionText='Ideación con intención O intento real. Notificar médico INMEDIATAMENTE.';
+      interventions = ['Notificar al médico responsable INMEDIATAMENTE','No dejar al paciente solo bajo ningún concepto','Valorar hospitalización psiquiátrica urgente','Retirar TODOS los medios letales del alcance','Activar red de apoyo familiar/social de urgencia','Plan de seguridad formal (documentado)','Monitorización continua hasta transferencia'];
+    } else {
+      riskClass='none'; riskLabel='SIN RIESGO IDENTIFICADO'; actionText=''; interventions=[];
+    }
+
+    // Critical override: plan + intent, or recent real attempt
+    if(ideation === 5 || (realAttempt && cs.attempts >= 1 && cs.lethality >= 2)){
+      riskClass='critical'; riskLabel='RIESGO CRÍTICO';
+      actionText='🚨 Activar protocolo de emergencias INMEDIATAMENTE.';
+      interventions = ['🚨 LLAMAR AL 112 / 024 INMEDIATAMENTE si no hay respuesta in situ','Supervisión 1:1 de forma ininterrumpida','Transporte a Urgencias hospitalarias urgente','Notificación al familiar de referencia','Documentar hora de notificación y acciones tomadas'];
+    }
+
+    // Protective factor modifier: ≥3 factors can lower moderate → low
+    let finalClass = riskClass;
+    if(riskClass === 'moderate' && protCount >= 3) finalClass = 'low';
+
+    App.state.results.riskLevel = finalClass;
+    App.state.cssrs._riskLabel = riskLabel;
+
+    const disp = document.getElementById('risk-level-disp');
+    const actionEl = document.getElementById('risk-action');
+    if(disp){ disp.className=`risk-disp ${finalClass}`; disp.textContent=riskLabel; }
+    if(actionEl) actionEl.textContent = actionText;
+
+    // Intervention panel
+    const ip = document.getElementById('interv-panel');
+    const ii = document.getElementById('interv-items');
+    if(ip && ii){
+      ip.style.display = interventions.length > 0 ? 'block' : 'none';
+      ii.innerHTML = interventions.map(t=>`<div class="interv-item">${t}</div>`).join('');
+    }
+
+    // Emergency box
+    const eb = document.getElementById('emergency-box');
+    if(eb) eb.style.display = finalClass==='critical' ? 'block' : 'none';
+
+    App.ui.updateProgress();
+    App.storage.autoSave();
+  }
+};
+
+/* ============================================================
+   App.pharma — Drug database + dose calculator
+============================================================ */
+App.pharma = {
+
+  /** Build filter bar and initial drug list */
+  buildAll(){
+    const bar = document.getElementById('drug-filters-bar');
+    if(!bar) return;
+    const cats = ['todos','depresion','ansiedad','psicosis','bipolar','tept'];
+    const labels = {todos:'TODOS',depresion:'DEPRESIÓN',ansiedad:'ANSIEDAD',psicosis:'PSICOSIS',bipolar:'BIPOLAR',tept:'TEPT'};
+    bar.innerHTML = cats.map((c,i)=>
+      `<button class="dfbtn ${i===0?'active':''}" onclick="App.pharma.filterDrugs('${c}',this)">${labels[c]}</button>`
+    ).join('');
+    this._renderDrugs('todos');
+    this._buildDoseCalc();
+  },
+
+  filterDrugs(cat, btn){
+    document.querySelectorAll('.dfbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    App.state.drugFilter = cat;
+    this._renderDrugs(cat);
+  },
+
+  /**
+   * Render drug cards for a given filter category.
+   * Uses a fragment for performance (no full DOM rewrite if list is small).
+   * @param {string} cat - Category filter
+   */
+  _renderDrugs(cat){
+    const list = document.getElementById('drug-list');
+    if(!list) return;
+    const drugs = cat==='todos' ? App.data.drugs : App.data.drugs.filter(d=>d.disorders.includes(cat));
+
+    const frag = document.createDocumentFragment();
+    drugs.forEach((d,i)=>{
+      const el = document.createElement('div');
+      el.className = 'drug-card';
+      el.id = `dc_${i}`;
+      el.innerHTML = `
+        <div class="drug-hdr" onclick="App.pharma.toggleDrug(${i})">
+          <div>
+            <div class="drug-name">${d.name}</div>
+            <div class="drug-meta" style="margin-top:5px;">
+              <span class="tag tag-lav">${d.cls}</span>
+              <span class="tag tag-mint">${d.line}</span>
+              <span class="nnt">⚡ <span data-tip="Number Needed to Treat: patients needed to treat for 1 to benefit vs. placebo.">${d.nnt}</span></span>
+            </div>
+          </div>
+          <div class="drug-arrow" id="dca_${i}">▸</div>
+        </div>
+        <div id="dcd_${i}" style="display:none;">
+          <div class="drug-detail">
+            <div class="ddi"><label>Dosis inicio</label><span>${d.start}</span></div>
+            <div class="ddi"><label>Dosis objetivo</label><span>${d.target}</span></div>
+            <div class="ddi" style="grid-column:1/-1"><label>Efectos adversos frecuentes</label><span>${d.ae}</span></div>
+            <div class="ddi" style="grid-column:1/-1">
+              <label>Interacciones graves</label>
+              <div class="drug-warn">⚠ ${d.interactions}</div>
+            </div>
+            <div class="ddi" style="grid-column:1/-1"><label>Notas clínicas</label><span>${d.notes}</span></div>
+            <div class="ddi" style="grid-column:1/-1"><label>Evidencia / Guía</label><span style="color:var(--lav)">${d.ref}</span></div>
+          </div>
+        </div>`;
+      frag.appendChild(el);
+    });
+    list.innerHTML = '';
+    list.appendChild(frag);
+  },
+
+  toggleDrug(i){
+    const det = document.getElementById(`dcd_${i}`);
+    const arr = document.getElementById(`dca_${i}`);
+    const card = document.getElementById(`dc_${i}`);
+    if(!det) return;
+    const open = det.style.display === 'block';
+    det.style.display = open ? 'none' : 'block';
+    arr.textContent = open ? '▸' : '▾';
+    card.classList.toggle('open', !open);
+  },
+
+  _buildDoseCalc(){
+    const sel = document.getElementById('calc-drug');
+    if(!sel) return;
+    sel.innerHTML = App.data.drugs.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+  },
+
+  /**
+   * Calculate adjusted dose based on renal and hepatic function.
+   * Uses drug-specific adjustment factors stored in App.data.drugs.
+   */
+  calcDose(){
+    const drugName = document.getElementById('calc-drug')?.value;
+    const baseDose = parseFloat(document.getElementById('calc-dose')?.value);
+    const renal = document.getElementById('calc-renal')?.value || 'normal';
+    const hepatic = document.getElementById('calc-hepatic')?.value || 'normal';
+    const resEl = document.getElementById('dose-result');
+    if(!resEl) return;
+
+    if(!drugName || isNaN(baseDose) || baseDose <= 0){
+      resEl.style.display = 'none'; return;
+    }
+
+    const drug = App.data.drugs.find(d=>d.name === drugName);
+    if(!drug){ resEl.style.display='none'; return; }
+
+    const rf = drug.renal[renal] || 1;
+    const hf = drug.hepatic[hepatic] || 1;
+    // Apply the more restrictive factor
+    const factor = Math.min(rf, hf);
+    const adjustedDose = (baseDose * factor).toFixed(1);
+
+    let warnings = [];
+    if(renal === 'severe' && rf === 0) warnings.push('⚠ Contraindicado en insuficiencia renal grave (litio, etc.)');
+    if(factor < 0.5) warnings.push('⚠ Reducción de dosis significativa — monitorización estrecha recomendada');
+    if(factor < 1) warnings.push('Siempre confirmar ajuste en ficha técnica actualizada y con farmacéutico clínico');
+
+    resEl.style.display = 'block';
+    resEl.innerHTML = `
+      <strong>Dosis base:</strong> ${baseDose} mg/día →
+      <strong>Dosis ajustada estimada: ${adjustedDose} mg/día</strong>
+      (factor renal: ${rf}, factor hepático: ${hf})
+      ${warnings.length ? '<br>' + warnings.map(w=>`<div style="color:var(--coral);margin-top:4px;">${w}</div>`).join('') : ''}
+      <div style="font-size:8.5px;color:var(--text-muted);margin-top:6px;">
+        Ajuste orientativo basado en fichas técnicas. Confirmar siempre con fuentes actualizadas (Micromedex, ficha técnica EMA/AEMPS).
+        <br>Ref: ${drug.ref}
+      </div>`;
+  }
+};
+
+/* ============================================================
+   App.evidence — Evidence library rendering
+============================================================ */
+App.evidence = {
+  colorMap: {lav:'var(--lav)',mint:'var(--mint)',coral:'var(--coral)',gold:'var(--gold)',blue:'var(--blue)',teal:'var(--teal)'},
+
+  buildAll(){
+    const list = document.getElementById('evidence-list');
+    if(!list) return;
+    list.innerHTML = App.data.evidenceRefs.map(r=>`
+      <div class="ref-card">
+        <div class="ref-hdr">
+          <span class="ref-journal" style="color:${this.colorMap[r.color]||'var(--lav)'}">${r.journal}</span>
+          <span class="ref-year">${r.year}</span>
+        </div>
+        <div class="ref-body">
+          <div class="ref-title">${r.title}</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:9px;font-style:italic;">${r.authors}</div>
+          ${r.results.map(res=>`<div class="ref-ri">${res}</div>`).join('')}
+          <div class="ref-lim">⚠ Limitación: ${r.lim}</div>
+          <div class="ref-doi">DOI/URL: ${r.doi}</div>
+        </div>
+      </div>`).join('');
+  }
+};
+
+/* ============================================================
+   App.glossary — Clinical glossary modal
+============================================================ */
+App.glossary = {
+  /** Open and render glossary modal */
+  open(){
+    const ov = document.getElementById('glossary-modal-overlay');
+    if(ov){ ov.classList.add('open'); this._render(App.data.glossary); }
+  },
+
+  close(){
+    const ov = document.getElementById('glossary-modal-overlay');
+    if(ov) ov.classList.remove('open');
+  },
+
+  /**
+   * Filter glossary terms by search query.
+   * @param {string} query - Search string
+   */
+  filter(query){
+    const q = query.toLowerCase().trim();
+    const filtered = q.length < 1
+      ? App.data.glossary
+      : App.data.glossary.filter(g=>
+          g.term.toLowerCase().includes(q) || g.def.toLowerCase().includes(q)
+        );
+    this._render(filtered);
+  },
+
+  /**
+   * Render glossary items.
+   * @param {Array} items - Filtered glossary array
+   */
+  _render(items){
+    const c = document.getElementById('gloss-list');
+    if(!c) return;
+    if(items.length === 0){
+      c.innerHTML = '<div style="color:var(--text-muted);font-size:10.5px;padding:10px 0;">Sin resultados.</div>';
+      return;
+    }
+    c.innerHTML = items.map(g=>`
+      <div class="gloss-item">
+        <div class="gloss-term">${g.term}</div>
+        <div class="gloss-def">${g.def}</div>
+        <div class="gloss-src">${g.src}</div>
+      </div>`).join('');
+  }
+};
+
+/* ============================================================
+   App.config — Settings modal (cutoff customisation)
+============================================================ */
+App.config = {
+  open(){
+    const body = document.getElementById('modal-body');
+    if(!body) return;
+    const co = App.state.cutoffs;
+
+    body.innerHTML = `
+      <button class="modal-close" onclick="App.config.close()">✕</button>
+      <div class="modal-title">⚙ CONFIGURACIÓN · PUNTOS DE CORTE</div>
+      <div style="font-size:9.5px;color:var(--text-muted);margin-bottom:14px;">
+        Personalice los puntos de corte de las escalas para adaptarlos a su población clínica.
+        Los valores por defecto siguen las guías originales.
+      </div>
+
+      <div style="font-size:10px;color:var(--mint);margin-bottom:8px;font-weight:700;">PHQ-9</div>
+      ${this._row('phq9.mild','Leve (def: 5)',co.phq9.mild)}
+      ${this._row('phq9.moderate','Moderado (def: 10)',co.phq9.moderate)}
+      ${this._row('phq9.moderateSevere','Mod-Grave (def: 15)',co.phq9.moderateSevere)}
+      ${this._row('phq9.severe','Grave (def: 20)',co.phq9.severe)}
+
+      <div style="font-size:10px;color:var(--lav);margin-bottom:8px;margin-top:14px;font-weight:700;">GAD-7</div>
+      ${this._row('gad7.mild','Leve (def: 5)',co.gad7.mild)}
+      ${this._row('gad7.moderate','Moderado (def: 10)',co.gad7.moderate)}
+      ${this._row('gad7.severe','Grave (def: 15)',co.gad7.severe)}
+
+      <div style="font-size:10px;color:var(--gold);margin-bottom:8px;margin-top:14px;font-weight:700;">AUDIT</div>
+      ${this._row('audit.hazardous','Consumo de riesgo (def: 8)',co.audit.hazardous)}
+      ${this._row('audit.harmful','Perjudicial (def: 16)',co.audit.harmful)}
+      ${this._row('audit.dependence','Dependencia (def: 20)',co.audit.dependence)}
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-lav" onclick="App.config.save()">💾 GUARDAR</button>
+        <button class="btn btn-ghost" onclick="App.config.resetDefaults()">↺ VALORES POR DEFECTO</button>
+      </div>`;
+
+    document.getElementById('modal-overlay').classList.add('open');
+  },
+
+  _row(key, label, val){
+    return `<div class="cutoff-row">
+      <span class="cutoff-lbl">${label}</span>
+      <input class="cutoff-input" type="number" id="co_${key.replace('.','_')}" value="${val}" min="0" max="100">
+    </div>`;
+  },
+
+  save(){
+    const keys = ['phq9.mild','phq9.moderate','phq9.moderateSevere','phq9.severe',
+                  'gad7.mild','gad7.moderate','gad7.severe',
+                  'audit.hazardous','audit.harmful','audit.dependence'];
+    keys.forEach(k=>{
+      const el = document.getElementById(`co_${k.replace('.','_')}`);
+      if(!el) return;
+      const [scale, prop] = k.split('.');
+      const val = parseInt(el.value);
+      if(!isNaN(val) && val >= 0) App.state.cutoffs[scale][prop] = val;
+    });
+    App.toast.show('Puntos de corte guardados','success');
+    this.close();
+  },
+
+  resetDefaults(){
+    App.state.cutoffs = {
+      phq9: { mild:5, moderate:10, moderateSevere:15, severe:20 },
+      gad7: { mild:5, moderate:10, severe:15 },
+      ybocs: { mild:8, moderate:16, moderateSevere:24, severe:32 },
+      audit: { hazardous:8, harmful:16, dependence:20 },
+      asrs: { positiveThreshold: 4 }
+    };
+    App.toast.show('Valores restaurados a los estándares clínicos','info');
+    this.open(); // re-render
+  },
+
+  close(){ document.getElementById('modal-overlay').classList.remove('open'); }
+};
+
+/* ============================================================
+   App.summary — Summary view + export
+============================================================ */
+App.summary = {
+  /** Refresh the summary tab with current results */
+  refresh(){
+    const c = document.getElementById('summary-content');
+    if(!c) return;
+
+    const R = App.state.results;
+    const cards = [
+      { lbl:'PHQ-9', val: R.phq9 ? R.phq9.score : '—', sub: R.phq9 ? R.phq9.label : 'Sin completar', color:'var(--mint)' },
+      { lbl:'GAD-7', val: R.gad7 ? R.gad7.score : '—', sub: R.gad7 ? R.gad7.label : 'Sin completar', color:'var(--lav)' },
+      { lbl:'MDQ',   val: R.mdq  ? (R.mdq.pos?'POS':'NEG') : '—', sub: R.mdq ? `${R.mdq.positive}/13 ítems` : 'Sin completar', color:'var(--gold)' },
+      { lbl:'Y-BOCS',val: R.ybocs ? R.ybocs.score : '—', sub: R.ybocs ? R.ybocs.label : 'Sin completar', color:'var(--blue)' },
+      { lbl:'ASRS',  val: R.asrs ? (R.asrs.positive?'POS':'NEG') : '—', sub: R.asrs ? `${R.asrs.positiveCount}/6 positivos` : 'Sin completar', color:'var(--teal)' },
+      { lbl:'AUDIT', val: R.audit ? R.audit.score : '—', sub: R.audit ? R.audit.label : 'Sin completar', color:'var(--gold)' },
+      { lbl:'C-SSRS',val: R.riskLevel.toUpperCase(), sub: 'Nivel de riesgo', color: {none:'var(--r-none)',low:'var(--r-low)',moderate:'var(--r-mod)',high:'var(--r-high)',critical:'var(--r-crit)'}[R.riskLevel] || 'var(--text-muted)' }
+    ];
+
+    const notes = document.getElementById('clinical-notes')?.value || '';
+
+    c.innerHTML = `
+      <div class="sum-grid">
+        ${cards.map(card=>`
+          <div class="sum-card">
+            <div class="sum-lbl">${card.lbl}</div>
+            <div class="sum-val" style="color:${card.color}">${card.val}</div>
+            <div class="sum-sub">${card.sub}</div>
+          </div>`).join('')}
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="ctitle">📝 NOTAS DE SESIÓN</div>
+        <div style="font-size:10.5px;color:var(--text-dim);white-space:pre-wrap;margin-top:10px;">${notes || '(Sin notas registradas)'}</div>
+      </div>
+      <div style="font-size:8.5px;color:var(--text-muted);margin-top:14px;text-align:center;">
+        Sesión iniciada: ${new Date(App.state.sessionStart).toLocaleString()} |
+        Generado: ${new Date().toLocaleString()}
+      </div>`;
+  },
+
+  /** Export a self-contained HTML report */
+  exportReport(){
+    const R = App.state.results;
+    const notes = document.getElementById('clinical-notes')?.value || '';
+    const ts = new Date().toLocaleString('es-ES');
+
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Informe PSYCHIATRIC-SCANNER Ω v2 — ${ts}</title>
+<style>
+body{font-family:Arial,sans-serif;font-size:11px;max-width:720px;margin:40px auto;color:#222;line-height:1.6}
+h1{color:#4a3a8a;border-bottom:2px solid #4a3a8a;padding-bottom:7px;font-size:18px}
+h2{color:#3a2a6a;margin-top:22px;font-size:13px;border-bottom:1px solid #ddd;padding-bottom:3px}
+.warn{background:#fff8e1;border:1px solid #f0c45a;padding:9px;border-radius:4px;margin:14px 0;font-size:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.card{border:1px solid #ddd;border-radius:4px;padding:10px;text-align:center}
+.lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.08em}
+.val{font-size:22px;font-weight:700;color:#4a3a8a;margin:3px 0}
+.sub{font-size:9px;color:#666}
+.notes{background:#f9f9f9;border:1px solid #ddd;padding:11px;border-radius:4px;white-space:pre-wrap;font-size:10px}
+.ref{font-size:8.5px;color:#888;font-style:italic;margin-top:14px;border-top:1px solid #eee;padding-top:7px}
+</style></head><body>
+<h1>PSYCHIATRIC-SCANNER Ω · INFORME DE SESIÓN v2.0</h1>
+<div class="warn">⚠ HERRAMIENTA EXPERIMENTAL — NO APTA PARA DIAGNÓSTICO CLÍNICO. No sustituye la evaluación clínica profesional. Generado: ${ts}</div>
+
+<h2>📊 ESCALAS DE CRIBADO</h2>
+<div class="grid">
+  <div class="card"><div class="lbl">PHQ-9</div><div class="val">${R.phq9?R.phq9.score:'—'}</div><div class="sub">${R.phq9?R.phq9.label:'Sin completar'}</div></div>
+  <div class="card"><div class="lbl">GAD-7</div><div class="val">${R.gad7?R.gad7.score:'—'}</div><div class="sub">${R.gad7?R.gad7.label:'Sin completar'}</div></div>
+  <div class="card"><div class="lbl">MDQ</div><div class="val">${R.mdq?(R.mdq.pos?'POS':'NEG'):'—'}</div><div class="sub">${R.mdq?R.mdq.positive+'/13':''}</div></div>
+  <div class="card"><div class="lbl">Y-BOCS</div><div class="val">${R.ybocs?R.ybocs.score:'—'}</div><div class="sub">${R.ybocs?R.ybocs.label:''}</div></div>
+  <div class="card"><div class="lbl">ASRS</div><div class="val">${R.asrs?(R.asrs.positive?'POS':'NEG'):'—'}</div><div class="sub">${R.asrs?R.asrs.positiveCount+'/6':''}</div></div>
+  <div class="card"><div class="lbl">AUDIT</div><div class="val">${R.audit?R.audit.score:'—'}</div><div class="sub">${R.audit?R.audit.label:''}</div></div>
+</div>
+
+<h2>⚡ RIESGO SUICIDA (C-SSRS)</h2>
+<p><strong>Nivel:</strong> ${R.riskLevel.toUpperCase()}</p>
+
+<h2>📝 NOTAS CLÍNICAS</h2>
+<div class="notes">${notes || '(Sin notas)'}</div>
+
+<div class="ref">
+Refs: PHQ-9 (Kroenke 2001) · GAD-7 (Spitzer 2006) · MDQ (Hirschfeld 2000) · Y-BOCS (Goodman 1989) · ASRS (Kessler 2005) · AUDIT (Saunders 1993) · C-SSRS (Posner 2011) · NICE NG222 (2022)
+<br>PSYCHIATRIC-SCANNER Ω · RONIN MENTAL v2.0 | Prompt engineering: David Ferrandez Canalis
+</div>
+</body></html>`;
+
+    const blob = new Blob([html], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `psych_report_${Date.now()}.html`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    App.toast.show('Informe HTML exportado','success');
+  }
+};
+
+/* ============================================================
+   App.storage — localStorage persistence + session history
+============================================================ */
+App.storage = {
+  KEY: 'psych_scanner_v2',
+  HIST_KEY: 'psych_scanner_v2_history',
+
+  /** Debounced auto-save — only persists every 5s to avoid excess writes */
+  _saveTimer: null,
+  autoSave(){
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(()=>{
+      try{
+        const data = {
+          notes: document.getElementById('clinical-notes')?.value || '',
+          cutoffs: App.state.cutoffs,
+          results: App.state.results,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(this.KEY, JSON.stringify(data));
+        const ind = document.getElementById('autosave-ind');
+        if(ind){ ind.classList.add('vis'); setTimeout(()=>ind.classList.remove('vis'),2500); }
+      } catch(e){ console.warn('AutoSave failed:', e); }
+    }, 5000);
+  },
+
+  saveNotes(){
+    const notes = document.getElementById('clinical-notes')?.value || '';
+    App.state.notes = notes;
+    this.autoSave();
+    // Also push to history
+    this._pushHistory();
+    document.getElementById('notes-saved-ts').textContent = `Guardado: ${new Date().toLocaleTimeString()}`;
+    App.toast.show('Notas guardadas','success');
+  },
+
+  clearNotes(){
+    if(!confirm('¿Borrar todas las notas de sesión actual?')) return;
+    const el = document.getElementById('clinical-notes');
+    if(el) el.value = '';
+    App.toast.show('Notas eliminadas','info');
+  },
+
+  /** Push current session snapshot to history (max 10 entries) */
+  _pushHistory(){
+    try{
+      const hist = this._loadHistoryRaw();
+      const entry = {
+        ts: new Date().toISOString(),
+        phq9: App.state.results.phq9?.score ?? null,
+        gad7: App.state.results.gad7?.score ?? null,
+        mdq: App.state.results.mdq?.positive ?? null,
+        ybocs: App.state.results.ybocs?.score ?? null,
+        audit: App.state.results.audit?.score ?? null,
+        risk: App.state.results.riskLevel,
+        notes: document.getElementById('clinical-notes')?.value?.substring(0,200) || ''
+      };
+      hist.unshift(entry);
+      const trimmed = hist.slice(0, 10);
+      localStorage.setItem(this.HIST_KEY, JSON.stringify(trimmed));
+    } catch(e){}
+  },
+
+  _loadHistoryRaw(){
+    try{ return JSON.parse(localStorage.getItem(this.HIST_KEY) || '[]'); }
+    catch(e){ return []; }
+  },
+
+  /** Render session history list */
+  loadHistory(){
+    const c = document.getElementById('session-history');
+    if(!c) return;
+    const hist = this._loadHistoryRaw();
+    if(hist.length === 0){
+      c.innerHTML = '<div style="color:var(--text-muted);font-size:10px;padding:10px 0;">Sin historial guardado aún.</div>';
+      return;
+    }
+    c.innerHTML = hist.map((h,i)=>`
+      <div class="hist-item" onclick="App.storage.loadHistoryEntry(${i})" title="Clic para cargar notas de esta sesión">
+        <div class="hist-ts">${new Date(h.ts).toLocaleString()}</div>
+        <div class="hist-scores">
+          ${h.phq9!==null?`<span class="hist-score-chip">PHQ-9: ${h.phq9}</span>`:''}
+          ${h.gad7!==null?`<span class="hist-score-chip">GAD-7: ${h.gad7}</span>`:''}
+          ${h.audit!==null?`<span class="hist-score-chip">AUDIT: ${h.audit}</span>`:''}
+          <span class="hist-score-chip" style="border-color:var(--coral);color:var(--coral);">Riesgo: ${h.risk.toUpperCase()}</span>
+        </div>
+        ${h.notes?`<div style="font-size:9px;color:var(--text-muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px;">${h.notes}</div>`:''}
+      </div>`).join('');
+  },
+
+  /**
+   * Load a specific history entry's notes into the notes textarea.
+   * @param {number} idx - History index
+   */
+  loadHistoryEntry(idx){
+    const hist = this._loadHistoryRaw();
+    if(!hist[idx]) return;
+    const el = document.getElementById('clinical-notes');
+    if(el){ el.value = hist[idx].notes || ''; }
+    App.toast.show(`Notas de sesión del ${new Date(hist[idx].ts).toLocaleString()} cargadas`,'success');
+  },
+
+  clearHistory(){
+    if(!confirm('¿Borrar todo el historial de sesiones?')) return;
+    localStorage.removeItem(this.HIST_KEY);
+    this.loadHistory();
+    App.toast.show('Historial eliminado','warning');
+  },
+
+  openModal(){
+    const body = document.getElementById('modal-body');
+    if(!body) return;
+    let size = '—';
+    try{
+      const d = localStorage.getItem(this.KEY);
+      if(d) size = (new Blob([d]).size / 1024).toFixed(2) + ' KB';
+    }catch(e){}
+
+    body.innerHTML = `
+      <button class="modal-close" onclick="App.config.close()">✕</button>
+      <div class="modal-title">💾 GESTIÓN DE DATOS</div>
+      <div style="font-size:9.5px;color:var(--text-muted);margin-bottom:14px;">
+        Datos almacenados SOLO en este dispositivo (localStorage). Nunca enviados a servidores externos.
+        Tamaño actual: <strong>${size}</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <button class="btn btn-lav" onclick="App.storage.restoreSession()" style="justify-content:center;">↺ RESTAURAR ÚLTIMA SESIÓN</button>
+        <button class="btn btn-mint" onclick="App.storage.exportJSON()" style="justify-content:center;">⬇ EXPORTAR BACKUP JSON</button>
+        <button class="btn btn-ghost" onclick="App.storage.importJSON()" style="justify-content:center;">⬆ IMPORTAR BACKUP JSON</button>
+        <input type="file" id="json-import-in" accept=".json" style="display:none" onchange="App.storage._handleJSONImport(event)">
+        <div class="divider"></div>
+        <button class="btn btn-coral" onclick="App.storage.clearAll()" style="justify-content:center;">🗑 BORRAR TODOS LOS DATOS</button>
+      </div>`;
+
+    document.getElementById('modal-overlay').classList.add('open');
+  },
+
+  restoreSession(){
+    try{
+      const raw = localStorage.getItem(this.KEY);
+      if(!raw){ App.toast.show('Sin sesión guardada','warning'); return; }
+      const d = JSON.parse(raw);
+      if(d.notes){ const el=document.getElementById('clinical-notes'); if(el) el.value=d.notes; }
+      if(d.cutoffs) App.state.cutoffs = {...App.state.cutoffs, ...d.cutoffs};
+      App.toast.show(`Sesión del ${new Date(d.savedAt).toLocaleString()} restaurada`,'success');
+      App.config.close();
+    } catch(e){ App.toast.show('Error al restaurar','error'); }
+  },
+
+  exportJSON(){
+    const data = {
+      session: localStorage.getItem(this.KEY),
+      history: localStorage.getItem(this.HIST_KEY)
+    };
+    const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=`psych_backup_${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(a.href);
+    App.toast.show('Backup JSON exportado','success');
+  },
+
+  importJSON(){
+    document.getElementById('json-import-in')?.click();
+  },
+
+  _handleJSONImport(evt){
+    const file = evt.target.files?.[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const d = JSON.parse(e.target.result);
+        if(d.session) localStorage.setItem(this.KEY, d.session);
+        if(d.history) localStorage.setItem(this.HIST_KEY, d.history);
+        App.toast.show('Backup importado correctamente','success');
+        App.config.close();
+      } catch(err){ App.toast.show('Archivo JSON inválido','error'); }
+    };
+    reader.readAsText(file);
+  },
+
+  clearAll(){
+    if(!confirm('⚠ ¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) return;
+    localStorage.removeItem(this.KEY);
+    localStorage.removeItem(this.HIST_KEY);
+    App.toast.show('Todos los datos eliminados','warning');
+    App.config.close();
+  }
+};
+
+/* ============================================================
+   SESSION CLOCK
+============================================================ */
+function startClock(){
+  const el = document.getElementById('session-clock');
+  if(!el) return;
+  setInterval(()=>{
+    const elapsed = Date.now() - App.state.sessionStart;
+    const m = Math.floor(elapsed/60000);
+    const s = Math.floor((elapsed%60000)/1000);
+    el.textContent = `SESIÓN · ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+/* ============================================================
+   INIT — Bootstrap everything on DOMContentLoaded
+============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    // Build all modules
+    App.ui.buildProgressBar();
+    App.scales.buildAll();
+    App.dsm.buildAll();
+    App.cssrs.buildAll();
+    App.pharma.buildAll();
+    App.evidence.buildAll();
+    App.i18n.apply();
+    startClock();
+
+    // Restore saved notes
+    App.storage.restoreSession();
+
+    // Auto-save every 30s
+    setInterval(()=>App.storage.autoSave(), 30000);
+
+    // Initial progress render
+    App.ui.updateProgress();
+
+    App.toast.show('PSYCHIATRIC-SCANNER Ω v2.0 cargado · Modo offline activo','success', 4000);
+  } catch(err){
+    console.error('Init error:', err);
+    App.toast.show('Error de inicialización: ' + err.message, 'error', 7000);
+  }
+});
+</script>
+
+</body>
+</html>
