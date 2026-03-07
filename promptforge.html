@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptForge v2.0 — Fábrica de Prompts Multi-Agente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Variables ─────────────────────────────────────────────────────── */
+  :root {
+    --bg:       #080808;
+    --bg2:      #0f0f0f;
+    --bg3:      #151515;
+    --border:   #222;
+    --ember:    #ff6b00;
+    --ember2:   #ff9a00;
+    --copper:   #b87333;
+    --steel:    #8fa8b5;
+    --text:     #e8e0d5;
+    --muted:    #5a5248;
+    --green:    #4ecb71;
+    --red:      #e05555;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Forge Sparks Background ────────────────────────────────────────── */
+  .sparks-canvas {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 96px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--ember) 0%, var(--ember2) 40%, var(--copper) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px rgba(255,107,0,0.3));
+  }
+  .logo-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .version-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; padding: 4px 10px;
+    border: 1px solid var(--ember); color: var(--ember);
+    letter-spacing: 2px;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,107,0,0); }
+    50% { box-shadow: 0 0 12px rgba(255,107,0,0.4); }
+  }
+
+  /* ── Tagline ─────────────────────────────────────────────────────────── */
+  .tagline {
+    padding: 28px 0 40px;
+    border-bottom: 1px solid var(--border);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;
+  }
+  .tagline h1 {
+    font-size: 22px; font-weight: 600; line-height: 1.4;
+    color: var(--text);
+  }
+  .tagline h1 em { font-style: normal; color: var(--ember); }
+  .pipeline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    line-height: 2;
+    border-left: 2px solid var(--border); padding-left: 16px;
+  }
+  .pipeline .arrow { color: var(--ember); }
+  .pipeline .dim { color: var(--muted); }
+
+  /* ── API Key Bar ─────────────────────────────────────────────────────── */
+  .api-bar {
+    margin: 32px 0;
+    display: flex; gap: 12px; align-items: center;
+    padding: 16px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--copper);
+  }
+  .api-bar label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .api-bar input {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--steel);
+    letter-spacing: 1px;
+  }
+  .api-bar input::placeholder { color: var(--muted); }
+  .api-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; white-space: nowrap; padding: 3px 8px;
+    border: 1px solid; letter-spacing: 1px;
+  }
+  .api-status.offline { color: var(--muted); border-color: var(--muted); }
+  .api-status.online  { color: var(--green);  border-color: var(--green);  }
+
+  /* ── Forge Section ───────────────────────────────────────────────────── */
+  .forge-section { padding: 40px 0; border-bottom: 1px solid var(--border); }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .section-label span { color: var(--ember); }
+
+  .objective-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 400;
+    padding: 20px 24px;
+    resize: none; outline: none;
+    line-height: 1.6;
+    transition: border-color .2s;
+    min-height: 90px;
+  }
+  .objective-input:focus { border-color: var(--ember); }
+  .objective-input::placeholder { color: var(--muted); }
+
+  .context-input {
+    width: 100%; margin-top: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--steel);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; padding: 12px 24px;
+    resize: none; outline: none;
+    line-height: 1.6; min-height: 50px;
+    transition: border-color .2s;
+  }
+  .context-input:focus { border-color: var(--copper); }
+  .context-input::placeholder { color: var(--muted); }
+
+  .forge-controls {
+    margin-top: 16px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .forge-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: 3px;
+    padding: 12px 36px;
+    background: linear-gradient(135deg, var(--ember), var(--ember2));
+    color: #000; border: none; cursor: pointer;
+    transition: all .2s; position: relative; overflow: hidden;
+  }
+  .forge-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .forge-btn:active { transform: translateY(0); }
+  .forge-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .roles-select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 12px 16px; cursor: pointer; outline: none;
+  }
+
+  .quick-fills {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .quick-fill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    border: 1px solid var(--border); padding: 4px 10px;
+    cursor: pointer; background: transparent;
+    transition: all .15s; letter-spacing: 1px;
+  }
+  .quick-fill:hover { color: var(--ember); border-color: var(--ember); }
+
+  /* ── Progress ────────────────────────────────────────────────────────── */
+  .progress-bar-wrap {
+    margin-top: 20px; display: none;
+    background: var(--bg2); border: 1px solid var(--border); padding: 16px 20px;
+  }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-stages {
+    display: flex; gap: 0; margin-bottom: 12px;
+  }
+  .stage {
+    flex: 1; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 1px;
+    padding: 6px 4px;
+    color: var(--muted); border-bottom: 2px solid var(--border);
+    transition: all .3s;
+  }
+  .stage.active { color: var(--ember); border-color: var(--ember); }
+  .stage.done   { color: var(--green); border-color: var(--green); }
+  .progress-log {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    line-height: 1.8; min-height: 20px;
+  }
+  .progress-log .ember { color: var(--ember); }
+  .progress-log .green { color: var(--green); }
+
+  /* ── Results ─────────────────────────────────────────────────────────── */
+  .results-section { padding: 40px 0; }
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .score-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px; line-height: 1;
+    color: var(--ember);
+  }
+  .score-display span { font-size: 16px; color: var(--muted); }
+  .export-btns { display: flex; gap: 8px; }
+  .export-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 8px 16px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--steel);
+    transition: all .15s;
+  }
+  .export-btn:hover { border-color: var(--ember2); color: var(--ember2); }
+
+  /* ── Agent Cards ─────────────────────────────────────────────────────── */
+  .agents-grid { display: flex; flex-direction: column; gap: 2px; }
+
+  .agent-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    transition: border-color .2s;
+    overflow: hidden;
+  }
+  .agent-card[data-cat="investigación"] { border-left-color: #4a9eff; }
+  .agent-card[data-cat="ingeniería"]    { border-left-color: var(--ember); }
+  .agent-card[data-cat="validación"]    { border-left-color: var(--green); }
+  .agent-card[data-cat="documentación"] { border-left-color: var(--copper); }
+  .agent-card[data-cat="crítica"]       { border-left-color: #c678dd; }
+  .agent-card[data-cat="orquestación"]  { border-left-color: var(--ember2); }
+
+  .agent-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; user-select: none;
+  }
+  .agent-emoji { font-size: 22px; }
+  .agent-name {
+    font-size: 15px; font-weight: 600; flex: 1;
+  }
+  .agent-meta {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .cat-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 2px 8px; border: 1px solid var(--border); color: var(--muted);
+  }
+  .quality-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+  }
+  .quality-score.high { color: var(--green); }
+  .quality-score.mid  { color: var(--ember2); }
+  .quality-score.low  { color: var(--red); }
+
+  .chevron {
+    color: var(--muted); font-size: 12px;
+    transition: transform .25s;
+  }
+  .agent-card.open .chevron { transform: rotate(180deg); }
+
+  .agent-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 0;
+  }
+  .agent-card.open .agent-body { display: block; }
+
+  .prompt-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .tab-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 10px 18px; cursor: pointer; background: transparent;
+    border: none; color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+  .tab-btn.active { color: var(--ember); border-bottom-color: var(--ember); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .prompt-content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.8;
+    color: var(--steel);
+    padding: 24px;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 420px; overflow-y: auto;
+    background: var(--bg);
+  }
+  /* Syntax-like coloring for prompt sections */
+  .prompt-content .sec-head { color: var(--ember); font-weight: 600; }
+  .prompt-content .task-num { color: var(--ember2); }
+  .prompt-content .neg-inst { color: #e88; }
+  .prompt-content .crit-ok  { color: var(--green); }
+
+  .validation-pane { padding: 20px 24px; }
+  .dim-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .dim-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); width: 130px; flex-shrink: 0;
+  }
+  .dim-bar-bg {
+    flex: 1; height: 4px; background: var(--bg3);
+    position: relative; overflow: hidden;
+  }
+  .dim-bar {
+    height: 100%; background: var(--ember);
+    transition: width 1s cubic-bezier(.16,1,.3,1);
+  }
+  .dim-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text); width: 36px; text-align: right;
+  }
+  .issues-list { margin-top: 16px; }
+  .issue-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    padding: 4px 0;
+  }
+  .issue-item::before { content: '◦ '; color: var(--ember); }
+
+  .copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    padding: 8px 16px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); transition: all .15s;
+    float: right; margin: 12px 24px;
+  }
+  .copy-btn:hover { color: var(--ember); border-color: var(--ember); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  /* ── Taxonomy Panel ──────────────────────────────────────────────────── */
+  .taxonomy-section {
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+  }
+  .tax-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  .tax-role {
+    background: var(--bg2);
+    padding: 12px 14px;
+    transition: background .15s;
+    cursor: default;
+  }
+  .tax-role:hover { background: var(--bg3); }
+  .tax-role .r-emoji { font-size: 18px; margin-bottom: 4px; }
+  .tax-role .r-name {
+    font-size: 11px; font-weight: 600; line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .tax-role .r-cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Stats Bar ───────────────────────────────────────────────────────── */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    margin: 32px 0;
+  }
+  .stat {
+    background: var(--bg2); padding: 20px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px; line-height: 1;
+    color: var(--ember);
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-top: 4px;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────────── */
+  footer {
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  footer p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted); letter-spacing: 2px;
+  }
+
+  /* ── Scrollbar ───────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ember); }
+
+  /* ── Glow text utility ───────────────────────────────────────────────── */
+  .glow { text-shadow: 0 0 20px rgba(255,107,0,0.5); }
+
+  /* ── Empty state ─────────────────────────────────────────────────────── */
+  .empty-state {
+    padding: 60px 0; text-align: center;
+    display: none;
+  }
+  .empty-state.visible { display: block; }
+  .empty-state p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--muted); letter-spacing: 2px;
+    margin-top: 12px;
+  }
+  .anvil { font-size: 64px; opacity: 0.15; }
+
+  @media (max-width: 700px) {
+    .tagline { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2,1fr); }
+    header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .results-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<canvas class="sparks-canvas" id="sparksCanvas"></canvas>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div>
+      <div class="logo">PromptForge</div>
+      <div class="logo-sub">Sistema Generador de Prompts Hiper-Especializados</div>
+    </div>
+    <div class="version-badge">v2.0</div>
+  </header>
+
+  <!-- Tagline -->
+  <div class="tagline">
+    <h1>
+      Da un objetivo complejo.<br>
+      Recibe un equipo de <em>prompts listos</em> para orquestación multi-agente.
+    </h1>
+    <div class="pipeline">
+      <span class="arrow">→</span> Objetivo en lenguaje natural<br>
+      <span class="arrow">→</span> Análisis: dominio + tareas + roles<br>
+      <span class="arrow">→</span> Generación CO-STAR++ por rol<br>
+      <span class="arrow">→</span> Validación 5 dimensiones<br>
+      <span class="arrow">→</span> Exportación <span class="dim">JSON / MD / CrewAI</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">30</div><div class="stat-label">Roles</div></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">Dominios</div></div>
+    <div class="stat"><div class="stat-num">9</div><div class="stat-label">Secciones CO-STAR++</div></div>
+    <div class="stat"><div class="stat-num glow" id="liveScore">98</div><div class="stat-label">Score Calidad</div></div>
+  </div>
+
+  <!-- API Key -->
+  <div class="api-bar">
+    <label>ANTHROPIC KEY</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-... (opcional — sin key usa motor offline)" autocomplete="off">
+    <div class="api-status offline" id="apiStatus">OFFLINE</div>
+  </div>
+
+  <!-- Forge Input -->
+  <div class="forge-section">
+    <div class="section-label"><span>01</span> FORJAR PROMPTS</div>
+
+    <textarea class="objective-input" id="objectiveInput" rows="3"
+      placeholder="Describe tu objetivo... ej: Implementar un sistema de detección de fraudes basado en machine learning con explicabilidad y monitoreo de drift en producción"></textarea>
+
+    <textarea class="context-input" id="contextInput" rows="2"
+      placeholder="// Contexto adicional opcional — stack tecnológico, restricciones, normativas, audiencia..."></textarea>
+
+    <div class="quick-fills">
+      <button class="quick-fill" data-obj="Implementar un sistema de detección de fraudes bancarios con machine learning y explicabilidad XAI" data-ctx="Stack: Python, scikit-learn, FastAPI. Cumplimiento GDPR. Latencia P95 < 100ms.">🤖 Fraudes ML</button>
+      <button class="quick-fill" data-obj="Construir un juego de naves espaciales en JavaScript con canvas, física de colisiones y sistema de puntuación" data-ctx="Sin dependencias externas. Jugable en navegador. Target: jugadores casual.">🎮 Juego JS</button>
+      <button class="quick-fill" data-obj="Auditar un modelo de lenguaje grande para riesgo de sesgo demográfico y cumplimiento EU AI Act" data-ctx="Audiencia: equipo legal + técnico. Output: informe ejecutivo + informe técnico detallado.">⚖️ Auditoría LLM</button>
+      <button class="quick-fill" data-obj="Implementar un filtro de Kalman en Python para seguimiento de objetos en tiempo real" data-ctx="Optimización numérica. Cobertura de tests > 90%. Documentación matemática.">📡 Filtro Kalman</button>
+      <button class="quick-fill" data-obj="Desarrollar un sistema de triaje clínico automatizado con IA para urgencias hospitalarias" data-ctx="Cumplimiento HIPAA. Validación clínica requerida. Integración con HIS.">🏥 Triaje Clínico</button>
+    </div>
+
+    <div class="forge-controls">
+      <button class="forge-btn" id="forgeBtn" onclick="runForge()">⚒ FORJAR</button>
+      <select class="roles-select" id="maxRoles">
+        <option value="3">3 agentes</option>
+        <option value="4" selected>4 agentes</option>
+        <option value="6">6 agentes</option>
+        <option value="8">8 agentes</option>
+      </select>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-stages">
+        <div class="stage" id="s1">ANÁLISIS</div>
+        <div class="stage" id="s2">ROLES</div>
+        <div class="stage" id="s3">GENERACIÓN</div>
+        <div class="stage" id="s4">VALIDACIÓN</div>
+        <div class="stage" id="s5">EXPORT</div>
+      </div>
+      <div class="progress-log" id="progressLog">Iniciando PromptForge...</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection" style="display:none">
+    <div class="results-header">
+      <div>
+        <div class="section-label"><span>02</span> PROMPTS GENERADOS</div>
+        <div style="display:flex; align-items:baseline; gap:12px; margin-top:8px">
+          <div class="score-display" id="overallScore">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)" id="promptCount"></div>
+        </div>
+      </div>
+      <div class="export-btns">
+        <button class="export-btn" onclick="exportJSON()">⬇ JSON</button>
+        <button class="export-btn" onclick="exportMarkdown()">⬇ MD</button>
+        <button class="export-btn" onclick="exportCrewAI()">⬇ CrewAI</button>
+      </div>
+    </div>
+    <div class="agents-grid" id="agentsGrid"></div>
+  </div>
+
+  <div class="empty-state visible" id="emptyState">
+    <div class="anvil">⚒</div>
+    <p>Introduce un objetivo y pulsa FORJAR</p>
+  </div>
+
+  <!-- Taxonomy -->
+  <div class="taxonomy-section">
+    <div class="section-label"><span>03</span> TAXONOMÍA DE ROLES</div>
+    <div class="tax-grid" id="taxonomyGrid"></div>
+  </div>
+
+  <footer>
+    <p>PROMPTFORGE v2.0 — FÁBRICA DE PROMPTS MULTI-AGENTE</p>
+    <p>CO-STAR++ · CHAIN-OF-THOUGHT · AUTO-REFINEMENT</p>
+  </footer>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   PROMPTFORGE ENGINE — JavaScript port del motor Python
+   Implementa el pipeline completo en modo offline
+   Con API key: usa Claude para meta-prompting dinámico
+   ════════════════════════════════════════════════════════════════ */
+
+// ── Sparks canvas animation ──────────────────────────────────────
+const canvas = document.getElementById('sparksCanvas');
+const ctx2 = canvas.getContext('2d');
+let sparks = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function spawnSpark() {
+  sparks.push({
+    x: Math.random() * canvas.width,
+    y: canvas.height + 10,
+    vx: (Math.random() - 0.5) * 1.2,
+    vy: -(Math.random() * 2 + 0.5),
+    life: 1, decay: Math.random() * 0.008 + 0.004,
+    size: Math.random() * 2 + 0.5,
+    hue: Math.random() * 30 + 15,
+  });
+}
+
+function animateSparks() {
+  ctx2.clearRect(0, 0, canvas.width, canvas.height);
+  if (Math.random() < 0.3) spawnSpark();
+  sparks = sparks.filter(s => s.life > 0);
+  sparks.forEach(s => {
+    s.x += s.vx; s.y += s.vy; s.life -= s.decay;
+    ctx2.beginPath();
+    ctx2.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx2.fillStyle = `hsla(${s.hue}, 100%, 60%, ${s.life})`;
+    ctx2.fill();
+  });
+  requestAnimationFrame(animateSparks);
+}
+animateSparks();
+
+// ── API Key handling ─────────────────────────────────────────────
+const apiKeyInput = document.getElementById('apiKey');
+const apiStatus   = document.getElementById('apiStatus');
+
+apiKeyInput.addEventListener('input', () => {
+  const has = apiKeyInput.value.trim().startsWith('sk-');
+  apiStatus.textContent = has ? 'ONLINE' : 'OFFLINE';
+  apiStatus.className = 'api-status ' + (has ? 'online' : 'offline');
+});
+
+// ── Quick fills ──────────────────────────────────────────────────
+document.querySelectorAll('.quick-fill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('objectiveInput').value = btn.dataset.obj;
+    document.getElementById('contextInput').value   = btn.dataset.ctx || '';
+  });
+});
+
+// ── Domain Taxonomy (JS version) ─────────────────────────────────
+const DOMAIN_DB = {
+  machine_learning:     { label:'Machine Learning & IA',    kw:['machine learning','ml','modelo','entrenamiento','dataset','neural','deep learning','pytorch','tensorflow','sklearn','predicción','fraude','xai','explicab','drift','embedding','transformer','llm','detección'], roles:['data_researcher','ml_engineer','model_validator','mlops_engineer','critic_evaluator','technical_writer'] },
+  software_engineering: { label:'Ingeniería de Software',   kw:['software','aplicación','app','backend','frontend','api','javascript','python','java','typescript','react','vue','node','docker','kubernetes','juego','game','web','canvas','naves','videojuego','filtro','kalman'], roles:['software_architect','senior_developer','qa_engineer','devops_engineer','technical_writer','critic_evaluator'] },
+  cybersecurity:        { label:'Ciberseguridad',           kw:['seguridad','ciberseguridad','vulnerabilidad','pentest','auditoría','cifrado','firewall','malware','amenaza','compliance','gdpr','iso 27001','sesgo','bias'], roles:['security_researcher','pentester','compliance_analyst','ethics_evaluator','technical_writer'] },
+  data_science:         { label:'Ciencia de Datos',         kw:['datos','análisis','estadística','visualización','dashboard','bi','kpi','pipeline','etl','warehouse','spark','pandas','exploración','eda'], roles:['data_researcher','data_engineer','data_analyst','visualization_specialist','technical_writer'] },
+  medicine_health:      { label:'Medicina & Salud',         kw:['médico','clínico','salud','paciente','diagnóstico','tratamiento','fármaco','hospital','enfermería','ensayo clínico','triaje','hipaa','biomarcador','urgencias'], roles:['medical_researcher','clinical_analyst','compliance_analyst','regulatory_writer','ethics_evaluator'] },
+  legal:                { label:'Legal & Regulatorio',      kw:['legal','jurídico','ley','derecho','contrato','regulatorio','normativa','eu ai act','gdpr','compliance','propiedad intelectual','sesgo','ético'], roles:['legal_researcher','compliance_analyst','ethics_evaluator','regulatory_writer','critic_evaluator'] },
+  finance:              { label:'Finanzas & Economía',      kw:['financiero','finanzas','inversión','riesgo financiero','cartera','trading','banco','crédito','scoring','dcf','var','hedge','fraude financiero'], roles:['financial_researcher','risk_analyst','financial_modeler','compliance_analyst','technical_writer'] },
+  research_general:     { label:'Investigación General',    kw:['investigación','research','paper','artículo','hipótesis','experimento','metodología','revisión sistemática','literatura','benchmark','survey'], roles:['research_analyst','methodology_expert','data_researcher','academic_writer','peer_reviewer'] },
+};
+
+const ROLE_REGISTRY = {
+  data_researcher:        { name:'Investigador de Datos y Contexto',      cat:'investigación', emoji:'🔬', purpose:'Recopilar, sintetizar y estructurar información sobre el dominio del problema. Identifica datasets, papers relevantes, benchmarks y define el marco conceptual.', skills:['búsqueda sistemática de literatura','síntesis de información técnica','identificación de patrones','evaluación de fuentes'], thinking:'Antes de responder, aplica: 1) MAPEA el alcance completo 2) DESCOMPÓN en sub-problemas 3) PRIORIZA por impacto 4) SINTETIZA los hallazgos. Muestra explícitamente cada etapa.', output:'Informe estructurado en Markdown con: Resumen ejecutivo, Tabla comparativa de fuentes, Hallazgos clave, Referencias.' },
+  research_analyst:       { name:'Analista de Investigación y Estado del Arte', cat:'investigación', emoji:'📚', purpose:'Realizar análisis comparativos de soluciones existentes, mapear el estado del arte e identificar gaps de conocimiento.', skills:['revisión sistemática','análisis comparativo','síntesis de evidencia'], thinking:'Razona paso a paso: enumera hechos conocidos, aplica razonamiento deductivo, declara supuestos, presenta conclusión con nivel de confianza.', output:'Informe comparativo con tabla de estado del arte, gaps identificados y recomendaciones.' },
+  medical_researcher:     { name:'Investigador Biomédico Senior',         cat:'investigación', emoji:'🏥', purpose:'Investigar el contexto clínico y biomédico. Evalúa evidencia científica, guías clínicas y parámetros estadísticos.', skills:['evaluación crítica de evidencia EBM','guías clínicas internacionales','análisis bioestadístico'], thinking:'Fundamenta cada afirmación en evidencia: cita fuentes primarias, distingue niveles de evidencia (A/B/C), declara incertidumbre.', output:'Informe clínico estructurado con niveles de evidencia, tablas de hallazgos y referencias PubMed.' },
+  legal_researcher:       { name:'Investigador Legal y Normativo',        cat:'investigación', emoji:'⚖️', purpose:'Investigar el marco legal y regulatorio aplicable. Identifica normativas, jurisprudencia y riesgos de cumplimiento.', skills:['análisis de normativas','investigación de jurisprudencia','evaluación de compliance'], thinking:'Identifica normativas aplicables → cita artículo/sección específica → evalúa cumplimiento → propone acción de cierre.', output:'Memo legal con: normativas aplicables, análisis de cumplimiento, riesgos y plan de mitigación.' },
+  security_researcher:    { name:'Investigador de Seguridad',             cat:'investigación', emoji:'🛡️', purpose:'Investigar el paisaje de amenazas, CVEs aplicables y mejores prácticas de seguridad para el contexto del proyecto.', skills:['análisis de threat landscape','CVEs y vulnerabilidades','OWASP/MITRE ATT&CK'], thinking:'Pensamiento adversarial: ¿Qué intentaría un atacante? ¿Puntos de fragilidad? ¿Supuestos falsos? ¿Defensa más efectiva?', output:'Informe de amenazas con threat landscape, CVEs aplicables y contramedidas priorizadas.' },
+  financial_researcher:   { name:'Investigador Financiero y de Mercados', cat:'investigación', emoji:'💹', purpose:'Investigar el contexto financiero, modelos cuantitativos relevantes y frameworks de análisis de riesgo.', skills:['modelado financiero cuantitativo','gestión de riesgos','regulaciones financieras'], thinking:'Análisis cuantitativo: define variables y unidades, especifica modelo matemático, valida supuestos, presenta con intervalos de confianza.', output:'Informe financiero con modelo de riesgo, análisis de sensibilidad y recomendaciones regulatorias.' },
+  software_architect:     { name:'Arquitecto de Software Senior',         cat:'ingeniería',    emoji:'🏗️', purpose:'Diseñar la arquitectura técnica de alto nivel. Define componentes, interfaces, patrones y garantiza escalabilidad y mantenibilidad.', skills:['diseño de arquitecturas','patrones arquitectónicos','análisis de trade-offs','diagramación C4/UML'], thinking:'Pensamiento sistémico: 1) COMPONENTES 2) RELACIONES y acoples 3) EMERGENCIA del sistema 4) TRADE-OFFS de cada decisión.', output:'Documento de arquitectura con diagrama C4 (Mermaid), ADRs y análisis de trade-offs.' },
+  senior_developer:       { name:'Desarrollador Senior / Implementador',  cat:'ingeniería',    emoji:'💻', purpose:'Implementar código de alta calidad que materializa diseños y especificaciones. Código limpio, documentado y con tests.', skills:['implementación en múltiples lenguajes','patrones de diseño SOLID','optimización de rendimiento'], thinking:'1) LEE requisitos completos 2) DISEÑA interfaz antes de implementar 3) IMPLEMENTA en incrementos 4) DOCUMENTA conforme avanzas.', output:'Código con docstrings completos, comentarios inline para lógica no trivial, type annotations y ejemplo de uso.' },
+  ml_engineer:            { name:'Ingeniero de Machine Learning',         cat:'ingeniería',    emoji:'🤖', purpose:'Diseñar, implementar y optimizar soluciones de ML. Desde preprocesamiento hasta entrenamiento, evaluación y despliegue reproducible.', skills:['pipelines ML end-to-end','selección de algoritmos','feature engineering','MLflow/W&B'], thinking:'Proceso experimental: HIPÓTESIS → EXPERIMENTO mínimo → OBSERVACIÓN con métricas → CONCLUSIÓN. ¿Confirma o refuta? ¿Siguiente iteración?', output:'Código Python con pipeline ML, tracking MLflow, model card y documentación de decisiones.' },
+  data_engineer:          { name:'Ingeniero de Datos y Pipelines',        cat:'ingeniería',    emoji:'🔧', purpose:'Diseñar e implementar pipelines de datos robustos. Gestiona ingesta, transformación, almacenamiento y calidad del dato.', skills:['pipelines ETL/ELT','data lakes y warehouses','calidad de datos','linaje'], thinking:'Sigue el flujo del dato: ORIGEN → TRANSFORMACIONES → DESTINO → LINAJE trazable en cada paso.', output:'Código de pipeline con validación de calidad (Great Expectations), lineage documentado y SLAs definidos.' },
+  devops_engineer:        { name:'Ingeniero DevOps / MLOps',              cat:'ingeniería',    emoji:'⚙️', purpose:'Diseñar e implementar CI/CD, containerización y monitorización. Garantiza despliegue confiable en producción.', skills:['Docker/Kubernetes','GitHub Actions/GitLab CI','Terraform','observabilidad'], thinking:'Automatización primero: si debe hacerse más de una vez → automatizar. Si puede fallar → recovery automático. Si se despliega → monitorizar.', output:'Dockerfile multi-stage, pipeline CI/CD YAML, configuración de alertas y runbook de operaciones.' },
+  mlops_engineer:         { name:'Ingeniero MLOps y Producción',          cat:'ingeniería',    emoji:'🚀', purpose:'Gestionar el ciclo de vida completo de modelos ML en producción: serving, monitoreo de drift y re-entrenamiento automatizado.', skills:['model serving APIs','detección de data/model drift','MLflow/DVC','pipelines de re-entrenamiento'], thinking:'Pensamiento operacional: DISPONIBILIDAD → OBSERVABILIDAD → RECUPERACIÓN → EVOLUCIÓN sin downtime.', output:'Pipeline MLOps con serving endpoint, configuración de drift detection y playbook de re-entrenamiento.' },
+  pentester:              { name:'Especialista en Pentesting',             cat:'ingeniería',    emoji:'🔐', purpose:'Ejecutar evaluaciones de seguridad ofensiva. Identifica y demuestra vulnerabilidades simulando comportamiento real de atacante.', skills:['metodologías OWASP/PTES','explotación web y red','Burp Suite/Metasploit','redacción de informes pentest'], thinking:'Adversarial: RECONOCIMIENTO → ESCANEO → EXPLOTACIÓN → POST-EXPLOTACIÓN. Documenta cada hallazgo con CVSSv3 y PoC.', output:'Informe de pentest con tabla de hallazgos por severidad, PoC por vulnerabilidad y plan de remediación.' },
+  financial_modeler:      { name:'Modelador Financiero Cuantitativo',     cat:'ingeniería',    emoji:'📊', purpose:'Diseñar e implementar modelos financieros cuantitativos: valoración, riesgo y optimización de portafolios.', skills:['modelado Monte Carlo','VaR/CVaR','optimización Markowitz','backtesting'], thinking:'Rigor cuantitativo: especifica supuestos → valida con datos históricos → analiza sensibilidad → presenta con condiciones de validez.', output:'Código Python del modelo con análisis de sensibilidad, backtesting y documentación de supuestos.' },
+  qa_engineer:            { name:'Ingeniero de Calidad y Testing (QA)',   cat:'validación',    emoji:'🧪', purpose:'Diseñar y ejecutar estrategias de testing exhaustivas. Verifica corrección, robustez y confiabilidad del software.', skills:['pirámide de tests','pytest/Jest/JUnit','análisis de cobertura','testing de rendimiento'], thinking:'Para cada componente: ¿Cuál es el contrato? ¿Qué inputs fallarían? ¿Edge cases en los límites? ¿Comportamiento bajo carga?', output:'Suite de tests organizada: test_[componente]_[condición]_[resultado]. Docstring en cada test. Fixtures documentadas.' },
+  model_validator:        { name:'Validador de Modelos ML',               cat:'validación',    emoji:'📏', purpose:'Evaluar rigurosamente rendimiento, fiabilidad y fairness de modelos ML. Detecta sesgos y valida criterios de producción.', skills:['métricas de ML con IC 95%','análisis de fairness','SHAP/LIME','evaluación adversarial'], thinking:'Rigor estadístico: reporta IC 95%, distingue significancia estadística vs. práctica, corrige por comparaciones múltiples.', output:'Informe de evaluación con tabla de métricas, análisis de fairness, curvas ROC y recomendación producción.' },
+  clinical_analyst:       { name:'Analista Clínico y Validador Biomédico', cat:'validación',   emoji:'🩺', purpose:'Validar que los resultados cumplen estándares clínicos y de seguridad del paciente. Evalúa validez clínica e impacto en outcomes.', skills:['estadística clínica','sensibilidad/especificidad/AUC','FDA/CE Mark','impacto en outcomes'], thinking:'Basado en evidencia: nivel de evidencia → significancia clínica vs. estadística → impacto en outcomes primarios.', output:'Informe de validación clínica con métricas de rendimiento, análisis de subgrupos y recomendación regulatoria.' },
+  compliance_analyst:     { name:'Analista de Compliance y Regulación',   cat:'validación',    emoji:'📋', purpose:'Verificar cumplimiento con normativas aplicables. Identifica gaps, documenta controles y propone plan de remediación.', skills:['GDPR/HIPAA/PCI-DSS/SOX','diseño de controles','auditoría de sistemas','gestión de riesgos regulatorios'], thinking:'Regulatorio: IDENTIFICACIÓN de normativas → MAPEO de requisitos → EVALUACIÓN cumple/no-cumple → PLAN con responsables y fechas.', output:'Informe de compliance con matriz de controles, gap analysis, riesgo residual y plan de remediación priorizado.' },
+  risk_analyst:           { name:'Analista de Riesgos',                   cat:'validación',    emoji:'⚠️', purpose:'Identificar, cuantificar y priorizar riesgos técnicos y de negocio. Propone estrategias de mitigación.', skills:['identificación de riesgos','probabilidad × impacto','FTA/FMEA','matrices de riesgo'], thinking:'Sistemático: IDENTIFICACIÓN exhaustiva → PROBABILIDAD×IMPACTO → PRIORIZACIÓN por EV(Loss) → MITIGACIÓN con responsables.', output:'Matriz de riesgos con mapa de calor, estrategias de mitigación y apetito de riesgo definido.' },
+  incident_responder:     { name:'Respondedor de Incidentes de Seguridad', cat:'validación',   emoji:'🚨', purpose:'Gestionar respuesta ante incidentes de seguridad. Contiene el impacto, realiza análisis forense y documenta lecciones.', skills:['playbooks de respuesta','análisis forense digital','contención y erradicación','RCA'], thinking:'Crisis: CONTENER primero → COMUNICAR proactivamente → EVIDENCIAR con timestamps → APRENDER en post-mortem blameless.', output:'Informe de incidente con timeline, análisis forense, acciones tomadas y lecciones aprendidas.' },
+  technical_writer:       { name:'Redactor Técnico Senior',               cat:'documentación', emoji:'✍️', purpose:'Crear documentación técnica clara y completa. READMEs, APIs, tutoriales y manuales de operaciones.', skills:['redacción técnica estructurada','OpenAPI/Swagger','Mermaid/PlantUML','bases de conocimiento'], thinking:'Audiencia primero: ¿Quién lee? ¿Qué necesita saber? → Pirámide invertida → Párrafo = una idea → Referencias verificables.', output:'Documentación Markdown con: README, referencia de API con ejemplos curl, guía de troubleshooting y CHANGELOG.' },
+  academic_writer:        { name:'Redactor Académico y Científico',       cat:'documentación', emoji:'🎓', purpose:'Redactar papers, revisiones de literatura y documentación académica con rigor metodológico y estilo formal.', skills:['papers científicos','APA/IEEE/Vancouver','argumentación científica','estilo de journals'], thinking:'Rigor académico: cita fuentes primarias, distingue hechos establecidos de emergentes, contextualiza en estado del arte.', output:'Paper con estructura IMRaD: Abstract, Intro, Methods, Results, Discussion, References en formato journal.' },
+  regulatory_writer:      { name:'Redactor Regulatorio y de Compliance',  cat:'documentación', emoji:'📄', purpose:'Redactar documentación regulatoria, dossiers y SOPs. Lenguaje preciso acorde a marcos normativos.', skills:['dossiers FDA/EMA/CE','SOPs GMP/GLP','reporting a reguladores','gestión documental'], thinking:'Precisión regulatoria: usa lenguaje exacto de la norma → cita artículo/párrafo específico → distingue "debe" vs "debería".', output:'Documento regulatorio con estructura formal, referencias normativas y evidencias requeridas.' },
+  visualization_specialist:{ name:'Especialista en Visualización de Datos',cat:'documentación',emoji:'🎨', purpose:'Diseñar visualizaciones claras e informativas. Selecciona tipos de gráfico apropiados y garantiza accesibilidad.', skills:['principios Tufte/Few/Cairo','matplotlib/plotly/D3','storytelling con datos','accesibilidad'], thinking:'Diseño visual: MENSAJE central → AUDIENCIA y decisión → TIPO de gráfico más honesto → INTEGRIDAD sin distorsión.', output:'Código de visualización con paleta accesible, títulos descriptivos y comentarios de decisiones de diseño.' },
+  critic_evaluator:       { name:'Crítico y Evaluador de Calidad',        cat:'crítica',       emoji:'🔍', purpose:'Revisar críticamente el trabajo de otros agentes. Identifica errores, inconsistencias, sesgos y áreas de mejora.', skills:['revisión crítica de código e informes','identificación de sesgos','análisis de consistencia lógica'], thinking:'Crítica estructurada: RESUMEN objetivo → FORTALEZAS reales → DEBILIDADES con evidencia → IMPACTO verificable.', output:'Informe de revisión con hallazgos por prioridad (crítico/alto/medio/bajo), evidencia y sugerencias accionables.' },
+  ethics_evaluator:       { name:'Evaluador de Ética, Sesgo y Equidad',   cat:'crítica',       emoji:'🏛️', purpose:'Analizar aspectos éticos, de sesgo y equidad. Identifica riesgos éticos y propone salvaguardas.', skills:['métricas de fairness','EU AI Act/IEEE EAD','impacto en grupos vulnerables','salvaguardas éticas'], thinking:'Marco ético: STAKEHOLDERS afectados → IMPACTO DIFERENCIAL por grupo → MARCOS ÉTICOS (consecuencialismo/deontología) → MITIGACIÓN.', output:'Informe de impacto ético con métricas de fairness, análisis de grupos afectados y recomendaciones de salvaguarda.' },
+  peer_reviewer:          { name:'Revisor de Pares Científico',           cat:'crítica',       emoji:'🎯', purpose:'Revisión de pares rigurosa: evalúa solidez metodológica, validez de conclusiones y relevancia.', skills:['rigor metodológico','validez estadística','limitaciones y sesgos','recomendación aceptación/revisión'], thinking:'Científico: lee completo antes de juzgar → evalúa pregunta/método/resultados/conclusiones por separado → problemas fatales vs. menores.', output:'Informe de revisión con secciones: Resumen, Comentarios Mayores, Comentarios Menores, Recomendación justificada.' },
+  orchestrator:           { name:'Orquestador y Coordinador del Equipo',  cat:'orquestación',  emoji:'🎼', purpose:'Coordinar el equipo de agentes, gestionar el flujo de tareas, resolver conflictos y asegurar coherencia del resultado.', skills:['planificación y descomposición','coordinación de dependencias','síntesis de resultados','gestión del estado compartido'], thinking:'Coordinación: ESTADO actual → DEPENDENCIAS y bloqueos → PRIORIZACIÓN por impacto → SÍNTESIS de todos los outputs.', output:'Plan de trabajo con asignación de tareas, dependencias, checkpoints y criterios de completitud.' },
+  data_analyst:           { name:'Analista de Datos y Business Intelligence', cat:'investigación', emoji:'📈', purpose:'Analizar datos para extraer insights accionables. EDA, visualizaciones, dashboards y reporting.', skills:['EDA','estadística descriptiva e inferencial','SQL/BI','dashboards'], thinking:'Data-driven: EXPLORAR sin hipótesis → HIPÓTESIS específicas → VALIDAR con estadística → COMUNICAR con nivel de confianza.', output:'Informe de análisis con EDA, visualizaciones clave, insights accionables y recomendaciones.' },
+  methodology_expert:     { name:'Experto en Metodología de Investigación', cat:'investigación', emoji:'🔭', purpose:'Diseñar metodología de investigación o experimentación. Define protocolo, controles y criterios de validez.', skills:['diseño experimental','selección de metodologías','control de sesgos','validez interna/externa'], thinking:'Rigor metodológico: pregunta PICO → metodología apropiada → sesgos potenciales → análisis a priori → criterios de validez.', output:'Protocolo de estudio con diseño, variables, controles, análisis estadístico y criterios de éxito.' },
+};
+
+// ── Domain detection ─────────────────────────────────────────────
+function detectDomain(text) {
+  const t = text.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const [key, domain] of Object.entries(DOMAIN_DB)) {
+    const score = domain.kw.reduce((acc, kw) => acc + (t.includes(kw) ? kw.length : 0), 0);
+    if (score > bestScore) { bestScore = score; best = key; }
+  }
+  return best || 'software_engineering';
+}
+
+function detectImplicitTasks(text) {
+  const t = text.toLowerCase();
+  const tasks = [];
+  const verbs = [
+    [/\b(implementar?|desarrollar?|construir?|crear?)\b/, 'implementación técnica'],
+    [/\b(analizar?|investigar?|estudiar?|examinar?)\b/,    'análisis e investigación'],
+    [/\b(detectar?|identificar?|descubrir?)\b/,            'detección e identificación'],
+    [/\b(validar?|verificar?|probar?|testear?)\b/,         'validación y testing'],
+    [/\b(desplegar?|integrar?|escalar?)\b/,                'despliegue e integración'],
+    [/\b(documentar?|redactar?|escribir?)\b/,              'documentación y comunicación'],
+    [/\b(auditar?|revisar?|evaluar?)\b/,                   'auditoría y evaluación'],
+    [/\b(optimizar?|mejorar?|ajustar?)\b/,                 'optimización y mejora'],
+    [/\b(monitorizar?|supervisar?)\b/,                     'monitorización'],
+  ];
+  for (const [re, task] of verbs) if (re.test(t) && !tasks.includes(task)) tasks.push(task);
+  return tasks.length ? tasks : ['análisis de requisitos','implementación técnica','validación y testing'];
+}
+
+function estimateComplexity(text, tasks) {
+  const score = text.split(' ').length / 20 + tasks.length +
+    (text.match(/\b(complejo|avanzado|enterprise|escalable|distribuido|producción|real.?time)\b/gi)||[]).length * 2;
+  if (score < 5)  return 'bajo';
+  if (score < 10) return 'medio';
+  if (score < 18) return 'alto';
+  return 'muy_alto';
+}
+
+// ── Prompt Template Engine ───────────────────────────────────────
+function buildPrompt(role, analysis) {
+  const r = ROLE_REGISTRY[role.id];
+  const domain = analysis.domainLabel;
+  const obj = analysis.objective;
+  const skills = r.skills.slice(0,4).join('; ');
+  const tasks = getDomainTasks(domain, role.id, analysis);
+  const constraints = buildConstraints(role.id, domain);
+  const output = buildOutputFormat(role.id);
+  const fewShot = buildFewShot(role.id, domain);
+  const criteria = buildCriteria(role.id, analysis);
+
+  return `# ROL Y EXPERTISE
+${r.purpose.split('.')[0]}. Eres un ${r.name} con 12+ años de experiencia especializada en ${domain}. Tus competencias clave son: ${skills}. Aplicas estándares de calidad profesional de nivel producción en cada entregable.
+
+---
+
+# CONTEXTO DEL PROYECTO
+Formas parte de un equipo multi-agente especializado trabajando en:
+
+**Objetivo:** ${obj}
+
+**Dominio:** ${domain} | **Complejidad:** ${analysis.complexity.toUpperCase()}
+**Tareas detectadas:** ${analysis.tasks.join(', ')}
+
+**Tu Rol en el Equipo:** ${r.purpose}
+
+---
+
+# OBJETIVO PRINCIPAL
+${r.purpose.split('.')[0]} para el proyecto: "${obj.substring(0,80)}${obj.length>80?'...':''}". Tu entregable debe estar listo para uso directo por el equipo sin clarificaciones adicionales.
+
+---
+
+# TAREAS ESPECÍFICAS
+${tasks.map((t,i) => `${i+1}. ${t}`).join('\n')}
+
+---
+
+# RESTRICCIONES Y DIRECTRICES
+${constraints.map(c => `- ${c}`).join('\n')}
+
+---
+
+# CADENA DE RAZONAMIENTO (PROCESO MENTAL REQUERIDO)
+Antes de producir cualquier output, aplica el siguiente proceso:
+
+${r.thinking}
+
+---
+
+# FORMATO DE RESPUESTA
+${output}
+
+---
+
+# EJEMPLOS FEW-SHOT
+${fewShot}
+
+---
+
+# CRITERIOS DE ÉXITO
+${criteria.map(c => `✓ ${c}`).join('\n')}
+
+---
+*Generado por PromptForge v2.0 — ${new Date().toLocaleString('es')}*`;
+}
+
+function getDomainTasks(domain, roleId, analysis) {
+  const taskDB = {
+    'Machine Learning & IA': {
+      data_researcher: ['Identificar y evaluar datasets públicos y privados relevantes','Revisar el estado del arte de modelos para este tipo de problema (últimos 3 años)','Documentar métricas estándar del campo y sus benchmarks de referencia','Analizar papers clave y sintetizar hallazgos en tabla comparativa','Identificar riesgos de sesgo más comunes en datasets del dominio','Proponer 3+ fuentes de datos alternativas con análisis de pros/contras'],
+      ml_engineer: ['Diseñar pipeline de preprocesamiento con manejo de outliers, nulos y encoding','Implementar 3 arquitecturas candidatas con justificación técnica de cada una','Configurar experimentación reproducible con MLflow/W&B y seed fijo','Optimizar hiperparámetros con validación cruzada estratificada (k=5)','Implementar módulo SHAP/LIME para explicabilidad de predicciones','Desarrollar API de inferencia con FastAPI y documentación OpenAPI','Documentar todas las decisiones de diseño en el Model Card'],
+      model_validator: ['Evaluar el modelo en múltiples particiones del dataset para detectar varianza','Calcular métricas primarias (AUC-ROC, F1, Precision, Recall) con IC 95%','Ejecutar análisis de fairness por grupos demográficos y subpoblaciones','Validar robustez ante perturbaciones de input (adversarial test cases)','Comparar rendimiento contra baselines estadísticos simples','Documentar limitaciones conocidas y condiciones de aplicabilidad'],
+      mlops_engineer: ['Diseñar pipeline CI/CD para entrenamiento, evaluación y despliegue automático','Implementar monitoreo de data drift y model drift con alertas automáticas','Configurar serving del modelo con SLA de latencia (P50/P95/P99)','Establecer pipeline de re-entrenamiento automático ante degradación','Implementar A/B testing framework para comparar versiones en producción'],
+      technical_writer: ['Redactar Model Card completo siguiendo estándar Hugging Face/Google','Documentar API de inferencia con ejemplos de requests/responses en OpenAPI','Crear guía de instalación y configuración del entorno de desarrollo','Escribir runbook de operaciones para el equipo de MLOps','Elaborar informe ejecutivo de resultados para stakeholders no técnicos'],
+      critic_evaluator: ['Revisar el diseño del pipeline identificando puntos de fallo únicos (SPOF)','Evaluar si las métricas de evaluación son las más apropiadas para el negocio','Identificar sesgos potenciales en el proceso de recolección y etiquetado','Cuestionar supuestos sobre la distribución de datos en producción vs. entrenamiento','Revisar el Model Card buscando omisiones de limitaciones importantes'],
+    },
+    'Ingeniería de Software': {
+      software_architect: ['Diseñar arquitectura de alto nivel con diagrama C4 (Context, Container, Component)','Definir interfaces y contratos entre componentes usando OpenAPI/AsyncAPI','Documentar decisiones de arquitectura (ADRs) con contexto, decisión y consecuencias','Evaluar trade-offs entre opciones tecnológicas con matriz de decisión ponderada','Identificar requisitos no funcionales: rendimiento, escalabilidad, seguridad','Diseñar estrategia de datos: modelo, migración y versionado'],
+      senior_developer: ['Implementar módulos core siguiendo principios SOLID y Clean Architecture','Escribir código autodocumentado con docstrings completos en cada función pública','Integrar manejo de errores robusto con tipos de error específicos y mensajes claros','Implementar logging estructurado con niveles apropiados (DEBUG/INFO/WARN/ERROR)','Crear endpoints de health-check y métricas de rendimiento','Revisar el código contra OWASP Top 10 para eliminar vulnerabilidades básicas'],
+      qa_engineer: ['Diseñar estrategia de testing: pirámide (unitario > integración > E2E)','Implementar tests unitarios con cobertura mínima del 80% en líneas críticas','Crear tests de integración para los flujos principales de usuario','Diseñar tests de carga para validar SLAs de rendimiento (k6/Locust)','Implementar tests de regresión automatizados para el pipeline CI/CD','Documentar casos de prueba en formato Given-When-Then'],
+      devops_engineer: ['Crear Dockerfile multi-stage optimizado con imagen base minimalista','Configurar pipeline CI/CD: lint → test → build → scan → deploy','Implementar despliegue Blue/Green o Canary para zero downtime','Configurar alertas de observabilidad: latencia P95, error rate, saturación','Implementar gestión de secretos con Vault o cloud secrets manager','Documentar runbook de operaciones y procedimientos de rollback'],
+      technical_writer: ['Crear README.md completo: descripción, instalación, uso y ejemplos ejecutables','Documentar la API con ejemplos curl y SDK en los lenguajes principales','Escribir guía de contribución (CONTRIBUTING.md) con convenciones del proyecto','Crear guía de troubleshooting con errores más comunes y soluciones','Elaborar diagrama de arquitectura legible para audiencias técnicas y no técnicas'],
+      critic_evaluator: ['Revisar arquitectura buscando violaciones SOLID y acoplamiento excesivo','Evaluar si el diseño de la API es RESTful y sigue convenciones estándar','Identificar posibles problemas de concurrencia, condiciones de carrera o deadlocks','Revisar el manejo de errores buscando excepciones silenciosas o mensajes engañosos','Evaluar si la estrategia de testing cubre los casos de borde más críticos'],
+    },
+  };
+
+  const domainTasks = taskDB[domain];
+  if (domainTasks && domainTasks[roleId]) return domainTasks[roleId];
+  // Generic fallback enriched with context
+  return [
+    `Analizar los requisitos del objetivo "${analysis.objective.substring(0,50)}..." desde la perspectiva del ${roleId.replace(/_/g,' ')}`,
+    'Descomponer el problema en sub-tareas independientes y manejables con entregables claros',
+    'Implementar la solución aplicando las mejores prácticas y estándares del dominio',
+    'Verificar que el resultado cumple con los criterios de calidad definidos',
+    'Documentar el proceso, decisiones tomadas y justificaciones técnicas',
+    `Contribuir a la tarea de '${analysis.tasks[0] || 'implementación'}' desde tu área de expertise`,
+    'Identificar y comunicar riesgos o limitaciones encontradas con alternativas propuestas',
+  ];
+}
+
+function buildConstraints(roleId, domain) {
+  const base = [
+    'No asumas contexto no proporcionado explícitamente en el briefing',
+    'Mantén el scope dentro de tu área de responsabilidad específica',
+    'Cuando encuentres ambigüedades, explicítalas y proporciona tu interpretación razonada',
+    'No produzcas output parcial sin indicar explícitamente qué partes están completas y cuáles pendientes',
+    'Evita afirmaciones sin respaldo técnico o referencial verificable',
+  ];
+  const extra = {
+    'Machine Learning & IA':  ['No uses datos del test set para decisiones de diseño (data leakage)','Evita sobreajuste al dataset de evaluación: no optimices para el holdout'],
+    'Ciberseguridad':         ['Opera exclusivamente dentro del scope autorizado y documentado','No propongas técnicas de explotación sin la correspondiente mitigación'],
+    'Medicina & Salud':       ['No hagas recomendaciones clínicas directas; tus outputs son para profesionales de salud','Declara el nivel de evidencia de cada afirmación clínica'],
+    'Legal & Regulatorio':    ['No proveas consejo legal vinculante; produce análisis para revisión por profesionales','Cita siempre artículo, sección y párrafo específico en afirmaciones normativas'],
+    'Finanzas & Economía':    ['No hagas recomendaciones de inversión; produce análisis para decisión cualificada','Declara todos los supuestos del modelo y sus condiciones de validez'],
+  };
+  return [...base, ...(extra[domain] || [])];
+}
+
+function buildOutputFormat(roleId) {
+  const formats = {
+    software_architect:   'Documento de arquitectura en Markdown: diagrama C4 (Mermaid), tabla de componentes, ADRs numerados y análisis de trade-offs. Longitud: 800-1500 palabras.',
+    senior_developer:     'Código con docstrings completos. Estructura de archivos clara. Type annotations. Sección "Uso" con ejemplo ejecutable al final.',
+    ml_engineer:          'Pipeline Python: preprocessing.py, models.py, evaluate.py, api.py. MLflow tracking configurado. Model Card incluido.',
+    qa_engineer:          'Tests en pytest: clases por componente, nombres test_[componente]_[condición]_[resultado], docstring en cada test, fixtures en conftest.py.',
+    devops_engineer:      'Dockerfile multi-stage + pipeline YAML CI/CD + configuración de alertas + runbook de operaciones en Markdown.',
+    model_validator:      'Informe de evaluación: tabla de métricas con IC 95%, curvas ROC descritas, análisis de fairness, recomendación producción (Sí/No/Condicionalmente).',
+    technical_writer:     'README.md completo + referencia API con ejemplos curl + guía de troubleshooting. Uso de Markdown con headers, tablas y bloques de código.',
+    critic_evaluator:     'Informe de revisión con hallazgos por prioridad (Crítico/Alto/Medio/Bajo): descripción, evidencia y sugerencia accionable. Tabla resumen.',
+    ethics_evaluator:     'Informe de impacto ético: tabla de grupos afectados, métricas de fairness calculadas, gaps identificados y salvaguardas recomendadas.',
+    data_researcher:      'Informe estructurado: tabla comparativa de fuentes/datasets, hallazgos clave sintetizados, gaps de conocimiento, recomendaciones.',
+    compliance_analyst:   'Matriz de compliance: normativa → requisito → estado (✓/✗/⚠) → evidencia → plan de cierre. Riesgo residual por área.',
+    orchestrator:         'Plan de trabajo: tabla de asignación de tareas, grafo de dependencias, checkpoints de validación y criterios de completitud por entregable.',
+  };
+  return formats[roleId] || 'Documento estructurado en Markdown con: resumen ejecutivo (2-3 párrafos), secciones numeradas con headers, tablas para información comparativa y referencias al final. Longitud: 600-2000 palabras según complejidad.';
+}
+
+function buildFewShot(roleId, domain) {
+  const examples = {
+    ml_engineer: `**Input:** "Implementar normalización de features para detección de fraudes"
+**Output (fragmento):**
+\`\`\`python
+class FraudFeatureNormalizer:
+    """
+    Normaliza features numéricas usando RobustScaler.
+    Justificación: Resistente a outliers (frecuentes en fraude).
+    Métricas: Ver evaluate.py para impacto en AUC-ROC.
+    """
+    def fit_transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        self.scaler_ = RobustScaler()
+        return pd.DataFrame(self.scaler_.fit_transform(X), columns=X.columns)
+\`\`\``,
+    qa_engineer: `**Input:** "Testear módulo de autenticación JWT"
+**Output (fragmento):**
+\`\`\`python
+class TestJWTAuthentication:
+    """Suite de tests para autenticación JWT. Cubre: generación, validación, expiración."""
+    
+    def test_valid_token_returns_user_id(self, auth_client, test_user):
+        """Token válido debe retornar el user_id correcto del payload."""
+        token = auth_client.generate_token(test_user.id)
+        assert auth_client.validate_token(token)["user_id"] == test_user.id
+    
+    def test_expired_token_raises_error(self, auth_client):
+        """Token expirado NO debe retornar None silenciosamente."""
+        with pytest.raises(TokenExpiredError, match="Token has expired"):
+            auth_client.validate_token(auth_client.generate_token("u1", expires_in=-1))
+\`\`\``,
+    critic_evaluator: `**Input:** "Revisar el diseño del pipeline de ML"
+**Output (fragmento):**
+## Hallazgo CRÍTICO — Data Leakage en Normalización
+- **Evidencia:** \`scaler.fit_transform(X_train + X_test)\` en preprocessing.py:47
+- **Impacto:** El modelo "ve" estadísticas del test set durante entrenamiento → métricas infladas (~5% AUC)
+- **Acción:** Aplicar \`fit\` solo en X_train, \`transform\` en X_test separadamente
+
+## Hallazgo ALTO — Sin manejo de distribución shift
+- **Evidencia:** No hay validación de la distribución de features en inferencia vs. entrenamiento
+- **Acción:** Implementar Great Expectations o test de Kolmogorov-Smirnov en el serving pipeline`,
+  };
+  return examples[roleId] || `**Tipo de Input esperado:** Especificación técnica o tarea concreta relacionada con el objetivo del proyecto.
+
+**Características del Output esperado:**
+- Responde directamente sin preámbulos ni frases de relleno
+- Usa terminología técnica específica de ${domain}
+- Estructura clara con secciones distinguibles
+- Incluye justificación de las decisiones tomadas
+- Señala explícitamente limitaciones o supuestos realizados
+
+**Lo que NO debe aparecer:** Frases genéricas ("Como IA puedo..."), respuestas incompletas sin aviso, afirmaciones sin respaldo técnico.`;
+}
+
+function buildCriteria(roleId, analysis) {
+  const specific = {
+    ml_engineer:      ['El código ejecuta sin errores en el entorno especificado','Las métricas del modelo superan el umbral mínimo definido','El experimento es reproducible con el mismo seed en diferente máquina'],
+    qa_engineer:      ['La suite cubre al menos el 80% de líneas críticas (cobertura medida)','Todos los tests son deterministas y pasan en el pipeline CI/CD','Edge cases y condiciones de borde están cubiertos con docstring'],
+    technical_writer: ['Un desarrollador nuevo puede usar el sistema siguiendo solo la documentación','Los ejemplos de código en la documentación son ejecutables y correctos','La documentación está actualizada respecto al código de producción'],
+    critic_evaluator: ['Cada crítica incluye evidencia técnica y sugerencia accionable concreta','Hallazgos priorizados por impacto (Crítico/Alto/Medio/Bajo)','No contiene juicios sin base técnica o factual verificable'],
+  };
+  return [
+    ...(specific[roleId] || [
+      'El output cumple el objetivo declarado de forma completa',
+      'La calidad es apropiada para uso directo sin revisión adicional',
+    ]),
+    'Las limitaciones y supuestos están documentados explícitamente',
+    `El entregable está adaptado al dominio ${analysis.domainLabel} con terminología correcta`,
+  ].slice(0,5);
+}
+
+// ── Validation Engine ────────────────────────────────────────────
+function validatePrompt(promptText) {
+  const req = ['# ROL','# CONTEXTO','# OBJETIVO','# TAREAS','# RESTRICCIONES','# CADENA','# FORMATO','# CRITERIOS'];
+  const present = req.filter(s => promptText.toUpperCase().includes(s.toUpperCase()));
+  const missing  = req.filter(s => !promptText.toUpperCase().includes(s.toUpperCase()));
+  const coverage = present.length / req.length;
+
+  const negCount = (promptText.match(/\b(no\s+\w+|evita|jamás|nunca|no\s+debes|prohibido)\b/gi)||[]).length;
+  const hasCoT   = /paso\s+a\s+paso|antes\s+de\s+responder|proceso\s+mental|cadena\s+de/i.test(promptText);
+  const hasFS    = /ejemplo|input.*output|```/i.test(promptText);
+
+  const completeness   = coverage * 100;
+  const specificity    = Math.min(100, 60 + (promptText.match(/\b(pytest|mlflow|docker|owasp|gdpr|auc-roc|fastapi|kubernetes|shap|cvss)\b/gi)||[]).length * 4 + (promptText.match(/^\s*\d+\./gm)||[]).length * 2);
+  const readability    = Math.min(100, 65 + (promptText.match(/^#{1,3}\s/gm)||[]).length * 4 + (promptText.match(/^---$/gm)||[]).length * 3);
+  const instructions   = Math.min(100, 50 + (negCount >= 2 ? 20 : negCount * 8) + (hasCoT ? 20 : 0) + ((promptText.match(/^\s*\d+\./gm)||[]).length >= 4 ? 10 : 0));
+  const fewshot        = hasFS ? 90 : 20;
+
+  const overall = completeness * 0.30 + specificity * 0.25 + readability * 0.15 + instructions * 0.20 + fewshot * 0.10;
+
+  return {
+    overall: Math.round(overall),
+    dims: { completeness: Math.round(completeness), specificity: Math.round(specificity), readability: Math.round(readability), instructions: Math.round(instructions), fewshot: Math.round(fewshot) },
+    missing, hasCoT, hasFS, negCount, needsRefinement: overall < 65,
+  };
+}
+
+// ── LLM-powered generation (with API key) ────────────────────────
+async function generateWithLLM(role, analysis, apiKey) {
+  const metaPrompt = `Eres un Arquitecto Senior de Ingeniería de Prompts para sistemas multi-agente. Genera un prompt PROFESIONAL y HIPER-ESPECÍFICO para el siguiente agente.
+
+ROL: ${role.name} (${role.cat})
+OBJETIVO DEL PROYECTO: ${analysis.objective}
+DOMINIO: ${analysis.domainLabel}
+PROPÓSITO DEL AGENTE: ${ROLE_REGISTRY[role.id].purpose}
+HABILIDADES: ${ROLE_REGISTRY[role.id].skills.join(', ')}
+
+Genera el prompt siguiendo EXACTAMENTE esta estructura de 9 secciones:
+# ROL Y EXPERTISE
+# CONTEXTO DEL PROYECTO
+# OBJETIVO PRINCIPAL
+# TAREAS ESPECÍFICAS (lista numerada 1-8)
+# RESTRICCIONES Y DIRECTRICES (incluye al menos 3 instrucciones negativas "No..." / "Evita...")
+# CADENA DE RAZONAMIENTO (proceso paso a paso explícito)
+# FORMATO DE RESPUESTA (especificación exacta del output esperado)
+# EJEMPLOS FEW-SHOT (2 ejemplos concretos con input→output real del dominio)
+# CRITERIOS DE ÉXITO (3-5 criterios verificables y medibles)
+
+El prompt debe ser:
+- HIPER-ESPECÍFICO para ${analysis.domainLabel} (no genérico)
+- Usar terminología técnica del dominio
+- Incluir métricas, herramientas y frameworks reales del sector
+- Estar listo para uso directo sin modificaciones
+
+Genera ÚNICAMENTE el prompt (sin texto introductorio ni comentarios):`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: metaPrompt }],
+    }),
+  });
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+// ── Main Forge Function ──────────────────────────────────────────
+let lastResult = null;
+
+async function runForge() {
+  const objective = document.getElementById('objectiveInput').value.trim();
+  if (!objective) { document.getElementById('objectiveInput').focus(); return; }
+
+  const apiKey  = document.getElementById('apiKey').value.trim();
+  const maxRoles = parseInt(document.getElementById('maxRoles').value);
+  const btn = document.getElementById('forgeBtn');
+
+  btn.disabled = true;
+  btn.textContent = '⚒ FORJANDO...';
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('emptyState').classList.remove('visible');
+
+  const log = (msg, cls='') => {
+    const el = document.getElementById('progressLog');
+    el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+    el.scrollTop = el.scrollHeight;
+  };
+  const stage = (n) => {
+    ['s1','s2','s3','s4','s5'].forEach((id, i) => {
+      document.getElementById(id).className = 'stage' + (i+1 < n ? ' done' : i+1 === n ? ' active' : '');
+    });
+  };
+
+  document.getElementById('progressLog').innerHTML = '';
+
+  try {
+    // ETAPA 1: Análisis
+    stage(1);
+    log('→ Analizando objetivo...', 'ember');
+    await sleep(200);
+    const domainKey  = detectDomain(objective);
+    const domainInfo = DOMAIN_DB[domainKey];
+    const tasks      = detectImplicitTasks(objective);
+    const complexity = estimateComplexity(objective, tasks);
+    const analysis   = { objective, domainKey, domainLabel: domainInfo.label, tasks, complexity };
+    log(`✓ Dominio: ${domainInfo.label} | Complejidad: ${complexity.toUpperCase()}`, 'green');
+    log(`✓ Tareas detectadas: ${tasks.join(', ')}`);
+
+    // ETAPA 2: Selección de roles
+    stage(2);
+    log('→ Seleccionando roles óptimos...', 'ember');
+    await sleep(150);
+    const selectedRoles = domainInfo.roles.slice(0, maxRoles).map(id => ({
+      id, name: ROLE_REGISTRY[id]?.name || id, cat: ROLE_REGISTRY[id]?.cat || 'general',
+    }));
+    // Garantizar critic y writer
+    if (!selectedRoles.find(r => r.id === 'critic_evaluator') && selectedRoles.length < maxRoles)
+      selectedRoles.push({ id:'critic_evaluator', name: ROLE_REGISTRY['critic_evaluator'].name, cat:'crítica' });
+    const finalRoles = selectedRoles.slice(0, maxRoles);
+    log(`✓ ${finalRoles.length} roles: ${finalRoles.map(r => r.name.split(' ')[0]).join(', ')}`, 'green');
+
+    // ETAPA 3: Generación
+    stage(3);
+    log('→ Generando prompts especializados...', 'ember');
+    const useAPI = apiKey.startsWith('sk-');
+    log(`  Modo: ${useAPI ? 'Claude API (meta-prompting dinámico)' : 'Motor offline (templates CO-STAR++)'}`);
+
+    const generatedPrompts = [];
+    for (let i = 0; i < finalRoles.length; i++) {
+      const role = finalRoles[i];
+      log(`  [${i+1}/${finalRoles.length}] ${ROLE_REGISTRY[role.id]?.emoji || '🤖'} ${role.name}...`);
+      let promptText;
+      try {
+        promptText = useAPI
+          ? await generateWithLLM(role, analysis, apiKey)
+          : buildPrompt(role, analysis);
+      } catch(e) {
+        promptText = buildPrompt(role, analysis);
+      }
+      generatedPrompts.push({ ...role, prompt: promptText, method: useAPI ? 'llm' : 'template' });
+      await sleep(80);
+    }
+    log(`✓ ${generatedPrompts.length} prompts generados`, 'green');
+
+    // ETAPA 4: Validación
+    stage(4);
+    log('→ Validando calidad...', 'ember');
+    await sleep(200);
+    const validated = generatedPrompts.map(p => ({
+      ...p, validation: validatePrompt(p.prompt)
+    }));
+    const avgScore = Math.round(validated.reduce((a,p) => a + p.validation.overall, 0) / validated.length);
+    log(`✓ Score global: ${avgScore}/100 | Aprobados: ${validated.filter(p=>!p.validation.needsRefinement).length}/${validated.length}`, 'green');
+
+    // ETAPA 5: Export
+    stage(5);
+    log('→ Empaquetando resultados...', 'ember');
+    await sleep(150);
+    lastResult = { analysis, prompts: validated, score: avgScore };
+    log(`✓ Listo — ${validated.length} prompts disponibles para exportar`, 'green');
+
+    // Render results
+    renderResults(validated, avgScore, analysis);
+
+  } catch(err) {
+    log(`✗ Error: ${err.message}`, '');
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⚒ FORJAR';
+}
+
+// ── Render Results ───────────────────────────────────────────────
+function renderResults(prompts, score, analysis) {
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('overallScore').innerHTML = `${score}<span>/100</span>`;
+  document.getElementById('liveScore').textContent = score;
+  document.getElementById('promptCount').textContent = `${prompts.length} AGENTES · ${analysis.domainLabel}`;
+
+  const grid = document.getElementById('agentsGrid');
+  grid.innerHTML = prompts.map((p, i) => {
+    const v = p.validation;
+    const scoreClass = v.overall >= 85 ? 'high' : v.overall >= 70 ? 'mid' : 'low';
+    const dimRows = [
+      ['COMPLETITUD',   v.dims.completeness],
+      ['ESPECIFICIDAD', v.dims.specificity],
+      ['LEGIBILIDAD',   v.dims.readability],
+      ['INSTRUCCIONES', v.dims.instructions],
+      ['FEW-SHOT',      v.dims.fewshot],
+    ].map(([label, val]) => `
+      <div class="dim-row">
+        <div class="dim-label">${label}</div>
+        <div class="dim-bar-bg"><div class="dim-bar" style="width:${val}%;background:${val>=80?'var(--green)':val>=60?'var(--ember)':'var(--red)'}"></div></div>
+        <div class="dim-val">${val}</div>
+      </div>`).join('');
+
+    const issueList = v.missing.length
+      ? v.missing.map(m => `<div class="issue-item">${m} faltante</div>`).join('')
+      : '<div class="issue-item" style="color:var(--green)">Sin issues detectados ✓</div>';
+
+    const highlightedPrompt = p.prompt
+      .replace(/^(# .+)$/gm, '<span class="sec-head">$1</span>')
+      .replace(/^(\d+\. )/gm, '<span class="task-num">$1</span>')
+      .replace(/^(- (?:No|Evita|Nunca|Jamás).+)$/gm, '<span class="neg-inst">$1</span>')
+      .replace(/^(✓ .+)$/gm, '<span class="crit-ok">$1</span>');
+
+    return `
+    <div class="agent-card" data-cat="${p.cat}" id="card-${i}">
+      <div class="agent-header" onclick="toggleCard(${i})">
+        <div class="agent-emoji">${ROLE_REGISTRY[p.id]?.emoji || '🤖'}</div>
+        <div class="agent-name">${p.name}</div>
+        <div class="agent-meta">
+          <span class="cat-tag">${p.cat}</span>
+          <span class="quality-score ${scoreClass}">${v.overall}/100</span>
+          <span class="cat-tag" style="color:var(--muted)">${p.method}</span>
+        </div>
+        <div class="chevron">▼</div>
+      </div>
+      <div class="agent-body">
+        <div class="prompt-tabs">
+          <button class="tab-btn active" onclick="showTab(${i},'prompt',this)">PROMPT</button>
+          <button class="tab-btn" onclick="showTab(${i},'validation',this)">VALIDACIÓN</button>
+        </div>
+        <div class="tab-pane active" id="tab-${i}-prompt">
+          <button class="copy-btn" onclick="copyPrompt(${i})">COPIAR</button>
+          <pre class="prompt-content">${highlightedPrompt}</pre>
+        </div>
+        <div class="tab-pane" id="tab-${i}-validation">
+          <div class="validation-pane">
+            ${dimRows}
+            <div class="issues-list">${issueList}</div>
+            <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+              CoT: ${v.hasCoT?'✓':'✗'} · Few-shot: ${v.hasFS?'✓':'✗'} · Instrucciones negativas: ${v.negCount} · Secciones: ${8-v.missing.length}/8
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Open first card
+  toggleCard(0);
+}
+
+function toggleCard(i) {
+  const card = document.getElementById(`card-${i}`);
+  card.classList.toggle('open');
+}
+function showTab(i, pane, btn) {
+  document.querySelectorAll(`#card-${i} .tab-pane`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#card-${i} .tab-btn`).forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${i}-${pane}`).classList.add('active');
+  btn.classList.add('active');
+}
+function copyPrompt(i) {
+  const p = lastResult.prompts[i];
+  navigator.clipboard.writeText(p.prompt);
+  const btn = document.querySelector(`#card-${i} .copy-btn`);
+  btn.textContent = 'COPIADO ✓'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('copied'); }, 2000);
+}
+
+// ── Exports ──────────────────────────────────────────────────────
+function exportJSON() {
+  if (!lastResult) return;
+  const data = {
+    promptforge_version: '2.0.0', generated_at: new Date().toISOString(),
+    objective: lastResult.analysis.objective,
+    analysis: { primary_domain: lastResult.analysis.domainLabel, tasks: lastResult.analysis.tasks, complexity: lastResult.analysis.complexity },
+    prompts: lastResult.prompts.map(p => ({ role_id: p.id, role_name: p.name, category: p.cat, emoji: ROLE_REGISTRY[p.id]?.emoji||'🤖', prompt: p.prompt, quality_score: p.validation.overall })),
+    validation: { overall_score: lastResult.score, num_prompts: lastResult.prompts.length },
+  };
+  download('promptforge_export.json', JSON.stringify(data, null, 2), 'application/json');
+}
+
+function exportMarkdown() {
+  if (!lastResult) return;
+  const lines = [
+    `# PromptForge — Prompts Generados\n`,
+    `> **Objetivo:** ${lastResult.analysis.objective}  `,
+    `> **Dominio:** ${lastResult.analysis.domainLabel} | **Score:** ${lastResult.score}/100 | **Agentes:** ${lastResult.prompts.length}\n`,
+    '---\n',
+  ];
+  lastResult.prompts.forEach((p, i) => {
+    lines.push(`## ${i+1}. ${ROLE_REGISTRY[p.id]?.emoji||'🤖'} ${p.name}\n`);
+    lines.push(`**Categoría:** ${p.cat} | **Calidad:** ${p.validation.overall}/100\n`);
+    lines.push('```prompt');
+    lines.push(p.prompt);
+    lines.push('```\n');
+  });
+  download('promptforge_prompts.md', lines.join('\n'), 'text/markdown');
+}
+
+function exportCrewAI() {
+  if (!lastResult) return;
+  const agents = lastResult.prompts.map(p => {
+    const varName = p.id.replace(/-/g,'_');
+    const sys = p.prompt.replace(/"""/g,"'''");
+    return `\n${varName} = Agent(\n    role="${p.name}",\n    goal="${p.prompt.split('\\n')[0].replace(/# ROL Y EXPERTISE/,'').trim().substring(0,120)}",\n    backstory="${ROLE_REGISTRY[p.id]?.purpose?.substring(0,200)||''}",\n    verbose=True,\n    system_template="""${sys}"""\n)`;
+  }).join('\n');
+  const tasks = lastResult.prompts.map(p => `\ntask_${p.id.replace(/-/g,'_')} = Task(\n    description="Ejecutar rol ${p.name} para: ${lastResult.analysis.objective.substring(0,60)}...",\n    agent=${p.id.replace(/-/g,'_')},\n    expected_output="${ROLE_REGISTRY[p.id]?.name||p.name}"\n)`).join('\n');
+  const code = `"""PromptForge v2.0 — Bootstrap CrewAI\nObjetivo: ${lastResult.analysis.objective}\nGenerado: ${new Date().toLocaleString()}\n\nUso: pip install crewai && python crewai_team.py\n"""\nfrom crewai import Agent, Task, Crew, Process\n\n# ═══ AGENTES ═══${agents}\n\n# ═══ TAREAS ═══${tasks}\n\n# ═══ CREW ═══\ncrew = Crew(\n    agents=[${lastResult.prompts.map(p=>p.id.replace(/-/g,'_')).join(', ')}],\n    tasks=[${lastResult.prompts.map(p=>`task_${p.id.replace(/-/g,'_')}`).join(', ')}],\n    process=Process.sequential,\n    verbose=2,\n)\n\nif __name__ == "__main__":\n    result = crew.kickoff()\n    print(result)\n`;
+  download('crewai_team.py', code, 'text/plain');
+}
+
+function download(filename, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+}
+
+// ── Taxonomy Grid ────────────────────────────────────────────────
+function renderTaxonomy() {
+  const grid = document.getElementById('taxonomyGrid');
+  const catColors = { investigación:'#4a9eff', ingeniería:'var(--ember)', validación:'var(--green)', documentación:'var(--copper)', crítica:'#c678dd', orquestación:'var(--ember2)' };
+  grid.innerHTML = Object.entries(ROLE_REGISTRY).map(([id, r]) => `
+    <div class="tax-role" title="${r.purpose}">
+      <div class="r-emoji">${r.emoji}</div>
+      <div class="r-name">${r.name}</div>
+      <div class="r-cat" style="color:${catColors[r.cat]||'var(--muted)'}">${r.cat}</div>
+    </div>`).join('');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Init ─────────────────────────────────────────────────────────
+renderTaxonomy();
+</script>
+</body>
+</html>
