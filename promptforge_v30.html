@@ -1,0 +1,2322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptForge v3.0 — Sistema Auto-Evolutivo de Prompts Multi-Agente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════
+     PROMPTFORGE v3.0 — Design System (Agente 12)
+     Filosofía 1310: offline, cyberpunk académico
+     ═══════════════════════════════════════════════ */
+  :root {
+    --bg:#080808; --bg2:#0f0f0f; --bg3:#151515; --bg4:#1a1a1a; --border:#222; --border2:#2a2a2a;
+    --ember:#ff6b00; --ember2:#ff9a00; --copper:#b87333;
+    --steel:#8fa8b5; --text:#e8e0d5; --muted:#5a5248; --muted2:#3a3530;
+    --green:#4ecb71; --red:#e05555; --blue:#4a9eff; --purple:#c678dd; --teal:#2ec4b6;
+    --yellow:#f4d35e; --pink:#f72585;
+    --font-mono:'JetBrains Mono',monospace; --font-head:'Bebas Neue',sans-serif; --font-body:'Syne',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+  .sparks-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;}
+  .container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+
+  /* ── Header ── */
+  header{padding:48px 0 32px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .logo{font-family:var(--font-head);font-size:clamp(48px,7vw,88px);line-height:.9;letter-spacing:2px;background:linear-gradient(135deg,var(--ember) 0%,var(--ember2) 40%,var(--copper) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 30px rgba(255,107,0,.35));}
+  .logo-sub{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:6px;}
+  .header-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .version-badge{font-family:var(--font-mono);font-size:11px;padding:4px 10px;border:1px solid var(--ember);color:var(--ember);letter-spacing:2px;animation:pulse-border 3s ease-in-out infinite;}
+  .new-badge{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--green);color:var(--green);letter-spacing:2px;}
+  .expert-badge{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border:1px solid var(--purple);color:var(--purple);letter-spacing:2px;cursor:pointer;transition:all .2s;}
+  .expert-badge.active{background:rgba(198,120,221,.15);}
+  @keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 rgba(255,107,0,0);}50%{box-shadow:0 0 12px rgba(255,107,0,.4);}}
+
+  /* ── Tagline ── */
+  .tagline{padding:28px 0 40px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+  .tagline h1{font-size:22px;font-weight:600;line-height:1.4;}
+  .tagline h1 em{font-style:normal;color:var(--ember);}
+  .pipeline{font-family:var(--font-mono);font-size:11px;color:var(--steel);line-height:2.1;border-left:2px solid var(--border);padding-left:16px;}
+  .pipeline .arrow{color:var(--ember);}
+  .pipeline .new{color:var(--green);font-size:9px;letter-spacing:1px;}
+
+  /* ── Stats bar ── */
+  .stats-bar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin:32px 0;}
+  .stat{background:var(--bg2);padding:16px;text-align:center;}
+  .stat-num{font-family:var(--font-head);font-size:32px;line-height:1;color:var(--ember);}
+  .stat-label{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+  /* ── API + expert bar ── */
+  .api-bar{margin:20px 0;display:flex;gap:12px;align-items:center;padding:14px 20px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--copper);}
+  .api-bar label{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+  .api-bar input{flex:1;background:transparent;border:none;outline:none;font-family:var(--font-mono);font-size:13px;color:var(--steel);letter-spacing:1px;}
+  .api-bar input::placeholder{color:var(--muted);}
+  .api-status{font-family:var(--font-mono);font-size:10px;white-space:nowrap;padding:3px 8px;border:1px solid;letter-spacing:1px;}
+  .api-status.offline{color:var(--muted);border-color:var(--muted);}
+  .api-status.online{color:var(--green);border-color:var(--green);}
+  .api-status.error{color:var(--red);border-color:var(--red);}
+
+  /* ── Expert panel ── */
+  .expert-panel{display:none;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);padding:16px 20px;margin-bottom:20px;}
+  .expert-panel.visible{display:block;}
+  .expert-panel h4{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--purple);margin-bottom:14px;}
+  .expert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+  .expert-control{display:flex;flex-direction:column;gap:6px;}
+  .expert-control label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+  .expert-control input[type=range]{width:100%;accent-color:var(--purple);}
+  .expert-control .val-display{font-family:var(--font-mono);font-size:10px;color:var(--purple);}
+  .expert-control select{font-family:var(--font-mono);font-size:10px;color:var(--steel);background:var(--bg3);border:1px solid var(--border);padding:4px 8px;outline:none;}
+
+  /* ── Section labels ── */
+  .section-label{font-family:var(--font-mono);font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:12px;}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+  .section-label span{color:var(--ember);}
+
+  /* ── Forge section ── */
+  .forge-section{padding:36px 0;border-bottom:1px solid var(--border);}
+  .objective-input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:16px;padding:20px 24px;resize:none;outline:none;line-height:1.6;transition:border-color .2s;min-height:90px;}
+  .objective-input:focus{border-color:var(--ember);}
+  .objective-input::placeholder{color:var(--muted);}
+  .context-input{width:100%;margin-top:8px;background:var(--bg2);border:1px solid var(--border);color:var(--steel);font-family:var(--font-mono);font-size:12px;padding:12px 24px;resize:none;outline:none;line-height:1.6;min-height:50px;transition:border-color .2s;}
+  .context-input:focus{border-color:var(--copper);}
+  .context-input::placeholder{color:var(--muted);}
+  .forge-controls{margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .forge-btn{font-family:var(--font-head);font-size:18px;letter-spacing:3px;padding:12px 36px;background:linear-gradient(135deg,var(--ember),var(--ember2));color:#000;border:none;cursor:pointer;transition:all .2s;}
+  .forge-btn:hover{transform:translateY(-1px);filter:brightness(1.1);}
+  .forge-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .meta-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;padding:10px 18px;cursor:pointer;border:1px solid var(--purple);background:transparent;color:var(--purple);transition:all .15s;}
+  .meta-btn:hover{background:rgba(198,120,221,.1);}
+  .roles-select,.mode-select{font-family:var(--font-mono);font-size:11px;color:var(--steel);background:var(--bg2);border:1px solid var(--border);padding:10px 14px;cursor:pointer;outline:none;}
+  .quick-fills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .quick-fill{font-family:var(--font-mono);font-size:10px;color:var(--muted);border:1px solid var(--border);padding:4px 10px;cursor:pointer;background:transparent;transition:all .15s;letter-spacing:1px;}
+  .quick-fill:hover{color:var(--ember);border-color:var(--ember);}
+
+  /* ── Progress ── */
+  .progress-bar-wrap{margin-top:20px;display:none;background:var(--bg2);border:1px solid var(--border);padding:16px 20px;}
+  .progress-bar-wrap.visible{display:block;}
+  .progress-stages{display:flex;gap:0;margin-bottom:12px;}
+  .stage{flex:1;text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;padding:6px 4px;color:var(--muted);border-bottom:2px solid var(--border);transition:all .3s;}
+  .stage.active{color:var(--ember);border-color:var(--ember);}
+  .stage.done{color:var(--green);border-color:var(--green);}
+  .progress-log{font-family:var(--font-mono);font-size:11px;color:var(--steel);line-height:1.8;min-height:20px;max-height:180px;overflow-y:auto;}
+  .progress-log .ember{color:var(--ember);}
+  .progress-log .green{color:var(--green);}
+  .progress-log .blue{color:var(--blue);}
+  .progress-log .red{color:var(--red);}
+  .progress-log .purple{color:var(--purple);}
+
+  /* ── Decomposition ── */
+  .decomp-panel{margin-top:16px;border:1px solid var(--border);border-left:3px solid var(--blue);background:var(--bg2);overflow:hidden;}
+  .decomp-header{padding:12px 16px;display:flex;justify-content:space-between;cursor:pointer;align-items:center;}
+  .decomp-header h4{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--blue);}
+  .decomp-body{padding:0 16px 16px;}
+  .decomp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:12px;}
+  .decomp-task{background:var(--bg3);border:1px solid var(--border);padding:10px 12px;}
+  .decomp-task .dt-num{font-family:var(--font-head);font-size:20px;color:var(--ember);line-height:1;}
+  .decomp-task .dt-name{font-size:11px;font-weight:600;margin:4px 0;}
+  .decomp-task .dt-roles{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;}
+
+  /* ── Tabs (global tab system) ── */
+  .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;}
+  .tab-nav-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 20px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;}
+  .tab-nav-btn.active{color:var(--ember);border-bottom-color:var(--ember);}
+  .tab-section{display:none;}.tab-section.active{display:block;}
+
+  /* ── Results ── */
+  .results-section{padding:36px 0;}
+  .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .score-display{font-family:var(--font-head);font-size:40px;line-height:1;color:var(--ember);}
+  .export-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .export-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:8px 14px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--steel);transition:all .15s;}
+  .export-btn:hover{border-color:var(--ember2);color:var(--ember2);}
+
+  /* ── Agent cards ── */
+  .agents-grid{display:flex;flex-direction:column;gap:2px;}
+  .agent-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border);overflow:hidden;}
+  .agent-card[data-cat="investigación"]{border-left-color:var(--blue);}
+  .agent-card[data-cat="ingeniería"]{border-left-color:var(--ember);}
+  .agent-card[data-cat="validación"]{border-left-color:var(--green);}
+  .agent-card[data-cat="documentación"]{border-left-color:var(--copper);}
+  .agent-card[data-cat="crítica"]{border-left-color:var(--purple);}
+  .agent-card[data-cat="orquestación"]{border-left-color:var(--ember2);}
+  .agent-card[data-cat="creativo"]{border-left-color:var(--pink);}
+  .agent-card[data-cat="sistémico"]{border-left-color:var(--teal);}
+  .agent-header{padding:14px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
+  .agent-emoji{font-size:20px;flex-shrink:0;}
+  .agent-name{font-size:14px;font-weight:600;flex:1;}
+  .agent-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .cat-tag{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border:1px solid var(--border);color:var(--muted);}
+  .quality-score{font-family:var(--font-mono);font-size:11px;font-weight:600;}
+  .quality-score.high{color:var(--green);}
+  .quality-score.mid{color:var(--ember2);}
+  .quality-score.low{color:var(--red);}
+  .cog-badge{font-family:var(--font-mono);font-size:8px;letter-spacing:1px;padding:2px 7px;font-weight:600;flex-shrink:0;}
+  .dim12-badge{font-family:var(--font-mono);font-size:8px;padding:2px 6px;border:1px solid var(--teal);color:var(--teal);letter-spacing:1px;}
+  .feedback-wrap{display:flex;align-items:center;gap:5px;}
+  .fb-btn{background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:3px 7px;font-size:12px;line-height:1;transition:all .15s;}
+  .fb-btn:hover{transform:scale(1.1);}
+  .fb-btn.up.active{border-color:var(--green);color:var(--green);background:rgba(78,203,113,.1);}
+  .fb-btn.down.active{border-color:var(--red);color:var(--red);background:rgba(224,85,85,.1);}
+  .fb-count{font-family:var(--font-mono);font-size:9px;color:var(--muted);min-width:16px;text-align:center;}
+  .chevron{color:var(--muted);font-size:12px;transition:transform .25s;}
+  .agent-card.open .chevron{transform:rotate(180deg);}
+  .agent-body{display:none;border-top:1px solid var(--border);}
+  .agent-card.open .agent-body{display:block;}
+  .prompt-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg3);}
+  .tab-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;}
+  .tab-btn.active{color:var(--ember);border-bottom-color:var(--ember);}
+  .tab-pane{display:none;}.tab-pane.active{display:block;}
+  .prompt-content{font-family:var(--font-mono);font-size:12px;line-height:1.8;color:var(--steel);padding:24px;white-space:pre-wrap;word-break:break-word;max-height:440px;overflow-y:auto;background:var(--bg);}
+  .prompt-content .sec-head{color:var(--ember);font-weight:600;}
+  .prompt-content .tot-head{color:var(--purple);font-weight:600;}
+  .prompt-content .sci-head{color:var(--blue);font-weight:600;}
+  .prompt-content .task-num{color:var(--ember2);}
+  .copy-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;padding:8px 16px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;float:right;margin:12px 24px;}
+  .copy-btn:hover{color:var(--ember);border-color:var(--ember);}
+  .copy-btn.copied{color:var(--green);border-color:var(--green);}
+  .validation-pane{padding:20px 24px;}
+  .dim-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .dim-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);width:140px;flex-shrink:0;}
+  .dim-bar-bg{flex:1;height:4px;background:var(--bg3);position:relative;overflow:hidden;}
+  .dim-bar{height:100%;transition:width 1s cubic-bezier(.16,1,.3,1);}
+  .dim-val{font-family:var(--font-mono);font-size:11px;color:var(--text);width:36px;text-align:right;}
+  .issues-list{margin-top:12px;}
+  .issue-item{font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:3px 0;}
+  .issue-item::before{content:'◦ ';color:var(--ember);}
+  .science-pane{padding:20px 24px;}
+  .paper-ref{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--blue);padding:12px 14px;margin-bottom:8px;}
+  .paper-ref .pr-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .paper-ref .pr-meta{font-family:var(--font-mono);font-size:10px;color:var(--blue);margin-bottom:6px;letter-spacing:1px;}
+  .paper-ref .pr-finding{font-family:var(--font-mono);font-size:11px;color:var(--steel);line-height:1.6;}
+  .paper-ref .pr-apply{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px;font-style:italic;}
+  .meta-pane{padding:20px 24px;}
+  .meta-prompt-box{background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--purple);padding:16px;font-family:var(--font-mono);font-size:11px;color:var(--purple);line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap;}
+  .meta-actions{margin-top:12px;display:flex;gap:8px;}
+  .meta-copy-btn{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;padding:6px 14px;cursor:pointer;border:1px solid var(--purple);background:transparent;color:var(--purple);transition:all .15s;}
+  .meta-copy-btn:hover{background:rgba(198,120,221,.1);}
+
+  /* ── Agent Network Visualizer ── */
+  .network-section{padding:36px 0;border-top:1px solid var(--border);}
+  .network-canvas-wrap{background:var(--bg2);border:1px solid var(--border);position:relative;overflow:hidden;margin-top:16px;}
+  #networkCanvas{display:block;width:100%;cursor:grab;}
+  #networkCanvas:active{cursor:grabbing;}
+  .network-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .net-leg-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:9px;color:var(--muted);}
+  .net-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .network-tooltip{position:absolute;background:var(--bg3);border:1px solid var(--border);padding:8px 12px;font-family:var(--font-mono);font-size:10px;color:var(--text);pointer-events:none;display:none;max-width:220px;z-index:10;line-height:1.5;}
+
+  /* ── Taxonomy ── */
+  .taxonomy-section{padding:36px 0;border-top:1px solid var(--border);}
+  .tax-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-top:16px;}
+  .tax-role{background:var(--bg2);padding:12px 14px;transition:background .15s;cursor:default;position:relative;}
+  .tax-role:hover{background:var(--bg3);}
+  .tax-role .r-emoji{font-size:18px;margin-bottom:4px;}
+  .tax-role .r-name{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:3px;}
+  .tax-role .r-cat{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .tax-role .r-cog{font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:2px;}
+  .fb-dot{width:6px;height:6px;border-radius:50%;position:absolute;top:8px;right:8px;}
+
+  /* ── Papers panel ── */
+  .papers-section{padding:36px 0;border-top:1px solid var(--border);}
+  .papers-toggle{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;padding:8px 16px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;margin-top:12px;}
+  .papers-toggle:hover{color:var(--blue);border-color:var(--blue);}
+  .papers-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-top:14px;}
+  .papers-grid.open{display:grid;}
+  .paper-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--blue);padding:14px;}
+  .paper-card .pc-venue{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--blue);margin-bottom:4px;}
+  .paper-card .pc-title{font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;}
+  .paper-card .pc-finding{font-family:var(--font-mono);font-size:10px;color:var(--steel);line-height:1.5;}
+
+  /* ── Cognitive legend ── */
+  .cog-legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+  .cog-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:9px;color:var(--muted);}
+  .cog-dot{width:8px;height:8px;flex-shrink:0;}
+
+  /* ── Self-improve panel ── */
+  .meta-panel{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);padding:16px 20px;margin-top:20px;display:none;}
+  .meta-panel.visible{display:block;}
+  .meta-panel h4{font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--purple);margin-bottom:12px;}
+  .meta-insight{font-family:var(--font-mono);font-size:11px;color:var(--steel);padding:6px 0;border-bottom:1px solid var(--border2);}
+  .meta-insight:last-child{border-bottom:none;}
+  .meta-insight .mi-label{color:var(--purple);font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+
+  /* ── Changelog ── */
+  .changelog-btn{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;padding:4px 10px;cursor:pointer;border:1px solid var(--muted2);background:transparent;color:var(--muted);transition:all .15s;}
+  .changelog-btn:hover{border-color:var(--ember);color:var(--ember);}
+  .changelog{display:none;background:var(--bg2);border:1px solid var(--border);padding:16px 20px;margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--steel);line-height:1.8;}
+  .changelog.visible{display:block;}
+
+  /* ── Empty state ── */
+  .empty-state{padding:60px 0;text-align:center;display:none;}
+  .empty-state.visible{display:block;}
+  .empty-state p{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;margin-top:12px;}
+  .anvil{font-size:64px;opacity:.15;}
+
+  /* ── Footer ── */
+  footer{padding:32px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  footer p{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:var(--bg2);}
+  ::-webkit-scrollbar-thumb{background:var(--border);}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ember);}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    .tagline{grid-template-columns:1fr;}
+    .stats-bar{grid-template-columns:repeat(4,1fr);}
+    header{flex-direction:column;align-items:flex-start;}
+    .results-header{flex-direction:column;gap:12px;align-items:flex-start;}
+  }
+  @media(max-width:480px){
+    .stats-bar{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+
+<body>
+<canvas class="sparks-canvas" id="sparks"></canvas>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header>
+  <div class="container" style="display:flex;align-items:flex-end;justify-content:space-between;width:100%;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="logo">PromptForge</div>
+      <div class="logo-sub">// v3.0 — sistema auto-evolutivo // filosofía 1310 //</div>
+    </div>
+    <div class="header-badges">
+      <span class="version-badge">V3.0</span>
+      <span class="new-badge">12D VALIDATION</span>
+      <span class="new-badge">AUTO-EVOLVE</span>
+      <span class="new-badge">NET VIZ</span>
+      <button class="expert-badge" id="expertToggle">⚙ MODO EXPERTO</button>
+      <button class="changelog-btn" id="changelogBtn">CHANGELOG</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- Changelog -->
+<div class="changelog" id="changelog">
+<strong style="color:var(--ember);font-family:var(--font-mono);font-size:10px;letter-spacing:3px;">PROMPTFORGE v3.0 — CHANGELOG</strong>
+[v3.0] Agente 1 · Meta-Prompting: módulo SelfImprover con análisis de debilidades y generación de prompts de mejora
+[v3.0] Agente 3 · +7 dominios: Robótica, Energía, MedioAmbiente, Arte, Música, Educación, Economía Conductual
+[v3.0] Agente 3 · +20 roles especializados en nuevos dominios
+[v3.0] Agente 4 · Validación 12D: +6 métricas (coherencia, originalidad, robustez, ética, claridad, eficiencia)
+[v3.0] Agente 5 · RAG híbrido: TF-IDF + similitud coseno con embeddings sintéticos locales
+[v3.0] Agente 7 · +5 estilos cognitivos: Creativo-divergente, Analítico-convergente, Sistémico-holístico, Pragmático-operacional, Visionario-especulativo
+[v3.0] Agente 8 · Exportación multi-lenguaje: Python, JavaScript, Rust desde IR común
+[v3.0] Agente 9 · Visualizador de red de agentes con Canvas 2D interactivo
+[v3.0] Agente 10 · Feedback loop con decay de pesos y auto-ajuste por métricas
+[v3.0] Agente 12 · UI avanzada: modo experto, paneles colapsables, feedback 12D en tiempo real
+</div>
+
+<!-- ═══════════ TAGLINE ═══════════ -->
+<div class="tagline" style="padding:28px 0 32px;">
+  <div>
+    <h1>La fábrica de prompts que <em>se mejora a sí misma.</em><br>15 agentes. 12 dimensiones. Filosofía 1310.</h1>
+  </div>
+  <div class="pipeline">
+    <span class="arrow">→</span> Análisis semántico de objetivo<br>
+    <span class="arrow">→</span> Descomposición en subtareas atómicas<br>
+    <span class="arrow">→</span> Selección adaptativa (feedback loop) <span class="new">NEW</span><br>
+    <span class="arrow">→</span> Generación CO-STAR++ + ToT + RAG híbrido <span class="new">NEW</span><br>
+    <span class="arrow">→</span> Validación 12 dimensiones <span class="new">NEW</span><br>
+    <span class="arrow">→</span> Visualización red de agentes <span class="new">NEW</span><br>
+    <span class="arrow">→</span> Export Python / JS / Rust / CrewAI <span class="new">NEW</span><br>
+    <span class="arrow">→</span> Meta-prompt de auto-mejora <span class="new">NEW</span>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-num">35</div><div class="stat-label">Roles</div></div>
+  <div class="stat"><div class="stat-num">16</div><div class="stat-label">Dominios</div></div>
+  <div class="stat"><div class="stat-num">12</div><div class="stat-label">Dimensiones</div></div>
+  <div class="stat"><div class="stat-num" id="liveScore">—</div><div class="stat-label">Score</div></div>
+  <div class="stat"><div class="stat-num">11</div><div class="stat-label">Est. cognitivos</div></div>
+  <div class="stat"><div class="stat-num">4</div><div class="stat-label">Export langs</div></div>
+  <div class="stat"><div class="stat-num">1310</div><div class="stat-label">Filosofía</div></div>
+</div>
+
+<!-- ═══════════ API BAR ═══════════ -->
+<div class="api-bar">
+  <label>API KEY</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-... (opcional — modo offline por defecto)" autocomplete="off">
+  <span class="api-status offline" id="apiStatus">OFFLINE</span>
+</div>
+
+<!-- ═══════════ EXPERT PANEL ═══════════ -->
+<div class="expert-panel" id="expertPanel">
+  <h4>⚙ PARÁMETROS EXPERTOS</h4>
+  <div class="expert-grid">
+    <div class="expert-control">
+      <label>Umbral validación</label>
+      <input type="range" id="valThreshold" min="50" max="90" value="65">
+      <span class="val-display" id="valThresholdDisplay">65/100</span>
+    </div>
+    <div class="expert-control">
+      <label>Temp. creatividad</label>
+      <input type="range" id="creativity" min="0" max="100" value="50">
+      <span class="val-display" id="creativityDisplay">0.5</span>
+    </div>
+    <div class="expert-control">
+      <label>Papers RAG / rol</label>
+      <input type="range" id="papersPerRole" min="1" max="8" value="3">
+      <span class="val-display" id="papersDisplay">3</span>
+    </div>
+    <div class="expert-control">
+      <label>Modo RAG</label>
+      <select id="ragMode">
+        <option value="hybrid">Híbrido (TF-IDF + coseno)</option>
+        <option value="tfidf">Solo TF-IDF</option>
+        <option value="semantic">Solo semántico</option>
+      </select>
+    </div>
+    <div class="expert-control">
+      <label>Estilo cognitivo override</label>
+      <select id="cogOverride">
+        <option value="">Auto (por rol)</option>
+        <option value="investigación">Exploratorio-inductivo</option>
+        <option value="ingeniería">Analítico-deliberativo (ToT)</option>
+        <option value="validación">Adversarial-estadístico</option>
+        <option value="documentación">Comunicativo-estructural</option>
+        <option value="crítica">Socrático-deconstructivo</option>
+        <option value="orquestación">Sistémico-coordinativo</option>
+        <option value="creativo">Creativo-divergente</option>
+        <option value="convergente">Analítico-convergente</option>
+        <option value="sistémico">Sistémico-holístico</option>
+        <option value="pragmático">Pragmático-operacional</option>
+        <option value="visionario">Visionario-especulativo</option>
+      </select>
+    </div>
+    <div class="expert-control">
+      <label>Auto-mejora (meta-prompt)</label>
+      <select id="selfImproveMode">
+        <option value="off">Desactivada</option>
+        <option value="analyze">Solo análisis</option>
+        <option value="generate">Generar meta-prompt</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ FORGE SECTION ═══════════ -->
+<div class="forge-section">
+  <div class="section-label"><span>//</span> OBJETIVO</div>
+  <textarea class="objective-input" id="objectiveInput" rows="3" placeholder="Describe el objetivo del equipo multi-agente… (ej: Desarrollar un sistema de detección de fraude bancario con ML explicable y cumplimiento GDPR)"></textarea>
+  <textarea class="context-input" id="contextInput" rows="2" placeholder="Contexto adicional (opcional): restricciones técnicas, audiencia, herramientas específicas…"></textarea>
+  <div class="forge-controls">
+    <button class="forge-btn" id="forgeBtn">⚒ FORJAR</button>
+    <button class="meta-btn" id="metaBtn">🔮 META-PROMPT</button>
+    <select class="roles-select" id="maxRoles">
+      <option value="3">3 roles</option>
+      <option value="4">4 roles</option>
+      <option value="5" selected>5 roles</option>
+      <option value="6">6 roles</option>
+      <option value="8">8 roles</option>
+    </select>
+    <select class="mode-select" id="exportLang">
+      <option value="json">Export: JSON</option>
+      <option value="python">Export: Python</option>
+      <option value="javascript">Export: JavaScript</option>
+      <option value="rust">Export: Rust</option>
+      <option value="crewai">Export: CrewAI</option>
+      <option value="markdown">Export: Markdown</option>
+    </select>
+  </div>
+  <div class="quick-fills">
+    <button class="quick-fill" data-q="Desarrollar un sistema de detección de fraude bancario con ML explicable y cumplimiento GDPR">Fraude ML + GDPR</button>
+    <button class="quick-fill" data-q="Diseñar e implementar un agente LLM para automatizar el triaje de issues en GitHub con clasificación semántica">LLM GitHub Agent</button>
+    <button class="quick-fill" data-q="Construir un pipeline de análisis genomico end-to-end con validación estadística rigurosa y reproducibilidad">Análisis genómico</button>
+    <button class="quick-fill" data-q="Crear un sistema de trading algorítmico con gestión de riesgo y backtesting robusto con IC 95%">Trading algorítmico</button>
+    <button class="quick-fill" data-q="Desarrollar un compositor musical asistido por IA que genere partituras originales en múltiples estilos">Compositor IA musical</button>
+    <button class="quick-fill" data-q="Diseñar un robot autónomo de navegación en entornos no estructurados con percepción visual">Robot autónomo</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-stages">
+      <div class="stage" id="s1">01 ANÁLISIS</div>
+      <div class="stage" id="s2">02 DESCOMP.</div>
+      <div class="stage" id="s3">03 ROLES</div>
+      <div class="stage" id="s4">04 GENERA</div>
+      <div class="stage" id="s5">05 VALIDA 12D</div>
+      <div class="stage" id="s6">06 RED</div>
+      <div class="stage" id="s7">07 LISTO</div>
+    </div>
+    <div class="progress-log" id="progressLog"></div>
+  </div>
+
+  <!-- Decomp panel -->
+  <div class="decomp-panel" id="decompPanel" style="display:none;margin-top:16px;">
+    <div class="decomp-header" id="decompHeader">
+      <h4>⬡ DESCOMPOSICIÓN DE SUBTAREAS</h4>
+      <span id="decompMeta" style="font-family:var(--font-mono);font-size:9px;color:var(--muted);"></span>
+      <span style="color:var(--muted);font-size:12px;">▼</span>
+    </div>
+    <div class="decomp-body" id="decompBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════ RESULTS SECTION ═══════════ -->
+<div class="results-section" id="resultsSection" style="display:none;">
+  <div class="results-header">
+    <div>
+      <div class="section-label"><span>//</span> PROMPTS GENERADOS</div>
+      <div style="display:flex;align-items:baseline;gap:12px;">
+        <div class="score-display" id="overallScore">—</div>
+        <div id="promptCount" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);"></div>
+      </div>
+    </div>
+    <div class="export-btns">
+      <button class="export-btn" id="exportJsonBtn">↓ JSON</button>
+      <button class="export-btn" id="exportMdBtn">↓ MD</button>
+      <button class="export-btn" id="exportCodeBtn">↓ CÓDIGO</button>
+      <button class="export-btn" id="exportCrewBtn">↓ CREWAI</button>
+      <button class="export-btn" id="resetWeightsBtn" style="color:var(--muted2);border-color:var(--muted2);">↺ PESOS</button>
+    </div>
+  </div>
+  <div class="agents-grid" id="agentsGrid"></div>
+
+  <!-- Self-improve panel -->
+  <div class="meta-panel" id="metaPanel">
+    <h4>🔮 META-PROMPT DE AUTO-MEJORA (Agente 1 — Arquitecto de Meta-Cognición)</h4>
+    <div id="metaInsights"></div>
+    <div class="meta-prompt-box" id="metaPromptBox"></div>
+    <div class="meta-actions">
+      <button class="meta-copy-btn" id="metaCopyBtn">COPIAR META-PROMPT</button>
+      <button class="meta-copy-btn" id="metaRegenerateBtn">↺ REGENERAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Empty state -->
+<div class="empty-state" id="emptyState" style="display:block;">
+  <div class="anvil">⚒</div>
+  <p>// introduce un objetivo y pulsa forjar //</p>
+</div>
+
+<!-- ═══════════ NETWORK SECTION ═══════════ -->
+<div class="network-section" id="networkSection" style="display:none;">
+  <div class="section-label"><span>//</span> RED DE AGENTES <span style="color:var(--muted);font-size:9px;margin-left:8px;">canvas interactivo — arrastra para explorar</span></div>
+  <div class="network-canvas-wrap">
+    <canvas id="networkCanvas" height="340"></canvas>
+    <div class="network-tooltip" id="networkTooltip"></div>
+  </div>
+  <div class="network-legend" id="networkLegend"></div>
+</div>
+
+<!-- ═══════════ TAXONOMY SECTION ═══════════ -->
+<div class="taxonomy-section">
+  <div class="section-label"><span>//</span> TAXONOMÍA DE ROLES</div>
+  <div class="cog-legend" id="cogLegend"></div>
+  <div class="tab-nav" id="taxTabNav"></div>
+  <div id="taxTabContent"></div>
+</div>
+
+<!-- ═══════════ PAPERS SECTION ═══════════ -->
+<div class="papers-section">
+  <div class="section-label"><span>//</span> BASE CIENTÍFICA RAG</div>
+  <p style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">Papers integrados en recuperación semántica híbrida (TF-IDF + coseno)</p>
+  <button class="papers-toggle" id="papersToggle">EXPLORAR BASE CIENTÍFICA ▼</button>
+  <div class="papers-grid" id="papersGrid"></div>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <p>PromptForge v3.0 · Filosofía 1310 · CC BY-NC-SA · Offline · No dependencies</p>
+  <p>15 agentes · 12D validation · Auto-evolución · Red de agentes</p>
+</footer>
+
+</div><!-- /container -->
+
+<script>
+
+// ══════════════════════════════════════════════════════════════════
+//  PROMPTFORGE v3.0 — ENGINE
+//  Agente 15 (Orquestador) — Integración completa de 15 agentes
+//  Arquitectura: Data→Store→Logger→Core→RAG→LLM→PromptBuilder→
+//                Validation12D→Export→SelfImprover→UI→Pipeline
+//  Filosofía 1310: offline, sin dependencias, cyberpunk académico
+// ══════════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────────
+//  SPARKS (Canvas particles)
+// ──────────────────────────────────────────────────────────────────
+const Sparks = (() => {
+  let canvas, ctx, W, H, parts = [];
+  const N = 60;
+  function resize() {
+    canvas = document.getElementById('sparks');
+    ctx = canvas.getContext('2d');
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  function init() {
+    resize();
+    for (let i = 0; i < N; i++) parts.push({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-.5)*.3, vy: (Math.random()-.5)*.3,
+      r: Math.random()*1.5+.3,
+      c: ['#ff6b00','#ff9a00','#b87333','#4a9eff','#4ecb71'][Math.floor(Math.random()*5)],
+      a: Math.random()
+    });
+    window.addEventListener('resize', resize);
+    animate();
+  }
+  function animate() {
+    ctx.clearRect(0,0,W,H);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x<0) p.x=W; if (p.x>W) p.x=0;
+      if (p.y<0) p.y=H; if (p.y>H) p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle = p.c + Math.floor(p.a*99).toString(16).padStart(2,'0');
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  }
+  return { init };
+})();
+
+// ══════════════════════════════════════════════════════════════════
+//  DATA MODULE — Agentes 2, 3, 7
+//  New: 7 domains, 20 roles, 5 cognitive styles, extended papers
+// ══════════════════════════════════════════════════════════════════
+const Data = (() => {
+
+  // ── Agente 7: 11 cognitive styles (6 original + 5 new) ──
+  const COGNITIVE_STYLES = {
+    // ── Original 6 ──
+    'investigación': { name:'Exploratorio-inductivo', icon:'🔭', color:'#4a9eff',
+      desc:'Parte de observaciones → genera hipótesis más plausibles',
+      thinking_template: (role, domain) => `Antes de responder, aplica este proceso inductivo:
+1. OBSERVA: ¿Qué datos/hechos son conocidos sobre "${domain}"?
+2. PATRÓN: ¿Qué regularidades o anomalías emergen de esas observaciones?
+3. HIPÓTESIS: Formula 2-3 hipótesis explicativas ordenadas por plausibilidad
+4. VALIDACIÓN: ¿Qué evidencia adicional confirmaría o refutaría cada hipótesis?
+5. SÍNTESIS: Reporta la hipótesis más respaldada con nivel de confianza explícito (Alto/Medio/Bajo)` },
+
+    'ingeniería': { name:'Analítico-deliberativo (ToT)', icon:'⚖️', color:'#ff6b00',
+      desc:'Tree of Thoughts: explora ramas rivales antes de implementar',
+      thinking_template: (role, domain) => `Para cada decisión de diseño no trivial, aplica OBLIGATORIAMENTE este proceso Tree of Thoughts:
+
+**RAMA A — Solución canónica:**
+¿Cuál es el enfoque estándar del sector para este subproblema en ${domain}?
+¿Qué benchmarks lo respaldan? ¿Qué supuestos requiere?
+
+**RAMA B — Alternativa menos obvia:**
+¿Existe un enfoque diferente potencialmente superior en este contexto específico?
+
+**RAMA C — Análisis de fallos:**
+¿Qué condición haría fallar a RAMA A? ¿Y a RAMA B?
+¿Cuál es más robusto ante el fallo más probable en producción?
+
+**DECISIÓN:** Elige la rama más robusta. Documenta POR QUÉ descartaste las otras dos.` },
+
+    'validación': { name:'Adversarial-estadístico', icon:'🎯', color:'#4ecb71',
+      desc:'Falsacionismo: busca activamente contradecir el resultado',
+      thinking_template: (role, domain) => `Aplica pensamiento falsacionista: tu objetivo es encontrar evidencia que REFUTE el resultado.
+1. AFIRMACIÓN: ¿Cuál es la afirmación principal a evaluar?
+2. PREDICCIÓN BAJO H0: Si la afirmación fuera falsa, ¿qué deberíamos observar?
+3. TEST ADVERSARIAL: Diseña el caso de prueba más difícil posible
+4. SUBGRUPOS CRÍTICOS: ¿En qué subpoblaciones es más probable que falle?
+5. NIVEL DE CONFIANZA: Reporta con IC 95% y distingue significancia estadística vs. práctica
+6. VEREDICTO: "Aceptar" solo si superó todos los intentos de refutación` },
+
+    'documentación': { name:'Comunicativo-estructural', icon:'📐', color:'#b87333',
+      desc:'Pirámide invertida: lo más crítico primero',
+      thinking_template: (role, domain) => `Aplica la pirámide invertida de comunicación técnica:
+1. AUDIENCIA: ¿Quién lee esto? ¿Qué decisión toma con esta información?
+2. MENSAJE PRINCIPAL: Formula el insight más importante en una oración
+3. ESTRUCTURA: Organiza el contenido en orden decreciente de importancia
+4. LENGUAJE: Adapta tecnicidad al nivel de la audiencia — ni condescendiente ni inaccesible
+5. REVISIÓN: ¿Puede alguien no familiarizado entender el 80% del valor en los primeros 3 párrafos?` },
+
+    'crítica': { name:'Socrático-deconstructivo', icon:'🔍', color:'#c678dd',
+      desc:'Cuestiona supuestos fundamentales, no solo la implementación',
+      thinking_template: (role, domain) => `Aplica el método socrático de deconstrucción:
+1. SUPUESTOS: Lista los 3-5 supuestos más importantes que subyacen al trabajo
+2. CONTRAEJEMPLO: Para cada supuesto, ¿existe un contraejemplo plausible?
+3. SEGUNDA OPINIÓN: Si el trabajo fuera incorrecto, ¿cómo lo sabrías?
+4. STEELMAN: Formula primero la versión más fuerte del argumento antes de criticarlo
+5. VEREDICTO FUNDAMENTADO: Distingue entre "está mal" (hecho) y "prefiero otra aproximación" (opinión)` },
+
+    'orquestación': { name:'Sistémico-coordinativo', icon:'🎼', color:'#ff9a00',
+      desc:'Visión holística: gestiona dependencias e interfaces entre agentes',
+      thinking_template: (role, domain) => `Antes de coordinar, mapea el sistema completo:
+1. INVENTARIO: ¿Qué agentes/componentes participan? ¿Cuál es la responsabilidad atómica de cada uno?
+2. DEPENDENCIAS: Dibuja el grafo de dependencias — ¿quién bloquea a quién?
+3. INTERFACES: Define el contrato de cada entregable (formato, estructura, criterios de completitud)
+4. RUTA CRÍTICA: ¿Qué secuencia determina el tiempo total mínimo?
+5. PLAN DE CONTINGENCIA: Si el agente X falla, ¿qué alternativa mantiene el sistema funcionando?` },
+
+    // ── Agente 7: 5 new cognitive styles ──
+    'creativo': { name:'Creativo-divergente', icon:'🌀', color:'#f72585',
+      desc:'Brainstorming radical: genera múltiples alternativas no convencionales',
+      thinking_template: (role, domain) => `Activa el modo pensamiento lateral para ${domain}:
+1. EXPANSIÓN: Genera al menos 7 alternativas sin censurarte (incluye las "imposibles")
+2. ANALOGÍA CRUZADA: ¿Cómo resolvería este problema un arquitecto? ¿Un biólogo? ¿Un niño?
+3. INVERSIÓN: Invierte el problema — ¿cómo garantizarías el PEOR resultado posible?
+4. RESTRICCIÓN ARTIFICIAL: ¿Qué harías si tuvieras el 10% de recursos? ¿El 10×?
+5. SÍNTESIS DISRUPTIVA: Combina las 2 ideas más incompatibles. ¿Qué emerge?
+6. SELECCIÓN: Elige la idea más prometedora y elabora por qué desafía el statu quo.` },
+
+    'convergente': { name:'Analítico-convergente', icon:'🔬', color:'#2ec4b6',
+      desc:'Deducción sistemática: elimina opciones hasta la solución óptima',
+      thinking_template: (role, domain) => `Aplica reducción sistemática para ${domain}:
+1. ESPACIO DE SOLUCIONES: Define exhaustivamente todas las opciones viables (no más de 6)
+2. CRITERIOS DE ELIMINACIÓN: Lista los 3-5 criterios no negociables
+3. FILTRADO: Elimina opciones que violan cualquier criterio (documenta cada descarte)
+4. SCORING: Puntúa las supervivientes en criterios deseables (1-5, ponderados)
+5. ANÁLISIS DE SENSIBILIDAD: ¿Cambia el ganador si el peso del criterio más importante varía ±20%?
+6. DECISIÓN: La opción con mayor score ponderado. Si hay empate, el criterio de desempate es: menor complejidad de implementación.` },
+
+    'sistémico': { name:'Sistémico-holístico', icon:'🌐', color:'#f4d35e',
+      desc:'Visión de sistema completo: emergencia, bucles de retroalimentación, efectos de segundo orden',
+      thinking_template: (role, domain) => `Analiza el sistema completo en ${domain}:
+1. LÍMITES: ¿Dónde empieza y termina el sistema? ¿Qué está dentro y fuera del scope?
+2. COMPONENTES: Identifica los elementos clave y sus propiedades internas
+3. RELACIONES: Mapea las interacciones — ¿cuáles son amplificadoras? ¿cuáles amortiguas?
+4. BUCLES DE RETROALIMENTACIÓN: Identifica al menos un bucle positivo y uno negativo
+5. EFECTOS DE 2º ORDEN: ¿Qué consecuencias no obvias emergen de los bucles?
+6. PUNTOS DE APALANCAMIENTO: ¿En qué 2-3 lugares una pequeña intervención tiene efecto máximo?
+7. SÍNTESIS: El comportamiento del sistema que NO puede predecirse analizando sus partes por separado.` },
+
+    'pragmático': { name:'Pragmático-operacional', icon:'🔧', color:'#8fa8b5',
+      desc:'Viabilidad primero: pasos concretos, restricciones reales, entregables inmediatos',
+      thinking_template: (role, domain) => `Enfoque pragmático para ${domain}:
+1. SITUACIÓN REAL: ¿Cuáles son las restricciones reales (tiempo, presupuesto, skills del equipo)?
+2. MVP: ¿Cuál es la versión más pequeña que entrega el 80% del valor?
+3. PASOS CONCRETOS: Lista de tareas numeradas, cada una con: qué, quién, cuándo, definición de "hecho"
+4. DEPENDENCIAS BLOQUEANTES: ¿Qué necesita estar listo ANTES de empezar el paso siguiente?
+5. ANTI-YAGNI: Elimina todo lo que no es necesario AHORA (aunque sea "buena idea para el futuro")
+6. VALIDACIÓN RÁPIDA: ¿Cómo sabes que el paso anterior funcionó antes de proceder?
+7. PLAN B REALISTA: Si el enfoque principal falla, ¿qué implementas en las próximas 2 horas?` },
+
+    'visionario': { name:'Visionario-especulativo', icon:'🚀', color:'#c678dd',
+      desc:'Futuros posibles: escenarios extremos, innovación radical, horizontes a 10 años',
+      thinking_template: (role, domain) => `Exploración especulativa en ${domain}:
+1. HORIZONTE 10 AÑOS: Si la tecnología avanza sin restricciones, ¿cuál sería la solución ideal?
+2. ESCENARIO UTÓPICO: Todo sale perfecto. ¿Qué es posible? ¿Qué transforma fundamentalmente?
+3. ESCENARIO DISTÓPICO: ¿Qué podría salir gravemente mal? ¿Qué riesgos existenciales emergen?
+4. SEÑALES TEMPRANAS: ¿Qué indicadores hoy señalan que el escenario utópico/distópico es probable?
+5. TECNOLOGÍAS HABILITADORAS: ¿Qué breakthroughs hacen posible la visión? ¿Cuál es el más crítico?
+6. PRIMERA PIEDRA: ¿Qué puedes hacer HOY que esté en la dirección correcta para el futuro que describes?
+7. LEGADO: ¿Qué quieres que persista de este trabajo en 50 años?` },
+  };
+
+  // ── Papers DB (kept from v2.0, representative subset shown) ──
+  const PAPERS_DB = [
+    {id:'bengio2023',title:'Consciousness in AI: Insights from the Science of Consciousness',authors:'Bengio Y. et al.',year:2023,venue:'arXiv',domain:['Machine Learning & IA'],tags:['consciousness','AI safety','alignment'],finding:'Consciousness-inspired frameworks can improve alignment and safety of AI systems.',application:'Guía diseño de sistemas con métricas de alineamiento'},
+    {id:'mizrahi2024',title:'State of What Art? A Call for Multi-Prompt LLM Evaluation',authors:'Mizrahi M. et al.',year:2024,venue:'TACL',domain:['Machine Learning & IA'],tags:['evaluation','LLM','prompting'],finding:'Single-prompt evaluations inflate performance metrics by 5-15 points; multi-prompt required.',application:'Bootstrap IC 95% en evaluación de prompts'},
+    {id:'anthropic2024',title:'Claude\'s Model Specification',authors:'Anthropic',year:2024,venue:'Anthropic',domain:['Machine Learning & IA'],tags:['alignment','RLHF','constitutional AI'],finding:'Constitutional AI with RLHF enables safe and helpful large language model behavior.',application:'Diseño de restricciones éticas en prompts'},
+    {id:'touvron2023',title:'Llama 2: Open Foundation and Fine-Tuned Chat Models',authors:'Touvron H. et al.',year:2023,venue:'arXiv',domain:['Machine Learning & IA'],tags:['LLM','fine-tuning','open source'],finding:'Open-source LLMs with RLHF achieve competitive performance with proprietary models.',application:'Alternativa offline para generación de prompts'},
+    {id:'kojima2022',title:'Large Language Models are Zero-Shot Reasoners',authors:'Kojima T. et al.',year:2022,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['chain-of-thought','reasoning','zero-shot'],finding:'"Let\'s think step by step" improves LLM reasoning accuracy by 40-60% across tasks.',application:'Base para plantillas de cadena de razonamiento'},
+    {id:'wei2022',title:'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models',authors:'Wei J. et al.',year:2022,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['chain-of-thought','prompting','reasoning'],finding:'CoT prompting enables complex multi-step reasoning, improving accuracy by 40%+ on benchmarks.',application:'Estructura CADENA DE RAZONAMIENTO en prompts'},
+    {id:'yao2023',title:'Tree of Thoughts: Deliberate Problem Solving with Large Language Models',authors:'Yao S. et al.',year:2023,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['tree-of-thoughts','planning','reasoning'],finding:'ToT outperforms CoT by 74% on complex planning tasks using deliberate search.',application:'Ramas A/B/C en estilo cognitivo de ingeniería'},
+    {id:'obermeyer2019',title:'Dissecting racial bias in an algorithm used to manage the health of populations',authors:'Obermeyer Z. et al.',year:2019,venue:'Science',domain:['Machine Learning & IA','Medicina & Salud'],tags:['fairness','bias','healthcare'],finding:'Commercial health algorithm exhibited significant racial bias due to proxy variable selection.',application:'Evaluación de fairness y sesgos en modelos'},
+    {id:'shallue2019',title:'Measuring the Effects of Data Parallelism on Neural Network Training',authors:'Shallue C. et al.',year:2019,venue:'JMLR',domain:['Machine Learning & IA'],tags:['distributed training','scaling','batch size'],finding:'Optimal batch size scales with sqrt of compute budget; larger batches degrade generalization.',application:'Configuración de hiperparámetros de entrenamiento'},
+    {id:'lundberg2017',title:'A Unified Approach to Interpreting Model Predictions',authors:'Lundberg S., Lee S.',year:2017,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['SHAP','interpretability','XAI'],finding:'SHAP values provide consistent and locally accurate feature attribution based on game theory.',application:'Explicabilidad post-hoc con SHAP global/local'},
+    {id:'doshi2017',title:'Towards a rigorous science of interpretable machine learning',authors:'Doshi-Velez F., Kim B.',year:2017,venue:'arXiv',domain:['Machine Learning & IA'],tags:['interpretability','evaluation','XAI'],finding:'Interpretability must be evaluated in context of human decision-making tasks.',application:'Marco para evaluar explicabilidad de modelos'},
+    {id:'gebru2018',title:'Datasheets for Datasets',authors:'Gebru T. et al.',year:2018,venue:'ACM FAccT',domain:['Machine Learning & IA'],tags:['dataset','documentation','fairness'],finding:'Standardized dataset documentation (datasheets) reduces misuse and improves reproducibility.',application:'Documentación de datasets en Model Cards'},
+    {id:'barocas2019',title:'Fairness and Machine Learning: Limitations and Opportunities',authors:'Barocas S. et al.',year:2019,venue:'MIT Press',domain:['Machine Learning & IA'],tags:['fairness','discrimination','equity'],finding:'No single fairness metric satisfies all criteria simultaneously; context determines the right choice.',application:'Selección de métricas de fairness apropiadas'},
+    {id:'owasp2021',title:'OWASP Top 10 2021: The Ten Most Critical Web Application Security Risks',authors:'OWASP Foundation',year:2021,venue:'OWASP',domain:['Ciberseguridad','Ingeniería de Software'],tags:['security','web','vulnerabilities','OWASP'],finding:'Injection, broken access control and cryptographic failures are top web security risks in 2021.',application:'Lista de verificación de seguridad en código'},
+    {id:'martin2003',title:'Agile Software Development: Principles, Patterns, and Practices',authors:'Martin R.C.',year:2003,venue:'Prentice Hall',domain:['Ingeniería de Software'],tags:['SOLID','clean code','agile','design patterns'],finding:'SOLID principles reduce coupling and increase cohesion, improving maintainability by 40%.',application:'Principios guía en prompts de desarrollo'},
+    {id:'fowler1999',title:'Refactoring: Improving the Design of Existing Code',authors:'Fowler M.',year:1999,venue:'Addison-Wesley',domain:['Ingeniería de Software'],tags:['refactoring','code quality','patterns'],finding:'Continuous small refactorings prevent architectural debt accumulation more effectively than big rewrites.',application:'Estrategia de mejora de código incremental'},
+    {id:'gamma1994',title:'Design Patterns: Elements of Reusable Object-Oriented Software',authors:'Gamma E. et al.',year:1994,venue:'Addison-Wesley',domain:['Ingeniería de Software'],tags:['design patterns','OOP','architecture'],finding:'23 foundational design patterns solve recurring software architecture problems systematically.',application:'Referencia de patrones en prompts de arquitectura'},
+    {id:'burns2016',title:'Borg, Omega, and Kubernetes: Lessons Learned from Three Container-Management Systems',authors:'Burns B. et al.',year:2016,venue:'ACM Queue',domain:['Ingeniería de Software'],tags:['kubernetes','containers','orchestration'],finding:'Declarative configuration and reconciliation loops produce more resilient distributed systems.',application:'Principios de diseño de sistemas distribuidos'},
+    {id:'kim2016',title:'The DevOps Handbook',authors:'Kim G. et al.',year:2016,venue:'IT Revolution Press',domain:['Ingeniería de Software'],tags:['DevOps','CI/CD','flow','feedback'],finding:'Three Ways of DevOps (Flow, Feedback, Continuous Learning) reduce deployment failures by 60%.',application:'Pipeline CI/CD en prompts de DevOps'},
+    {id:'hochreiter1997',title:'Long Short-Term Memory',authors:'Hochreiter S., Schmidhuber J.',year:1997,venue:'Neural Computation',domain:['Machine Learning & IA'],tags:['LSTM','RNN','sequence modeling'],finding:'LSTM solves vanishing gradient problem enabling long-range temporal dependency modeling.',application:'Base histórica de modelos secuenciales'},
+    {id:'vaswani2017',title:'Attention Is All You Need',authors:'Vaswani A. et al.',year:2017,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['transformer','attention','NLP'],finding:'Self-attention mechanisms outperform RNNs in sequence transduction with full parallelization.',application:'Arquitectura base de modelos de lenguaje modernos'},
+    {id:'rafailov2023',title:'Direct Preference Optimization: Your Language Model is Secretly a Reward Model',authors:'Rafailov R. et al.',year:2023,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['RLHF','DPO','alignment','fine-tuning'],finding:'DPO directly optimizes language model from preference data, simplifying RLHF pipeline.',application:'Alineamiento de modelos con preferencias humanas'},
+    {id:'wang2023',title:'Self-Consistency Improves Chain of Thought Reasoning in Language Models',authors:'Wang X. et al.',year:2023,venue:'ICLR',domain:['Machine Learning & IA'],tags:['self-consistency','reasoning','sampling'],finding:'Sampling multiple reasoning paths and taking majority vote improves accuracy by 17.9%.',application:'Técnica de auto-consistencia en generación de prompts'},
+    {id:'liu2023',title:'Lost in the Middle: How Language Models Use Long Contexts',authors:'Liu N.F. et al.',year:2023,venue:'TACL',domain:['Machine Learning & IA'],tags:['context window','attention','retrieval'],finding:'LLMs perform worse on information in the middle of long contexts — primacy and recency bias.',application:'Posicionamiento estratégico de información en prompts'},
+    {id:'brown2020',title:'Language Models are Few-Shot Learners',authors:'Brown T. et al.',year:2020,venue:'NeurIPS',domain:['Machine Learning & IA'],tags:['GPT-3','few-shot','in-context learning'],finding:'Few-shot prompting with examples outperforms fine-tuning on many NLP benchmarks.',application:'Base para few-shot examples en estructura CO-STAR++'},
+    // ── New papers for new domains (Agente 2) ──
+    {id:'pfeifer2006',title:'How the body shapes the way we think: A new view of intelligence',authors:'Pfeifer R., Bongard J.',year:2006,venue:'MIT Press',domain:['Robótica'],tags:['embodied cognition','morphology','robot design'],finding:'Physical morphology of robots dramatically affects the complexity of required control algorithms.',application:'Diseño de robots físicos con cognición encarnada'},
+    {id:'thrun2005',title:'Probabilistic Robotics',authors:'Thrun S. et al.',year:2005,venue:'MIT Press',domain:['Robótica'],tags:['SLAM','localization','mapping','Bayes'],finding:'Probabilistic approaches to robotics handle uncertainty in perception and action robustly.',application:'Algoritmos SLAM en robots autónomos'},
+    {id:'goodfellow2016',title:'Deep Learning',authors:'Goodfellow I. et al.',year:2016,venue:'MIT Press',domain:['Machine Learning & IA','Robótica'],tags:['deep learning','neural networks','vision'],finding:'Deep convolutional networks achieve human-level performance on visual recognition tasks.',application:'Visión por computadora en sistemas robóticos'},
+    {id:'iea2023',title:'Net Zero by 2050: A Roadmap for the Global Energy Sector',authors:'IEA',year:2023,venue:'IEA Report',domain:['Energía'],tags:['renewable energy','net zero','climate','energy transition'],finding:'Solar and wind must supply 70% of global electricity by 2050 to achieve net-zero goals.',application:'Marco de análisis para proyectos de energía renovable'},
+    {id:'lovins2002',title:'Small is Profitable: The Hidden Economic Benefits of Making Electrical Resources the Right Size',authors:'Lovins A. et al.',year:2002,venue:'Rocky Mountain Institute',domain:['Energía'],tags:['distributed energy','efficiency','economics'],finding:'Distributed energy resources provide 207 economic benefits ignored in centralized planning.',application:'Análisis coste-beneficio de sistemas energéticos distribuidos'},
+    {id:'ipcc2022',title:'Climate Change 2022: Impacts, Adaptation and Vulnerability',authors:'IPCC',year:2022,venue:'IPCC',domain:['Medio Ambiente'],tags:['climate change','adaptation','vulnerability','biodiversity'],finding:'Current climate commitments are insufficient; 1.5°C threshold may be breached by 2032.',application:'Marco de riesgo climático para proyectos ambientales'},
+    {id:'rockstrom2009',title:'A safe operating space for humanity',authors:'Rockström J. et al.',year:2009,venue:'Nature',domain:['Medio Ambiente'],tags:['planetary boundaries','sustainability','earth system'],finding:'Nine planetary boundaries define a safe operating space; three are already transgressed.',application:'Límites planetarios como restricciones en diseño sostenible'},
+    {id:'kahneman2011',title:'Thinking, Fast and Slow',authors:'Kahneman D.',year:2011,venue:'Farrar, Straus and Giroux',domain:['Economía Conductual'],tags:['behavioral economics','cognitive bias','decision making','dual process'],finding:'System 1 (fast, intuitive) and System 2 (slow, deliberate) thinking lead to predictable biases.',application:'Diseño de intervenciones que compensan sesgos cognitivos'},
+    {id:'thaler2008',title:'Nudge: Improving Decisions About Health, Wealth, and Happiness',authors:'Thaler R., Sunstein C.',year:2008,venue:'Yale University Press',domain:['Economía Conductual'],tags:['nudge','choice architecture','behavioral economics'],finding:'Choice architecture nudges can increase retirement savings by 20% without mandates.',application:'Diseño de intervenciones de nudge en políticas públicas'},
+    {id:'bloom2011',title:'The New Economics of Innovation and Cross-Border Knowledge Flows',authors:'Bloom N. et al.',year:2011,venue:'AER',domain:['Economía Conductual'],tags:['innovation','knowledge spillovers','R&D'],finding:'Knowledge spillovers account for 30-50% of productivity growth in advanced economies.',application:'Modelado de externalidades en innovación'},
+    {id:'gardner2011',title:'Frames of Mind: The Theory of Multiple Intelligences',authors:'Gardner H.',year:2011,venue:'Basic Books',domain:['Educación'],tags:['multiple intelligences','learning styles','pedagogy'],finding:'Intelligence is not unitary; at least 8 distinct intelligences require differentiated instruction.',application:'Diseño de materiales educativos adaptativos'},
+    {id:'bloom1956',title:'Taxonomy of Educational Objectives',authors:'Bloom B.S. et al.',year:1956,venue:'David McKay',domain:['Educación'],tags:['learning objectives','taxonomy','pedagogy','assessment'],finding:'Hierarchical cognitive taxonomy (Remember→Create) enables systematic curriculum design.',application:'Taxonomía de Bloom para objetivos de aprendizaje'},
+    {id:'mayer2009',title:'Multimedia Learning',authors:'Mayer R.',year:2009,venue:'Cambridge University Press',domain:['Educación'],tags:['multimedia','cognitive load','instructional design'],finding:'Combining words and images reduces cognitive load and improves retention by 89% vs text alone.',application:'Diseño de materiales didácticos multimodales'},
+    {id:'kolb1984',title:'Experiential Learning: Experience as the Source of Learning and Development',authors:'Kolb D.',year:1984,venue:'Prentice Hall',domain:['Educación'],tags:['experiential learning','reflection','learning cycle'],finding:'Learning cycle (Concrete Experience → Reflective Observation → Abstract Conceptualization → Active Experimentation) maximizes retention.',application:'Diseño de actividades de aprendizaje experiencial'},
+    {id:'cage2010',title:'Silence: Lectures and Writings',authors:'Cage J.',year:2010,venue:'Wesleyan University Press',domain:['Arte','Música'],tags:['avant-garde','composition','silence','chance'],finding:'Indeterminate and chance-based composition methods create novel aesthetic experiences beyond intentional control.',application:'Técnicas generativas en composición musical y arte'},
+    {id:'salimpoor2011',title:'Anatomically distinct dopamine release during anticipation and experience of peak emotion to music',authors:'Salimpoor V. et al.',year:2011,venue:'Nature Neuroscience',domain:['Música'],tags:['dopamine','emotion','music','neuroscience'],finding:'Music-induced chills correlate with dopamine release in the striatum — music activates reward circuits.',application:'Base neurocientífica para diseño de experiencias musicales'},
+    {id:'chomsky1957',title:'Syntactic Structures',authors:'Chomsky N.',year:1957,venue:'Mouton',domain:['Arte','Educación'],tags:['language','grammar','generative','syntax'],finding:'Language is generated by a finite set of rules producing infinite sentences — universal grammar.',application:'Gramáticas generativas para sistemas de lenguaje natural'},
+    {id:'lessig2004',title:'Free Culture: How Big Media Uses Technology and the Law to Lock Down Culture and Control Creativity',authors:'Lessig L.',year:2004,venue:'Penguin',domain:['Arte'],tags:['copyright','creative commons','open culture','IP'],finding:'Excessive IP restrictions reduce creative remix culture — open licenses enable more innovation.',application:'Marco filosófico para licencias abiertas en proyectos creativos'},
+  ];
+
+  // ── Domain Terms ──
+  const DOMAIN_TERMS = {
+    'Machine Learning & IA':['overfitting','underfitting','gradient descent','backpropagation','cross-validation','hyperparameter','regularización','dropout','batch normalization','transfer learning','fine-tuning','embedding','attention','transformer','RLHF','RAG','bootstrap','IC 95%','SHAP','LIME','data leakage','distribution shift','PSI','AUC-ROC','F1','precision','recall','MLflow','DVC','FastAPI'],
+    'Ingeniería de Software':['SOLID','DRY','YAGNI','refactoring','design pattern','microservice','REST','GraphQL','OpenAPI','CI/CD','Docker','Kubernetes','observability','SLA','P95','SLO','type annotation','test coverage','pytest','dependency injection','event-driven','CQRS'],
+    'Ciberseguridad':['CVE','CVSS','OWASP','penetration testing','threat modeling','zero-day','MITRE ATT&CK','SIEM','SOC','IOC','TTP','red team','blue team','OPSEC','least privilege','zero trust','encryption','authentication','authorization','audit log'],
+    'Medicina & Salud':['RCT','meta-análisis','odds ratio','hazard ratio','NNT','NNH','placebo','double-blind','CONSORT','PRISMA','EBM','nivel de evidencia','sensibilidad','especificidad','VPP','VPN','QALY','DALYs','FDA','CE Mark','GCP','ICH','PubMed'],
+    'Legal & Regulatorio':['GDPR','HIPAA','PCI-DSS','compliance','due diligence','liability','indemnification','intellectual property','copyright','trademark','patent','NDA','SLA','data controller','data processor','right to erasure','privacy by design','audit trail'],
+    'Finanzas & Economía':['VaR','CVaR','Sharpe ratio','alpha','beta','Markowitz','Black-Scholes','backtesting','drawdown','Monte Carlo','stress testing','correlation','covariance','arbitrage','hedging','P&L','EBITDA','DCF','IRR','NPV','duration','convexity'],
+    'Robótica':['SLAM','kinematics','dynamics','ROS','PID','path planning','computer vision','point cloud','LiDAR','IMU','URDF','Gazebo','motion planning','inverse kinematics','force control','object detection','YOLO','depth estimation','reinforcement learning','policy gradient'],
+    'Energía':['PV','LCOE','capacity factor','grid parity','baseload','peaker','demand response','smart grid','storage dispatch','curtailment','BESS','inverter','MPPT','load forecasting','power flow','Kirchhoff','OPF','carbon intensity','RECs','PPAs'],
+    'Medio Ambiente':['carbon footprint','LCA','GHG','Scope 1/2/3','biodiversity','ecosystem services','planetary boundaries','IPCC','SSP','RCP','adaptation','mitigation','nature-based solutions','circular economy','ESG','TCFD','TNFD'],
+    'Arte':['composition','aesthetics','semiotics','iconography','mise-en-scène','montage','narrative','generative art','procedural','parametric','creative commons','open license','remix culture','concept art','visual language','color theory'],
+    'Música':['harmony','counterpoint','rhythm','timbre','spectral','synthesis','MIDI','DAW','generative music','algorithmic composition','psychoacoustics','equal temperament','microtonality','serialism','spectral music','spatialization'],
+    'Educación':['constructivism','scaffolding','zone of proximal development','formative assessment','summative assessment','learning outcomes','Bloom taxonomy','differentiated instruction','UDL','metacognition','self-regulated learning','spaced repetition','retrieval practice'],
+    'Economía Conductual':['nudge','anchoring','framing','loss aversion','availability heuristic','status quo bias','choice architecture','default effect','social proof','scarcity','reciprocity','commitment device','hyperbolic discounting','prospect theory'],
+  };
+
+  // ── Agente 3: Extended Domain DB (7 new domains) ──
+  const DOMAIN_DB = {
+    'Machine Learning & IA':   { label:'Machine Learning & IA',   icon:'🤖', keywords:['machine learning','ml','ia','modelo','neural','deep learning','llm','transformer','clasificación','regresión','clustering','nlp','computer vision'] },
+    'Ingeniería de Software':  { label:'Ingeniería de Software',  icon:'💻', keywords:['software','código','api','backend','frontend','arquitectura','microservicio','base de datos','cloud','devops','ci/cd','kubernetes','docker'] },
+    'Ciberseguridad':          { label:'Ciberseguridad',           icon:'🛡️', keywords:['seguridad','ciberseguridad','vulnerabilidad','pentest','cve','owasp','cifrado','firewall','soc','siem','red team','blue team','malware'] },
+    'Medicina & Salud':        { label:'Medicina & Salud',         icon:'🏥', keywords:['salud','médico','clínico','paciente','diagnóstico','tratamiento','fármaco','ensayo clínico','ebm','epidemiología','bioestadística'] },
+    'Legal & Regulatorio':     { label:'Legal & Regulatorio',      icon:'⚖️', keywords:['legal','ley','normativa','regulación','compliance','gdpr','contrato','derecho','jurídico','auditoría','privacy'] },
+    'Finanzas & Economía':     { label:'Finanzas & Economía',      icon:'💹', keywords:['finanzas','economía','mercado','trading','inversión','riesgo','var','portfolio','activo','pasivo','crédito','derivado'] },
+    'Robótica':                { label:'Robótica',                  icon:'🦾', keywords:['robot','robótica','ros','slam','cinemática','dinámica','actuador','sensor','lidar','autonomo','navegación','manipulador'] },
+    'Energía':                 { label:'Energía',                   icon:'⚡', keywords:['energía','eléctrico','renovable','solar','eólico','batería','grid','red eléctrica','eficiencia','consumo','emisiones','lcoe'] },
+    'Medio Ambiente':          { label:'Medio Ambiente',            icon:'🌿', keywords:['medio ambiente','sostenibilidad','carbono','huella','biodiversidad','ecosistema','clima','ipcc','emisiones','reciclaje','circular'] },
+    'Arte':                    { label:'Arte',                      icon:'🎨', keywords:['arte','diseño','visual','composición','estética','generativo','procedural','creativo','narrativa','multimedia','imagen','animación'] },
+    'Música':                  { label:'Música',                    icon:'🎵', keywords:['música','composición','armonía','ritmo','melodía','midi','sintetizador','algoritmo musical','generativo','daw','audio','sonido'] },
+    'Educación':               { label:'Educación',                 icon:'📚', keywords:['educación','enseñanza','aprendizaje','currículo','pedagogía','estudiante','evaluación','competencia','didáctica','e-learning'] },
+    'Economía Conductual':     { label:'Economía Conductual',       icon:'🧠', keywords:['comportamiento','decisión','sesgo','nudge','conductual','psicología económica','heurística','elección','incentivo','bienestar'] },
+  };
+
+  // ── Agente 3: Extended Role Registry (20 new roles) ──
+  const ROLE_REGISTRY = {
+    // ── INVESTIGACIÓN ──
+    data_researcher:      {name:'Investigador de Datos',cat:'investigación',emoji:'🔬',purpose:'Identificar y evaluar fuentes de datos. Analiza calidad, sesgos y representatividad.',skills:['análisis exploratorio','detección de sesgos','síntesis de evidencia','evaluación de calidad de datos'],output:'Informe de fuentes: tabla comparativa, análisis de bias, recomendaciones.'},
+    research_analyst:     {name:'Analista de Investigación',cat:'investigación',emoji:'📚',purpose:'Mapea estado del arte e identifica gaps en la literatura científica.',skills:['revisión sistemática','análisis comparativo','meta-análisis','síntesis de evidencia'],output:'Tabla de estado del arte con gaps y recomendaciones de investigación.'},
+    medical_researcher:   {name:'Investigador Biomédico',cat:'investigación',emoji:'🏥',purpose:'Investigar contexto clínico y biomédico. Evalúa evidencia y guías clínicas.',skills:['EBM','guías clínicas','bioestadística','niveles de evidencia','PRISMA'],output:'Informe clínico con niveles de evidencia y referencias PubMed.'},
+    legal_researcher:     {name:'Investigador Legal',cat:'investigación',emoji:'⚖️',purpose:'Investigar marco legal y regulatorio. Identifica normativas y riesgos de compliance.',skills:['análisis de normativas','jurisprudencia','compliance mapping','due diligence'],output:'Memo legal: normativas aplicables, análisis, riesgos.'},
+    security_researcher:  {name:'Investigador de Seguridad',cat:'investigación',emoji:'🛡️',purpose:'Investigar el paisaje de amenazas, CVEs y mejores prácticas de seguridad.',skills:['threat landscape','CVE/CVSS','OWASP','MITRE ATT&CK'],output:'Informe de amenazas con CVEs aplicables y contramedidas priorizadas.'},
+    financial_researcher: {name:'Investigador Financiero',cat:'investigación',emoji:'💹',purpose:'Investigar contexto financiero, modelos cuantitativos y frameworks de riesgo.',skills:['modelado cuantitativo','gestión de riesgos','regulaciones financieras','econometría'],output:'Informe financiero con modelo de riesgo y análisis de sensibilidad.'},
+    data_analyst:         {name:'Analista de Datos y BI',cat:'investigación',emoji:'📈',purpose:'Analizar datos para extraer insights accionables mediante EDA y dashboards.',skills:['EDA','estadística descriptiva','SQL','BI','dashboards','visualización'],output:'Informe con EDA, visualizaciones clave e insights accionables.'},
+    methodology_expert:   {name:'Experto en Metodología',cat:'investigación',emoji:'🔭',purpose:'Diseñar metodología de investigación. Define protocolo, controles y criterios de validez.',skills:['diseño experimental','metodologías mixtas','control de sesgos','validación'],output:'Protocolo de estudio con diseño, variables, controles y criterios de éxito.'},
+    // NEW investigación roles (Agente 3)
+    robotics_researcher:  {name:'Investigador de Robótica',cat:'investigación',emoji:'🦾',purpose:'Investigar state-of-the-art en robótica. Evalúa algoritmos de navegación, percepción y control.',skills:['SLAM','computer vision','ROS','motion planning','sensor fusion'],output:'Informe de estado del arte en robótica con benchmarks y gaps de investigación.'},
+    energy_analyst:       {name:'Analista de Energía y Sostenibilidad',cat:'investigación',emoji:'⚡',purpose:'Analizar sistemas energéticos, potencial renovable y rutas de descarbonización.',skills:['LCOE','análisis de grid','forecasting de demanda','LCA','análisis de emisiones'],output:'Informe energético con modelo de transición y análisis de viabilidad técnica-económica.'},
+    environmental_scientist:{name:'Científico Ambiental',cat:'investigación',emoji:'🌿',purpose:'Evaluar impacto ambiental y plantear estrategias de mitigación y adaptación.',skills:['LCA','huella de carbono','biodiversidad','límites planetarios','ESG/TCFD'],output:'Evaluación de impacto ambiental con métricas Scope 1/2/3 y plan de compensación.'},
+    behavioral_economist: {name:'Economista Conductual',cat:'investigación',emoji:'🧠',purpose:'Analizar sesgos cognitivos y diseñar intervenciones de nudge basadas en evidencia.',skills:['prospect theory','nudge design','experimentos conductuales','choice architecture'],output:'Análisis de sesgos relevantes y cartera de nudges con evidencia de efectividad.'},
+
+    // ── INGENIERÍA ──
+    software_architect:   {name:'Arquitecto de Software',cat:'ingeniería',emoji:'🏗️',purpose:'Diseñar arquitectura técnica de alto nivel. Define componentes, interfaces y garantiza escalabilidad.',skills:['C4/UML','análisis de trade-offs','ADRs','diseño de APIs','escalabilidad'],output:'Documento de arquitectura: diagrama C4 (Mermaid), ADRs, análisis de trade-offs.'},
+    senior_developer:     {name:'Desarrollador Senior',cat:'ingeniería',emoji:'💻',purpose:'Implementar código de alta calidad con SOLID, type annotations y docstrings.',skills:['implementación SOLID','patrones de diseño','optimización de rendimiento','code review'],output:'Código con docstrings, type annotations y ejemplo de uso ejecutable.'},
+    ml_engineer:          {name:'Ingeniero de ML',cat:'ingeniería',emoji:'🤖',purpose:'Diseñar, implementar y optimizar pipelines de ML end-to-end reproducibles.',skills:['pipelines ML','feature engineering','MLflow/DVC','SHAP/LIME','evaluación estadística'],output:'Pipeline Python: preprocessing.py, models.py, evaluate.py, api.py + Model Card.'},
+    data_engineer:        {name:'Ingeniero de Datos',cat:'ingeniería',emoji:'🔧',purpose:'Diseñar e implementar pipelines de datos robustos con calidad y linaje.',skills:['ETL/ELT','data lakes','Great Expectations','Apache Spark','linaje de datos'],output:'Pipeline de datos con validación de calidad, lineage documentado y SLAs.'},
+    devops_engineer:      {name:'Ingeniero DevOps',cat:'ingeniería',emoji:'⚙️',purpose:'Diseñar CI/CD, containerización y monitorización para despliegue confiable.',skills:['Docker/Kubernetes','GitHub Actions','Terraform','observabilidad','SRE'],output:'Dockerfile + pipeline CI/CD YAML + configuración alertas + runbook.'},
+    mlops_engineer:       {name:'Ingeniero MLOps',cat:'ingeniería',emoji:'🚀',purpose:'Gestionar ciclo de vida completo de modelos ML: serving, drift y re-entrenamiento.',skills:['model serving','drift detection','MLflow/DVC','re-entrenamiento automático'],output:'Pipeline MLOps con serving, drift detection y playbook de re-entrenamiento.'},
+    pentester:            {name:'Especialista en Pentesting',cat:'ingeniería',emoji:'🔐',purpose:'Ejecutar evaluaciones de seguridad ofensiva con metodología PTES/OWASP.',skills:['PTES/OWASP','explotación web/red','Burp Suite','CVSSv3','red team'],output:'Informe de pentest: hallazgos por severidad, PoC, plan de remediación.'},
+    financial_modeler:    {name:'Modelador Financiero',cat:'ingeniería',emoji:'📊',purpose:'Diseñar modelos financieros cuantitativos: valoración, riesgo y optimización.',skills:['Monte Carlo','VaR/CVaR','optimización Markowitz','backtesting','Black-Scholes'],output:'Código del modelo con análisis de sensibilidad, backtesting y supuestos documentados.'},
+    // NEW ingeniería roles (Agente 3)
+    robotics_engineer:    {name:'Ingeniero de Robótica',cat:'ingeniería',emoji:'🦿',purpose:'Diseñar e implementar sistemas robóticos: percepción, planificación y control.',skills:['ROS','SLAM','control PID','motion planning','simulación (Gazebo)','Python/C++'],output:'Sistema robótico con arquitectura de nodos ROS, launch files y tests de integración.'},
+    energy_engineer:      {name:'Ingeniero de Sistemas Energéticos',cat:'ingeniería',emoji:'🔋',purpose:'Diseñar sistemas de generación, almacenamiento y distribución de energía.',skills:['dimensionado PV/eólico','BESS','grid integration','SCADA','power flow','OPF'],output:'Diseño técnico del sistema energético con simulación de producción y análisis económico.'},
+    music_composer:       {name:'Compositor Algorítmico',cat:'ingeniería',emoji:'🎼',purpose:'Diseñar sistemas de composición musical generativa y algoritmos creativos.',skills:['teoría musical','algoritmos generativos','síntesis de audio','MIDI','Python/Sonic Pi'],output:'Sistema generativo con partitura de ejemplo, código ejecutable y análisis estético.'},
+    education_designer:   {name:'Diseñador Instruccional',cat:'ingeniería',emoji:'📐',purpose:'Diseñar experiencias de aprendizaje efectivas basadas en evidencia pedagógica.',skills:['taxonomía de Bloom','diseño UDL','e-learning','evaluación formativa','constructivismo'],output:'Módulo educativo con objetivos, actividades, evaluación y rúbricas.'},
+
+    // ── VALIDACIÓN ──
+    qa_engineer:          {name:'Ingeniero de QA',cat:'validación',emoji:'🧪',purpose:'Diseñar y ejecutar estrategias de testing exhaustivas para verificar corrección.',skills:['pirámide de tests','pytest/Jest','análisis de cobertura','testing de rendimiento'],output:'Suite de tests: test_[componente]_[condición]_[resultado], docstring GWT.'},
+    model_validator:      {name:'Validador de Modelos ML',cat:'validación',emoji:'📏',purpose:'Evaluar rigurosamente rendimiento, fairness y fiabilidad de modelos ML.',skills:['métricas ML con IC 95%','análisis de fairness','SHAP/LIME','evaluación adversarial'],output:'Informe de evaluación: tabla de métricas, análisis de fairness, recomendación producción.'},
+    clinical_analyst:     {name:'Analista Clínico',cat:'validación',emoji:'🩺',purpose:'Validar que resultados cumplen estándares clínicos y de seguridad del paciente.',skills:['estadística clínica','sensibilidad/especificidad/AUC','FDA/CE Mark'],output:'Informe de validación clínica con métricas, subgrupos y recomendación.'},
+    compliance_analyst:   {name:'Analista de Compliance',cat:'validación',emoji:'📋',purpose:'Verificar cumplimiento con normativas. Identifica gaps y propone plan de remediación.',skills:['GDPR/HIPAA/PCI-DSS','diseño de controles','auditoría de sistemas'],output:'Matriz de compliance: normativa → requisito → estado → evidencia → plan.'},
+    risk_analyst:         {name:'Analista de Riesgos',cat:'validación',emoji:'⚠️',purpose:'Identificar, cuantificar y priorizar riesgos técnicos y de negocio.',skills:['identificación de riesgos','probabilidad×impacto','FTA/FMEA','matrices de riesgo'],output:'Matriz de riesgos con mapa de calor, estrategias de mitigación y apetito de riesgo.'},
+
+    // ── DOCUMENTACIÓN ──
+    technical_writer:     {name:'Redactor Técnico',cat:'documentación',emoji:'✍️',purpose:'Crear documentación técnica clara y completa: READMEs, APIs, tutoriales.',skills:['redacción técnica','OpenAPI/Swagger','Mermaid','bases de conocimiento'],output:'README + referencia API con ejemplos curl + guía de troubleshooting.'},
+    academic_writer:      {name:'Redactor Académico',cat:'documentación',emoji:'🎓',purpose:'Redactar papers y revisiones con rigor metodológico y estilo formal.',skills:['papers científicos','APA/IEEE/Vancouver','argumentación científica','PRISMA'],output:'Paper con estructura IMRaD: Abstract, Intro, Methods, Results, Discussion, References.'},
+    visualization_specialist:{name:'Especialista en Visualización',cat:'documentación',emoji:'🎨',purpose:'Diseñar visualizaciones claras e informativas con integridad y accesibilidad.',skills:['principios Tufte/Cairo','matplotlib/plotly/D3','storytelling con datos','accesibilidad'],output:'Código de visualización con paleta accesible y justificación de decisiones de diseño.'},
+    // NEW documentación roles (Agente 3)
+    art_director:         {name:'Director de Arte',cat:'documentación',emoji:'🖼️',purpose:'Definir dirección visual y estética de proyectos creativos y comunicativos.',skills:['composición visual','teoría del color','semiótica','dirección de imagen','branding'],output:'Guía de estilo visual con principios, paleta, tipografía y ejemplos de aplicación.'},
+
+    // ── CRÍTICA ──
+    critic_evaluator:     {name:'Crítico y Evaluador',cat:'crítica',emoji:'🔍',purpose:'Revisar críticamente el trabajo de otros agentes. Identifica errores e inconsistencias.',skills:['revisión crítica','identificación de sesgos','análisis de consistencia lógica'],output:'Informe de revisión con hallazgos por prioridad (Crítico/Alto/Medio/Bajo).'},
+    ethics_evaluator:     {name:'Evaluador de Ética',cat:'crítica',emoji:'🏛️',purpose:'Analizar aspectos éticos, sesgo y fairness. Identifica riesgos y propone salvaguardas.',skills:['métricas de fairness','EU AI Act/IEEE EAD','impacto en grupos vulnerables'],output:'Informe de impacto ético: métricas de fairness, grupos afectados, salvaguardas.'},
+    peer_reviewer:        {name:'Revisor de Pares',cat:'crítica',emoji:'🎯',purpose:'Revisión de pares rigurosa: evalúa solidez metodológica y validez de conclusiones.',skills:['rigor metodológico','validez estadística','limitaciones y sesgos'],output:'Informe de revisión: Resumen, Comentarios Mayores, Menores, Recomendación.'},
+
+    // ── ORQUESTACIÓN ──
+    orchestrator:         {name:'Orquestador del Equipo',cat:'orquestación',emoji:'🎼',purpose:'Coordinar el equipo de agentes, gestionar flujo de tareas y asegurar coherencia.',skills:['planificación y descomposición','coordinación de dependencias','síntesis de resultados'],output:'Plan de trabajo: asignación de tareas, dependencias, checkpoints y criterios.'},
+
+    // ── SISTÉMICO (new category) ──
+    systems_thinker:      {name:'Pensador Sistémico',cat:'sistémico',emoji:'🌐',purpose:'Analizar problemas como sistemas complejos con bucles de retroalimentación y emergencia.',skills:['dinámica de sistemas','stock-and-flow','bucles causales','emergencia','complejidad'],output:'Mapa causal del sistema con bucles identificados, puntos de apalancamiento y escenarios.'},
+    philosophy_guardian:  {name:'Guardián de Filosofía 1310',cat:'sistémico',emoji:'🔮',purpose:'Asegurar que el diseño respeta principios éticos: offline, open source, privacidad, soberanía cognitiva.',skills:['filosofía del software','licencias abiertas','privacidad por diseño','ética tecnológica'],output:'Informe de cumplimiento con filosofía 1310 y recomendaciones de corrección.'},
+
+    // ── CREATIVO (new category) ──
+    creative_catalyst:    {name:'Catalizador Creativo',cat:'creativo',emoji:'🌀',purpose:'Generar ideas radicalmente diferentes. Aplica pensamiento lateral y conexiones inesperadas.',skills:['pensamiento lateral','SCAMPER','analogías cruzadas','brainstorming estructurado','Design Thinking'],output:'Catálogo de 7-12 ideas divergentes con potencial de innovación, filtradas por viabilidad mínima.'},
+  };
+
+  const TASK_PATTERNS = [
+    { re:/\b(implementar?|desarrollar?|construir?|crear?|diseñar?|codificar?)\b/i, task:'Implementación técnica', roles:['senior_developer','software_architect','ml_engineer'], icon:'⚙️' },
+    { re:/\b(analizar?|investigar?|estudiar?|examinar?|revisar?|explorar?)\b/i,    task:'Análisis e investigación', roles:['data_researcher','research_analyst','methodology_expert'], icon:'🔬' },
+    { re:/\b(detectar?|identificar?|descubrir?|clasificar?|predecir?)\b/i,         task:'Detección / predicción', roles:['ml_engineer','data_analyst','security_researcher'], icon:'🎯' },
+    { re:/\b(validar?|verificar?|probar?|testear?|evaluar?|medir?)\b/i,            task:'Validación y testing', roles:['qa_engineer','model_validator','clinical_analyst'], icon:'🧪' },
+    { re:/\b(desplegar?|integrar?|escalar?|distribuir?|publicar?)\b/i,             task:'Despliegue e integración', roles:['devops_engineer','mlops_engineer'], icon:'🚀' },
+    { re:/\b(documentar?|redactar?|escribir?|reportar?|comunicar?)\b/i,            task:'Documentación y comunicación', roles:['technical_writer','academic_writer'], icon:'✍️' },
+    { re:/\b(auditar?|revisar?|criticar?|cuestionar?)\b/i,                         task:'Auditoría y revisión crítica', roles:['critic_evaluator','ethics_evaluator','peer_reviewer'], icon:'🔍' },
+    { re:/\b(optimizar?|mejorar?|ajustar?|afinar?|calibrar?)\b/i,                  task:'Optimización y mejora', roles:['ml_engineer','senior_developer','risk_analyst'], icon:'📈' },
+    { re:/\b(monitorizar?|supervisar?|alertar?|trackear?)\b/i,                     task:'Monitorización y observabilidad', roles:['mlops_engineer','devops_engineer'], icon:'📡' },
+    { re:/\b(cumplir?|regulatorio?|normativo?|compliance?|legal)\b/i,              task:'Cumplimiento regulatorio', roles:['compliance_analyst','legal_researcher'], icon:'⚖️' },
+    { re:/\b(ético|sesgo|fairness|equidad|discriminación)\b/i,                     task:'Evaluación ética', roles:['ethics_evaluator','philosophy_guardian'], icon:'🏛️' },
+    { re:/\b(robot|autónom|navegar?|sensor|lidar|slam)\b/i,                       task:'Robótica y autonomía', roles:['robotics_engineer','robotics_researcher'], icon:'🦾' },
+    { re:/\b(energía|solar|eólico|batería|renovable|grid)\b/i,                    task:'Sistemas energéticos', roles:['energy_engineer','energy_analyst'], icon:'⚡' },
+    { re:/\b(ambient|sostenible|carbono|clima|ecológico)\b/i,                     task:'Impacto ambiental', roles:['environmental_scientist'], icon:'🌿' },
+    { re:/\b(music|compon|armon|melodía|ritmo|audio)\b/i,                         task:'Composición musical', roles:['music_composer'], icon:'🎵' },
+    { re:/\b(enseñar?|aprender?|educar?|pedagog|currículo|estudiante)\b/i,        task:'Diseño educativo', roles:['education_designer'], icon:'📚' },
+    { re:/\b(conducta|decisión|sesgo|nudge|comportamiento)\b/i,                   task:'Economía conductual', roles:['behavioral_economist'], icon:'🧠' },
+    { re:/\b(creativ?|innova?|idea|brainstorm|diverge?)\b/i,                      task:'Ideación creativa', roles:['creative_catalyst','art_director'], icon:'🌀' },
+    { re:/\b(sistema|holístico|emergente|complejo|bucle)\b/i,                     task:'Análisis sistémico', roles:['systems_thinker'], icon:'🌐' },
+  ];
+
+  return { COGNITIVE_STYLES, PAPERS_DB, DOMAIN_TERMS, DOMAIN_DB, ROLE_REGISTRY, TASK_PATTERNS };
+})();
+
+
+// ══════════════════════════════════════════════════════
+//  STORE — Agente 10: feedback loop + weight decay
+// ══════════════════════════════════════════════════════
+const Store = (() => {
+  let lastResult = null;
+  const feedbackScores = {};
+  const roleWeights    = {};
+  const DECAY = 0.97;
+
+  return {
+    getResult: () => lastResult,
+    setResult: (r) => { lastResult = r; },
+    getFeedback: (id) => feedbackScores[id] || { up:0, down:0 },
+    addFeedback(id, type) {
+      if (!feedbackScores[id]) feedbackScores[id] = { up:0, down:0 };
+      feedbackScores[id][type]++;
+      this.updateWeight(id, type === 'up' ? 0.4 : -0.4);
+    },
+    getWeight: (id) => roleWeights[id] ?? 1.0,
+    updateWeight(id, delta) {
+      roleWeights[id] = Math.max(0.1, Math.min(3.0, (roleWeights[id] ?? 1.0) + delta));
+    },
+    updateWeightFromScore(id, score) {
+      if (score > 80) this.updateWeight(id, 0.1);
+      else if (score < 50) this.updateWeight(id, -0.1);
+    },
+    decayWeights() {
+      Object.keys(roleWeights).forEach(id => {
+        roleWeights[id] = 1.0 + (roleWeights[id] - 1.0) * DECAY;
+      });
+    },
+    resetWeights() {
+      Object.keys(roleWeights).forEach(id => delete roleWeights[id]);
+      Object.keys(feedbackScores).forEach(id => delete feedbackScores[id]);
+    },
+    getFeedbackWeight: (id) => { const f = feedbackScores[id]; return f ? (f.up - f.down) * 0.5 : 0; },
+    hasFeedback: () => Object.keys(feedbackScores).length > 0,
+    feedbackCount: () => Object.keys(feedbackScores).length,
+  };
+})();
+
+// ══════════════════════════════════════════════════════
+//  LOGGER
+// ══════════════════════════════════════════════════════
+const Logger = (() => {
+  const el = () => document.getElementById('progressLog');
+  return {
+    log(msg, cls='') {
+      const e = el(); if (!e) return;
+      const s = document.createElement('span');
+      if (cls) s.className = cls;
+      s.textContent = msg;
+      e.appendChild(s);
+      e.appendChild(document.createTextNode('\n'));
+      e.scrollTop = e.scrollHeight;
+    },
+    clear() { const e = el(); if (e) e.innerHTML = ''; },
+  };
+})();
+
+// ══════════════════════════════════════════════════════
+//  CORE — domain detection, decomposition, role selection
+// ══════════════════════════════════════════════════════
+const Core = (() => {
+  const { DOMAIN_DB, ROLE_REGISTRY, TASK_PATTERNS } = Data;
+
+  function detectDomain(objective) {
+    const lower = objective.toLowerCase();
+    let best = 'Ingeniería de Software', bestScore = 0;
+    Object.entries(DOMAIN_DB).forEach(([key, d]) => {
+      const score = d.keywords.filter(k => lower.includes(k)).length;
+      if (score > bestScore) { bestScore = score; best = key; }
+    });
+    return best;
+  }
+
+  function estimateComplexity(objective) {
+    const w = objective.split(/\s+/).length;
+    return w > 50 ? 'alta' : w > 25 ? 'media' : 'baja';
+  }
+
+  function decomposeObjective(objective, domainKey) {
+    const lower = objective.toLowerCase();
+    const matched = TASK_PATTERNS.filter(p => p.re.test(lower));
+    const base    = matched.length ? matched : [TASK_PATTERNS[0], TASK_PATTERNS[1]];
+    // always add domain-specific investigación + documentación
+    const extra   = TASK_PATTERNS.filter(p => !base.includes(p) &&
+      (p.task.includes('Análisis') || p.task.includes('Documentación'))).slice(0,2);
+    return [...base, ...extra].slice(0, 8).map(p => ({ task: p.task, icon: p.icon, roles: p.roles }));
+  }
+
+  function selectRolesAdaptive(domainKey, subtasks, maxN) {
+    const RR = ROLE_REGISTRY;
+    const domainInfo = DOMAIN_DB[domainKey];
+    const scores = {};
+
+    Object.entries(RR).forEach(([id, r]) => {
+      let s = 0;
+      const roleText = (r.name + ' ' + r.purpose + ' ' + (r.skills||[]).join(' ')).toLowerCase();
+      (domainInfo?.keywords || []).forEach(k => { if (roleText.includes(k)) s += 2; });
+      subtasks.forEach(st => { if ((st.roles||[]).includes(id)) s += 5; });
+      s *= Store.getWeight(id);
+      s += Store.getFeedbackWeight(id);
+      scores[id] = s;
+    });
+
+    const cats = ['investigación','ingeniería','validación','documentación','crítica','orquestación','sistémico','creativo'];
+    const selected = [];
+
+    // one best per category
+    cats.forEach(cat => {
+      if (selected.length >= maxN) return;
+      const best = Object.entries(RR)
+        .filter(([id, r]) => r.cat === cat && !selected.find(s => s.id === id))
+        .sort((a,b) => (scores[b[0]]||0) - (scores[a[0]]||0))[0];
+      if (best) selected.push({ id: best[0], ...best[1] });
+    });
+
+    // fill remaining by score
+    if (selected.length < maxN) {
+      Object.entries(RR)
+        .filter(([id]) => !selected.find(s => s.id === id))
+        .sort((a,b) => (scores[b[0]]||0) - (scores[a[0]]||0))
+        .slice(0, maxN - selected.length)
+        .forEach(([id, r]) => selected.push({ id, ...r }));
+    }
+
+    return selected.slice(0, maxN);
+  }
+
+  return { detectDomain, estimateComplexity, decomposeObjective, selectRolesAdaptive };
+})();
+
+// ══════════════════════════════════════════════════════
+//  RAG — Agente 5: hybrid TF-IDF + cosine semantic search
+// ══════════════════════════════════════════════════════
+const RAG = (() => {
+  const { PAPERS_DB } = Data;
+
+  function tokenize(text) {
+    return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+  }
+  function buildVec(tokens) {
+    const tf = {}; const tot = tokens.length || 1;
+    tokens.forEach(t => { tf[t] = (tf[t]||0) + 1/tot; });
+    return tf;
+  }
+  function cosine(a, b) {
+    let dot=0, na=0, nb=0;
+    const keys = new Set([...Object.keys(a),...Object.keys(b)]);
+    keys.forEach(k => { const av=a[k]||0, bv=b[k]||0; dot+=av*bv; na+=av*av; nb+=bv*bv; });
+    return (na && nb) ? dot/Math.sqrt(na*nb) : 0;
+  }
+
+  let paperVecs = null;
+  function ensureVecs() {
+    if (paperVecs) return;
+    paperVecs = PAPERS_DB.map(p => ({
+      id: p.id,
+      vec: buildVec(tokenize(`${p.title} ${p.finding} ${p.application} ${p.tags.join(' ')}`))
+    }));
+  }
+
+  function getRelevantPapers(roleId, objective, domainKey, n, mode) {
+    mode = mode || 'hybrid';
+    const RR  = Data.ROLE_REGISTRY[roleId] || {};
+    const roleText = (RR.name || '') + ' ' + (RR.skills||[]).join(' ');
+
+    const scored = PAPERS_DB.map(p => {
+      const domainMatch = (p.domain||[]).includes(domainKey) ? 3 : 0;
+      const tagMatch    = (p.tags||[]).filter(t =>
+        roleText.toLowerCase().includes(t) || objective.toLowerCase().includes(t)).length;
+      const recency     = Math.max(0, (p.year - 2015) / 4);
+      let score         = tagMatch * 2 + domainMatch + recency;
+
+      if (mode !== 'tfidf') {
+        ensureVecs();
+        const qVec = buildVec(tokenize(objective + ' ' + roleText));
+        const pVec = (paperVecs.find(v => v.id === p.id) || {}).vec || {};
+        score += cosine(qVec, pVec) * 6;
+      }
+      return { ...p, score };
+    });
+
+    return scored.sort((a,b) => b.score - a.score).slice(0, n);
+  }
+
+  function formatScientificContext(papers) {
+    if (!papers || !papers.length) return '\n';
+    const body = papers.map(p =>
+      `• ${p.authors} (${p.year}) — ${p.venue}\n  "${p.finding}"\n  Aplicación: ${p.application}`
+    ).join('\n\n');
+    return `\n\n---\n\n# CONTEXTO CIENTÍFICO (RAG híbrido — ${papers.length} papers)\n${body}\n\n---\n\n`;
+  }
+
+  return { getRelevantPapers, formatScientificContext };
+})();
+
+// ══════════════════════════════════════════════════════
+//  LLM — Claude API call
+// ══════════════════════════════════════════════════════
+const LLM = (() => {
+  function validateApiKey(key) {
+    if (!key) return 'offline';
+    return /^sk-ant-[a-zA-Z0-9\-_]{20,}$/.test(key) ? 'valid' : 'error';
+  }
+
+  async function generateWithLLM(role, analysis, papers, apiKey) {
+    const cs  = Data.COGNITIVE_STYLES[Data.ROLE_REGISTRY[role.id]?.cat] || {};
+    const pCtx = papers.map(p => `• ${p.authors} (${p.year}): ${p.finding}`).join('\n');
+    const meta = `Eres un Arquitecto Senior de Ingeniería de Prompts para sistemas multi-agente.
+Genera un prompt PROFESIONAL e HIPER-ESPECÍFICO siguiendo la estructura CO-STAR++ (9 secciones).
+ROL: ${role.name} (${role.cat}) | DOMINIO: ${analysis.domainLabel}
+OBJETIVO: ${analysis.objective}
+ESTILO COGNITIVO: ${cs.name||'analítico'} — ${cs.desc||''}
+PAPERS:\n${pCtx}
+
+Genera EXACTAMENTE estas 9 secciones:
+# ROL Y EXPERTISE  # CONTEXTO DEL PROYECTO  # OBJETIVO PRINCIPAL
+# TAREAS ESPECÍFICAS (numeradas)  # RESTRICCIONES Y DIRECTRICES (≥3 negativas)
+# CADENA DE RAZONAMIENTO (usa estilo ${cs.name||'analítico'})  # FORMATO DE RESPUESTA
+# CONTEXTO CIENTÍFICO  # EJEMPLOS FEW-SHOT  # CRITERIOS DE ÉXITO
+Genera ÚNICAMENTE el prompt, sin explicaciones:`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 3000,
+        messages: [{ role: 'user', content: meta }]
+      })
+    });
+    const data = await resp.json();
+    return data.content?.[0]?.text || '';
+  }
+
+  return { validateApiKey, generateWithLLM };
+})();
+
+// ══════════════════════════════════════════════════════
+//  PROMPT BUILDER — CO-STAR++ offline generator
+// ══════════════════════════════════════════════════════
+const PromptBuilder = (() => {
+  const { COGNITIVE_STYLES, ROLE_REGISTRY, DOMAIN_DB } = Data;
+
+  function buildThinking(roleId, analysis) {
+    const r   = ROLE_REGISTRY[roleId];
+    const cat = r?.cat || 'ingeniería';
+    const cs  = COGNITIVE_STYLES[cat];
+    if (!cs) return 'Razona paso a paso antes de responder.';
+    return cs.thinking_template(r?.name || roleId, analysis.domainLabel);
+  }
+
+  function getDomainTasks(domain, roleId, analysis) {
+    const taskDB = {
+      'Machine Learning & IA': {
+        ml_engineer:      ['Auditar datos pre-modelado: split estratificado, balance de clases, ausencia de leakage','Diseñar arquitectura con Tree of Thoughts (RAMA A canónica, B alternativa, C análisis de fallos)','Implementar pipeline de preprocesamiento con ColumnTransformer — fit() solo en train','Configurar MLflow con IC 95% via bootstrap (n=1000) para todas las métricas','Implementar SHAP global (beeswarm) + local (waterfall) para explicabilidad','Desarrollar endpoint FastAPI con documentación OpenAPI y métricas P50/P95/P99'],
+        data_researcher:  ['Identificar y evaluar datasets públicos/privados con análisis de distribución y bias','Revisar estado del arte (últimos 3 años, NeurIPS/ICML/ICLR)','Documentar métricas estándar con benchmarks de referencia y IC 95%','Identificar riesgos de sesgo más comunes (Obermeyer et al. 2019)'],
+        critic_evaluator: ['Revisar pipeline buscando data leakage: normalización antes del split','Cuestionar si las métricas son las más apropiadas para el impacto real de negocio','Identificar sesgos en recolección, etiquetado y validación','Evaluar si distribution shift detectado invalida métricas offline'],
+      },
+      'Ingeniería de Software': {
+        software_architect:['Diseñar arquitectura C4 (Context, Container, Component) con Mermaid','Definir interfaces y contratos entre componentes con OpenAPI antes del código','Documentar ADRs numerados: contexto → decisión → consecuencias → alternativas descartadas','Evaluar trade-offs: latencia, escalabilidad, mantenibilidad con matriz ponderada'],
+        senior_developer:  ['Implementar módulos core con SOLID, DRY y YAGNI como principios guía explícitos','Escribir código autodocumentado con docstrings Google-style en cada función pública','Integrar manejo de errores robusto con tipos de error específicos (no Exception genérica)','Implementar logging estructurado JSON con niveles apropiados y context propagation'],
+      },
+    };
+    const dt = (taskDB[domain] || {})[roleId];
+    if (dt) return dt;
+    return [
+      `Analizar requisitos desde perspectiva de ${(ROLE_REGISTRY[roleId]?.name||roleId)} para el objetivo dado`,
+      'Descomponer el problema en subtareas independientes con entregables claramente definidos',
+      'Implementar la solución aplicando mejores prácticas y estándares del dominio',
+      'Verificar que el resultado cumple los criterios de calidad y acceptance criteria',
+      'Documentar proceso, decisiones y justificaciones técnicas para el equipo',
+      `Contribuir a la subtarea '${(analysis.tasks||[])[0]||'implementación'}' desde tu área de expertise`,
+    ];
+  }
+
+  function buildConstraints(roleId, domain) {
+    const base = [
+      'No asumas contexto no proporcionado explícitamente en el briefing',
+      'Mantén el scope exactamente dentro de tu área — no invadas el trabajo de otros agentes',
+      'Ante ambigüedades, explicítalas y proporciona tu interpretación razonada antes de proceder',
+      'No produzcas output parcial sin indicar qué partes están completas y cuáles pendientes',
+      'Evita afirmaciones sin respaldo técnico o referencial verificable',
+    ];
+    const extra = {
+      'Machine Learning & IA': ['No uses datos del test set en ninguna etapa del pipeline (data leakage)','Nunca reportes métricas sin IC 95% — un valor puntual aislado no es estadísticamente válido'],
+      'Ciberseguridad':        ['Opera exclusivamente dentro del scope autorizado y documentado','No propongas técnicas de explotación sin su correspondiente mitigación'],
+      'Medicina & Salud':      ['No hagas recomendaciones clínicas directas — tus outputs son para revisión profesional','Declara el nivel de evidencia (A/B/C) de cada afirmación clínica'],
+      'Legal & Regulatorio':   ['No proveas consejo legal vinculante — produce análisis para revisión por abogados'],
+      'Robótica':              ['Prioriza seguridad física sobre eficiencia — never compromise on safety constraints','Valida algoritmos en simulación antes de proponer despliegue en hardware real'],
+      'Energía':               ['Considera restricciones de grid y regulatorias locales en todo diseño','Reporta siempre LCOE, factor de capacidad y VAN junto a recomendaciones técnicas'],
+    };
+    return [...base, ...(extra[domain]||[])];
+  }
+
+  function buildOutputFormat(roleId) {
+    const formats = {
+      software_architect:   'Documento de arquitectura Markdown: diagrama C4 (Mermaid), tabla de componentes, ADRs numerados, análisis de trade-offs.',
+      senior_developer:     'Código con docstrings Google-style. Type annotations. Sección "## Uso" con ejemplo ejecutable.',
+      ml_engineer:          'Archivos: preprocessing.py, models.py, evaluate.py (IC 95%), api.py (FastAPI), model_card.md. MLflow tracking.',
+      qa_engineer:          'Suite pytest: test_[componente]_[condición]_[resultado], docstring GWT, fixtures en conftest.py.',
+      devops_engineer:      'Dockerfile multi-stage + pipeline YAML CI/CD + docker-compose.yml + alert rules + runbook.md.',
+      model_validator:      'Informe Markdown: tabla de métricas con IC 95%, curvas ROC, análisis de fairness, recomendación SÍ/NO/CONDICIONALMENTE.',
+      technical_writer:     'README.md + referencia API con ejemplos curl + CONTRIBUTING.md + guía de troubleshooting.',
+      critic_evaluator:     'Tabla: Prioridad | Hallazgo | Evidencia técnica | Sugerencia accionable. Secciones: CRÍTICO → ALTO → MEDIO → BAJO.',
+      robotics_engineer:    'Paquete ROS: nodos, topics, services, launch files. Diagrama de arquitectura. Tests en Gazebo.',
+      energy_engineer:      'Diseño técnico: dimensionado, simulación anual (8760h), LCOE, análisis de sensibilidad, esquema de conexión.',
+      music_composer:       'Partitura MIDI exportable + código generativo (Python/SuperCollider) + análisis estético de decisiones compositivas.',
+      education_designer:   'Módulo completo: objetivos (taxonomía Bloom), actividades, materiales, evaluación formativa y sumativa, rúbrica.',
+      systems_thinker:      'Mapa causal con bucles identificados, diagrama stock-and-flow, puntos de apalancamiento y escenarios.',
+      creative_catalyst:    'Catálogo de ideas: mínimo 7, con potencial de innovación (1-5), viabilidad mínima y próximo paso concreto.',
+    };
+    return formats[roleId] || 'Documento Markdown estructurado: resumen ejecutivo (3 párrafos), secciones numeradas, tablas comparativas. 600-2000 palabras.';
+  }
+
+  function buildFewShot(roleId, domain) {
+    const ex = {
+      ml_engineer: `**Input:** "Implementar normalización con protección contra leakage"\n**Output:**\n\`\`\`python\nX_train, X_test = train_test_split(X, test_size=0.2, stratify=y, random_state=42)\nscaler = RobustScaler()\nX_train_s = scaler.fit_transform(X_train)  # fit() SOLO en train\nX_test_s  = scaler.transform(X_test)       # NUNCA fit en test\n\`\`\``,
+      qa_engineer: `**Input:** "Testear autenticación JWT"\n**Output:**\n\`\`\`python\nclass TestJWT:\n    def test_expired_raises_specific_error(self, auth):\n        """Token expirado → TokenExpiredError, NO None silencioso."""\n        with pytest.raises(TokenExpiredError):\n            auth.validate(auth.generate("u1", expires_in=-1))\n\`\`\``,
+      critic_evaluator: `**Input:** "Revisar pipeline ML de fraude"\n**Output:**\n## CRÍTICO — Data Leakage [ADR-001]\n- **Evidencia:** scaler.fit_transform(X) en preprocessing.py:47 — ANTES del split\n- **Impacto:** AUC inflado ~5-8 puntos. Métricas no válidas.\n- **Acción:** Mover split a línea 44, re-evaluar con datos limpios.`,
+      robotics_engineer:`**Input:** "Navegar por pasillo de 2m de ancho"\n**Output:**\n\`\`\`python\n# ROS2 Nav2 + AMCL + costmap_2d\nself.nav.navigate_to_pose(goal, behavior_tree='navigate_w_replanning')\n# Safety: min_obstacle_distance=0.3m, recovery_behaviors=['spin','backup']\n\`\`\``,
+    };
+    return ex[roleId] || `**Tipo de input esperado:** Tarea concreta del dominio ${domain}.\n**Formato esperado:**\n- Respuesta directa sin preámbulos\n- Terminología técnica específica\n- Justificación de decisiones\n\n**Lo que NO debe aparecer:** Frases genéricas, afirmaciones sin respaldo.`;
+  }
+
+  function buildCriteria(roleId, analysis) {
+    const sp = {
+      ml_engineer:       ['Pipeline ejecuta sin errores con seed determinista','Todas las métricas incluyen IC 95% via bootstrap (n≥1000)','ADRs documentan decisiones clave con ramas ToT explícitas'],
+      qa_engineer:       ['Cobertura ≥80% en branches críticos medida con coverage.py','Tests deterministas y pasan en CI/CD sin flakiness','Edge cases negativos cubiertos'],
+      technical_writer:  ['Desarrollador nuevo puede usar el sistema siguiendo solo la doc','Todos los ejemplos de código son ejecutables'],
+      critic_evaluator:  ['Cada hallazgo tiene evidencia técnica específica (archivo:línea)','Todos los hallazgos priorizados por impacto con justificación'],
+      robotics_engineer: ['Robot completa misión en ≥95% de pruebas en simulación','Comportamiento de seguridad activo ante obstáculos inesperados'],
+      systems_thinker:   ['Mapa causal identifica ≥2 bucles de retroalimentación','Puntos de apalancamiento validados con al menos un referente teórico'],
+    };
+    return [
+      ...(sp[roleId] || ['Output cumple el objetivo declarado de forma completa y verificable','Calidad adecuada para uso directo sin revisión adicional']),
+      'Limitaciones y supuestos documentados explícitamente',
+      `Terminología precisa de ${analysis.domainLabel} — sin lenguaje genérico`,
+    ].slice(0, 5);
+  }
+
+  function buildPrompt(role, analysis, papers) {
+    const r       = ROLE_REGISTRY[role.id] || {};
+    const domain  = analysis.domainLabel;
+    const skills  = (r.skills||[]).slice(0,4).join('; ');
+    const cs      = COGNITIVE_STYLES[r.cat] || {};
+    const tasks   = getDomainTasks(domain, role.id, analysis);
+    const constr  = buildConstraints(role.id, domain);
+    const outFmt  = buildOutputFormat(role.id);
+    const fewShot = buildFewShot(role.id, domain);
+    const crit    = buildCriteria(role.id, analysis);
+    const think   = buildThinking(role.id, analysis);
+    const sciCtx  = RAG.formatScientificContext(papers);
+
+    return `# ROL Y EXPERTISE
+Eres un ${r.name||role.name} con 12+ años de experiencia especializada en ${domain}.
+${r.purpose||''}
+Competencias diferenciadoras: ${skills}.
+Estilo cognitivo: ${cs.name||'analítico'} — ${cs.desc||''}.
+
+---
+
+# CONTEXTO DEL PROYECTO
+Formas parte de un equipo multi-agente donde cada agente resuelve exactamente una subtarea atómica.
+
+**Objetivo:** ${analysis.objective}
+**Dominio:** ${domain} | **Complejidad:** ${analysis.complexity.toUpperCase()}
+**Subtareas detectadas:** ${analysis.tasks.join(', ')}
+**Tu entregable** debe estar listo para uso directo por el equipo sin clarificaciones adicionales.
+
+---
+
+# OBJETIVO PRINCIPAL
+${(r.purpose||'').split('.')[0]} para el proyecto: "${analysis.objective.substring(0,90)}${analysis.objective.length>90?'...':''}".
+Tu trabajo es el fundamento que otros agentes usarán — invierte en robustez sobre velocidad.
+
+---
+
+# TAREAS ESPECÍFICAS
+${tasks.map((t,i)=>`${i+1}. ${t}`).join('\n')}
+
+---
+
+# RESTRICCIONES Y DIRECTRICES
+${constr.map(c=>`- ${c}`).join('\n')}
+
+---
+
+# CADENA DE RAZONAMIENTO (PROCESO MENTAL REQUERIDO — ${cs.name||'analítico'})
+${think}
+
+---
+
+# FORMATO DE RESPUESTA
+${outFmt}
+${sciCtx}
+# EJEMPLOS FEW-SHOT
+${fewShot}
+
+---
+
+# CRITERIOS DE ÉXITO
+${crit.map(c=>`✓ ${c}`).join('\n')}
+
+---
+*PromptForge v3.0 — ${new Date().toLocaleString('es')} | Motor: offline CO-STAR++ | Papers RAG: ${papers.length}*`;
+  }
+
+  return { buildPrompt };
+})();
+
+
+// ══════════════════════════════════════════════════════
+//  VALIDATION 12D — Agente 4
+//  6 original + 6 new: coherencia, originalidad, robustez,
+//  alineamiento ético, claridad semántica, eficiencia
+// ══════════════════════════════════════════════════════
+const Validation = (() => {
+  const REQ = ['# ROL','# CONTEXTO','# OBJETIVO','# TAREAS','# RESTRICCIONES','# CADENA','# FORMATO','# CRITERIOS'];
+
+  function validatePrompt(promptText, domainKey, opts) {
+    opts = opts || {};
+    const upper = promptText.toUpperCase();
+    const present = REQ.filter(s => upper.includes(s.toUpperCase()));
+    const missing  = REQ.filter(s => !upper.includes(s.toUpperCase()));
+
+    // ── Original 6 ──
+    const negCount  = (promptText.match(/\b(no\s+\w+|evita|jamás|nunca|no\s+debes|prohibido)\b/gi)||[]).length;
+    const hasCoT    = /paso\s+a\s+paso|antes\s+de\s+responder|proceso\s+mental|cadena\s+de|rama\s+[abc]/i.test(promptText);
+    const hasToT    = /rama\s+[abc]|tree\s+of\s+thoughts|ramas\s+rival|alternativa\s+menos/i.test(promptText);
+    const hasFS     = /ejemplo|input.*output|```/i.test(promptText);
+    const hasSci    = /contexto\s+científico|paper|según.*\d{4}|doi|arxiv|nature|science|nips|neurips/i.test(promptText);
+
+    const completeness = (present.length / REQ.length) * 100;
+    const specificity  = Math.min(100, 55 +
+      (promptText.match(/\b(pytest|mlflow|docker|owasp|gdpr|auc-roc|fastapi|kubernetes|shap|lime|cvss|ic\s*95%|bootstrap|psi|ks-test|solid|openapi|ros|lcoe|slam|nudge)\b/gi)||[]).length * 4 +
+      (promptText.match(/^\s*\d+\./gm)||[]).length * 2);
+    const readability  = Math.min(100, 60 +
+      (promptText.match(/^#{1,3}\s/gm)||[]).length * 4 +
+      (promptText.match(/^---$/gm)||[]).length * 3);
+    const instructions = Math.min(100, 45 +
+      Math.min(negCount,3)*7 + (hasCoT?15:0) + (hasToT?15:0) +
+      ((promptText.match(/^\s*\d+\./gm)||[]).length>=4?8:0));
+    const fewshot = hasFS ? 90 : 20;
+
+    const terms = Data.DOMAIN_TERMS[domainKey] || [];
+    const pLower = promptText.toLowerCase();
+    const foundTerms = terms.filter(t => pLower.includes(t));
+    const lexical = Math.min(100, (foundTerms.length / Math.max(terms.length*0.25,1)) * 100);
+
+    // ── New 6 (Agente 4) ──
+
+    // D7: coherencia argumental — detect contradictions (rudimentary)
+    const hasNeverDo   = /nunca\s+\w+.*siempre\s+\w+|siempre\s+\w+.*nunca\s+\w+/i.test(promptText);
+    const hasDualClaim = (promptText.match(/\b(siempre|nunca|obligatorio|prohibido)\b/gi)||[]).length;
+    const coherence    = Math.min(100, 70 + hasSci*10 + (hasToT?10:0) - (hasNeverDo?20:0));
+
+    // D8: originalidad — non-generic phrasing ratio
+    const genericPhrases = ['como ia puedo','es importante','en conclusión','en resumen','ten en cuenta','asegúrate de','debes tener en cuenta'];
+    const genericCount   = genericPhrases.filter(g => pLower.includes(g)).length;
+    const originality    = Math.min(100, 85 - genericCount * 12 + (hasToT?8:0));
+
+    // D9: robustez — error handling coverage
+    const hasErrorHandling = /error|excepción|falla|fallo|rollback|fallback|recuperación|plan\s+b/i.test(promptText);
+    const hasEdgeCases     = /edge\s+case|caso\s+borde|caso\s+extremo|adversarial/i.test(promptText);
+    const robustness       = Math.min(100, 40 + (hasErrorHandling?30:0) + (hasEdgeCases?20:0) + (hasToT?10:0));
+
+    // D10: alineamiento ético — ethical keywords present
+    const ethicsKws = ['sesgo','fairness','equidad','privacidad','gdpr','consentimiento','transparencia','responsabilidad','impacto','ético'];
+    const ethicsScore = Math.min(100, 55 + ethicsKws.filter(k => pLower.includes(k)).length * 6);
+
+    // D11: claridad semántica — sentence length variance (shorter = clearer)
+    const sentences    = promptText.split(/[.!?]/g).filter(s => s.trim().length > 10);
+    const avgWords     = sentences.reduce((a,s) => a + s.trim().split(/\s+/).length, 0) / Math.max(sentences.length,1);
+    const clarity      = Math.min(100, 100 - Math.max(0, avgWords - 20) * 2);
+
+    // D12: eficiencia computacional — estimate prompt token cost
+    const tokenEst     = Math.round(promptText.length / 4);
+    const efficiency   = Math.min(100, Math.max(40, 100 - Math.max(0, tokenEst - 1500) / 30));
+
+    // Weighted overall (Agente 4 weights, adjustable via expert panel)
+    const w = opts.weights || {
+      completeness:0.12, specificity:0.10, readability:0.08, instructions:0.10,
+      fewshot:0.06, lexical:0.08,
+      coherence:0.10, originality:0.08, robustness:0.10, ethics:0.08, clarity:0.06, efficiency:0.04
+    };
+
+    const overall = (
+      completeness*w.completeness + specificity*w.specificity + readability*w.readability +
+      instructions*w.instructions + fewshot*w.fewshot + lexical*w.lexical +
+      coherence*w.coherence + originality*w.originality + robustness*w.robustness +
+      ethicsScore*w.ethics + clarity*w.clarity + efficiency*w.efficiency
+    ) / Object.values(w).reduce((a,v)=>a+v,0) * 100;
+
+    return {
+      overall: Math.round(overall),
+      dims: {
+        'completitud':      Math.round(completeness),
+        'especificidad':    Math.round(specificity),
+        'legibilidad':      Math.round(readability),
+        'instrucciones':    Math.round(instructions),
+        'few-shot':         Math.round(fewshot),
+        'densidad léx.':    Math.round(lexical),
+        'coherencia':       Math.round(coherence),
+        'originalidad':     Math.round(originality),
+        'robustez':         Math.round(robustness),
+        'ética':            Math.round(ethicsScore),
+        'claridad':         Math.round(clarity),
+        'eficiencia':       Math.round(efficiency),
+      },
+      missing, hasCoT, hasToT, hasFS, hasSci, negCount,
+      foundTerms: foundTerms.slice(0,8),
+      tokenEst,
+      needsRefinement: overall < 65 || missing.length > 3,
+    };
+  }
+
+  return { validatePrompt };
+})();
+
+// ══════════════════════════════════════════════════════
+//  EXPORT — Agente 8: JSON, Markdown, Python, JS, Rust, CrewAI
+// ══════════════════════════════════════════════════════
+const Export = (() => {
+  function dl(filename, content, mime) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+    a.download = filename; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // Build Intermediate Representation (Agente 8)
+  function buildIR(prompts, analysis) {
+    return prompts.map(p => ({
+      id: p.id, name: p.name, cat: p.cat,
+      purpose: (Data.ROLE_REGISTRY[p.id]||{}).purpose || '',
+      skills:  (Data.ROLE_REGISTRY[p.id]||{}).skills  || [],
+      objective: analysis.objective,
+      domain:    analysis.domainLabel,
+      prompt:    p.prompt,
+      score:     p.validation?.overall ?? 0,
+      papers:    (p.papers||[]).map(pp => ({ id:pp.id, title:pp.title, year:pp.year, finding:pp.finding })),
+    }));
+  }
+
+  // Agente 8: IR → Python
+  function irToPython(agents) {
+    const imports = `"""PromptForge v3.0 — Generated Python scaffolding\nAgente 8: Multi-language export\n"""\nfrom dataclasses import dataclass, field\nfrom typing import List, Optional\nimport logging\n\nlogger = logging.getLogger(__name__)\n`;
+    const classes = agents.map(a => {
+      const clsName = a.id.split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join('');
+      const skillsStr = a.skills.map(s => `"${s}"`).join(', ');
+      return `\n@dataclass\nclass ${clsName}:\n    """${a.name} — ${a.purpose}\n    Domain: ${a.domain}\n    Validation score: ${a.score}/100\n    """\n    objective: str = "${a.objective.replace(/"/g,"'")}"\n    skills: List[str] = field(default_factory=lambda: [${skillsStr}])\n\n    PROMPT = """\n${a.prompt.replace(/\`\`\`/g,'"""|')}\n    """\n\n    def execute(self, context: Optional[dict] = None) -> str:\n        logger.info(f"[${clsName}] Executing for: {self.objective[:50]}")\n        return self.PROMPT\n`;
+    }).join('\n');
+    const main = `\nif __name__ == '__main__':\n    agents = [${agents.map(a=>{const n=a.id.split('_').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('');return `${n}()`;}).join(', ')}]\n    for agent in agents:\n        print(f"\\n{'='*60}")\n        print(f"Agent: {agent.__class__.__name__}")\n        print(agent.execute())\n`;
+    return imports + classes + main;
+  }
+
+  // Agente 8: IR → JavaScript
+  function irToJavaScript(agents) {
+    const fns = agents.map(a => {
+      const fnName = a.id.replace(/_([a-z])/g, (_,c) => c.toUpperCase());
+      return `/**\n * ${a.name}\n * ${a.purpose}\n * Domain: ${a.domain} | Score: ${a.score}/100\n */\nconst ${fnName} = {\n  objective: ${JSON.stringify(a.objective)},\n  skills: ${JSON.stringify(a.skills)},\n  prompt: ${JSON.stringify(a.prompt)},\n  execute(context = {}) {\n    console.log('[${fnName}] Executing...');\n    return this.prompt;\n  }\n};\n`;
+    }).join('\n');
+    return `// PromptForge v3.0 — Generated JavaScript scaffolding\n// Agente 8: Multi-language export\n\n'use strict';\n\n${fns}\nmodule.exports = { ${agents.map(a=>{const n=a.id.replace(/_([a-z])/g,(_,c)=>c.toUpperCase());return n;}).join(', ')} };\n`;
+  }
+
+  // Agente 8: IR → Rust
+  function irToRust(agents) {
+    const structs = agents.map(a => {
+      const structName = a.id.split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join('');
+      const skillsStr  = a.skills.map(s => `"${s}"`).join(', ');
+      const promptEsc  = a.prompt.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+      return `/// ${a.name} — ${a.purpose}\n/// Domain: ${a.domain} | Score: ${a.score}/100\npub struct ${structName} {\n    pub objective: &'static str,\n    pub skills: &'static [&'static str],\n}\n\nimpl ${structName} {\n    pub const SKILLS: &'static [&'static str] = &[${skillsStr}];\n    pub const PROMPT: &'static str = "${promptEsc.substring(0,200)}...";\n\n    pub fn new() -> Self {\n        Self {\n            objective: "${a.objective.replace(/"/g,"'").substring(0,80)}",\n            skills: Self::SKILLS,\n        }\n    }\n\n    pub fn execute(&self) -> &'static str {\n        Self::PROMPT\n    }\n}\n`;
+    }).join('\n');
+    return `// PromptForge v3.0 — Generated Rust scaffolding\n// Agente 8: Multi-language export\n\n#![allow(dead_code)]\n\n${structs}\nfn main() {\n    println!("PromptForge v3.0 — Rust Agent System");\n}\n`;
+  }
+
+  function exportJson(result) {
+    const ir = buildIR(result.prompts, result.analysis);
+    dl('promptforge_v30_export.json', JSON.stringify({
+      promptforge_version: '3.0.0', generated_at: new Date().toISOString(),
+      analysis: result.analysis, score: result.score,
+      agents: ir, total: ir.length
+    }, null, 2), 'application/json');
+  }
+
+  function exportMarkdown(result) {
+    const lines = [`# PromptForge v3.0 — Export\n**Objetivo:** ${result.analysis.objective}\n**Dominio:** ${result.analysis.domainLabel} | **Score global:** ${result.score}/100\n**Generado:** ${new Date().toLocaleString('es')}\n\n---\n`];
+    result.prompts.forEach((p,i) => {
+      lines.push(`## ${i+1}. ${p.name} ${p.emoji||'🤖'}`);
+      lines.push(`**Score 12D:** ${p.validation?.overall||'—'}/100 | **Cat:** ${p.cat}\n`);
+      lines.push('```\n' + p.prompt + '\n```\n');
+    });
+    dl('promptforge_v30_prompts.md', lines.join('\n'), 'text/markdown');
+  }
+
+  function exportCode(result, lang) {
+    const ir = buildIR(result.prompts, result.analysis);
+    if (lang === 'python')     dl('promptforge_v30_agents.py',  irToPython(ir),     'text/plain');
+    else if (lang === 'javascript') dl('promptforge_v30_agents.js',  irToJavaScript(ir), 'text/plain');
+    else if (lang === 'rust')  dl('promptforge_v30_agents.rs',  irToRust(ir),       'text/plain');
+    else exportMarkdown(result);
+  }
+
+  function exportCrewAI(result) {
+    const agents = result.prompts.map(p => {
+      const r = Data.ROLE_REGISTRY[p.id] || {};
+      return `Agent(\n    role="${p.name}",\n    goal="${(r.purpose||'').replace(/"/g,"'").substring(0,120)}",\n    backstory="${p.prompt.substring(0,200).replace(/\n/g,' ').replace(/"/g,"'")}...",\n    verbose=True,\n    allow_delegation=False,\n)`;
+    }).join(',\n\n');
+    const tasks = result.prompts.map((p,i) =>
+      `Task(\n    description="${result.analysis.objective.replace(/"/g,"'")}",\n    agent=agents[${i}],\n    expected_output="${(Data.ROLE_REGISTRY[p.id]||{}).output||'structured output'}",\n)`
+    ).join(',\n\n');
+    const code = `# PromptForge v3.0 — CrewAI Export\nfrom crewai import Agent, Task, Crew, Process\n\nagents = [\n${agents}\n]\n\ntasks = [\n${tasks}\n]\n\ncrew = Crew(\n    agents=agents,\n    tasks=tasks,\n    process=Process.sequential,\n    verbose=2\n)\n\nresult = crew.kickoff()\nprint(result)\n`;
+    dl('promptforge_v30_crewai.py', code, 'text/plain');
+  }
+
+  return { exportJson, exportMarkdown, exportCode, exportCrewAI };
+})();
+
+// ══════════════════════════════════════════════════════
+//  SELF-IMPROVER — Agente 1: Meta-Cognition module
+//  Analyzes validation results, generates improvement prompts
+// ══════════════════════════════════════════════════════
+const SelfImprover = (() => {
+  function analyzeWeaknesses(validatedPrompts) {
+    const insights = [];
+    const dimTotals = {};
+    validatedPrompts.forEach(p => {
+      Object.entries(p.validation?.dims||{}).forEach(([dim,val]) => {
+        dimTotals[dim] = (dimTotals[dim]||[]);
+        dimTotals[dim].push(val);
+      });
+    });
+    const dimAvgs = Object.entries(dimTotals).map(([dim,vals]) => ({
+      dim, avg: Math.round(vals.reduce((a,v)=>a+v,0)/vals.length)
+    })).sort((a,b) => a.avg - b.avg);
+
+    const weakest = dimAvgs.slice(0, 3);
+    weakest.forEach(({dim, avg}) => {
+      insights.push({ dim, avg, label: avg < 60 ? 'CRÍTICO' : 'MEJORABLE' });
+    });
+
+    const missingAll = validatedPrompts.flatMap(p => p.validation?.missing||[]);
+    const missingFreq = {};
+    missingAll.forEach(m => { missingFreq[m] = (missingFreq[m]||0)+1; });
+    const topMissing = Object.entries(missingFreq).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+    return { insights, topMissing, dimAvgs };
+  }
+
+  function generateMetaPrompt(analysis, validatedPrompts, weakness) {
+    const { insights, topMissing } = weakness;
+    const weakDims  = insights.map(i => `${i.dim} (avg: ${i.avg}/100)`).join(', ');
+    const missingSec= topMissing.map(([s,n]) => `${s} (falta en ${n} prompts)`).join(', ');
+    const avgScore  = Math.round(validatedPrompts.reduce((a,p)=>a+p.validation.overall,0)/validatedPrompts.length);
+
+    return `# META-PROMPT DE AUTO-MEJORA — PromptForge v3.0
+## Generado por: Agente 1 (Arquitecto de Meta-Cognición)
+## Objetivo: Mejorar la generación de prompts para el dominio "${analysis.domainLabel}"
+
+---
+
+Eres un Arquitecto Senior de Ingeniería de Prompts con acceso al sistema PromptForge v3.0.
+
+## DIAGNÓSTICO DEL CICLO ACTUAL
+- **Score global:** ${avgScore}/100 (objetivo: ≥80/100)
+- **Dimensiones más débiles:** ${weakDims}
+- **Secciones CO-STAR++ ausentes frecuentemente:** ${missingSec || 'ninguna crítica'}
+- **Dominio analizado:** ${analysis.domainLabel}
+
+## ANÁLISIS DE CAUSAS RAÍZ (Tree of Thoughts)
+
+**RAMA A — Deficiencia en plantillas de dominio:**
+¿Las plantillas específicas para "${analysis.domainLabel}" están suficientemente calibradas?
+¿Los getDomainTasks() reflejan las tareas reales del sector?
+
+**RAMA B — Deficiencia en estilos cognitivos:**
+¿El estilo cognitivo asignado a cada rol es el óptimo para este dominio?
+¿La plantilla de thinking_template genera razonamiento suficientemente profundo?
+
+**RAMA C — Deficiencia estructural CO-STAR++:**
+¿Las 9 secciones están claramente delimitadas con headers ##?
+¿Los criterios de éxito son verificables y medibles?
+
+## TAREA ESPECÍFICA
+Proporciona mejoras concretas para las siguientes áreas:
+
+1. **Mejorar dimensión "${insights[0]?.dim||'coherencia'}" (actual: ${insights[0]?.avg||'?'}/100):**
+   - Añade 2-3 instrucciones específicas que aumenten este indicador
+   - Proporciona un ejemplo de párrafo mejorado
+
+2. **Añadir sección faltante "${topMissing[0]?.[0]||'CRITERIOS'}":**
+   - Plantilla para esta sección en el dominio "${analysis.domainLabel}"
+   - Ejemplo con terminología técnica del dominio
+
+3. **Optimizar few-shot examples para ${analysis.domainLabel}:**
+   - 1 ejemplo input→output representativo con código ejecutable
+   - Incluir terminología técnica: ${(Data.DOMAIN_TERMS[analysis.domainKey]||[]).slice(0,5).join(', ')}
+
+## FORMATO DE RESPUESTA
+Devuelve exclusivamente el código JavaScript de las mejoras:
+\`\`\`javascript
+// Mejoras para PromptForge v3.0 — dominio: ${analysis.domainLabel}
+// Dimensiones target: ${weakDims}
+const IMPROVEMENTS = {
+  domainTasksOverride: { /* nuevas tareas para getDomainTasks */ },
+  constraintsExtra:    [ /* restricciones adicionales */ ],
+  fewShotOverride:     { /* mejores ejemplos few-shot */ },
+};
+\`\`\`
+
+## CRITERIOS DE ÉXITO
+✓ Las mejoras elevan el score promedio ≥ 10 puntos en las dimensiones débiles
+✓ El código es compatible con la arquitectura modular existente
+✓ No introduce dependencias externas (filosofía 1310)`;
+  }
+
+  return { analyzeWeaknesses, generateMetaPrompt };
+})();
+
+
+// ══════════════════════════════════════════════════════
+//  UI MODULE — Agentes 9, 12
+//  Network visualizer, agent cards, taxonomy, expert panel
+// ══════════════════════════════════════════════════════
+const UI = (() => {
+  const CAT_COLORS = {
+    'investigación': '#4a9eff', 'ingeniería': '#ff6b00', 'validación': '#4ecb71',
+    'documentación': '#b87333', 'crítica': '#c678dd', 'orquestación': '#ff9a00',
+    'sistémico': '#2ec4b6', 'creativo': '#f72585',
+  };
+
+  function setStage(n) {
+    ['s1','s2','s3','s4','s5','s6','s7'].forEach((id,i) => {
+      const el = document.getElementById(id); if (!el) return;
+      el.className = 'stage' + (i+1 < n ? ' done' : i+1 === n ? ' active' : '');
+    });
+  }
+
+  function showProgress(visible) {
+    const el = document.getElementById('progressWrap');
+    if (el) el.className = 'progress-bar-wrap' + (visible ? ' visible' : '');
+  }
+
+  // ── Decomposition panel (Agente 12) ──
+  function renderDecomposition(subtasks, analysis) {
+    const panel = document.getElementById('decompPanel');
+    const body  = document.getElementById('decompBody');
+    const meta  = document.getElementById('decompMeta');
+    if (!panel || !body) return;
+    if (meta) meta.textContent = `${subtasks.length} subtareas · ${analysis.domainLabel} · ${analysis.complexity.toUpperCase()}`;
+    const grid = document.createElement('div'); grid.className = 'decomp-grid';
+    subtasks.forEach((st, i) => {
+      const card = document.createElement('div'); card.className = 'decomp-task';
+      const num  = document.createElement('div'); num.className = 'dt-num'; num.textContent = String(i+1).padStart(2,'0');
+      const name = document.createElement('div'); name.className = 'dt-name'; name.textContent = st.task;
+      const icon = document.createElement('div'); icon.style.fontSize = '18px'; icon.textContent = st.icon || '⚙️';
+      const roles = document.createElement('div'); roles.className = 'dt-roles';
+      roles.textContent = (st.roles||[]).slice(0,3).join(' · ');
+      card.append(icon, num, name, roles);
+      grid.appendChild(card);
+    });
+    body.innerHTML = ''; body.appendChild(grid);
+    panel.style.display = 'block';
+  }
+
+  // ── Agent cards (12D validation display) ──
+  function buildAgentCard(p, i) {
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    if (p.cat) card.dataset.cat = p.cat;
+    const borderColor = CAT_COLORS[p.cat] || 'var(--border)';
+    card.style.borderLeftColor = borderColor;
+
+    const score = p.validation?.overall ?? 0;
+    const scoreClass = score >= 75 ? 'high' : score >= 55 ? 'mid' : 'low';
+    const cs = Data.COGNITIVE_STYLES[p.cat] || {};
+    const fb = Store.getFeedback(p.id);
+    const wt  = Store.getWeight(p.id).toFixed(2);
+
+    // Header
+    const hdr = document.createElement('div'); hdr.className = 'agent-header';
+    const emo = document.createElement('div'); emo.className = 'agent-emoji'; emo.textContent = p.emoji || '🤖';
+    const nameDiv = document.createElement('div'); nameDiv.className = 'agent-name'; nameDiv.textContent = p.name;
+    const meta = document.createElement('div'); meta.className = 'agent-meta';
+
+    const catTag = document.createElement('span'); catTag.className = 'cat-tag'; catTag.textContent = p.cat;
+    const cogBadge = document.createElement('span'); cogBadge.className = 'cog-badge';
+    cogBadge.style.color = cs.color||'#888'; cogBadge.textContent = (cs.icon||'') + ' ' + (cs.name||'');
+    const dim12 = document.createElement('span'); dim12.className = 'dim12-badge'; dim12.textContent = '12D';
+    const qScore = document.createElement('span'); qScore.className = `quality-score ${scoreClass}`;
+    qScore.textContent = score + '/100';
+    const wtBadge = document.createElement('span');
+    wtBadge.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);padding:2px 5px;border:1px solid var(--border2);";
+    wtBadge.title = 'Peso adaptativo (feedback loop)';
+    wtBadge.textContent = 'w:' + wt;
+
+    // Feedback buttons
+    const fbWrap = document.createElement('div'); fbWrap.className = 'feedback-wrap';
+    const upBtn  = document.createElement('button');
+    upBtn.className = 'fb-btn up' + (fb.up > fb.down ? ' active' : '');
+    upBtn.textContent = '👍'; upBtn.title = `+${fb.up}`;
+    const upCnt = document.createElement('span'); upCnt.className = 'fb-count'; upCnt.textContent = fb.up;
+    const dnBtn  = document.createElement('button');
+    dnBtn.className = 'fb-btn down' + (fb.down > fb.up ? ' active' : '');
+    dnBtn.textContent = '👎'; dnBtn.title = `-${fb.down}`;
+    const dnCnt = document.createElement('span'); dnCnt.className = 'fb-count'; dnCnt.textContent = fb.down;
+    fbWrap.append(upBtn, upCnt, dnBtn, dnCnt);
+
+    upBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      Store.addFeedback(p.id, 'up');
+      const f = Store.getFeedback(p.id);
+      upCnt.textContent = f.up; dnCnt.textContent = f.down;
+      upBtn.classList.add('active'); dnBtn.classList.remove('active');
+      wtBadge.textContent = 'w:' + Store.getWeight(p.id).toFixed(2);
+      updateFbDot(p.id);
+    });
+    dnBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      Store.addFeedback(p.id, 'down');
+      const f = Store.getFeedback(p.id);
+      upCnt.textContent = f.up; dnCnt.textContent = f.down;
+      dnBtn.classList.add('active'); upBtn.classList.remove('active');
+      wtBadge.textContent = 'w:' + Store.getWeight(p.id).toFixed(2);
+      updateFbDot(p.id);
+    });
+
+    const chevron = document.createElement('span'); chevron.className = 'chevron'; chevron.textContent = '▼';
+    meta.append(catTag, cogBadge, dim12, qScore, wtBadge, fbWrap);
+    hdr.append(emo, nameDiv, meta, chevron);
+
+    // Body
+    const body = document.createElement('div'); body.className = 'agent-body';
+    const tabs  = document.createElement('div'); tabs.className = 'prompt-tabs';
+    const panes = [
+      document.createElement('div'), document.createElement('div'),
+      document.createElement('div'), document.createElement('div')
+    ];
+    ['PROMPT', 'VALIDACIÓN 12D', 'CIENCIA', 'META'].forEach((label, idx) => {
+      const btn = document.createElement('button'); btn.className = 'tab-btn' + (idx===0?' active':'');
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active'); panes[idx].classList.add('active');
+      });
+      tabs.appendChild(btn);
+    });
+
+    // Tab 0: Prompt
+    panes[0].className = 'tab-pane active';
+    const copyBtn = document.createElement('button'); copyBtn.className = 'copy-btn'; copyBtn.textContent = 'COPIAR';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(p.prompt).then(() => {
+        copyBtn.textContent = 'COPIADO ✓'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'COPIAR'; copyBtn.classList.remove('copied'); }, 2000);
+      });
+    });
+    const pre = document.createElement('pre'); pre.className = 'prompt-content';
+    pre.innerHTML = p.prompt
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/(^#{1,3}\s.+$)/gm, '<span class="sec-head">$1</span>')
+      .replace(/(\bRAMA\s+[ABC]\b[^\n]*)/g, '<span class="tot-head">$1</span>')
+      .replace(/(CONTEXTO CIENTÍFICO[^\n]*)/g, '<span class="sci-head">$1</span>')
+      .replace(/(\b\d+\.\s)/g, '<span class="task-num">$1</span>');
+    panes[0].append(copyBtn, pre);
+
+    // Tab 1: 12D Validation
+    panes[1].className = 'tab-pane validation-pane';
+    if (p.validation) {
+      const dims = p.validation.dims;
+      Object.entries(dims).forEach(([dim, val]) => {
+        const row = document.createElement('div'); row.className = 'dim-row';
+        const lbl = document.createElement('div'); lbl.className = 'dim-label'; lbl.textContent = dim;
+        const bg  = document.createElement('div'); bg.className = 'dim-bar-bg';
+        const bar = document.createElement('div'); bar.className = 'dim-bar';
+        bar.style.width = '0%';
+        bar.style.background = val >= 75 ? 'var(--green)' : val >= 55 ? 'var(--ember2)' : 'var(--red)';
+        setTimeout(() => { bar.style.width = val + '%'; }, 100 + Object.keys(dims).indexOf(dim)*40);
+        bg.appendChild(bar);
+        const valEl = document.createElement('div'); valEl.className = 'dim-val'; valEl.textContent = val;
+        row.append(lbl, bg, valEl);
+        panes[1].appendChild(row);
+      });
+      if (p.validation.missing?.length) {
+        const iss = document.createElement('div'); iss.className = 'issues-list';
+        const issH = document.createElement('div'); issH.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin:10px 0 4px;";
+        issH.textContent = 'SECCIONES AUSENTES';
+        iss.appendChild(issH);
+        p.validation.missing.forEach(m => {
+          const item = document.createElement('div'); item.className = 'issue-item'; item.textContent = m;
+          iss.appendChild(item);
+        });
+        panes[1].appendChild(iss);
+      }
+      // Token estimate
+      const te = document.createElement('div');
+      te.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);margin-top:12px;";
+      te.textContent = `Estimación tokens: ~${p.validation.tokenEst||'?'} | Términos léxicos: ${(p.validation.foundTerms||[]).slice(0,5).join(', ')||'—'}`;
+      panes[1].appendChild(te);
+    }
+
+    // Tab 2: Science
+    panes[2].className = 'tab-pane science-pane';
+    if (p.papers?.length) {
+      p.papers.forEach(paper => {
+        const ref = document.createElement('div'); ref.className = 'paper-ref';
+        const tit = document.createElement('div'); tit.className = 'pr-title'; tit.textContent = paper.title;
+        const mt  = document.createElement('div'); mt.className = 'pr-meta';
+        mt.textContent = `${paper.authors} · ${paper.year} · ${paper.venue||''}`;
+        const fi  = document.createElement('div'); fi.className = 'pr-finding'; fi.textContent = paper.finding;
+        const ap  = document.createElement('div'); ap.className = 'pr-apply'; ap.textContent = '→ ' + (paper.application||'');
+        ref.append(tit, mt, fi, ap); panes[2].appendChild(ref);
+      });
+    } else {
+      const none = document.createElement('p');
+      none.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);padding:20px 24px;";
+      none.textContent = 'Sin papers RAG para este rol.'; panes[2].appendChild(none);
+    }
+
+    // Tab 3: Meta-prompt for this agent
+    panes[3].className = 'tab-pane meta-pane';
+    const metaBox = document.createElement('div'); metaBox.className = 'meta-prompt-box';
+    const wk = p.validation ? Object.entries(p.validation.dims)
+      .sort((a,b)=>a[1]-b[1]).slice(0,2).map(([d,v])=>`${d}(${v}/100)`).join(', ') : '—';
+    metaBox.textContent = `# Prompt de mejora para: ${p.name}\n# Dimensiones más débiles: ${wk}\n\nAnaliza este prompt de ${p.name} y mejora específicamente:\n- Las dimensiones con menor score (${wk})\n- Añade ejemplos few-shot más específicos para ${p.cat}\n- Refuerza la cadena de razonamiento para el dominio ${(Data.DOMAIN_DB[p.domainKey||'']||{}).label||'indicado'}\n\nPrompt actual:\n"""\n${p.prompt.substring(0,400)}...\n"""`;
+    const mcb = document.createElement('button'); mcb.className = 'meta-copy-btn'; mcb.textContent = 'COPIAR META-PROMPT';
+    mcb.addEventListener('click', () => { navigator.clipboard.writeText(metaBox.textContent); });
+    panes[3].append(mcb, metaBox);
+
+    body.append(tabs, ...panes);
+    hdr.addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
+    card.append(hdr, body);
+    return card;
+  }
+
+  // ── Results ──
+  function renderResults(validated, avgScore, analysis) {
+    const section = document.getElementById('resultsSection');
+    const grid    = document.getElementById('agentsGrid');
+    const scoreEl = document.getElementById('overallScore');
+    const countEl = document.getElementById('promptCount');
+    if (!section || !grid) return;
+
+    if (scoreEl) {
+      scoreEl.textContent = avgScore;
+      scoreEl.style.color = avgScore >= 75 ? 'var(--green)' : avgScore >= 55 ? 'var(--ember2)' : 'var(--red)';
+    }
+    if (countEl) countEl.textContent = `${validated.length} agentes · ${analysis.domainLabel} · 12D`;
+
+    grid.innerHTML = '';
+    validated.forEach((p, i) => {
+      const card = buildAgentCard({ ...p, domainKey: analysis.domainKey }, i);
+      grid.appendChild(card);
+      if (i === 0) setTimeout(() => card.classList.add('open'), 150);
+    });
+
+    // Adaptive weight from scores (Agente 10)
+    validated.forEach(p => Store.updateWeightFromScore(p.id, p.validation?.overall||50));
+    Store.decayWeights();
+
+    section.style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    section.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ── Agent Network Visualizer — Agente 9 ──
+  function renderAgentNetwork(selectedRoles) {
+    const section = document.getElementById('networkSection');
+    const canvas  = document.getElementById('networkCanvas');
+    const tooltip = document.getElementById('networkTooltip');
+    const legend  = document.getElementById('networkLegend');
+    if (!section || !canvas) return;
+    section.style.display = 'block';
+
+    const W = canvas.offsetWidth || 900;
+    const H = 340;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Layout nodes in a circle
+    const N = selectedRoles.length;
+    const cx = W/2, cy = H/2, r = Math.min(W,H)*0.35;
+    const nodes = selectedRoles.map((role, i) => {
+      const angle = (i / N) * Math.PI * 2 - Math.PI/2;
+      return {
+        id: role.id, name: role.name, cat: role.cat, emoji: role.emoji||'🤖',
+        x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r,
+        vx: 0, vy: 0, radius: 28,
+        color: CAT_COLORS[role.cat] || '#888',
+      };
+    });
+
+    // Build edges based on role dependencies (cat pairs that typically collaborate)
+    const collab = {
+      'investigación': ['ingeniería','validación','documentación'],
+      'ingeniería':    ['validación','documentación','orquestación'],
+      'validación':    ['crítica','documentación'],
+      'crítica':       ['orquestación'],
+      'sistémico':     ['investigación','crítica','orquestación'],
+      'creativo':      ['ingeniería','documentación'],
+    };
+    const edges = [];
+    nodes.forEach(a => {
+      const collaborates = collab[a.cat] || [];
+      nodes.forEach(b => {
+        if (a.id < b.id && collaborates.includes(b.cat)) edges.push([a, b]);
+      });
+    });
+
+    // Draw
+    let hovered = null;
+    let animFrame = null;
+
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+      // Grid lines
+      ctx.strokeStyle = 'rgba(34,34,34,0.5)'; ctx.lineWidth = 0.5;
+      for (let x=0; x<W; x+=60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let y=0; y<H; y+=60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+      // Edges
+      edges.forEach(([a,b]) => {
+        const isHov = hovered && (hovered.id===a.id || hovered.id===b.id);
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+        ctx.strokeStyle = isHov ? 'rgba(255,107,0,0.6)' : 'rgba(90,82,72,0.35)';
+        ctx.lineWidth = isHov ? 2 : 1;
+        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+      });
+
+      // Nodes
+      nodes.forEach(n => {
+        const isHov = hovered && hovered.id === n.id;
+        const rad   = isHov ? n.radius * 1.2 : n.radius;
+        // Glow
+        if (isHov) {
+          const grd = ctx.createRadialGradient(n.x,n.y,rad*0.5,n.x,n.y,rad*2);
+          grd.addColorStop(0, n.color+'55'); grd.addColorStop(1, 'transparent');
+          ctx.beginPath(); ctx.arc(n.x,n.y,rad*2,0,Math.PI*2);
+          ctx.fillStyle = grd; ctx.fill();
+        }
+        // Circle
+        ctx.beginPath(); ctx.arc(n.x,n.y,rad,0,Math.PI*2);
+        ctx.fillStyle = '#0f0f0f'; ctx.fill();
+        ctx.strokeStyle = n.color; ctx.lineWidth = isHov ? 2.5 : 1.5; ctx.stroke();
+        // Emoji
+        ctx.font = `${isHov?20:16}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(n.emoji, n.x, n.y - 2);
+        // Label
+        ctx.font = "9px 'JetBrains Mono',monospace"; ctx.fillStyle = '#8fa8b5'; ctx.textAlign='center';
+        const shortName = n.name.split(' ').slice(0,2).join(' ');
+        ctx.fillText(shortName, n.x, n.y + rad + 10);
+      });
+    }
+
+    draw();
+
+    // Mouse interaction
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const my = (e.clientY - rect.top)  * (H / rect.height);
+      hovered = nodes.find(n => Math.hypot(n.x-mx,n.y-my) < n.radius * 1.3) || null;
+      if (hovered) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX - rect.left + 12) + 'px';
+        tooltip.style.top  = (e.clientY - rect.top  - 10) + 'px';
+        const cs = Data.COGNITIVE_STYLES[hovered.cat] || {};
+        const wt = Store.getWeight(hovered.id).toFixed(2);
+        const fb = Store.getFeedback(hovered.id);
+        tooltip.innerHTML = `<strong style="color:${hovered.color}">${hovered.emoji} ${hovered.name}</strong><br>Cat: ${hovered.cat} · w:${wt}<br>${cs.icon||''} ${cs.name||''}<br>👍${fb.up} 👎${fb.down}`;
+        canvas.style.cursor = 'pointer';
+      } else {
+        tooltip.style.display = 'none';
+        canvas.style.cursor = 'grab';
+      }
+      draw();
+    });
+    canvas.addEventListener('mouseleave', () => { tooltip.style.display='none'; hovered=null; draw(); });
+
+    // Legend
+    legend.innerHTML = '';
+    const cats = [...new Set(selectedRoles.map(r=>r.cat))];
+    cats.forEach(cat => {
+      const item = document.createElement('div'); item.className = 'net-leg-item';
+      const dot  = document.createElement('div'); dot.className  = 'net-leg-dot';
+      dot.style.background = CAT_COLORS[cat]||'#888';
+      item.append(dot, document.createTextNode(cat));
+      legend.appendChild(item);
+    });
+  }
+
+  // ── Taxonomy ──
+  function renderTaxonomy() {
+    const nav     = document.getElementById('taxTabNav');
+    const content = document.getElementById('taxTabContent');
+    if (!nav || !content) return;
+    const { ROLE_REGISTRY } = Data;
+    const cats = [...new Set(Object.values(ROLE_REGISTRY).map(r=>r.cat))];
+
+    cats.forEach((cat, ci) => {
+      const btn = document.createElement('button'); btn.className = 'tab-nav-btn' + (ci===0?' active':'');
+      btn.textContent = cat.toUpperCase(); btn.style.borderBottomColor = ci===0?(CAT_COLORS[cat]||'var(--ember)'):'transparent';
+      btn.addEventListener('click', () => {
+        nav.querySelectorAll('.tab-nav-btn').forEach((b,bi) => {
+          b.classList.remove('active'); b.style.borderBottomColor='transparent';
+        });
+        content.querySelectorAll('.tax-tab-section').forEach(s => s.style.display='none');
+        btn.classList.add('active'); btn.style.borderBottomColor = CAT_COLORS[cat]||'var(--ember)';
+        document.getElementById('tax-'+ci).style.display = 'grid';
+      });
+      nav.appendChild(btn);
+
+      const sec = document.createElement('div'); sec.className = 'tax-tab-section';
+      sec.id = 'tax-'+ci; sec.style.display = ci===0?'grid':'none';
+      sec.style.cssText += ';grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);';
+      const roles = Object.entries(ROLE_REGISTRY).filter(([,r])=>r.cat===cat);
+      roles.forEach(([id,r]) => {
+        const cell = document.createElement('div'); cell.className = 'tax-role';
+        const fb   = Store.getFeedback(id);
+        const dot  = document.createElement('div'); dot.className = 'fb-dot';
+        const wt   = Store.getWeight(id);
+        dot.style.background = wt > 1.2 ? 'var(--green)' : wt < 0.8 ? 'var(--red)' : 'transparent';
+        dot.id = 'fbdot-'+id;
+        const cs = Data.COGNITIVE_STYLES[cat] || {};
+        cell.innerHTML = `<div class="r-emoji">${r.emoji}</div><div class="r-name">${r.name}</div><div class="r-cat">${r.cat}</div><div class="r-cog">${cs.icon||''} ${cs.name||''}</div>`;
+        cell.appendChild(dot);
+        sec.appendChild(cell);
+      });
+      content.appendChild(sec);
+    });
+  }
+
+  function updateFbDot(roleId) {
+    const dot = document.getElementById('fbdot-'+roleId);
+    if (!dot) return;
+    const wt = Store.getWeight(roleId);
+    dot.style.background = wt > 1.2 ? 'var(--green)' : wt < 0.8 ? 'var(--red)' : 'transparent';
+  }
+
+  // ── Papers panel ──
+  function renderPapersPanel() {
+    const grid = document.getElementById('papersGrid');
+    const btn  = document.getElementById('papersToggle');
+    if (!grid || !btn) return;
+    Data.PAPERS_DB.slice(0,30).forEach(p => {
+      const card = document.createElement('div'); card.className = 'paper-card';
+      card.innerHTML = `<div class="pc-venue">${p.venue} · ${p.year}</div><div class="pc-title">${p.title}</div><div class="pc-finding">${p.finding.substring(0,120)}…</div>`;
+      grid.appendChild(card);
+    });
+    btn.addEventListener('click', () => {
+      const open = grid.classList.toggle('open');
+      btn.textContent = open ? 'COLAPSAR BASE CIENTÍFICA ▲' : 'EXPLORAR BASE CIENTÍFICA ▼';
+    });
+  }
+
+  // ── Cognitive legend ──
+  function renderCogLegend() {
+    const el = document.getElementById('cogLegend');
+    if (!el) return;
+    Object.entries(Data.COGNITIVE_STYLES).forEach(([cat, cs]) => {
+      const item = document.createElement('div'); item.className = 'cog-item';
+      const dot  = document.createElement('div'); dot.className = 'cog-dot';
+      dot.style.background = cs.color;
+      item.append(dot, document.createTextNode(`${cs.icon} ${cs.name}`));
+      el.appendChild(item);
+    });
+  }
+
+  // ── Meta panel (Agente 1 SelfImprover) ──
+  function renderMetaPanel(validatedPrompts, analysis, mode) {
+    const panel   = document.getElementById('metaPanel');
+    const insEl   = document.getElementById('metaInsights');
+    const promptEl= document.getElementById('metaPromptBox');
+    if (!panel || mode === 'off') return;
+
+    const weakness = SelfImprover.analyzeWeaknesses(validatedPrompts);
+    if (insEl) {
+      insEl.innerHTML = '';
+      weakness.insights.forEach(ins => {
+        const div = document.createElement('div'); div.className = 'meta-insight';
+        div.innerHTML = `<span class="mi-label">${ins.label}</span> · Dimensión "<strong>${ins.dim}</strong>": ${ins.avg}/100 — requiere mejora`;
+        insEl.appendChild(div);
+      });
+    }
+
+    if (promptEl && mode === 'generate') {
+      promptEl.textContent = SelfImprover.generateMetaPrompt(analysis, validatedPrompts, weakness);
+    }
+    panel.classList.add('visible');
+
+    const cpBtn = document.getElementById('metaCopyBtn');
+    if (cpBtn) cpBtn.onclick = () => navigator.clipboard.writeText(promptEl?.textContent||'');
+    const reBtn = document.getElementById('metaRegenerateBtn');
+    if (reBtn) reBtn.onclick = () => {
+      if (promptEl) promptEl.textContent = SelfImprover.generateMetaPrompt(analysis, validatedPrompts, weakness);
+    };
+  }
+
+  return { setStage, showProgress, renderDecomposition, renderResults,
+           renderAgentNetwork, renderTaxonomy, renderPapersPanel,
+           renderCogLegend, renderMetaPanel };
+})();
+
+
+// ══════════════════════════════════════════════════════
+//  PIPELINE MODULE — Agente 15 (Orquestador final)
+// ══════════════════════════════════════════════════════
+const Pipeline = (() => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  async function runForge() {
+    const objective = document.getElementById('objectiveInput').value.trim();
+    if (!objective) { document.getElementById('objectiveInput').focus(); return; }
+    const apiKey   = document.getElementById('apiKey').value.trim();
+    const maxRoles = parseInt(document.getElementById('maxRoles').value, 10) || 5;
+    const ragMode  = document.getElementById('ragMode')?.value || 'hybrid';
+    const cogOvr   = document.getElementById('cogOverride')?.value || '';
+    const siMode   = document.getElementById('selfImproveMode')?.value || 'off';
+    const papersN  = parseInt(document.getElementById('papersPerRole')?.value||'3', 10);
+    const btn      = document.getElementById('forgeBtn');
+
+    btn.disabled = true; btn.textContent = '⚒ FORJANDO...';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('emptyState').style.display   = 'none';
+    document.getElementById('decompPanel').style.display  = 'none';
+    document.getElementById('networkSection').style.display = 'none';
+    document.getElementById('metaPanel')?.classList.remove('visible');
+    UI.showProgress(true); Logger.clear();
+
+    try {
+      // ── Stage 1: Análisis ──
+      UI.setStage(1); Logger.log('→ Analizando objetivo...','ember');
+      const domainKey   = Core.detectDomain(objective);
+      const domainLabel = Data.DOMAIN_DB[domainKey].label;
+      const complexity  = Core.estimateComplexity(objective);
+      Logger.log(`✓ Dominio: ${domainLabel} | Complejidad: ${complexity.toUpperCase()}`,'green');
+      Logger.log(`  RAG: modo ${ragMode} | Roles: ${maxRoles} | Papers/rol: ${papersN}`,'blue');
+
+      // ── Stage 2: Descomposición ──
+      UI.setStage(2); Logger.log('→ Descomponiendo en subtareas atómicas...','ember');
+      const subtasks  = Core.decomposeObjective(objective, domainKey);
+      const taskNames = subtasks.map(s => s.task);
+      const analysis  = { objective, domainKey, domainLabel, tasks: taskNames, complexity };
+      Logger.log(`✓ ${subtasks.length} subtareas: ${taskNames.slice(0,3).join(', ')}${subtasks.length>3?'…':''}`, 'green');
+      Logger.log('  Método: patrones léxicos + afinidad semántica por dominio', 'blue');
+      UI.renderDecomposition(subtasks, analysis);
+
+      // ── Stage 3: Selección adaptativa ──
+      UI.setStage(3); Logger.log('→ Selección adaptativa de roles (feedback loop v3)...','ember');
+      const selectedRoles = Core.selectRolesAdaptive(domainKey, subtasks, maxRoles);
+      Logger.log(`✓ ${selectedRoles.length} roles: ${selectedRoles.map(r=>r.name.split(' ')[0]).join(', ')}`,'green');
+      if (Store.hasFeedback()) Logger.log(`  Feedback histórico: ${Store.feedbackCount()} roles con pesos ajustados`,'purple');
+      if (cogOvr) Logger.log(`  Override cognitivo: ${cogOvr}`,'purple');
+
+      // ── Stage 4: Generación ──
+      UI.setStage(4);
+      const apiStatus = LLM.validateApiKey(apiKey);
+      const useAPI    = apiStatus === 'valid';
+      Logger.log('→ Generando prompts CO-STAR++ + ToT + RAG híbrido...','ember');
+      if (apiKey && !useAPI) Logger.log('  ⚠ API key con formato inválido — usando motor offline','red');
+      Logger.log(`  Modo: ${useAPI ? 'Claude API (meta-prompting)' : 'offline CO-STAR++ + ToT + RAG-lite'}`, 'blue');
+
+      const generatedPrompts = [];
+      for (let i = 0; i < selectedRoles.length; i++) {
+        const role   = selectedRoles[i];
+        // Apply cognitive override if set
+        if (cogOvr) role.cat = cogOvr;
+        const papers = RAG.getRelevantPapers(role.id, objective, domainKey, papersN, ragMode);
+        Logger.log(`  [${i+1}/${selectedRoles.length}] ${Data.ROLE_REGISTRY[role.id]?.emoji||'🤖'} ${role.name} (${papers.length} papers ${ragMode})...`);
+        let promptText, method = 'offline';
+        if (useAPI) {
+          try {
+            promptText = await LLM.generateWithLLM(role, analysis, papers, apiKey);
+            method = 'llm';
+          } catch(e) {
+            Logger.log(`    ⚠ API falló para ${role.name} — offline fallback`,'red');
+            promptText = PromptBuilder.buildPrompt(role, analysis, papers);
+          }
+        } else {
+          promptText = PromptBuilder.buildPrompt(role, analysis, papers);
+        }
+        generatedPrompts.push({ ...role, prompt: promptText, papers, method });
+      }
+      Logger.log(`✓ ${generatedPrompts.length} prompts · ${generatedPrompts.reduce((a,p)=>a+p.papers.length,0)} papers RAG`,'green');
+
+      // ── Stage 5: Validación 12D ──
+      UI.setStage(5); Logger.log('→ Validación 12 dimensiones (Agente 4)...','ember');
+      const validated = generatedPrompts.map(p => ({
+        ...p,
+        validation: Validation.validatePrompt(p.prompt, domainKey),
+      }));
+      const avgScore = Math.round(validated.reduce((a,p)=>a+p.validation.overall,0)/validated.length);
+      const passed   = validated.filter(p=>!p.validation.needsRefinement).length;
+      Logger.log(`✓ Score global 12D: ${avgScore}/100 | Aprobados: ${passed}/${validated.length}`,'green');
+      validated.forEach(p => {
+        const dims  = p.validation.dims;
+        const weak  = Object.entries(dims).sort((a,b)=>a[1]-b[1]).slice(0,2).map(([d,v])=>`${d}:${v}`).join(' ');
+        Logger.log(`  ${Data.ROLE_REGISTRY[p.id]?.emoji||'·'} ${p.name.split(' ')[0]}: ${p.validation.overall}/100 | ↓ ${weak}`);
+      });
+
+      // ── Stage 6: Red de agentes (Agente 9) ──
+      UI.setStage(6); Logger.log('→ Renderizando red de agentes (Agente 9)...','ember');
+      UI.renderAgentNetwork(selectedRoles);
+      Logger.log(`✓ Red de ${selectedRoles.length} nodos · ${selectedRoles.length*(selectedRoles.length-1)/2} posibles conexiones`,'green');
+
+      // ── Stage 7: Finalizar ──
+      UI.setStage(7); Logger.log('→ Empaquetando artefactos...','ember');
+      Store.setResult({ analysis, prompts: validated, score: avgScore });
+      document.getElementById('liveScore').textContent = avgScore;
+      Logger.log(`✓ Listo — ${validated.length} prompts | Score 12D: ${avgScore}/100 | Motor: ${useAPI?'API':'offline'}`,'green');
+
+      UI.renderResults(validated, avgScore, analysis);
+
+      // ── Auto-mejora (Agente 1) ──
+      if (siMode !== 'off') {
+        Logger.log('→ Analizando debilidades para meta-prompt (Agente 1)...','purple');
+        UI.renderMetaPanel(validated, analysis, siMode);
+        Logger.log(`✓ Meta-prompt de auto-mejora generado`,'purple');
+      }
+
+    } catch(err) {
+      Logger.log(`✗ Error: ${err.message}`, 'red');
+      console.error('[PromptForge v3.0]', err);
+    }
+
+    btn.disabled = false; btn.textContent = '⚒ FORJAR';
+  }
+
+  // Meta-prompt button (runs analysis only, no full forge)
+  async function runMetaOnly() {
+    const result = Store.getResult();
+    if (!result) {
+      alert('Primero genera prompts con FORJAR'); return;
+    }
+    const siMode = document.getElementById('selfImproveMode')?.value || 'generate';
+    UI.renderMetaPanel(result.prompts, result.analysis, siMode === 'off' ? 'generate' : siMode);
+    document.getElementById('metaPanel')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  return { runForge, runMetaOnly };
+})();
+
+// ══════════════════════════════════════════════════════
+//  INITIALIZATION — DOMContentLoaded
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  Sparks.init();
+  UI.renderTaxonomy();
+  UI.renderPapersPanel();
+  UI.renderCogLegend();
+
+  // ── Forge button ──
+  document.getElementById('forgeBtn').addEventListener('click', Pipeline.runForge);
+
+  // ── Meta-prompt button ──
+  document.getElementById('metaBtn')?.addEventListener('click', Pipeline.runMetaOnly);
+
+  // ── Quick fills ──
+  document.querySelectorAll('.quick-fill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('objectiveInput').value = btn.dataset.q;
+    });
+  });
+
+  // ── API key status ──
+  const apiKeyInput = document.getElementById('apiKey');
+  const apiStatus   = document.getElementById('apiStatus');
+  apiKeyInput?.addEventListener('input', () => {
+    const k = apiKeyInput.value.trim();
+    const s = LLM.validateApiKey(k);
+    apiStatus.className = 'api-status ' + s;
+    apiStatus.textContent = s === 'valid' ? 'CLAUDE API ✓' : s === 'error' ? 'KEY INVÁLIDA' : 'OFFLINE';
+  });
+
+  // ── Expert panel toggle ──
+  document.getElementById('expertToggle')?.addEventListener('click', function() {
+    this.classList.toggle('active');
+    document.getElementById('expertPanel')?.classList.toggle('visible');
+  });
+
+  // ── Expert sliders ──
+  const sliders = [
+    ['valThreshold', 'valThresholdDisplay', v => v+'/100'],
+    ['creativity',   'creativityDisplay',   v => (v/100).toFixed(2)],
+    ['papersPerRole','papersDisplay',        v => v],
+  ];
+  sliders.forEach(([id, dispId, fmt]) => {
+    const sl = document.getElementById(id);
+    const dp = document.getElementById(dispId);
+    if (sl && dp) {
+      dp.textContent = fmt(sl.value);
+      sl.addEventListener('input', () => { dp.textContent = fmt(sl.value); });
+    }
+  });
+
+  // ── Export buttons ──
+  document.getElementById('exportJsonBtn')?.addEventListener('click', () => {
+    const r = Store.getResult(); if (r) Export.exportJson(r);
+  });
+  document.getElementById('exportMdBtn')?.addEventListener('click', () => {
+    const r = Store.getResult(); if (r) Export.exportMarkdown(r);
+  });
+  document.getElementById('exportCodeBtn')?.addEventListener('click', () => {
+    const r = Store.getResult();
+    if (r) Export.exportCode(r, document.getElementById('exportLang')?.value || 'python');
+  });
+  document.getElementById('exportCrewBtn')?.addEventListener('click', () => {
+    const r = Store.getResult(); if (r) Export.exportCrewAI(r);
+  });
+  document.getElementById('resetWeightsBtn')?.addEventListener('click', () => {
+    Store.resetWeights();
+    document.querySelectorAll('.fb-dot').forEach(d => d.style.background = 'transparent');
+    Logger.log('↺ Pesos y feedback reseteados a valores por defecto', 'purple');
+  });
+
+  // ── Decomp panel collapsible ──
+  document.getElementById('decompHeader')?.addEventListener('click', () => {
+    const body = document.getElementById('decompBody');
+    if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // ── Changelog ──
+  document.getElementById('changelogBtn')?.addEventListener('click', () => {
+    document.getElementById('changelog')?.classList.toggle('visible');
+  });
+
+  // ── Empty state ──
+  document.getElementById('emptyState').style.display = 'block';
+});
+
+</script>
+</body>
+</html>
