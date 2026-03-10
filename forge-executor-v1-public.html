@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="FORGE-EXECUTOR v1 Public — Generador multi-agente de proyectos. Genera código a partir de especificaciones JSON.">
+<title>⚡ FORGE-EXECUTOR · Public Edition</title>
+
+<!-- JSZip para exportar ZIP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!-- Tipografías: Crimson Pro (display elegante) + JetBrains Mono (código) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Warm terminal editorial
+   ════════════════════════════════════════════════════════════ */
+:root {
+  /* Paleta principal — carbón cálido + ámbar */
+  --ink-0:   #09090b;   /* negro casi puro */
+  --ink-1:   #111113;   /* fondo principal */
+  --ink-2:   #18181b;   /* paneles */
+  --ink-3:   #27272a;   /* bordes visibles */
+  --ink-4:   #3f3f46;   /* bordes interactivos */
+  --ink-5:   #52525b;   /* texto muy atenuado */
+
+  --paper-1: #a1a1aa;   /* texto secundario */
+  --paper-2: #d4d4d8;   /* texto base */
+  --paper-3: #f4f4f5;   /* texto brillante */
+  --paper-4: #fafafa;   /* blanco casi puro */
+
+  /* Acentos */
+  --amber:   #f59e0b;
+  --amber-2: #fbbf24;
+  --amber-3: #fde68a;
+  --teal:    #14b8a6;
+  --teal-2:  #2dd4bf;
+  --rose:    #f43f5e;
+  --rose-2:  #fb7185;
+  --sage:    #84cc16;
+  --sage-2:  #a3e635;
+  --sky:     #38bdf8;
+  --lavender:#a78bfa;
+
+  /* Semánticos */
+  --clr-ok:   var(--sage);
+  --clr-warn: var(--amber);
+  --clr-err:  var(--rose);
+  --clr-info: var(--teal);
+
+  /* Tipografía */
+  --font-display: 'Crimson Pro', Georgia, serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+  --font-ui:      'JetBrains Mono', monospace;
+
+  /* Espaciado */
+  --gap-xs:  4px;
+  --gap-sm:  8px;
+  --gap-md:  16px;
+  --gap-lg:  24px;
+  --gap-xl:  40px;
+  --gap-2xl: 64px;
+
+  /* Bordes */
+  --r-sm: 5px;
+  --r-md: 9px;
+  --r-lg: 14px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+
+  /* Animaciones */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --ink-0:   #ffffff;
+  --ink-1:   #fafaf9;
+  --ink-2:   #f5f5f4;
+  --ink-3:   #e7e5e4;
+  --ink-4:   #d6d3d1;
+  --ink-5:   #a8a29e;
+
+  --paper-1: #78716c;
+  --paper-2: #44403c;
+  --paper-3: #1c1917;
+  --paper-4: #0c0a09;
+
+  --amber:   #d97706;
+  --amber-2: #f59e0b;
+  --amber-3: #b45309;
+  --teal:    #0f766e;
+  --teal-2:  #14b8a6;
+  --rose:    #e11d48;
+  --rose-2:  #f43f5e;
+  --sage:    #65a30d;
+  --sage-2:  #84cc16;
+  --sky:     #0284c7;
+  --lavender:#7c3aed;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.12);
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESET
+   ════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--ink-1);
+  color: var(--paper-2);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Faint grid texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, var(--ink-3) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="light"] body::before { opacity: 0.15; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 99px; }
+
+/* ════════════════════════════════════════════════════════════
+   LAYOUT
+   ════════════════════════════════════════════════════════════ */
+.forge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEADER — editorial masthead
+   ════════════════════════════════════════════════════════════ */
+.forge-header {
+  border-bottom: 1px solid var(--ink-3);
+  background: var(--ink-2);
+  padding: 0 var(--gap-lg);
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-md);
+  padding: var(--gap-md) 0 var(--gap-sm);
+  border-bottom: 1px solid var(--ink-3);
+}
+
+.masthead {
+  flex: 1;
+  min-width: 0;
+}
+
+.masthead-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 4vw, 40px);
+  font-weight: 700;
+  color: var(--paper-4);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.masthead-title em {
+  font-style: italic;
+  color: var(--amber);
+}
+
+.masthead-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-1);
+  margin-top: 4px;
+}
+
+/* Monkey widget — right side */
+.mono-station {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.mono-face-wrap {
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease);
+  user-select: none;
+  display: inline-block;
+}
+.mono-face-wrap:hover { transform: scale(1.15) rotate(-6deg); }
+.mono-face-wrap.bounce { animation: mbounce 0.5s var(--ease) both; }
+.mono-face-wrap.spin   { animation: mspin 0.6s linear; }
+.mono-face-wrap.shake  { animation: mshake 0.4s ease; }
+@keyframes mbounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes mspin   { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+@keyframes mshake  { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+
+.mono-speech {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--teal-2);
+  text-align: right;
+  max-width: 220px;
+  line-height: 1.4;
+  min-height: 28px;
+}
+
+/* Header controls row */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--gap-sm) 0;
+  flex-wrap: wrap;
+}
+
+.hctl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-1);
+}
+.hctl-badge span { color: var(--amber-2); font-weight: 700; }
+
+.hctl-spacer { flex: 1; }
+
+.btn-theme {
+  background: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--r-sm);
+  color: var(--paper-2);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  transition: all 0.15s;
+}
+.btn-theme:hover { background: var(--ink-4); color: var(--paper-4); }
+
+/* ════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ════════════════════════════════════════════════════════════ */
+.progress-bar {
+  height: 2px;
+  background: var(--ink-3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--teal));
+  transition: width 0.4s var(--ease);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+/* ════════════════════════════════════════════════════════════
+   WORKSPACE — 3-column grid
+   ════════════════════════════════════════════════════════════ */
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  flex: 1;
+}
+
+@media (min-width: 900px) {
+  .workspace {
+    grid-template-columns: minmax(300px, 2fr) minmax(200px, 1.2fr) minmax(280px, 2fr);
+    height: calc(100dvh - 140px);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PANELS
+   ════════════════════════════════════════════════════════════ */
+.panel {
+  border-right: 1px solid var(--ink-3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.panel:last-child { border-right: none; }
+
+.panel-header {
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--ink-3);
+  padding: var(--gap-sm) var(--gap-md);
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.ph-number {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-5);
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.ph-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--paper-3);
+  flex: 1;
+  line-height: 1.2;
+}
+
+.ph-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--ink-3);
+  color: var(--ink-5);
+  border: 1px solid var(--ink-4);
+}
+.ph-badge.ok   { background: rgba(132,204,22,0.12); color: var(--sage-2); border-color: rgba(132,204,22,0.3); }
+.ph-badge.live { background: rgba(20,184,166,0.12); color: var(--teal-2); border-color: rgba(20,184,166,0.3); }
+.ph-badge.done { background: rgba(245,158,11,0.12); color: var(--amber-2); border-color: rgba(245,158,11,0.3); }
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+}
+
+.panel-footer {
+  border-top: 1px solid var(--ink-3);
+  background: var(--ink-2);
+  padding: var(--gap-sm) var(--gap-md);
+  display: flex;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUTTONS
+   ════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 var(--gap-md);
+  height: 38px;
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.btn:active::after { opacity: 0.06; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--amber);
+  color: var(--ink-0);
+  border-color: rgba(0,0,0,0.2);
+  box-shadow: 0 0 20px rgba(245,158,11,0.2);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--amber-2);
+  box-shadow: 0 0 30px rgba(245,158,11,0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--paper-2);
+  border-color: var(--ink-4);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--ink-3); color: var(--paper-4); border-color: var(--ink-5); }
+
+.btn-teal {
+  background: rgba(20,184,166,0.1);
+  color: var(--teal-2);
+  border-color: rgba(20,184,166,0.25);
+}
+.btn-teal:hover:not(:disabled) { background: rgba(20,184,166,0.2); }
+
+.btn-sm { height: 30px; padding: 0 var(--gap-sm); font-size: 11px; border-radius: var(--r-sm); }
+
+/* ════════════════════════════════════════════════════════════
+   PANEL 1 — INPUT
+   ════════════════════════════════════════════════════════════ */
+.example-strip {
+  display: flex;
+  gap: var(--gap-xs);
+  flex-wrap: wrap;
+}
+
+.example-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  border-radius: 99px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-1);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.example-pill:hover { background: var(--ink-4); color: var(--amber-2); border-color: rgba(245,158,11,0.35); }
+
+.spec-editor {
+  width: 100%;
+  background: var(--ink-0);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--r-md);
+  color: var(--paper-3);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.75;
+  padding: var(--gap-sm);
+  resize: none;
+  outline: none;
+  min-height: 280px;
+  flex: 1;
+  tab-size: 2;
+  transition: border-color 0.2s;
+  spellcheck: false;
+}
+.spec-editor:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+
+/* Security notice */
+.notice {
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: var(--r-sm);
+  padding: var(--gap-sm) var(--gap-md);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  line-height: 1.5;
+}
+.notice strong { font-weight: 700; }
+
+/* ════════════════════════════════════════════════════════════
+   PANEL 2 — PLAN
+   ════════════════════════════════════════════════════════════ */
+.plan-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap-xs);
+}
+
+.stat-box {
+  background: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--r-sm);
+  padding: var(--gap-sm);
+  text-align: center;
+}
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--amber-2);
+  line-height: 1;
+  display: block;
+}
+.stat-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+/* File tree */
+.file-tree {
+  background: var(--ink-0);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  flex: 1;
+  min-height: 80px;
+}
+
+.tree-empty {
+  padding: var(--gap-xl) var(--gap-md);
+  text-align: center;
+  color: var(--ink-5);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.tree-empty-icon { font-size: 28px; display: block; margin-bottom: var(--gap-sm); opacity: 0.4; }
+
+.tree-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 6px var(--gap-sm);
+  border-bottom: 1px solid var(--ink-3);
+  transition: background 0.1s;
+  cursor: default;
+  animation: row-in 0.2s var(--ease) both;
+}
+.tree-row:last-child { border-bottom: none; }
+.tree-row:hover { background: var(--ink-2); }
+@keyframes row-in { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+
+.tree-type-badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 58px;
+  text-align: center;
+  font-weight: 700;
+}
+.badge-component { background: rgba(56,189,248,0.12);  color: var(--sky);     border: 1px solid rgba(56,189,248,0.3); }
+.badge-service   { background: rgba(20,184,166,0.12);  color: var(--teal-2);  border: 1px solid rgba(20,184,166,0.3); }
+.badge-types     { background: rgba(167,139,250,0.12); color: var(--lavender);border: 1px solid rgba(167,139,250,0.3); }
+.badge-manifest  { background: rgba(245,158,11,0.12);  color: var(--amber-2); border: 1px solid rgba(245,158,11,0.3); }
+.badge-docs      { background: rgba(132,204,22,0.12);  color: var(--sage-2);  border: 1px solid rgba(132,204,22,0.3); }
+.badge-model     { background: rgba(244,63,94,0.12);   color: var(--rose-2);  border: 1px solid rgba(244,63,94,0.3); }
+.badge-unknown   { background: rgba(82,82,91,0.15);    color: var(--ink-5);   border: 1px solid var(--ink-4); }
+
+.tree-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-size {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-5);
+  white-space: nowrap;
+}
+
+/* Agent legend */
+.agent-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.legend-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 2px 0;
+}
+.legend-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-1);
+  min-width: 18px;
+  text-align: right;
+}
+.legend-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-5);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PANEL 3 — OUTPUT
+   ════════════════════════════════════════════════════════════ */
+/* Log */
+.exec-log {
+  background: var(--ink-0);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--r-md);
+  padding: var(--gap-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-y: auto;
+  min-height: 100px;
+  max-height: 160px;
+  scroll-behavior: smooth;
+}
+
+.log-entry {
+  display: flex;
+  gap: var(--gap-sm);
+  padding: 1px 0;
+  animation: log-in 0.15s var(--ease) both;
+}
+@keyframes log-in { from{opacity:0} to{opacity:1} }
+
+.log-ts    { color: var(--ink-5); font-size: 9px; flex-shrink: 0; width: 40px; }
+.log-icon  { flex-shrink: 0; font-size: 10px; }
+.log-text  { color: var(--paper-2); word-break: break-word; flex: 1; }
+.log-ok    .log-text { color: var(--sage-2); }
+.log-warn  .log-text { color: var(--amber-2); }
+.log-err   .log-text { color: var(--rose-2); }
+.log-hi    .log-text { color: var(--teal-2); }
+
+/* Output file list */
+.out-list {
+  background: var(--ink-0);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  flex: 1;
+  min-height: 80px;
+}
+
+.out-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 7px var(--gap-sm);
+  border-bottom: 1px solid var(--ink-3);
+  transition: background 0.1s;
+  animation: row-in 0.2s var(--ease) both;
+}
+.out-item:last-child { border-bottom: none; }
+.out-item:hover { background: var(--ink-2); }
+
+.out-path { font-family: var(--font-mono); font-size: 11px; color: var(--paper-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.out-size { font-family: var(--font-mono); font-size: 9px; color: var(--ink-5); white-space: nowrap; }
+
+.btn-icon-sm {
+  background: none;
+  border: 1px solid var(--ink-4);
+  border-radius: var(--r-sm);
+  color: var(--ink-5);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-icon-sm:hover { background: var(--ink-3); color: var(--paper-3); border-color: var(--ink-5); }
+
+/* Output summary */
+.out-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap-xs);
+  flex-shrink: 0;
+}
+
+/* Preview sheet */
+.preview-panel {
+  background: var(--ink-0);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+}
+.preview-header {
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--ink-3);
+  padding: 5px var(--gap-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-shrink: 0;
+}
+.preview-filename {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber-2);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.preview-content {
+  padding: var(--gap-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--paper-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ════════════════════════════════════════════════════════════
+   KOAN OVERLAY
+   ════════════════════════════════════════════════════════════ */
+.koan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9,9,11,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(8px);
+  padding: var(--gap-lg);
+}
+.koan-overlay.open { opacity: 1; pointer-events: all; }
+
+.koan-card {
+  background: var(--ink-2);
+  border: 1px solid var(--ink-4);
+  border-radius: var(--r-lg);
+  padding: var(--gap-xl) clamp(var(--gap-lg), 5vw, 56px);
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg), 0 0 80px rgba(245,158,11,0.05);
+  animation: koan-appear 0.4s var(--ease) both;
+}
+@keyframes koan-appear {
+  from { transform: scale(0.88) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.koan-emoji { font-size: 48px; display: block; margin-bottom: var(--gap-md); }
+.koan-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--amber);
+  text-transform: uppercase;
+  margin-bottom: var(--gap-sm);
+}
+.koan-quote {
+  font-family: var(--font-display);
+  font-size: clamp(17px, 3vw, 22px);
+  font-weight: 600;
+  font-style: italic;
+  color: var(--paper-4);
+  line-height: 1.45;
+  margin-bottom: var(--gap-sm);
+}
+.koan-lesson {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-1);
+  line-height: 1.6;
+  margin-bottom: var(--gap-xl);
+}
+
+/* ════════════════════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════════════════════ */
+.forge-footer {
+  background: var(--ink-2);
+  border-top: 1px solid var(--ink-3);
+  padding: var(--gap-sm) var(--gap-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-5);
+  flex-shrink: 0;
+}
+.footer-item strong { color: var(--paper-1); }
+.footer-sep { opacity: 0.3; }
+.footer-spacer { flex: 1; }
+.footer-zehaha {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--amber);
+  font-size: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   EMPTY STATES
+   ════════════════════════════════════════════════════════════ */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap-xl) var(--gap-lg);
+  gap: var(--gap-sm);
+  color: var(--ink-5);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  flex: 1;
+}
+.empty-icon { font-size: 28px; opacity: 0.4; }
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE STACK
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 899px) {
+  .workspace { height: auto; }
+  .panel { border-right: none; border-bottom: 1px solid var(--ink-3); }
+  .panel-body { min-height: 240px; }
+  .header-top { flex-wrap: wrap; }
+  .mono-station { flex-direction: row; align-items: center; }
+  .mono-speech { text-align: left; }
+}
+
+@media (max-width: 480px) {
+  .forge-header { padding: 0 var(--gap-md); }
+  .workspace { gap: 0; }
+  .masthead-title { font-size: 22px; }
+  .plan-stats-grid { grid-template-columns: 1fr 1fr; }
+  .forge-footer { gap: var(--gap-sm); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════════ */
+.toast-area {
+  position: fixed;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: var(--ink-3);
+  border: 1px solid var(--ink-5);
+  border-radius: var(--r-md);
+  padding: 6px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-3);
+  animation: toast-pop 0.25s var(--ease) both;
+  box-shadow: var(--shadow-md);
+}
+.toast.ok   { border-color: rgba(132,204,22,0.4); color: var(--sage-2); }
+.toast.warn { border-color: rgba(245,158,11,0.4); color: var(--amber-2); }
+@keyframes toast-pop { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ════════════════════════════════════════════════════════════
+   DIVIDERS + MISC
+   ════════════════════════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--ink-3);
+  margin: var(--gap-sm) 0;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-5);
+  margin-bottom: var(--gap-xs);
+}
+
+/* Animated dots for "working" state */
+.working-dots::after {
+  content: '...';
+  animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%,25%{ content: '.'; }
+  50%   { content: '..'; }
+  75%,100%{ content: '...'; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="forge" id="forge">
+
+  <!-- ─────────── HEADER ─────────── -->
+  <header class="forge-header">
+    <div class="header-top">
+      <div class="masthead">
+        <div class="masthead-eyebrow">⚡ Public Edition · v1.0</div>
+        <h1 class="masthead-title">FORGE<em>-</em>EXECUTOR</h1>
+        <div class="masthead-sub">
+          Multi-agent code generator · JSON → Project · Open source
+        </div>
+      </div>
+
+      <div class="mono-station">
+        <div class="mono-face-wrap" id="mono-face" onclick="App.mascot.koan()" title="Clic para sabiduría">🐵</div>
+        <div class="mono-speech" id="mono-speech">Sistema listo. Carga una especificación.</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="hctl-badge">archivos: <span id="hc-files">0</span></div>
+      <div class="hctl-badge">agentes: <span id="hc-agents">6</span></div>
+      <div class="hctl-badge">tokens: <span id="hc-tokens">0k</span></div>
+      <div class="hctl-spacer"></div>
+      <button class="btn-theme" onclick="App.ui.toggleTheme()" id="btn-theme">☾ oscuro</button>
+    </div>
+  </header>
+
+  <!-- ─────────── PROGRESS ─────────── -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="prog-fill"></div>
+  </div>
+
+  <!-- ─────────── WORKSPACE ─────────── -->
+  <main class="workspace">
+
+    <!-- ── PANEL 1: ESPECIFICACIÓN ── -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="ph-number">01</div>
+        <div class="ph-title">Especificación</div>
+        <div class="ph-badge" id="badge-input">JSON</div>
+      </div>
+
+      <div class="panel-body">
+        <div>
+          <div class="section-label">Ejemplos rápidos</div>
+          <div class="example-strip">
+            <span class="example-pill" onclick="App.ui.loadExample('todo')">📋 TodoApp</span>
+            <span class="example-pill" onclick="App.ui.loadExample('api')">🔌 API REST</span>
+            <span class="example-pill" onclick="App.ui.loadExample('fullstack')">🌐 Fullstack</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+          <div class="section-label">Especificación JSON · <kbd>Ctrl+Enter</kbd> para generar</div>
+          <textarea
+            class="spec-editor"
+            id="spec-input"
+            spellcheck="false"
+            placeholder='{\n  "project": { "name": "MiApp", ... },\n  "structure": { "files": [...] }\n}'
+          ></textarea>
+        </div>
+
+        <div class="notice">
+          <strong>⚠ Aviso:</strong> El código generado es un <em>esqueleto educativo</em>.
+          No usar en producción sin revisión. Rutas con <code>..</code> o caracteres especiales serán bloqueadas.
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-ghost btn-sm" onclick="App.ui.clearSpec()">✖ Limpiar</button>
+        <button class="btn btn-primary" id="btn-plan" onclick="App.core.plan()" style="flex:1">
+          🔍 Generar plan
+        </button>
+      </div>
+    </section>
+
+    <!-- ── PANEL 2: PLAN ── -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="ph-number">02</div>
+        <div class="ph-title">Plan</div>
+        <div class="ph-badge" id="badge-plan">pendiente</div>
+      </div>
+
+      <div class="panel-body">
+        <div class="plan-stats-grid" id="plan-stats">
+          <div class="stat-box">
+            <span class="stat-val" id="ps-files">—</span>
+            <span class="stat-lbl">archivos</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="ps-tokens">—</span>
+            <span class="stat-lbl">tokens</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="ps-eta">—</span>
+            <span class="stat-lbl">segundos</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Árbol de archivos (orden topológico)</div>
+          <div class="file-tree" id="file-tree">
+            <div class="tree-empty">
+              <span class="tree-empty-icon">🗂</span>
+              Genera un plan para ver<br>el árbol de archivos
+            </div>
+          </div>
+        </div>
+
+        <div id="agent-legend-wrap" style="display:none">
+          <div class="agent-legend" id="agent-legend"></div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-ghost btn-sm" onclick="App.core.clearPlan()">✖ Limpiar</button>
+        <button class="btn btn-primary" id="btn-execute" onclick="App.core.execute()" disabled style="flex:1">
+          ▶ Ejecutar plan
+        </button>
+      </div>
+    </section>
+
+    <!-- ── PANEL 3: SALIDA ── -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="ph-number">03</div>
+        <div class="ph-title">Archivos generados</div>
+        <div class="ph-badge" id="badge-output">0 archivos</div>
+      </div>
+
+      <div class="panel-body">
+        <div>
+          <div class="section-label">Log de ejecución</div>
+          <div class="exec-log" id="exec-log">
+            <div class="log-entry log-hi">
+              <span class="log-ts">00.0s</span>
+              <span class="log-icon">◈</span>
+              <span class="log-text">FORGE-EXECUTOR v1 · Public Edition · Sistema listo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="out-summary" id="out-summary">
+          <div class="stat-box">
+            <span class="stat-val" id="out-count">0</span>
+            <span class="stat-lbl">archivos</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="out-size">0 B</span>
+            <span class="stat-lbl">tamaño</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="out-time">—</span>
+            <span class="stat-lbl">tiempo</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Archivos</div>
+          <div class="out-list" id="out-list">
+            <div class="empty">
+              <span class="empty-icon">📭</span>
+              Ejecuta el plan para<br>ver los archivos generados
+            </div>
+          </div>
+        </div>
+
+        <div id="preview-wrap" style="display:none">
+          <div class="section-label">Vista previa</div>
+          <div class="preview-panel">
+            <div class="preview-header">
+              <span class="preview-filename" id="preview-filename">—</span>
+              <button class="btn-icon-sm" onclick="App.export.copyPreview()" title="Copiar">📋</button>
+              <button class="btn-icon-sm" onclick="App.ui.closePreview()" title="Cerrar">✕</button>
+            </div>
+            <pre class="preview-content" id="preview-content"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-ghost btn-sm" onclick="App.core.clearOutput()">🗑</button>
+        <button class="btn btn-ghost btn-sm" id="btn-manifest" onclick="App.export.copyManifest()" disabled>📋 Manifest</button>
+        <button class="btn btn-teal" id="btn-zip" onclick="App.export.downloadZip()" disabled style="flex:1">
+          📦 Descargar ZIP
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─────────── FOOTER ─────────── -->
+  <footer class="forge-footer">
+    <div class="footer-item">⚡ <strong id="f-files">0</strong> archivos</div>
+    <span class="footer-sep">·</span>
+    <div class="footer-item">⏱ <strong id="f-time">0s</strong></div>
+    <span class="footer-sep">·</span>
+    <div class="footer-item">🐵 mono activo</div>
+    <span class="footer-sep">·</span>
+    <div class="footer-item">#1310</div>
+    <div class="footer-spacer"></div>
+    <div class="footer-zehaha">ZEHAHAHAHA</div>
+    <span class="footer-sep">·</span>
+    <div class="footer-item">Versión educativa · <strong>no usar en producción</strong></div>
+  </footer>
+
+</div><!-- /forge -->
+
+<!-- ─────────── KOAN OVERLAY ─────────── -->
+<div class="koan-overlay" id="koan-overlay">
+  <div class="koan-card">
+    <span class="koan-emoji" id="koan-emoji">🐵</span>
+    <div class="koan-label" id="koan-label">reflexión</div>
+    <div class="koan-quote" id="koan-quote">...</div>
+    <div class="koan-lesson" id="koan-lesson">...</div>
+    <button class="btn btn-ghost" onclick="App.mascot.closeKoan()">Continuar →</button>
+  </div>
+</div>
+
+<!-- ─────────── TOASTS ─────────── -->
+<div class="toast-area" id="toast-area"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FORGE-EXECUTOR v1 · Public Edition
+     JavaScript — Arquitectura modular en objeto global App
+     ════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ────────────────────────────────────────────────────────────
+   App — objeto global que contiene todos los módulos
+   ──────────────────────────────────────────────────────────── */
+const App = {};
+
+/* ────────────────────────────────────────────────────────────
+   App.state — estado central de la aplicación
+   ──────────────────────────────────────────────────────────── */
+App.state = {
+  plan:      null,      // { spec, sorted, totalTokens, estTime }
+  store:     new Map(), // path → { content, size, type }
+  executing: false,
+  t0:        null,
+  previewPath: null
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.utils — utilidades puras (sin efectos de UI)
+   ──────────────────────────────────────────────────────────── */
+App.utils = {
+
+  /* Ordenamiento topológico por DFS.
+     Resuelve dependencias entre archivos antes de generarlos. */
+  topSort(files) {
+    const map = new Map(files.map(f => [f.path, f]));
+    const visited = new Set();
+    const result  = [];
+
+    function visit(file) {
+      if (visited.has(file.path)) return;
+      visited.add(file.path);
+      for (const dep of (file.dependsOn || [])) {
+        const depFile = map.get(dep);
+        if (depFile) visit(depFile);
+      }
+      result.push(file);
+    }
+
+    files.forEach(f => visit(f));
+    return result;
+  },
+
+  /* Estimación de tokens por tipo de archivo */
+  estimateTokens(file) {
+    const estimates = {
+      component: 780, service: 620, types: 280,
+      manifest: 200,  docs: 480,    model: 420
+    };
+    return estimates[file.type] || 350;
+  },
+
+  /* Formateo de bytes legible para humanos */
+  fmtSize(bytes) {
+    if (bytes < 1024)    return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  },
+
+  /* Formateo de tiempo en segundos */
+  fmtTime(ms) {
+    return (ms / 1000).toFixed(1) + 's';
+  },
+
+  /* PascalCase desde cualquier separador */
+  toPascal(str) {
+    return str.replace(/(?:^|[-_./\s])(\w)/g, (_, c) => c.toUpperCase());
+  },
+
+  /* camelCase inicial minúscula */
+  toCamel(str) {
+    const p = App.utils.toPascal(str);
+    return p.charAt(0).toLowerCase() + p.slice(1);
+  },
+
+  /* Nombre de archivo sin extensión */
+  basename(path) {
+    return path.split('/').pop().replace(/\.(ts|tsx|js|jsx|json|md)$/, '');
+  },
+
+  /* Promesa de espera */
+  sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  },
+
+  /* ── VALIDACIÓN DE SEGURIDAD ──────────────────────────────
+     Bloquea rutas maliciosas antes de procesar la especificación.
+     Principio: sanear la entrada, no confiar en el usuario. */
+  validateSpec(spec) {
+    const errors = [];
+
+    if (!spec || typeof spec !== 'object')
+      return ['La especificación debe ser un objeto JSON'];
+
+    if (!spec.project?.name)
+      errors.push('Falta project.name');
+
+    if (!Array.isArray(spec.structure?.files) || !spec.structure.files.length)
+      errors.push('Falta structure.files (array no vacío)');
+
+    const SUPPORTED = new Set(['component','service','types','manifest','docs','model']);
+
+    if (spec.structure?.files) {
+      spec.structure.files.forEach((f, i) => {
+        if (!f.path)
+          errors.push(`Archivo #${i}: falta path`);
+
+        // Bloquear rutas con traversal o caracteres peligrosos
+        if (f.path && (/\.\./.test(f.path) || /[<>:"\\|?*\x00-\x1f]/.test(f.path)))
+          errors.push(`Archivo "${f.path}": ruta insegura — caracteres prohibidos`);
+
+        // Bloquear rutas absolutas
+        if (f.path && /^[/\\]/.test(f.path))
+          errors.push(`Archivo "${f.path}": las rutas deben ser relativas`);
+
+        if (f.type && !SUPPORTED.has(f.type))
+          errors.push(`Archivo "${f.path}": tipo "${f.type}" no soportado. Usa: ${[...SUPPORTED].join(', ')}`);
+
+        // Longitud máxima de ruta
+        if (f.path && f.path.length > 200)
+          errors.push(`Archivo #${i}: ruta demasiado larga (>200 chars)`);
+      });
+    }
+
+    return errors;
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.generators — un generador por tipo de archivo.
+   Cada función recibe (spec, projectSpec, lang) y devuelve
+   una cadena con el contenido del archivo generado.
+   ──────────────────────────────────────────────────────────── */
+App.generators = {
+
+  /* ── component: Componente React con TypeScript ──────────── */
+  component(fileSpec, proj) {
+    const { path, purpose, dependsOn = [] } = fileSpec;
+    const name      = App.utils.toPascal(App.utils.basename(path));
+    const isPage    = /page|Page|screen|Screen/.test(path);
+    const depsImport = dependsOn.map(d =>
+      `// import { ... } from './${App.utils.basename(d)}';`
+    ).join('\n');
+
+    return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+// ⚠ Educational skeleton — review before production use
+
+import React, { useState, useEffect, useCallback } from 'react';
+${depsImport ? depsImport + '\n' : ''}
+/* ─── Props ─────────────────────────────────────────────── */
+interface ${name}Props {
+  /** Additional CSS class names */
+  className?: string;
+  /** Child elements */
+  children?: React.ReactNode;
+  /** Callback fired when user performs an action */
+  onAction?: (action: string, payload?: unknown) => void;
+}
+
+/* ─── Component ─────────────────────────────────────────── */
+export const ${name}: React.FC<${name}Props> = ({
+  className = '',
+  children,
+  onAction,
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /* ${purpose} */
+  useEffect(() => {
+    // TODO: initialize ${name}
+    return () => {
+      // cleanup
+    };
+  }, []);
+
+  const handleAction = useCallback(
+    (action: string, payload?: unknown) => {
+      onAction?.(action, payload);
+    },
+    [onAction]
+  );
+
+  /* Loading state */
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin h-8 w-8 rounded-full border-b-2 border-blue-500" />
+      </div>
+    );
+  }
+
+  /* Error state */
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        {error}
+      </div>
+    );
+  }
+
+  /* Main render */
+  return (
+    <div
+      className={\`${isPage ? 'min-h-screen bg-gray-50 ' : ''}${name.toLowerCase()} \${className}\`}
+      role="${isPage ? 'main' : 'region'}"
+      aria-label="${purpose}"
+    >
+      {children}
+    </div>
+  );
+};
+
+export default ${name};
+`;
+  },
+
+  /* ── service: Servicio de negocio (Node/Express) ─────────── */
+  service(fileSpec, proj) {
+    const { path, purpose, dependsOn = [] } = fileSpec;
+    const name = App.utils.toPascal(App.utils.basename(path));
+    const lang = proj.language || 'typescript';
+
+    if (lang === 'javascript') {
+      return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+// ⚠ Educational skeleton — review before production use
+
+'use strict';
+
+/**
+ * ${name}Service
+ * ${purpose}
+ */
+class ${name}Service {
+  constructor() {
+    /** @type {Map<string, object>} In-memory store (replace with DB) */
+    this._store = new Map();
+  }
+
+  /**
+   * Get all items, optionally filtered
+   * @param {object} [filter={}]
+   * @returns {Promise<object[]>}
+   */
+  async findAll(filter = {}) {
+    const items = Array.from(this._store.values());
+    return items;
+  }
+
+  /**
+   * Get a single item by ID
+   * @param {string} id
+   * @returns {Promise<object|null>}
+   */
+  async findById(id) {
+    return this._store.get(id) ?? null;
+  }
+
+  /**
+   * Create a new item
+   * @param {object} data
+   * @returns {Promise<object>}
+   */
+  async create(data) {
+    const id = \`\${Date.now()}-\${Math.random().toString(36).slice(2, 8)}\`;
+    const item = { id, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    this._store.set(id, item);
+    return item;
+  }
+
+  /**
+   * Update an existing item
+   * @param {string} id
+   * @param {object} data
+   * @returns {Promise<object>}
+   */
+  async update(id, data) {
+    const existing = await this.findById(id);
+    if (!existing) throw new Error(\`Item \${id} not found\`);
+    const updated = { ...existing, ...data, updatedAt: new Date().toISOString() };
+    this._store.set(id, updated);
+    return updated;
+  }
+
+  /**
+   * Delete an item
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async delete(id) {
+    if (!this._store.has(id)) throw new Error(\`Item \${id} not found\`);
+    this._store.delete(id);
+  }
+}
+
+module.exports = { ${name}Service, ${App.utils.toCamel(name)}Service: new ${name}Service() };
+`;
+    }
+
+    // TypeScript version
+    return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+// ⚠ Educational skeleton — review before production use
+
+export interface ${name}Entity {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: unknown;
+}
+
+export interface Create${name}Input extends Omit<${name}Entity, 'id' | 'createdAt' | 'updatedAt'> {}
+export interface Update${name}Input extends Partial<Create${name}Input> {}
+
+/**
+ * ${name}Service
+ * ${purpose}
+ */
+export class ${name}Service {
+  /** Singleton instance */
+  private static _instance: ${name}Service;
+
+  /** In-memory store — replace with real DB in production */
+  private _store = new Map<string, ${name}Entity>();
+
+  private constructor() {}
+
+  static getInstance(): ${name}Service {
+    return (${name}Service._instance ??= new ${name}Service());
+  }
+
+  async findAll(filter?: Partial<${name}Entity>): Promise<${name}Entity[]> {
+    try {
+      let items = Array.from(this._store.values());
+      // TODO: apply filter
+      return items;
+    } catch (err) {
+      throw new Error(\`${name}Service.findAll: \${err instanceof Error ? err.message : err}\`);
+    }
+  }
+
+  async findById(id: string): Promise<${name}Entity | null> {
+    if (!id?.trim()) throw new Error('ID is required');
+    return this._store.get(id) ?? null;
+  }
+
+  async create(data: Create${name}Input): Promise<${name}Entity> {
+    const id   = crypto.randomUUID();
+    const now  = new Date().toISOString();
+    const item: ${name}Entity = { id, ...data, createdAt: now, updatedAt: now };
+    this._store.set(id, item);
+    return item;
+  }
+
+  async update(id: string, data: Update${name}Input): Promise<${name}Entity> {
+    const existing = await this.findById(id);
+    if (!existing) throw new Error(\`${name} \${id} not found\`);
+    const updated: ${name}Entity = {
+      ...existing,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    this._store.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise<void> {
+    if (!(await this.findById(id))) throw new Error(\`${name} \${id} not found\`);
+    this._store.delete(id);
+  }
+}
+
+export const ${App.utils.toCamel(name)}Service = ${name}Service.getInstance();
+`;
+  },
+
+  /* ── types: Definiciones de tipos TypeScript ─────────────── */
+  types(fileSpec, proj) {
+    const { path, purpose } = fileSpec;
+    const name = App.utils.toPascal(App.utils.basename(path));
+    const projName = App.utils.toPascal(proj.name || 'Project');
+
+    return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+
+/* ─── Primitive aliases ──────────────────────────────────── */
+export type ID        = string;
+export type Timestamp = string; // ISO 8601
+
+/* ─── Base entity ────────────────────────────────────────── */
+export interface BaseEntity {
+  id:        ID;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/* ─── ${projName} domain types ────────────────────────── */
+export interface ${name} extends BaseEntity {
+  name:        string;
+  description?: string;
+  isActive:    boolean;
+  metadata?:   Record<string, unknown>;
+}
+
+export interface Create${name}Input
+  extends Omit<${name}, keyof BaseEntity> {}
+
+export interface Update${name}Input
+  extends Partial<Create${name}Input> {}
+
+/* ─── API contract types ─────────────────────────────────── */
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?:   T;
+  error?:  string;
+  message?: string;
+  meta?: {
+    page:    number;
+    limit:   number;
+    total:   number;
+    hasNext: boolean;
+  };
+}
+
+export type ApiError = {
+  code:    string;
+  message: string;
+  field?:  string;
+};
+
+/* ─── UI state types ─────────────────────────────────────── */
+export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+export interface AsyncState<T> {
+  data:    T | null;
+  loading: boolean;
+  error:   string | null;
+}
+`;
+  },
+
+  /* ── manifest: package.json ──────────────────────────────── */
+  manifest(fileSpec, proj) {
+    const { path } = fileSpec;
+    const name = proj.name.toLowerCase().replace(/\s+/g, '-');
+    const fw   = proj.framework || '';
+    const deps: Record<string, string> = {};
+    const dev:  Record<string, string> = {};
+
+    if (fw.includes('react') || proj.type === 'frontend') {
+      Object.assign(deps, { react: '^18.3.0', 'react-dom': '^18.3.0' });
+      Object.assign(dev, {
+        '@types/react': '^18.3.0',
+        '@types/react-dom': '^18.3.0',
+        typescript: '^5.3.0',
+        vite: '^5.1.0',
+        '@vitejs/plugin-react': '^4.2.0'
+      });
+    }
+
+    if (fw.includes('express') || proj.type === 'backend' || proj.type === 'fullstack') {
+      Object.assign(deps, { express: '^4.21.0', cors: '^2.8.5', dotenv: '^16.4.0' });
+      Object.assign(dev, {
+        '@types/express': '^4.17.0',
+        '@types/cors': '^2.8.0',
+        '@types/node': '^20.0.0',
+        typescript: '^5.3.0',
+        'ts-node': '^10.9.0',
+        nodemon: '^3.0.0'
+      });
+    }
+
+    if (!Object.keys(deps).length) {
+      dev.typescript = '^5.3.0';
+    }
+
+    const scripts: Record<string, string> = {
+      start: 'node dist/index.js',
+      dev:   fw.includes('react') ? 'vite' : 'ts-node src/index.ts',
+      build: fw.includes('react') ? 'vite build' : 'tsc',
+      preview: 'vite preview',
+      lint:  'eslint src --ext .ts,.tsx'
+    };
+
+    return JSON.stringify(
+      { name, version: '0.1.0', description: proj.description || '', private: true, scripts, dependencies: deps, devDependencies: dev },
+      null, 2
+    );
+  },
+
+  /* ── docs: README.md ─────────────────────────────────────── */
+  docs(fileSpec, proj, allFiles) {
+    const name    = proj.name || 'Project';
+    const desc    = proj.description || 'Un proyecto generado con FORGE-EXECUTOR.';
+    const fw      = proj.framework || '';
+    const lang    = proj.language || 'typescript';
+    const tree    = (allFiles || []).map(f => `  ${f.path}`).join('\n');
+    const year    = new Date().getFullYear();
+
+    const devCmd  = fw.includes('react') ? 'npm run dev' : 'ts-node src/index.ts';
+    const buildCmd = 'npm run build';
+
+    return `# ${name}
+
+> ${desc}
+
+*Generated by [FORGE-EXECUTOR v1 · Public Edition](https://github.com/forge-executor)*
+*⚠ This is an educational skeleton — review all code before production use.*
+
+---
+
+## 🚀 Quick start
+
+\`\`\`bash
+# 1. Install dependencies
+npm install
+
+# 2. Start in development mode
+${devCmd}
+
+# 3. Build for production
+${buildCmd}
+\`\`\`
+
+## 📦 Tech stack
+
+- **Language**: ${lang}
+- **Framework**: ${fw || 'none'}
+- **Build tool**: ${fw.includes('react') ? 'Vite' : 'TypeScript Compiler'}
+
+## 📁 Project structure
+
+\`\`\`
+${name}/
+${tree}
+\`\`\`
+
+## 🏗 Architecture
+
+This project was scaffolded using **FORGE-EXECUTOR** multi-agent generation:
+
+| Agent      | Responsibility                        |
+|------------|---------------------------------------|
+| Component  | React UI components with TypeScript   |
+| Service    | Business logic & data access layer    |
+| Types      | Shared TypeScript type definitions    |
+| Manifest   | Package config & dependencies         |
+| Docs       | This documentation                    |
+| Model      | Data models & entity definitions      |
+
+## ⚠ Important notes
+
+1. All generated code is a **scaffold** — not production-ready.
+2. Replace the in-memory stores with real databases.
+3. Add proper authentication and authorization.
+4. Review all TODOs before shipping.
+
+## 📜 License
+
+MIT © ${year}
+
+---
+
+*"El README que no escribiste hoy será el error que no encontrarás mañana." — El Mono, Koan #8*
+`;
+  },
+
+  /* ── model: Modelo de datos (TypeORM o clase plana) ──────── */
+  model(fileSpec, proj) {
+    const { path, purpose } = fileSpec;
+    const name = App.utils.toPascal(App.utils.basename(path));
+    const lang = proj.language || 'typescript';
+
+    if (lang === 'javascript') {
+      return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+// ⚠ Educational skeleton — review before production use
+
+'use strict';
+
+/**
+ * ${name} — Data model
+ * ${purpose}
+ */
+class ${name} {
+  /**
+   * @param {object} [data={}] - Initial data
+   */
+  constructor(data = {}) {
+    this.id          = data.id ?? null;
+    this.name        = data.name ?? '';
+    this.description = data.description ?? null;
+    this.isActive    = data.isActive ?? true;
+    this.metadata    = data.metadata ?? {};
+    this.createdAt   = data.createdAt ?? new Date().toISOString();
+    this.updatedAt   = data.updatedAt ?? new Date().toISOString();
+  }
+
+  /** Serialize to plain object */
+  toJSON() {
+    return {
+      id:          this.id,
+      name:        this.name,
+      description: this.description,
+      isActive:    this.isActive,
+      createdAt:   this.createdAt,
+    };
+  }
+
+  /** Validate required fields */
+  validate() {
+    const errors = [];
+    if (!this.name?.trim()) errors.push('name is required');
+    return errors;
+  }
+
+  /** Convenience factory */
+  static create(data) {
+    const m = new ${name}(data);
+    const errs = m.validate();
+    if (errs.length) throw new Error(errs.join('; '));
+    return m;
+  }
+}
+
+module.exports = { ${name} };
+`;
+    }
+
+    // TypeScript + TypeORM decorators
+    return `// ${path}
+// ${purpose}
+// Generated by FORGE-EXECUTOR v1 · Public Edition
+// ⚠ Educational skeleton — review before production use
+
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+
+/**
+ * ${name} entity
+ * ${purpose}
+ */
+@Entity({ name: '${name.toLowerCase()}s' })
+export class ${name} {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  @Index()
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @Column({ type: 'jsonb', nullable: true, default: '{}' })
+  metadata: Record<string, unknown>;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
+
+  constructor(partial?: Partial<${name}>) {
+    if (partial) Object.assign(this, partial);
+  }
+
+  /** Serialize to safe public shape */
+  toJSON() {
+    return {
+      id:          this.id,
+      name:        this.name,
+      description: this.description,
+      isActive:    this.isActive,
+      createdAt:   this.createdAt?.toISOString(),
+      updatedAt:   this.updatedAt?.toISOString(),
+    };
+  }
+}
+`;
+  },
+
+  /* ── dispatch: redirige al generador correcto ────────────── */
+  generate(fileSpec, proj, allFiles) {
+    try {
+      const genFn = App.generators[fileSpec.type];
+      if (!genFn) return `// ${fileSpec.path}\n// Type "${fileSpec.type}" not supported in this edition.\n`;
+
+      let content = genFn.call(App.generators, fileSpec, proj, allFiles);
+      // Normalizar: eliminar trailing spaces por línea, asegurar newline final
+      content = content.replace(/ +$/gm, '');
+      if (!content.endsWith('\n')) content += '\n';
+      return content;
+    } catch (err) {
+      return `// ${fileSpec.path}\n// ERROR generating: ${err.message}\n`;
+    }
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.ui — renderizado y actualización de la interfaz
+   ──────────────────────────────────────────────────────────── */
+App.ui = {
+
+  /* Typewriter effect para el discurso del mono */
+  _monoTimer: null,
+  setMonoSpeech(text) {
+    clearInterval(this._monoTimer);
+    const el = document.getElementById('mono-speech');
+    el.textContent = '';
+    let i = 0;
+    this._monoTimer = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) clearInterval(this._monoTimer);
+    }, 18);
+  },
+
+  /* Animar la cara del mono */
+  animateMono(mood = 'idle') {
+    const face = document.getElementById('mono-face');
+    const moods = {
+      idle:     { emoji: '🐵', cls: '' },
+      thinking: { emoji: '🤔', cls: '' },
+      working:  { emoji: '⚙️', cls: 'spin' },
+      happy:    { emoji: '🎉', cls: 'bounce' },
+      worried:  { emoji: '😰', cls: 'shake' },
+      sleeping: { emoji: '😴', cls: '' }
+    };
+    const m = moods[mood] || moods.idle;
+    face.textContent = m.emoji;
+    face.className   = `mono-face-wrap ${m.cls}`;
+  },
+
+  /* Barra de progreso */
+  setProgress(pct) {
+    document.getElementById('prog-fill').style.width = Math.min(100, pct) + '%';
+  },
+
+  /* Log de ejecución */
+  log(type, icon, text) {
+    const log = document.getElementById('exec-log');
+    const ts  = App.state.t0 ? App.utils.fmtTime(Date.now() - App.state.t0) : '00.0s';
+    const div = document.createElement('div');
+    div.className = `log-entry log-${type}`;
+    div.innerHTML  = `<span class="log-ts">${ts}</span><span class="log-icon">${icon}</span><span class="log-text">${text}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  },
+
+  /* Árbol de archivos en panel 2 */
+  renderFileTree(sorted) {
+    const tree = document.getElementById('file-tree');
+    tree.innerHTML = '';
+
+    sorted.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'tree-row';
+      row.style.animationDelay = `${i * 30}ms`;
+
+      const badgeClass = `tree-type-badge badge-${f.type || 'unknown'}`;
+      const typeLabel  = (f.type || '?').substring(0, 8).toUpperCase();
+      const shortPath  = f.path;
+
+      row.innerHTML = `
+        <span class="${badgeClass}">${typeLabel}</span>
+        <span class="tree-path" title="${f.path}">${shortPath}</span>
+        <span class="tree-size">~${App.utils.estimateTokens(f)} tkns</span>
+      `;
+      tree.appendChild(row);
+    });
+  },
+
+  /* Leyenda de agentes usados */
+  renderAgentLegend(sorted) {
+    const counts = {};
+    sorted.forEach(f => { counts[f.type] = (counts[f.type] || 0) + 1; });
+
+    const wrap   = document.getElementById('agent-legend-wrap');
+    const legend = document.getElementById('agent-legend');
+    legend.innerHTML = '<div class="legend-title">Agentes involucrados</div>';
+
+    const labels = {
+      component: '🧩 Component  — React + TS',
+      service:   '⚙️  Service    — Node.js lógica',
+      types:     '📝 Types      — TypeScript',
+      manifest:  '📦 Manifest   — package.json',
+      docs:      '📚 Docs       — README.md',
+      model:     '🗄️  Model      — Entidad de datos'
+    };
+
+    Object.entries(counts).forEach(([type, count]) => {
+      const row  = document.createElement('div');
+      row.className = 'legend-row';
+      const badgeClass = `tree-type-badge badge-${type}`;
+      row.innerHTML = `
+        <span class="${badgeClass}">${type.toUpperCase()}</span>
+        <span class="legend-count">${count}</span>
+        <span class="legend-label">${labels[type] || type}</span>
+      `;
+      legend.appendChild(row);
+    });
+
+    wrap.style.display = 'block';
+  },
+
+  /* Añadir archivo a la lista de salida */
+  appendOutputItem(path, size, type, idx) {
+    const list = document.getElementById('out-list');
+    // Eliminar empty state al primer archivo
+    if (idx === 0) list.innerHTML = '';
+
+    const item = document.createElement('div');
+    item.className = 'out-item';
+    item.style.animationDelay = `${idx * 25}ms`;
+
+    const badgeClass = `tree-type-badge badge-${type || 'unknown'}`;
+    item.innerHTML = `
+      <span class="${badgeClass}">${(type || '?').substring(0,8).toUpperCase()}</span>
+      <span class="out-path" title="${path}">${path}</span>
+      <span class="out-size">${App.utils.fmtSize(size)}</span>
+      <button class="btn-icon-sm" onclick="App.ui.openPreview('${path}')" title="Ver">👁</button>
+      <button class="btn-icon-sm" onclick="App.export.downloadFile('${path}')" title="Descargar">📥</button>
+    `;
+    list.appendChild(item);
+  },
+
+  /* Vista previa de un archivo */
+  openPreview(path) {
+    const data = App.state.store.get(path);
+    if (!data) return;
+    App.state.previewPath = path;
+    document.getElementById('preview-filename').textContent = path;
+    document.getElementById('preview-content').textContent  = data.content;
+    document.getElementById('preview-wrap').style.display   = 'block';
+    document.getElementById('preview-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  },
+
+  closePreview() {
+    document.getElementById('preview-wrap').style.display = 'none';
+    App.state.previewPath = null;
+  },
+
+  /* Limpiar todo */
+  clearSpec() {
+    document.getElementById('spec-input').value = '';
+    this.setMonoSpeech('Especificación limpiada. Lista para empezar de nuevo.');
+  },
+
+  /* Cargar ejemplo */
+  loadExample(id) {
+    const ex = App.examples[id];
+    if (!ex) return;
+    document.getElementById('spec-input').value = JSON.stringify(ex, null, 2);
+    this.setMonoSpeech(`Ejemplo '${ex.project.name}' cargado. Pulsa "Generar plan".`);
+    this.animateMono('idle');
+  },
+
+  /* Toggle de tema oscuro/claro */
+  toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.dataset.theme === 'dark';
+    html.dataset.theme = isDark ? 'light' : 'dark';
+    document.getElementById('btn-theme').textContent = isDark ? '☀ claro' : '☾ oscuro';
+    localStorage.setItem('forge-theme', html.dataset.theme);
+  },
+
+  /* Toast de notificación */
+  toast(msg, type = 'ok', ms = 2800) {
+    const area  = document.getElementById('toast-area');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    area.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.3s, transform 0.3s';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(6px)';
+      setTimeout(() => toast.remove(), 300);
+    }, ms);
+  },
+
+  /* Actualizar métricas del header */
+  updateHeaderStats({ files = 0, tokens = '0k' } = {}) {
+    document.getElementById('hc-files').textContent  = files;
+    document.getElementById('hc-tokens').textContent = tokens;
+    document.getElementById('f-files').textContent   = files;
+  },
+
+  /* Actualizar resumen de salida */
+  updateOutputSummary({ count = 0, size = '0 B', time = '—' } = {}) {
+    document.getElementById('out-count').textContent    = count;
+    document.getElementById('out-size').textContent     = size;
+    document.getElementById('out-time').textContent     = time;
+    document.getElementById('badge-output').textContent = `${count} archivos`;
+    document.getElementById('badge-output').className   = count > 0 ? 'ph-badge done' : 'ph-badge';
+    document.getElementById('f-time').textContent       = time;
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.mascot — mono filósofo y koans
+   ──────────────────────────────────────────────────────────── */
+App.mascot = {
+
+  _resolve: null,
+
+  KOANS: [
+    {
+      label: 'sobre la planificación',
+      emoji: '📋🐵',
+      quote: 'El mono que planifica demasiado, nunca construye. El que construye sin plan, nunca termina.',
+      lesson: 'La arquitectura emerge del equilibrio entre visión y acción.'
+    },
+    {
+      label: 'sobre el código',
+      emoji: '💻🐵',
+      quote: 'Cada función que escribes es un ladrillo. La arquitectura es la casa. El mono vive en el tejado.',
+      lesson: 'Piensa en la estructura global antes de escribir cada línea.'
+    },
+    {
+      label: 'sobre los tipos',
+      emoji: '📝🐵',
+      quote: 'Los tipos son promesas que el compilador vigila. El mono también vigila.',
+      lesson: 'Un sistema de tipos fuerte es documentación ejecutable.'
+    },
+    {
+      label: 'sobre los errores',
+      emoji: '🤔🐵',
+      quote: 'El código falla. El mono observa. El mono no juzga. Solo espera que aprendas.',
+      lesson: 'Los errores son maestros disfrazados de problemas.'
+    },
+    {
+      label: 'sobre la documentación',
+      emoji: '📚🐵',
+      quote: 'El README que no escribiste hoy será el error que no encontrarás mañana.',
+      lesson: 'Documenta mientras recuerdas. Tu yo futuro lo agradecerá.'
+    },
+    {
+      label: 'sobre las dependencias',
+      emoji: '🕸🐵',
+      quote: 'Las dependencias forman un árbol. El mono trepa con cuidado cada rama.',
+      lesson: 'El orden topológico existe para que construyas sobre cimientos sólidos.'
+    },
+    {
+      label: 'sobre la simplicidad',
+      emoji: '✨🐵',
+      quote: 'El mejor código es el que no existe. El segundo mejor es el que entiende alguien más.',
+      lesson: 'La versión pública es pequeña adrede. La complejidad se gana.'
+    },
+    {
+      label: 'sobre los esqueletos',
+      emoji: '💀🐵',
+      quote: 'Este código es un esqueleto. Tú eres el espíritu que lo anima.',
+      lesson: 'El generador produce estructura. El developer produce valor.'
+    },
+    {
+      label: 'sobre el #1310',
+      emoji: '🔢🐵',
+      quote: 'El número 1310 no es un versión. Es una tradición. Y el mono la respeta.',
+      lesson: 'Los proyectos tienen historia. Conocer el origen da perspectiva.'
+    }
+  ],
+
+  koan(phase) {
+    const koans = phase
+      ? this.KOANS.filter(k => k.label.includes(phase))
+      : this.KOANS;
+    const k = koans[Math.floor(Math.random() * koans.length)];
+    document.getElementById('koan-emoji').textContent  = k.emoji;
+    document.getElementById('koan-label').textContent  = k.label;
+    document.getElementById('koan-quote').textContent  = k.quote;
+    document.getElementById('koan-lesson').textContent = k.lesson;
+    document.getElementById('koan-overlay').classList.add('open');
+    return new Promise(r => { this._resolve = r; });
+  },
+
+  closeKoan() {
+    document.getElementById('koan-overlay').classList.remove('open');
+    if (this._resolve) { this._resolve(); this._resolve = null; }
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.examples — especificaciones de ejemplo
+   ──────────────────────────────────────────────────────────── */
+App.examples = {
+  todo: {
+    project: {
+      name: 'TodoApp',
+      type: 'frontend',
+      language: 'typescript',
+      framework: 'react',
+      description: 'App de tareas con estado local y filtros'
+    },
+    structure: { files: [
+      { path: 'src/types.ts',                  purpose: 'Tipos globales: Task, Filter, Status',       type: 'types',     dependsOn: [] },
+      { path: 'src/hooks/useTasks.ts',          purpose: 'Hook para gestión de tareas (localStorage)', type: 'service',   dependsOn: ['src/types.ts'] },
+      { path: 'src/components/TaskItem.tsx',    purpose: 'Componente de tarea individual con toggle',  type: 'component', dependsOn: ['src/types.ts'] },
+      { path: 'src/components/TaskList.tsx',    purpose: 'Lista filtrable de tareas',                  type: 'component', dependsOn: ['src/types.ts', 'src/components/TaskItem.tsx'] },
+      { path: 'src/App.tsx',                    purpose: 'Componente raíz con estado global',          type: 'component', dependsOn: ['src/hooks/useTasks.ts', 'src/components/TaskList.tsx'] },
+      { path: 'package.json',                   purpose: 'Dependencias del proyecto',                  type: 'manifest',  dependsOn: [] },
+      { path: 'README.md',                      purpose: 'Documentación del proyecto',                 type: 'docs',      dependsOn: [] }
+    ]}
+  },
+  api: {
+    project: {
+      name: 'BlogAPI',
+      type: 'backend',
+      language: 'typescript',
+      framework: 'express',
+      description: 'API REST para un blog con posts y comentarios'
+    },
+    structure: { files: [
+      { path: 'src/types.ts',                   purpose: 'Tipos: Post, Comment, User, ApiResponse', type: 'types',     dependsOn: [] },
+      { path: 'src/models/Post.ts',             purpose: 'Entidad Post con TypeORM',                type: 'model',     dependsOn: ['src/types.ts'] },
+      { path: 'src/models/Comment.ts',          purpose: 'Entidad Comment relacionada a Post',      type: 'model',     dependsOn: ['src/types.ts', 'src/models/Post.ts'] },
+      { path: 'src/services/PostService.ts',    purpose: 'CRUD de posts con paginación',            type: 'service',   dependsOn: ['src/models/Post.ts'] },
+      { path: 'src/services/CommentService.ts', purpose: 'CRUD de comentarios por post',            type: 'service',   dependsOn: ['src/models/Comment.ts'] },
+      { path: 'package.json',                   purpose: 'Dependencias backend Express + TypeORM',  type: 'manifest',  dependsOn: [] },
+      { path: 'README.md',                      purpose: 'Documentación de la API y endpoints',     type: 'docs',      dependsOn: [] }
+    ]}
+  },
+  fullstack: {
+    project: {
+      name: 'ShopFull',
+      type: 'fullstack',
+      language: 'typescript',
+      framework: 'react+express',
+      description: 'Tienda online con carrito, autenticación y panel admin'
+    },
+    structure: { files: [
+      { path: 'shared/types.ts',                    purpose: 'Tipos compartidos: Product, User, Order',    type: 'types',     dependsOn: [] },
+      { path: 'backend/models/Product.ts',          purpose: 'Entidad producto con precio e inventario',   type: 'model',     dependsOn: ['shared/types.ts'] },
+      { path: 'backend/models/Order.ts',            purpose: 'Entidad pedido con líneas y estado',         type: 'model',     dependsOn: ['shared/types.ts', 'backend/models/Product.ts'] },
+      { path: 'backend/services/ProductService.ts', purpose: 'CRUD productos con búsqueda y filtros',      type: 'service',   dependsOn: ['backend/models/Product.ts'] },
+      { path: 'backend/services/OrderService.ts',   purpose: 'Gestión de pedidos y stock',                 type: 'service',   dependsOn: ['backend/models/Order.ts', 'backend/services/ProductService.ts'] },
+      { path: 'frontend/components/ProductCard.tsx','purpose': 'Tarjeta de producto con imagen y precio',  type: 'component', dependsOn: ['shared/types.ts'] },
+      { path: 'frontend/components/CartSidebar.tsx','purpose': 'Carrito lateral con resumen y checkout',   type: 'component', dependsOn: ['shared/types.ts', 'frontend/components/ProductCard.tsx'] },
+      { path: 'frontend/pages/ShopPage.tsx',        purpose: 'Página principal de la tienda',              type: 'component', dependsOn: ['frontend/components/ProductCard.tsx', 'frontend/components/CartSidebar.tsx'] },
+      { path: 'package.json',                       purpose: 'Monorepo package con workspaces',            type: 'manifest',  dependsOn: [] },
+      { path: 'README.md',                          purpose: 'Guía completa del proyecto fullstack',       type: 'docs',      dependsOn: [] }
+    ]}
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.core — lógica principal (plan + execute)
+   ──────────────────────────────────────────────────────────── */
+App.core = {
+
+  /* GENERAR PLAN: valida, ordena y muestra el árbol */
+  plan() {
+    const raw = document.getElementById('spec-input').value.trim();
+    if (!raw) {
+      App.ui.setMonoSpeech('El mono necesita una especificación. No puede forjar el vacío.');
+      App.ui.animateMono('worried');
+      App.ui.toast('Pega una especificación JSON primero', 'warn');
+      return;
+    }
+
+    // 1. Parsear JSON
+    let spec;
+    try {
+      spec = JSON.parse(raw);
+    } catch (e) {
+      App.ui.log('err', '✕', `JSON inválido: ${e.message}`);
+      App.ui.setMonoSpeech('JSON inválido. El mono no puede leer eso.');
+      App.ui.animateMono('worried');
+      return;
+    }
+
+    // 2. Validar (seguridad y estructura)
+    const errors = App.utils.validateSpec(spec);
+    if (errors.length) {
+      errors.forEach(e => App.ui.log('err', '✕', e));
+      App.ui.setMonoSpeech(`Especificación inválida. ${errors.length} error(es) encontrado(s).`);
+      App.ui.animateMono('worried');
+      document.getElementById('badge-plan').textContent = 'error';
+      document.getElementById('badge-plan').className   = 'ph-badge';
+      return;
+    }
+
+    // 3. Ordenar topológicamente
+    const sorted = App.utils.topSort(spec.structure.files);
+
+    // 4. Calcular métricas
+    const totalTokens = sorted.reduce((a, f) => a + App.utils.estimateTokens(f), 0);
+    const estTime     = Math.max(1, Math.ceil(totalTokens / 1200));
+
+    App.state.plan = { spec, sorted, totalTokens, estTime };
+
+    // 5. Actualizar UI
+    document.getElementById('ps-files').textContent  = sorted.length;
+    document.getElementById('ps-tokens').textContent = (totalTokens / 1000).toFixed(1) + 'k';
+    document.getElementById('ps-eta').textContent    = estTime;
+
+    document.getElementById('badge-plan').textContent = 'listo';
+    document.getElementById('badge-plan').className   = 'ph-badge ok';
+
+    App.ui.renderFileTree(sorted);
+    App.ui.renderAgentLegend(sorted);
+    App.ui.updateHeaderStats({
+      files: sorted.length,
+      tokens: (totalTokens / 1000).toFixed(1) + 'k'
+    });
+
+    document.getElementById('btn-execute').disabled = false;
+
+    App.ui.log('ok', '✓', `Plan: ${sorted.length} archivos · ~${totalTokens} tokens · ~${estTime}s`);
+    App.ui.log('hi', '◈', 'Orden topológico resuelto. Sin dependencias circulares.');
+    App.ui.setMonoSpeech(`Plan listo. ${sorted.length} archivos en cola. ¿Ejecutamos?`);
+    App.ui.animateMono('thinking');
+
+    // Guardar spec en localStorage
+    try { localStorage.setItem('forge-last-spec', raw); } catch(e) { /* silent */ }
+
+    App.mascot.koan('planificación');
+  },
+
+  /* EJECUTAR PLAN: genera los archivos uno por uno */
+  async execute() {
+    if (!App.state.plan || App.state.executing) return;
+
+    App.state.executing = true;
+    App.state.t0        = Date.now();
+    App.state.store.clear();
+
+    const { sorted, spec } = App.state.plan;
+    const proj             = spec.project;
+
+    // UI setup
+    document.getElementById('btn-execute').disabled = true;
+    document.getElementById('btn-plan').disabled    = true;
+    document.getElementById('badge-plan').textContent = 'ejecutando';
+    document.getElementById('badge-plan').className   = 'ph-badge live';
+
+    App.ui.animateMono('working');
+    App.ui.setMonoSpeech(`Forjando ${sorted.length} archivos... El mono trabaja.`);
+    App.ui.setProgress(5);
+
+    App.ui.log('hi', '▶', `Iniciando: ${sorted.length} archivos · ${proj.language || 'ts'} · ${proj.name}`);
+
+    // Generar cada archivo
+    for (let i = 0; i < sorted.length; i++) {
+      const fileSpec = sorted[i];
+      const pct      = Math.round((i + 1) / sorted.length * 85) + 5;
+
+      App.ui.setProgress(pct);
+
+      // Pequeño delay para dar sensación de ejecución real y no bloquear el navegador
+      await App.utils.sleep(45 + Math.random() * 90);
+
+      const content = App.generators.generate(fileSpec, proj, sorted);
+      const size    = new Blob([content]).size;
+      App.state.store.set(fileSpec.path, { content, size, type: fileSpec.type });
+
+      App.ui.appendOutputItem(fileSpec.path, size, fileSpec.type, i);
+      App.ui.log('ok', '✓', `[${fileSpec.type}] ${fileSpec.path} · ${App.utils.fmtSize(size)}`);
+    }
+
+    // Completado
+    App.ui.setProgress(100);
+    const elapsed   = Date.now() - App.state.t0;
+    const totalSize = Array.from(App.state.store.values()).reduce((a, v) => a + v.size, 0);
+
+    App.ui.updateOutputSummary({
+      count: sorted.length,
+      size: App.utils.fmtSize(totalSize),
+      time: App.utils.fmtTime(elapsed)
+    });
+
+    document.getElementById('badge-plan').textContent = 'completado';
+    document.getElementById('badge-plan').className   = 'ph-badge done';
+
+    // Habilitar botones de exportación
+    document.getElementById('btn-zip').disabled      = false;
+    document.getElementById('btn-manifest').disabled = false;
+    document.getElementById('btn-execute').disabled  = false;
+    document.getElementById('btn-plan').disabled     = false;
+
+    App.ui.log('ok', '★', `¡Completado! ${sorted.length} archivos en ${App.utils.fmtTime(elapsed)} · ${App.utils.fmtSize(totalSize)}`);
+    App.ui.setMonoSpeech(`${sorted.length} archivos forjados en ${App.utils.fmtTime(elapsed)}. ¡Descarga el ZIP!`);
+    App.ui.animateMono('happy');
+    App.ui.toast(`✓ ${sorted.length} archivos generados en ${App.utils.fmtTime(elapsed)}`, 'ok');
+
+    App.state.executing = false;
+    App.mascot.koan('esqueletos');
+  },
+
+  /* Limpiar plan */
+  clearPlan() {
+    App.state.plan = null;
+    document.getElementById('file-tree').innerHTML = '<div class="tree-empty"><span class="tree-empty-icon">🗂</span>Genera un plan para ver<br>el árbol de archivos</div>';
+    document.getElementById('agent-legend-wrap').style.display = 'none';
+    document.getElementById('ps-files').textContent  = '—';
+    document.getElementById('ps-tokens').textContent = '—';
+    document.getElementById('ps-eta').textContent    = '—';
+    document.getElementById('badge-plan').textContent = 'pendiente';
+    document.getElementById('badge-plan').className   = 'ph-badge';
+    document.getElementById('btn-execute').disabled   = true;
+    App.ui.setProgress(0);
+  },
+
+  /* Limpiar salida */
+  clearOutput() {
+    App.state.store.clear();
+    document.getElementById('out-list').innerHTML = '<div class="empty"><span class="empty-icon">📭</span>Ejecuta el plan para<br>ver los archivos generados</div>';
+    App.ui.updateOutputSummary();
+    document.getElementById('btn-zip').disabled      = true;
+    document.getElementById('btn-manifest').disabled = true;
+    App.ui.closePreview();
+    App.ui.setProgress(0);
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   App.export — descarga y portapapeles
+   ──────────────────────────────────────────────────────────── */
+App.export = {
+
+  /* Descargar archivo individual */
+  downloadFile(path) {
+    const data = App.state.store.get(path);
+    if (!data) return;
+    const blob = new Blob([data.content], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = path.split('/').pop();
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  /* Descargar ZIP completo */
+  async downloadZip() {
+    if (!App.state.store.size) return;
+
+    if (typeof JSZip === 'undefined') {
+      App.ui.toast('JSZip no disponible. Comprueba tu conexión.', 'warn');
+      return;
+    }
+
+    App.ui.setMonoSpeech('El mono empaqueta el proyecto...');
+    App.ui.animateMono('working');
+
+    const zip     = new JSZip();
+    const projName = App.state.plan?.spec?.project?.name || 'forge-project';
+    const folder  = zip.folder(projName);
+
+    App.state.store.forEach((data, path) => {
+      folder.file(path, data.content);
+    });
+
+    try {
+      const blob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href    = url;
+      a.download = `${projName}-forge-v1.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      App.ui.log('ok', '📦', `ZIP descargado: ${projName}-forge-v1.zip (${App.utils.fmtSize(blob.size)})`);
+      App.ui.setMonoSpeech('ZIP descargado. El código es tuyo ahora. Úsalo con sabiduría.');
+      App.ui.animateMono('happy');
+      App.ui.toast(`📦 ${projName}-forge-v1.zip descargado`, 'ok');
+    } catch (err) {
+      App.ui.log('err', '✕', `Error generando ZIP: ${err.message}`);
+      App.ui.toast('Error generando ZIP', 'warn');
+    }
+  },
+
+  /* Copiar manifiesto (lista de archivos) */
+  copyManifest() {
+    if (!App.state.store.size) return;
+    const proj = App.state.plan?.spec?.project;
+    const lines = [
+      `# FORGE-EXECUTOR v1 · Public Edition — Manifiesto`,
+      `# Proyecto: ${proj?.name || '—'}`,
+      `# Generado: ${new Date().toISOString()}`,
+      `# ZEHAHAHAHA`,
+      '',
+      ...Array.from(App.state.store.entries()).map(
+        ([path, d]) => `${path} (${App.utils.fmtSize(d.size)}) [${d.type}]`
+      )
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      App.ui.setMonoSpeech('Manifiesto copiado al portapapeles.');
+      App.ui.toast('📋 Manifiesto copiado', 'ok', 1800);
+    });
+  },
+
+  /* Copiar contenido de la vista previa */
+  copyPreview() {
+    const data = App.state.store.get(App.state.previewPath);
+    if (!data) return;
+    navigator.clipboard.writeText(data.content).then(() => {
+      App.ui.toast('📋 Copiado al portapapeles', 'ok', 1800);
+    });
+  }
+};
+
+/* ────────────────────────────────────────────────────────────
+   INICIALIZACIÓN
+   ──────────────────────────────────────────────────────────── */
+(function init() {
+
+  // 1. Restaurar tema guardado
+  const savedTheme = localStorage.getItem('forge-theme');
+  if (savedTheme && savedTheme !== 'dark') {
+    document.documentElement.dataset.theme = savedTheme;
+    document.getElementById('btn-theme').textContent = '☀ claro';
+  }
+
+  // 2. Restaurar última especificación (si existe)
+  const lastSpec = localStorage.getItem('forge-last-spec');
+  if (lastSpec) {
+    document.getElementById('spec-input').value = lastSpec;
+    App.ui.log('hi', '💾', 'Última especificación restaurada desde localStorage');
+    App.ui.setMonoSpeech('Última spec restaurada. Genera el plan cuando estés listo.');
+  } else {
+    // Cargar el ejemplo 'todo' por defecto para nuevos usuarios
+    App.ui.loadExample('todo');
+  }
+
+  // 3. Atajos de teclado
+  document.getElementById('spec-input').addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); App.core.plan(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      App.mascot.closeKoan();
+      App.ui.closePreview();
+    }
+  });
+
+  // 4. Log inicial
+  App.ui.log('hi', '◈', '6 agentes listos: Component, Service, Types, Manifest, Docs, Model');
+  App.ui.log('hi', '◈', 'Versión pública educativa · Código generado = esqueleto, no producción');
+
+  // 5. Mood inicial del mono
+  App.ui.animateMono('idle');
+
+})();
+</script>
+
+</body>
+</html>
