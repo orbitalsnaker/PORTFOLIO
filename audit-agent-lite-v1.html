@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUDIT-AGENT · LITE v1.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-0: #080b0f;
+  --bg-1: #0d1117;
+  --bg-2: #161b22;
+  --bg-3: #1c2230;
+  --bg-4: #21273a;
+  --border: #2a3347;
+  --border-hi: #3d4f6e;
+  --text-0: #e8edf5;
+  --text-1: #8b98b0;
+  --text-2: #5a6478;
+  --ac-main: #f59e0b;
+  --ac-dim: #b45309;
+  --ac-glow: rgba(245,158,11,0.15);
+  --ac-bottle: #ef4444;
+  --ac-bottle-glow: rgba(239,68,68,0.15);
+  --ac-ok: #10b981;
+  --ac-ok-glow: rgba(16,185,129,0.12);
+  --ac-blue: #38bdf8;
+  --ac-purple: #a78bfa;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui: 'Space Grotesk', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-0);
+  color: var(--text-0);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 70% 0%, rgba(245,158,11,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 80%, rgba(56,189,248,0.04) 0%, transparent 50%);
+}
+
+/* ─── HEADER ─────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.app-logo {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ac-main);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-logo .badge {
+  font-size: 9px;
+  background: var(--ac-main);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.header-stats {
+  display: flex;
+  gap: 20px;
+  margin-left: auto;
+}
+.stat-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-chip .val { color: var(--ac-main); font-weight: 600; }
+.stat-chip .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ac-ok);
+  box-shadow: 0 0 6px var(--ac-ok);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+
+/* ─── MONKEY ─────────────────────────────────────── */
+.monkey-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 28px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.monkey-avatar {
+  font-size: 24px;
+  filter: drop-shadow(0 0 8px rgba(245,158,11,0.4));
+  transition: all 0.3s;
+}
+.monkey-msg {
+  font-family: var(--font-mono);
+  color: var(--text-1);
+  font-size: 12px;
+  flex: 1;
+}
+.monkey-msg span { color: var(--ac-main); }
+.audits-left {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  margin-left: auto;
+}
+.audits-left strong { color: var(--ac-main); }
+
+/* ─── LAYOUT ─────────────────────────────────────── */
+.app-body {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 0;
+  height: calc(100vh - 110px);
+  overflow: hidden;
+}
+
+/* ─── LEFT PANEL ──────────────────────────────────── */
+.panel-left {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-1);
+}
+.panel-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+textarea.process-input {
+  width: 100%;
+  min-height: 200px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 14px;
+  resize: vertical;
+  transition: border-color 0.2s;
+  outline: none;
+}
+textarea.process-input:focus {
+  border-color: var(--ac-main);
+  box-shadow: 0 0 0 2px var(--ac-glow);
+}
+textarea.process-input::placeholder { color: var(--text-2); }
+
+.hint-text {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+
+/* Steps builder */
+.steps-list { display: flex; flex-direction: column; gap: 8px; }
+.step-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ac-main);
+  min-width: 22px;
+  padding-top: 9px;
+}
+.step-inputs { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.step-inputs input, .step-inputs select {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.step-inputs input:focus, .step-inputs select:focus { border-color: var(--ac-main); }
+.step-inputs .inp-desc { flex: 1; min-width: 100px; }
+.step-inputs .inp-time { width: 70px; }
+.step-inputs select { width: 110px; }
+.btn-rm {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+.btn-rm:hover { border-color: var(--ac-bottle); color: var(--ac-bottle); }
+
+.btn-add-step {
+  background: none;
+  border: 1px dashed var(--border-hi);
+  color: var(--text-1);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  width: 100%;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+.btn-add-step:hover {
+  border-color: var(--ac-main);
+  color: var(--ac-main);
+  background: var(--ac-glow);
+}
+
+/* Buttons */
+.btn-audit {
+  width: 100%;
+  padding: 14px;
+  background: var(--ac-main);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-audit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.btn-audit:hover::before { opacity: 1; }
+.btn-audit:hover { box-shadow: 0 0 20px var(--ac-glow); }
+.btn-audit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.progress-bar-wrap {
+  height: 3px;
+  background: var(--bg-3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 12px;
+  display: none;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ac-dim), var(--ac-main));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.btn-export {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text-0);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  transition: all 0.2s;
+  flex: 1;
+}
+.btn-export:hover { border-color: var(--ac-main); color: var(--ac-main); }
+
+/* ─── RIGHT PANEL ─────────────────────────────────── */
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+
+/* Tabs */
+.tabs-bar {
+  display: flex;
+  gap: 2px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  overflow-x: auto;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab-btn:hover { color: var(--text-1); }
+.tab-btn.active {
+  color: var(--ac-main);
+  border-bottom-color: var(--ac-main);
+}
+.tab-icon { font-size: 14px; }
+
+.tabs-content { flex: 1; overflow-y: auto; padding: 24px; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  gap: 16px;
+}
+.empty-icon { font-size: 48px; opacity: 0.3; }
+.empty-title { font-size: 18px; font-weight: 600; color: var(--text-1); }
+.empty-sub { font-size: 13px; color: var(--text-2); font-family: var(--font-mono); max-width: 380px; line-height: 1.7; }
+
+/* ─── METRICS GRID ────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.metric-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent, var(--ac-main));
+}
+.metric-card.bottleneck-card {
+  --accent: var(--ac-bottle);
+  border-color: rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.04);
+}
+.metric-card.ok-card { --accent: var(--ac-ok); }
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-0);
+  line-height: 1;
+}
+.metric-value.warn { color: var(--ac-bottle); }
+.metric-value.ok { color: var(--ac-ok); }
+.metric-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 6px;
+}
+
+/* Chart */
+.chart-wrap {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.chart-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.chart-canvas-wrap { position: relative; height: 220px; }
+
+/* VSM */
+.vsm-container {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 20px 0;
+  min-height: 140px;
+}
+.vsm-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+  flex: 0 0 auto;
+}
+.vsm-box {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  width: 90px;
+}
+.vsm-box:hover { border-color: var(--ac-blue); transform: translateY(-2px); }
+.vsm-box.is-bottle {
+  background: rgba(239,68,68,0.1);
+  border-color: var(--ac-bottle);
+  box-shadow: 0 0 12px rgba(239,68,68,0.2);
+}
+.vsm-box.is-bottle::after {
+  content: '⚡';
+  position: absolute;
+  top: -8px; right: -6px;
+  font-size: 12px;
+}
+.vsm-box .step-name { color: var(--text-0); font-weight: 600; font-size: 9px; margin-bottom: 4px; }
+.vsm-box .step-time-badge {
+  color: var(--ac-main);
+  font-size: 11px;
+  font-weight: 700;
+}
+.vsm-box .step-type {
+  font-size: 9px;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.vsm-arrow {
+  font-size: 18px;
+  color: var(--border-hi);
+  flex: 0 0 auto;
+  line-height: 1;
+  padding-top: 10px;
+}
+
+/* Root Cause */
+.whys-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.why-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.why-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ac-main);
+  min-width: 60px;
+  padding-top: 3px;
+  font-weight: 700;
+}
+.why-text {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ac-main);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-0);
+  flex: 1;
+  line-height: 1.6;
+}
+.why-item:last-child .why-text {
+  border-left-color: var(--ac-bottle);
+  background: rgba(239,68,68,0.04);
+  color: var(--ac-bottle);
+  font-weight: 600;
+}
+
+.ishikawa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ishi-cat {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.ishi-cat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--ac-purple);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.ishi-cause {
+  font-size: 12px;
+  color: var(--text-1);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.ishi-cause:last-child { border-bottom: none; }
+
+/* Recommendations */
+.rec-list { display: flex; flex-direction: column; gap: 16px; }
+.rec-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: border-color 0.2s;
+  position: relative;
+}
+.rec-card:hover { border-color: var(--ac-main); }
+.rec-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rec-icon { font-size: 22px; flex: 0 0 auto; }
+.rec-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-0);
+  flex: 1;
+}
+.rec-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.rec-badge.high { background: rgba(239,68,68,0.2); color: var(--ac-bottle); }
+.rec-badge.medium { background: rgba(245,158,11,0.2); color: var(--ac-main); }
+.rec-badge.low { background: rgba(16,185,129,0.2); color: var(--ac-ok); }
+.rec-body { font-size: 13px; color: var(--text-1); line-height: 1.7; margin-bottom: 12px; }
+.rec-cite {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  line-height: 1.6;
+  border-left: 2px solid var(--ac-blue);
+}
+.rec-cite a { color: var(--ac-blue); text-decoration: none; }
+.rec-cite a:hover { text-decoration: underline; }
+.rec-effectiveness {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ac-ok);
+  background: var(--ac-ok-glow);
+  border-radius: 3px;
+  padding: 2px 8px;
+  margin-bottom: 10px;
+}
+
+/* Papers */
+.papers-grid { display: flex; flex-direction: column; gap: 12px; }
+.paper-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+.paper-card:hover { border-color: var(--border-hi); }
+.paper-year { font-family: var(--font-mono); font-size: 10px; color: var(--ac-main); margin-bottom: 4px; }
+.paper-title { font-size: 13px; font-weight: 600; color: var(--text-0); margin-bottom: 4px; line-height: 1.4; }
+.paper-authors { font-size: 11px; color: var(--text-2); font-style: italic; margin-bottom: 8px; }
+.paper-insight { font-size: 12px; color: var(--text-1); line-height: 1.6; margin-bottom: 8px; }
+.paper-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.paper-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  color: var(--text-2);
+}
+.paper-url { font-family: var(--font-mono); font-size: 10px; color: var(--ac-blue); text-decoration: none; }
+.paper-url:hover { text-decoration: underline; }
+
+/* Report */
+.report-body {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  white-space: pre-wrap;
+}
+
+/* Section headers */
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ac-main);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── TOAST ───────────────────────────────────────── */
+.toast-wrap {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+.toast {
+  background: var(--bg-3);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-0);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+  animation: toast-in 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.toast.ok { border-color: var(--ac-ok); }
+.toast.err { border-color: var(--ac-bottle); }
+.toast.warn { border-color: var(--ac-main); }
+@keyframes toast-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+/* section subtitle */
+.sec-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+
+/* Separador */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* action row */
+.action-row { display: flex; gap: 8px; padding: 20px; border-top: 1px solid var(--border); }
+
+.vsm-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-logo">
+    🔍 AUDIT-AGENT <span class="badge">LITE</span>
+  </div>
+  <div class="header-stats">
+    <div class="stat-chip">
+      <span class="dot"></span>
+      Sistema <span class="val">ONLINE</span>
+    </div>
+    <div class="stat-chip">Auditorías restantes: <span class="val" id="auditsLeft">3</span>/3</div>
+    <div class="stat-chip">v<span class="val">1.0.0</span></div>
+  </div>
+</header>
+
+<!-- MONKEY BAR -->
+<div class="monkey-bar">
+  <span class="monkey-avatar" id="monkeyAvatar">🐒</span>
+  <div class="monkey-msg" id="monkeyMsg">
+    Sistema listo. <span>Describe tu proceso</span> y presiona AUDITAR para comenzar el análisis.
+  </div>
+  <div class="audits-left" id="auditsLeftBar"></div>
+</div>
+
+<!-- BODY -->
+<div class="app-body">
+
+  <!-- LEFT: INPUT -->
+  <div class="panel-left">
+    <div class="panel-section" style="flex:1; overflow-y:auto;">
+      <div class="panel-label">① Descripción libre</div>
+      <textarea class="process-input" id="processInput" placeholder="Ejemplo: Auditar el proceso de aprobación de facturas. Paso 1: Recepción de factura (2 min). Paso 2: Validación de datos (5 min). Paso 3: Aprobación del gerente (espera 2 días). ..."></textarea>
+      <div class="hint-text">Incluye pasos, tiempos (ej: 5 min, 2 horas) y tipo de actividad. El agente extraerá la estructura automáticamente.</div>
+
+      <div class="divider"></div>
+      <div class="panel-label">② Pasos manuales <span style="color:var(--text-2);font-size:10px;">(opcional, hasta 10)</span></div>
+      <div class="steps-list" id="stepsList"></div>
+      <button class="btn-add-step" onclick="addStep()">+ Añadir paso</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-label">③ Dominio</div>
+      <select id="domainSelect" style="width:100%; background:var(--bg-0); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-0); font-family:var(--font-mono); font-size:12px; padding:8px 12px; outline:none;">
+        <option value="manufacturing">Manufactura / Producción</option>
+        <option value="services" selected>Servicios / Oficina</option>
+        <option value="logistics">Logística / Cadena de suministro</option>
+        <option value="healthcare">Salud / Clínica</option>
+        <option value="construction">Construcción / Proyectos</option>
+      </select>
+    </div>
+
+    <div class="panel-section">
+      <button class="btn-audit" id="auditBtn" onclick="runAudit()">⚡ AUDITAR PROCESO</button>
+      <div class="progress-bar-wrap" id="progressWrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-export" onclick="exportMarkdown()">⬇ Exportar MD</button>
+      <button class="btn-export" onclick="clearAll()">✕ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div class="panel-right">
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('vsm')" data-tab="vsm"><span class="tab-icon">🗺</span> VSM</button>
+      <button class="tab-btn" onclick="switchTab('metrics')" data-tab="metrics"><span class="tab-icon">📊</span> Métricas</button>
+      <button class="tab-btn" onclick="switchTab('rootcause')" data-tab="rootcause"><span class="tab-icon">🔬</span> Causa Raíz</button>
+      <button class="tab-btn" onclick="switchTab('recs')" data-tab="recs"><span class="tab-icon">💡</span> Recomendaciones</button>
+      <button class="tab-btn" onclick="switchTab('papers')" data-tab="papers"><span class="tab-icon">📚</span> Papers</button>
+      <button class="tab-btn" onclick="switchTab('report')" data-tab="report"><span class="tab-icon">📄</span> Informe</button>
+    </div>
+
+    <div class="tabs-content">
+
+      <!-- VSM TAB -->
+      <div class="tab-pane active" id="tab-vsm">
+        <div class="empty-state" id="vsm-empty">
+          <div class="empty-icon">🗺</div>
+          <div class="empty-title">Value Stream Map</div>
+          <div class="empty-sub">Describe tu proceso y presiona AUDITAR para generar el mapa de flujo de valor.</div>
+        </div>
+        <div id="vsm-content" style="display:none;">
+          <div class="section-title">Mapa de Flujo de Valor</div>
+          <div class="sec-sub">Los pasos en <span style="color:var(--ac-bottle)">rojo ⚡</span> son cuellos de botella según la Teoría de Restricciones (Goldratt, 1984).</div>
+          <div class="vsm-section">
+            <div class="vsm-container" id="vsmDiagram"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRICS TAB -->
+      <div class="tab-pane" id="tab-metrics">
+        <div class="empty-state" id="metrics-empty">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">Métricas del Proceso</div>
+          <div class="empty-sub">Ejecuta la auditoría para calcular Lead Time, Eficiencia y TAKT time.</div>
+        </div>
+        <div id="metrics-content" style="display:none;">
+          <div class="section-title">KPIs del Proceso</div>
+          <div class="metrics-grid" id="metricsGrid"></div>
+          <div class="section-title">Distribución de Tiempos por Paso</div>
+          <div class="chart-wrap">
+            <div class="chart-canvas-wrap">
+              <canvas id="timesChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROOT CAUSE TAB -->
+      <div class="tab-pane" id="tab-rootcause">
+        <div class="empty-state" id="rootcause-empty">
+          <div class="empty-icon">🔬</div>
+          <div class="empty-title">Análisis de Causa Raíz</div>
+          <div class="empty-sub">Aplica los 5 Porqués e Ishikawa sobre el cuello de botella detectado.</div>
+        </div>
+        <div id="rootcause-content" style="display:none;">
+          <div class="section-title">5 Porqués — Cuello de Botella Principal</div>
+          <div class="whys-chain" id="whysChain"></div>
+          <div class="section-title" style="margin-top:24px;">Diagrama de Ishikawa</div>
+          <div class="sec-sub">Las 4M+1E del cuello de botella identificado.</div>
+          <div class="ishikawa-grid" id="ishikawaGrid"></div>
+        </div>
+      </div>
+
+      <!-- RECS TAB -->
+      <div class="tab-pane" id="tab-recs">
+        <div class="empty-state" id="recs-empty">
+          <div class="empty-icon">💡</div>
+          <div class="empty-title">Recomendaciones</div>
+          <div class="empty-sub">Basadas en los papers más recientes de Lean, Six Sigma y TOC.</div>
+        </div>
+        <div id="recs-content" style="display:none;">
+          <div class="section-title">Plan de Mejora Recomendado</div>
+          <div class="sec-sub">Ordenado por impacto estimado. Cada recomendación cita el paper académico fuente.</div>
+          <div class="rec-list" id="recsList"></div>
+        </div>
+      </div>
+
+      <!-- PAPERS TAB -->
+      <div class="tab-pane" id="tab-papers">
+        <div class="section-title">Base de Conocimiento</div>
+        <div class="sec-sub">Papers académicos integrados en la base de conocimiento del agente.</div>
+        <div class="papers-grid" id="papersGrid"></div>
+      </div>
+
+      <!-- REPORT TAB -->
+      <div class="tab-pane" id="tab-report">
+        <div class="empty-state" id="report-empty">
+          <div class="empty-icon">📄</div>
+          <div class="empty-title">Informe de Auditoría</div>
+          <div class="empty-sub">Ejecuta la auditoría para generar el informe completo en Markdown.</div>
+        </div>
+        <div id="report-content" style="display:none;">
+          <div class="section-title">Informe Completo</div>
+          <div class="report-body" id="reportBody"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// KNOWLEDGE BASE — Papers académicos
+// Referencia: Chiarini & Kumar (2025), SEM (2025), Gupta et al. (2025), etc.
+// ══════════════════════════════════════════════════════════════
+const KNOWLEDGE_BASE = [
+  {
+    id: 'chiarini2025', authors: 'Chiarini, A. & Kumar, M.', year: 2025,
+    title: 'Crafting a synergistic convergence: lean and industry 4.0 transformation',
+    journal: 'International Journal of Production Research, 63(17), 6493–6513',
+    technique: 'lean i4.0 kaizen digital', problem: 'digital transformation waste bottleneck',
+    insight: 'Los principios Lean se potencian con IA y analítica. El Kaizen se redefine con capacidades predictivas. Los empleados ganan autonomía con IA.',
+    quote: 'Some Lean tools were modified or replaced with I4.0 technologies, enhancing employees\' autonomy and predictive capabilities.',
+    url: 'https://doi.org/10.1080/00207543.2025.2473702',
+    effectiveness: '+22% eficiencia media',
+    domain: ['manufacturing','services','logistics']
+  },
+  {
+    id: 'sem2025', authors: 'Sustainable Futures (2025)', year: 2025,
+    title: 'Achieving strategic goals by continuous improvement and lean manufacturing: A SEM-system dynamics approach',
+    journal: 'Sustainable Futures, 9, 100551',
+    technique: 'kaizen hoshin kanri kanban tqm poka-yoke SEM system dynamics',
+    problem: 'implementation timeline strategic alignment',
+    insight: 'Kaizen y Hoshin Kanri tardan hasta 13 años en madurar; Kanban, TQM y Poka-Yoke alcanzan madurez en ~8 años.',
+    quote: 'KAN, TQM, and POY reached implementation levels in approximately eight years, but KAI and HOK took up to 13 years.',
+    url: 'https://doi.org/10.1016/j.sftr.2025.100551',
+    effectiveness: 'Modelo validado SEM',
+    domain: ['manufacturing','services','logistics','construction']
+  },
+  {
+    id: 'gupta2025', authors: 'Gupta, K., Sarmah, P. & Gqibani, S.L.', year: 2025,
+    title: 'A Review on the Implementation and Effectiveness of Lean Manufacturing Strategies',
+    journal: 'Science, Engineering and Technology, 5(1), 274–285',
+    technique: 'lean six sigma kanban kaizen dmaic automation digital',
+    problem: 'waste reduction productivity efficiency',
+    insight: 'Lean se hibrida con DMAIC, Kanban, Kaizen; intervenciones de IA aumentan la efectividad en todos los sectores.',
+    quote: 'Lean integration with Six-Sigma, Kanban, Kaizen; automation and digital technology interventions to increase effectiveness.',
+    url: 'https://doi.org/10.54327/set2025/v5.i1.157',
+    effectiveness: 'Revisión sistemática de 120+ estudios',
+    domain: ['manufacturing','services','logistics','healthcare']
+  },
+  {
+    id: 'kaizen2025', authors: 'IEOM Society (2025)', year: 2025,
+    title: 'Analysis of Kaizen Projects in an Assembly Line and Warehouse of an Electric Motor Manufacturing Company',
+    journal: 'IEOM Conference Proceedings',
+    technique: 'kaizen 5S supermarkets assembly line warehouse',
+    problem: 'delivery time distance reduction',
+    insight: 'Reducción de tiempos de entrega de 90 a 40 minutos; distancias de 864 a 209 metros. 5S y Kaizen combinados son el mayor reductor de mudas de movimiento.',
+    quote: 'Reduction in material delivery times from 90 minutes to 40 minutes, reduction of delivery distances from 864 mts to 209 mts.',
+    url: 'https://index.ieomsociety.org/index.cfm/article/view/ID/32472',
+    effectiveness: '55% reducción de tiempo de entrega',
+    domain: ['manufacturing','logistics']
+  },
+  {
+    id: 'printing2018', authors: 'Field Study (2018/2025)', year: 2025,
+    title: 'Combining lean tools application in kaizen: a field study on the printing industry',
+    journal: 'Field Study – ScienceDirect',
+    technique: 'line balancing standardized work layout kaizen',
+    problem: 'productivity assembly balance',
+    insight: 'Combinación de herramientas Lean en Kaizen mejora productividad 10-30% en montaje e industria impresión.',
+    quote: 'Application of a mix of lean tools resulted in significant productivity improvements of 10-30 percent.',
+    url: 'https://www.sciencedirect.com/science/article/abs/pii/S1741040118000833',
+    effectiveness: '10–30% mejora de productividad',
+    domain: ['manufacturing']
+  },
+  {
+    id: 'qfd2025', authors: 'Jagusiak-Kocik, M. (2025)', year: 2025,
+    title: 'Assessment of the Possibilities of Using the QFD Method and Selected Lean Manufacturing Tools',
+    journal: 'Manufacturing 2025',
+    technique: 'QFD 5S SMED FMEA kaizen quality function deployment',
+    problem: 'design quality production',
+    insight: 'La casa de calidad (QFD) combinada con 5S, SMED, Kaizen y FMEA mejora tanto el diseño como la producción de forma integrada.',
+    quote: 'QFD combined with lean tools creates a holistic quality improvement framework.',
+    url: 'https://doi.org/10.3390/manu2025',
+    effectiveness: 'Marco validado en industria',
+    domain: ['manufacturing','construction']
+  },
+  {
+    id: 'goldratt1984', authors: 'Goldratt, E. M.', year: 1984,
+    title: 'The Goal — Theory of Constraints (TOC)',
+    journal: 'North River Press (Classic)',
+    technique: 'TOC bottleneck throughput drum-buffer-rope',
+    problem: 'bottleneck identification system optimization',
+    insight: 'El cuello de botella determina el throughput de todo el sistema. Identificarlo, explotarlo, subordinarlo, elevarlo y repetir el ciclo.',
+    quote: 'The bottleneck determines the throughput of the entire system. Exploit the constraint first.',
+    url: 'https://en.wikipedia.org/wiki/Theory_of_constraints',
+    effectiveness: 'Paradigma universal validado globalmente',
+    domain: ['manufacturing','services','logistics','healthcare','construction']
+  }
+];
+
+// ══════════════════════════════════════════════════════════════
+// ESTADO GLOBAL — igual a FORGE-EXECUTOR
+// ══════════════════════════════════════════════════════════════
+const S = {
+  steps: [],
+  metrics: null,
+  bottleneck: null,
+  whys: [],
+  ishikawa: null,
+  recommendations: [],
+  report: '',
+  executing: false,
+  domain: 'services'
+};
+
+// Auditorías usadas (localStorage)
+let auditsUsed = parseInt(localStorage.getItem('audit_lite_used') || '0');
+const MAX_AUDITS = 3;
+
+// ══════════════════════════════════════════════════════════════
+// AGENTS — arquitectura modular
+// ══════════════════════════════════════════════════════════════
+const App = {
+
+  // ── AGENT: MAPPER (Value Stream Mapping)
+  // Basado en: Rother & Shook (1998), Chiarini & Kumar (2025)
+  mapper: {
+    extractSteps(text) {
+      const lines = text.split(/[\n;]/).filter(l => l.trim().length > 0);
+      const steps = [];
+
+      lines.forEach((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        // Detectar número de paso o palabras clave de secuencia
+        const isStep = trimmed.match(/^(paso|step|actividad|etapa|proceso|\d+[\.\):]|primero|segundo|tercero|luego|después|a continuación|finalmente|entonces)/i);
+        if (!isStep && steps.length === 0 && trimmed.length < 15) return;
+
+        const desc = trimmed
+          .replace(/^(paso|step|actividad|etapa|\d+[\.\)\:])\s*/i, '')
+          .replace(/\s*[\(\[]\d+.*?[\)\]]/g, '')
+          .trim();
+        if (!desc) return;
+
+        const timeMin = App.mapper.extractTime(trimmed);
+        const isWaste = !!(trimmed.match(/espera|revisión de|aprobación de|traslado|revisión manual|inspección|esperar|cola|queue|wait|rework|reproceso|corrección|firmar/i));
+
+        steps.push({
+          id: i,
+          description: desc.length > 60 ? desc.substring(0, 60) + '…' : desc,
+          fullDescription: desc,
+          time: timeMin !== null ? timeMin : this.guessTime(desc),
+          isValueAdd: !isWaste,
+          isBottleneck: false
+        });
+      });
+
+      return steps.length > 0 ? steps.slice(0, 10) : [];
+    },
+
+    extractTime(text) {
+      // Formato: "2 días", "3 horas", "30 min", "45 minutos", "1h"
+      const patterns = [
+        { re: /(\d+(?:\.\d+)?)\s*(día|dias|days?)/i, mult: 480 },
+        { re: /(\d+(?:\.\d+)?)\s*(hora|horas|hours?|h)\b/i, mult: 60 },
+        { re: /(\d+(?:\.\d+)?)\s*(min|minuto|minutes?)\b/i, mult: 1 },
+        { re: /(\d+(?:\.\d+)?)\s*(seg|segundo|seconds?|s)\b/i, mult: 0.0167 }
+      ];
+      for (const p of patterns) {
+        const m = text.match(p.re);
+        if (m) return Math.round(parseFloat(m[1]) * p.mult);
+      }
+      return null;
+    },
+
+    guessTime(desc) {
+      if (desc.match(/espera|cola|aprobación|firmar|revisión|inspection/i)) return 120;
+      if (desc.match(/reunión|meeting|junta/i)) return 60;
+      if (desc.match(/validación|verificación|check/i)) return 15;
+      if (desc.match(/ingreso|entrada|registro|data entry/i)) return 10;
+      return 5;
+    }
+  },
+
+  // ── AGENT: METRICS CALCULATOR
+  // Basado en: SEM (2025), Gupta et al. (2025), Goldratt (1984)
+  metricsCalculator: {
+    compute(steps) {
+      if (!steps.length) return null;
+
+      const totalTime = steps.reduce((a, s) => a + (s.time || 0), 0);
+      const valueAddTime = steps.filter(s => s.isValueAdd).reduce((a, s) => a + (s.time || 0), 0);
+      const wasteTime = totalTime - valueAddTime;
+      const bottleneck = steps.reduce((a, b) => (a.time || 0) > (b.time || 0) ? a : b);
+      const efficiency = totalTime > 0 ? ((valueAddTime / totalTime) * 100).toFixed(1) : '0.0';
+
+      // TAKT time: asumimos 480 min/día laboral
+      const taktTime = (480 / steps.length).toFixed(1);
+
+      return {
+        totalTime,
+        valueAddTime,
+        wasteTime,
+        efficiency,
+        bottleneck,
+        taktTime,
+        stepCount: steps.length,
+        wasteSteps: steps.filter(s => !s.isValueAdd).length
+      };
+    },
+
+    formatTime(minutes) {
+      if (minutes < 60) return `${Math.round(minutes)} min`;
+      if (minutes < 480) return `${(minutes / 60).toFixed(1)} h`;
+      return `${(minutes / 480).toFixed(1)} días`;
+    }
+  },
+
+  // ── AGENT: ROOT CAUSE ANALYZER
+  // Basado en: 5 Porqués (Toyota), Diagrama Ishikawa (4M+1E)
+  // Referencia: Gupta et al. (2025), Kaizen IEOM (2025)
+  rootCause: {
+    fiveWhys(bottleneck, domain) {
+      const domainContexts = {
+        manufacturing: {
+          why1: `El paso "${bottleneck.description}" tiene el mayor tiempo (${App.metricsCalculator.formatTime(bottleneck.time)}).`,
+          why2: 'El proceso carece de automatización o herramientas de soporte adecuadas.',
+          why3: 'No se ha realizado un análisis de capacidad ni nivelación de carga (Heijunka).',
+          why4: 'La planificación de producción no considera la Teoría de Restricciones (TOC).',
+          why5: '⚑ CAUSA RAÍZ: Ausencia de un sistema de mejora continua (Kaizen) estandarizado y métricas de seguimiento.',
+        },
+        services: {
+          why1: `El paso "${bottleneck.description}" genera un retraso de ${App.metricsCalculator.formatTime(bottleneck.time)}.`,
+          why2: 'Dependencia de una persona o rol sin delegación ni automatización.',
+          why3: 'Ausencia de SLA (Acuerdos de Nivel de Servicio) definidos para este paso.',
+          why4: 'No existe un tablero de gestión visual ni alertas tempranas de demora.',
+          why5: '⚑ CAUSA RAÍZ: Falta de rediseño del flujo de trabajo con principios Lean Office.',
+        },
+        logistics: {
+          why1: `El paso "${bottleneck.description}" genera retrasos de ${App.metricsCalculator.formatTime(bottleneck.time)}.`,
+          why2: 'Rutas de transporte o gestión de almacén no optimizadas.',
+          why3: 'No se aplican principios 5S ni supermarkets de materiales.',
+          why4: 'Ausencia de Kanban de reposición o sistema pull en el flujo logístico.',
+          why5: '⚑ CAUSA RAÍZ: Diseño logístico no basado en VSM ni principios Lean (IEOM, 2025).',
+        },
+        healthcare: {
+          why1: `El paso "${bottleneck.description}" genera espera de ${App.metricsCalculator.formatTime(bottleneck.time)}.`,
+          why2: 'Saturación de recursos (profesional, sala, equipo) sin gestión de capacidad.',
+          why3: 'No existe gestión de agenda basada en demanda real (TAKT time clínico).',
+          why4: 'Falta de estandarización de protocolos y errores frecuentes (Poka-Yoke ausente).',
+          why5: '⚑ CAUSA RAÍZ: Ausencia de Lean Healthcare y gestión por flujo de pacientes.',
+        },
+        construction: {
+          why1: `El paso "${bottleneck.description}" retrasa la ruta crítica en ${App.metricsCalculator.formatTime(bottleneck.time)}.`,
+          why2: 'Dependencias no gestionadas entre actividades y falta de visibilidad.',
+          why3: 'Materiales y recursos no disponibles cuando se necesitan (Just-in-Time fallido).',
+          why4: 'No se usa Last Planner System ni planificación lookahead.',
+          why5: '⚑ CAUSA RAÍZ: Gestión de proyectos sin metodología Lean Construction.',
+        }
+      };
+      const ctx = domainContexts[domain] || domainContexts.services;
+      return [
+        { label: '¿Por qué? (1)', text: ctx.why1 },
+        { label: '¿Por qué? (2)', text: ctx.why2 },
+        { label: '¿Por qué? (3)', text: ctx.why3 },
+        { label: '¿Por qué? (4)', text: ctx.why4 },
+        { label: 'Causa Raíz', text: ctx.why5 }
+      ];
+    },
+
+    ishikawa(bottleneck, domain) {
+      return {
+        'Método': [
+          'Proceso no estandarizado ni documentado',
+          'Ausencia de procedimientos escritos (SOP)',
+          'Sin métricas de control de proceso'
+        ],
+        'Máquina / Herramienta': [
+          'Sistemas IT desconectados o manuales',
+          'Falta de automatización en la tarea',
+          'Herramientas de soporte inadecuadas'
+        ],
+        'Mano de Obra': [
+          'Concentración de autoridad en una persona',
+          'Falta de capacitación en Lean / mejora continua',
+          'Sin empoderamiento del operador (Jidoka)'
+        ],
+        'Materiales / Datos': [
+          'Información incompleta o en formatos incorrectos',
+          'Reprocesos por errores en datos de entrada',
+          'Sin validación automática (Poka-Yoke)'
+        ],
+        'Entorno': [
+          'Cultura organizacional resistente al cambio',
+          'Falta de soporte directivo (Hoshin Kanri)',
+          'Sin política de mejora continua formalizada'
+        ]
+      };
+    }
+  },
+
+  // ── AGENT: RECOMMENDER
+  // Basado en: RAG simple con KNOWLEDGE_BASE
+  // Referencias: Chiarini 2025, IEOM 2025, Gupta 2025, Goldratt 1984
+  recommender: {
+    suggest(metrics, domain, bottleneck) {
+      const recs = [];
+
+      // TOC: siempre primera recomendación (Goldratt, 1984)
+      recs.push({
+        icon: '⚡',
+        title: `Explotar el cuello de botella: "${bottleneck.description}"`,
+        priority: 'high',
+        body: `Según la Teoría de Restricciones (Goldratt, 1984), el paso más lento determina el throughput del sistema completo. Con ${App.metricsCalculator.formatTime(bottleneck.time)} este paso es ${((bottleneck.time / metrics.totalTime) * 100).toFixed(0)}% del tiempo total. La prioridad absoluta es reducirlo antes de optimizar cualquier otro paso.`,
+        paper: KNOWLEDGE_BASE.find(p => p.id === 'goldratt1984'),
+        actions: ['Asignar recursos adicionales al cuello de botella', 'Eliminar interrupciones y variabilidad en este paso', 'Aplicar drum-buffer-rope: subordinar todo lo demás']
+      });
+
+      // Eficiencia < 60%: aplicar VSM + Kaizen
+      if (parseFloat(metrics.efficiency) < 60) {
+        recs.push({
+          icon: '🔄',
+          title: 'Eliminar desperdicios (Mudas) — Aplicar Value Stream Mapping + Kaizen',
+          priority: 'high',
+          body: `La eficiencia del proceso es ${metrics.efficiency}%, muy por debajo del estándar recomendado. Los pasos sin valor añadido representan ${App.metricsCalculator.formatTime(metrics.wasteTime)}. Aplica el ciclo Kaizen documentado en Gupta et al. (2025): identifica, mide, analiza, mejora y controla cada muda.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id === 'gupta2025'),
+          actions: ['Mapear VSM actual vs. futuro', 'Eliminar pasos de espera y aprobación innecesarios', 'Implementar flujo continuo (One-Piece Flow)']
+        });
+      }
+
+      // Dominio servicios: digitalización
+      if (['services', 'healthcare'].includes(domain)) {
+        recs.push({
+          icon: '🤖',
+          title: 'Digitalizar y automatizar validaciones (Lean + Industria 4.0)',
+          priority: 'medium',
+          body: `Chiarini & Kumar (2025) demuestran que las herramientas Lean potenciadas con IA e I4.0 reducen tiempos de proceso en un 22% de media. Para procesos de oficina o salud, automatizar las validaciones manuales y crear alertas digitales reduce drásticamente el bottleneck de aprobación.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id === 'chiarini2025'),
+          actions: ['Implementar workflow digital con aprobaciones automáticas', 'Integrar alertas en tiempo real (panel Kanban)', 'Definir SLA digital con escalamiento automático']
+        });
+      }
+
+      // Dominio manufactura/logística: 5S + Kaizen
+      if (['manufacturing', 'logistics'].includes(domain)) {
+        recs.push({
+          icon: '📦',
+          title: 'Implementar 5S + Supermarkets Kanban en el flujo logístico',
+          priority: 'medium',
+          body: `El estudio IEOM (2025) demostró en una empresa fabricante de motores eléctricos que Kaizen + 5S redujo tiempos de entrega de 90 a 40 minutos y distancias de 864 a 209 metros. Aplicar supermarkets de materiales y flujo pull elimina las esperas por suministro.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id === 'kaizen2025'),
+          actions: ['Implementar 5S en el área del cuello de botella', 'Diseñar supermarkets de materiales con Kanban pull', 'Rediseñar layout para flujo unidireccional']
+        });
+      }
+
+      // Si hay >= 2 pasos sin valor añadido: estandarizar
+      if (metrics.wasteSteps >= 2) {
+        recs.push({
+          icon: '📋',
+          title: 'Estandarizar con QFD + FMEA + Poka-Yoke',
+          priority: 'medium',
+          body: `Con ${metrics.wasteSteps} pasos sin valor añadido detectados, aplicar QFD (Quality Function Deployment) junto con FMEA y Poka-Yoke permite rediseñar el proceso para que los errores sean imposibles o inmediatamente detectables. Jagusiak-Kocik (2025) valida esta combinación en múltiples sectores.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id === 'qfd2025'),
+          actions: ['Mapear requisitos del cliente con QFD', 'Analizar modos de fallo con FMEA', 'Implementar Poka-Yoke en puntos de error']
+        });
+      }
+
+      // Plan a largo plazo: SEM
+      recs.push({
+        icon: '🎯',
+        title: 'Diseñar hoja de ruta de implementación realista (SEM + Dinámica de Sistemas)',
+        priority: 'low',
+        body: `El modelo SEM (Sustainable Futures, 2025) demuestra que Kanban y TQM alcanzan madurez en ~8 años y Kaizen en ~13 años. Es fundamental establecer un Hoshin Kanri (despliegue de políticas) con objetivos anuales medibles. La mejora continua es un maratón, no un sprint.`,
+        paper: KNOWLEDGE_BASE.find(p => p.id === 'sem2025'),
+        actions: ['Definir A3 de mejora con metas anuales', 'Implementar PDCA mensual con revisión de KPIs', 'Crear equipo de mejora continua con mandato directivo']
+      });
+
+      return recs;
+    }
+  },
+
+  // ── AGENT: REPORT GENERATOR
+  // Genera informe Markdown estructurado
+  reportGenerator: {
+    generate(S) {
+      const m = S.metrics;
+      const b = S.bottleneck;
+      const now = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      let md = `# INFORME DE AUDITORÍA DE PROCESO
+**AUDIT-AGENT LITE v1.0** · ${now}
+**Dominio:** ${S.domain} · **Pasos analizados:** ${m.stepCount}
+
+---
+
+## 1. RESUMEN EJECUTIVO
+
+Se ha auditado un proceso de **${m.stepCount} pasos** con un Lead Time total de **${App.metricsCalculator.formatTime(m.totalTime)}**.
+La eficiencia del proceso (ratio valor añadido / tiempo total) es del **${m.efficiency}%**.
+
+**Cuello de botella identificado:** "${b.description}" con ${App.metricsCalculator.formatTime(b.time)} (${((b.time / m.totalTime) * 100).toFixed(0)}% del tiempo total).
+
+---
+
+## 2. MÉTRICAS DEL PROCESO
+
+| Indicador | Valor |
+|-----------|-------|
+| Lead Time Total | ${App.metricsCalculator.formatTime(m.totalTime)} |
+| Tiempo con Valor Añadido | ${App.metricsCalculator.formatTime(m.valueAddTime)} |
+| Tiempo de Desperdicios (Muda) | ${App.metricsCalculator.formatTime(m.wasteTime)} |
+| Eficiencia del Proceso | ${m.efficiency}% |
+| TAKT Time estimado | ${m.taktTime} min/paso |
+| Pasos sin valor añadido | ${m.wasteSteps} de ${m.stepCount} |
+
+---
+
+## 3. MAPA DE VALOR (VSM)
+
+${S.steps.map((s, i) => `${i + 1}. **${s.description}** — ${App.metricsCalculator.formatTime(s.time)} ${s.isValueAdd ? '✓ Valor' : '✗ Muda'} ${s.isBottleneck ? '⚡ CUELLO' : ''}`).join('\n')}
+
+---
+
+## 4. ANÁLISIS DE CAUSA RAÍZ (5 PORQUÉS)
+
+**Problema:** "${b.description}" genera ${App.metricsCalculator.formatTime(b.time)} de retraso.
+
+${S.whys.map((w, i) => `**${w.label}:** ${w.text}`).join('\n\n')}
+
+---
+
+## 5. RECOMENDACIONES DE MEJORA
+
+${S.recommendations.map((r, i) => `### ${i + 1}. ${r.title}
+**Prioridad:** ${r.priority === 'high' ? 'Alta ⚠' : r.priority === 'medium' ? 'Media ●' : 'Baja ○'}
+
+${r.body}
+
+**Acciones concretas:**
+${r.actions.map(a => `- ${a}`).join('\n')}
+
+**Fuente académica:** ${r.paper ? `${r.paper.authors} (${r.paper.year}). *${r.paper.title}*. ${r.paper.journal}. [DOI/URL](${r.paper.url || '#'}) — Efectividad estimada: ${r.paper.effectiveness}` : 'N/A'}
+
+`).join('\n')}
+
+---
+
+## 6. REFERENCIAS ACADÉMICAS
+
+${KNOWLEDGE_BASE.map((p, i) => `${i + 1}. ${p.authors} (${p.year}). *${p.title}*. ${p.journal}. ${p.url ? `URL: ${p.url}` : ''}`).join('\n')}
+
+---
+
+*Informe generado por AUDIT-AGENT LITE v1.0 · Sistema basado en Lean Manufacturing, Six Sigma y Teoría de Restricciones.*`;
+
+      return md;
+    }
+  },
+
+  // ── AGENT: PLANNER (orchestrator)
+  planner: {
+    async run(input, manualSteps, domain) {
+      setProgress(10);
+      setMonkey('🔍', `Analizando proceso con ${manualSteps.length || '?'} pasos detectados…`);
+      await delay(400);
+
+      // 1. Extraer pasos
+      let steps = manualSteps.length > 0 ? manualSteps : App.mapper.extractSteps(input);
+      if (!steps.length) {
+        toast('No se detectaron pasos en el texto. Usa el constructor manual.', 'warn');
+        return null;
+      }
+      setProgress(30);
+      await delay(300);
+
+      // 2. Calcular métricas
+      setMonkey('📊', 'Calculando métricas de proceso: Lead Time, Eficiencia, TAKT…');
+      const metrics = App.metricsCalculator.compute(steps);
+      const bottleneck = metrics.bottleneck;
+      setProgress(50);
+      await delay(300);
+
+      // 3. Marcar bottleneck
+      steps = steps.map(s => ({ ...s, isBottleneck: s.id === bottleneck.id || s.description === bottleneck.description }));
+
+      // 4. Causa raíz
+      setMonkey('🔬', 'Aplicando 5 Porqués e Ishikawa al cuello de botella…');
+      const whys = App.rootCause.fiveWhys(bottleneck, domain);
+      const ishikawa = App.rootCause.ishikawa(bottleneck, domain);
+      setProgress(70);
+      await delay(300);
+
+      // 5. Recomendaciones
+      setMonkey('💡', 'Buscando en la base de conocimiento…');
+      const recommendations = App.recommender.suggest(metrics, domain, bottleneck);
+      setProgress(85);
+      await delay(300);
+
+      // 6. Guardar en estado
+      Object.assign(S, { steps, metrics, bottleneck, whys, ishikawa, recommendations, domain });
+
+      // 7. Informe
+      setMonkey('📄', 'Redactando informe en Markdown…');
+      S.report = App.reportGenerator.generate(S);
+      setProgress(100);
+      await delay(200);
+
+      return S;
+    }
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// UI FUNCTIONS
+// ══════════════════════════════════════════════════════════════
+
+let chartInstance = null;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+
+function setMonkey(emoji, msg) {
+  document.getElementById('monkeyAvatar').textContent = emoji;
+  document.getElementById('monkeyMsg').innerHTML = msg;
+}
+
+function setProgress(pct) {
+  const wrap = document.getElementById('progressWrap');
+  const fill = document.getElementById('progressFill');
+  wrap.style.display = 'block';
+  fill.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => { wrap.style.display = 'none'; fill.style.width = '0%'; }, 800);
+}
+
+function toast(msg, type = 'ok') {
+  const icons = { ok: '✓', err: '✕', warn: '⚠' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+  document.getElementById('toastWrap').appendChild(t);
+  setTimeout(() => t.remove(), 3800);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function updateAuditsLeft() {
+  const left = MAX_AUDITS - auditsUsed;
+  document.getElementById('auditsLeft').textContent = left;
+  document.getElementById('auditsLeftBar').textContent = '';
+}
+
+// Step builder
+let stepCounter = 0;
+function addStep(desc = '', time = '', isValueAdd = true) {
+  const list = document.getElementById('stepsList');
+  if (list.children.length >= 10) { toast('Máximo 10 pasos en versión Lite', 'warn'); return; }
+  stepCounter++;
+  const id = stepCounter;
+  const row = document.createElement('div');
+  row.className = 'step-row';
+  row.dataset.id = id;
+  row.innerHTML = `
+    <span class="step-num">#${list.children.length + 1}</span>
+    <div class="step-inputs">
+      <input class="inp-desc" placeholder="Descripción del paso…" value="${desc}">
+      <input class="inp-time" type="number" placeholder="min" min="0" value="${time}">
+      <select>
+        <option value="1" ${isValueAdd ? 'selected' : ''}>✓ Valor</option>
+        <option value="0" ${!isValueAdd ? 'selected' : ''}>✗ Muda</option>
+      </select>
+    </div>
+    <button class="btn-rm" onclick="this.parentElement.remove(); renumberSteps()">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function renumberSteps() {
+  document.querySelectorAll('.step-row .step-num').forEach((el, i) => { el.textContent = `#${i + 1}`; });
+}
+
+function getManualSteps() {
+  const rows = document.querySelectorAll('.step-row');
+  const steps = [];
+  rows.forEach((row, i) => {
+    const desc = row.querySelector('.inp-desc').value.trim();
+    const timeRaw = row.querySelector('.inp-time').value;
+    const isVA = row.querySelector('select').value === '1';
+    if (desc) {
+      steps.push({ id: i, description: desc.substring(0, 60), fullDescription: desc,
+        time: timeRaw ? parseInt(timeRaw) : 5, isValueAdd: isVA, isBottleneck: false });
+    }
+  });
+  return steps;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAIN AUDIT FUNCTION
+// ══════════════════════════════════════════════════════════════
+async function runAudit() {
+  if (S.executing) return;
+  if (auditsUsed >= MAX_AUDITS) {
+    toast('Has agotado las 3 auditorías mensuales de la versión Lite. Actualiza a PRO para auditorías ilimitadas.', 'warn');
+    return;
+  }
+
+  const input = document.getElementById('processInput').value.trim();
+  const manualSteps = getManualSteps();
+  const domain = document.getElementById('domainSelect').value;
+
+  if (!input && !manualSteps.length) {
+    toast('Introduce la descripción del proceso o añade pasos manualmente.', 'warn');
+    return;
+  }
+
+  S.executing = true;
+  document.getElementById('auditBtn').disabled = true;
+
+  try {
+    const result = await App.planner.run(input, manualSteps, domain);
+    if (!result) {
+      S.executing = false;
+      document.getElementById('auditBtn').disabled = false;
+      return;
+    }
+
+    // Incrementar contador
+    auditsUsed++;
+    localStorage.setItem('audit_lite_used', auditsUsed);
+    updateAuditsLeft();
+
+    // Renderizar todo
+    renderVSM();
+    renderMetrics();
+    renderRootCause();
+    renderRecommendations();
+    renderReport();
+
+    setMonkey('🐒', `Auditoría completada. Eficiencia: <span>${S.metrics.efficiency}%</span>. Cuello de botella: <span>"${S.bottleneck.description}"</span>.`);
+    toast('Auditoría completada con éxito', 'ok');
+    switchTab('vsm');
+
+  } catch(e) {
+    console.error(e);
+    toast('Error durante la auditoría: ' + e.message, 'err');
+    setMonkey('😵', 'Error inesperado. Revisa la consola.');
+  } finally {
+    S.executing = false;
+    document.getElementById('auditBtn').disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════════════════════════
+
+function renderVSM() {
+  document.getElementById('vsm-empty').style.display = 'none';
+  document.getElementById('vsm-content').style.display = 'block';
+  const container = document.getElementById('vsmDiagram');
+  container.innerHTML = '';
+  S.steps.forEach((step, i) => {
+    const box = document.createElement('div');
+    box.className = 'vsm-step';
+    box.innerHTML = `
+      <div class="vsm-box ${step.isBottleneck ? 'is-bottle' : ''}" title="${step.fullDescription || step.description}">
+        <div class="step-name">${step.description}</div>
+        <div class="step-time-badge">${App.metricsCalculator.formatTime(step.time)}</div>
+        <div class="step-type">${step.isValueAdd ? '✓ Valor' : '✗ Muda'}</div>
+      </div>
+    `;
+    container.appendChild(box);
+    if (i < S.steps.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'vsm-arrow';
+      arrow.textContent = '→';
+      container.appendChild(arrow);
+    }
+  });
+}
+
+function renderMetrics() {
+  document.getElementById('metrics-empty').style.display = 'none';
+  document.getElementById('metrics-content').style.display = 'block';
+  const m = S.metrics;
+  const grid = document.getElementById('metricsGrid');
+  const fmt = App.metricsCalculator.formatTime;
+  const effNum = parseFloat(m.efficiency);
+
+  grid.innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">Lead Time Total</div>
+      <div class="metric-value">${fmt(m.totalTime)}</div>
+      <div class="metric-sub">Tiempo de inicio a fin del proceso</div>
+    </div>
+    <div class="metric-card ${effNum < 50 ? 'bottleneck-card' : effNum > 75 ? 'ok-card' : ''}">
+      <div class="metric-label">Eficiencia del Proceso</div>
+      <div class="metric-value ${effNum < 50 ? 'warn' : effNum > 75 ? 'ok' : ''}">${m.efficiency}%</div>
+      <div class="metric-sub">Ratio valor añadido / tiempo total</div>
+    </div>
+    <div class="metric-card bottleneck-card">
+      <div class="metric-label">Cuello de Botella ⚡</div>
+      <div class="metric-value warn">${fmt(m.bottleneck.time)}</div>
+      <div class="metric-sub">${m.bottleneck.description}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Tiempo de Desperdicio</div>
+      <div class="metric-value warn">${fmt(m.wasteTime)}</div>
+      <div class="metric-sub">${m.wasteSteps} paso(s) sin valor añadido</div>
+    </div>
+    <div class="metric-card ok-card">
+      <div class="metric-label">Tiempo Valor Añadido</div>
+      <div class="metric-value ok">${fmt(m.valueAddTime)}</div>
+      <div class="metric-sub">Pasos que el cliente paga</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">TAKT Time estimado</div>
+      <div class="metric-value">${m.taktTime}<span style="font-size:14px;"> min</span></div>
+      <div class="metric-sub">Ritmo de demanda por paso</div>
+    </div>
+  `;
+
+  // Chart.js — tiempos por paso (cuello de botella en rojo)
+  const ctx = document.getElementById('timesChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: S.steps.map(s => s.description.length > 18 ? s.description.substring(0, 18) + '…' : s.description),
+      datasets: [{
+        label: 'Tiempo (min)',
+        data: S.steps.map(s => s.time),
+        backgroundColor: S.steps.map(s => s.isBottleneck ? 'rgba(239,68,68,0.7)' : s.isValueAdd ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.4)'),
+        borderColor: S.steps.map(s => s.isBottleneck ? '#ef4444' : s.isValueAdd ? '#10b981' : '#f59e0b'),
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8b98b0', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#2a3347' } },
+        y: { ticks: { color: '#8b98b0', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#2a3347' } }
+      }
+    }
+  });
+}
+
+function renderRootCause() {
+  document.getElementById('rootcause-empty').style.display = 'none';
+  document.getElementById('rootcause-content').style.display = 'block';
+
+  const chain = document.getElementById('whysChain');
+  chain.innerHTML = S.whys.map(w => `
+    <div class="why-item">
+      <div class="why-num">${w.label}</div>
+      <div class="why-text">${w.text}</div>
+    </div>
+  `).join('');
+
+  const grid = document.getElementById('ishikawaGrid');
+  grid.innerHTML = Object.entries(S.ishikawa).map(([cat, causes]) => `
+    <div class="ishi-cat">
+      <div class="ishi-cat-label">${cat}</div>
+      ${causes.map(c => `<div class="ishi-cause">${c}</div>`).join('')}
+    </div>
+  `).join('');
+}
+
+function renderRecommendations() {
+  document.getElementById('recs-empty').style.display = 'none';
+  document.getElementById('recs-content').style.display = 'block';
+
+  const list = document.getElementById('recsList');
+  list.innerHTML = S.recommendations.map(r => `
+    <div class="rec-card">
+      <div class="rec-header">
+        <span class="rec-icon">${r.icon}</span>
+        <div class="rec-title">${r.title}</div>
+        <span class="rec-badge ${r.priority}">${r.priority === 'high' ? 'ALTA' : r.priority === 'medium' ? 'MEDIA' : 'BAJA'}</span>
+      </div>
+      ${r.paper ? `<div class="rec-effectiveness">✓ Efectividad documentada: ${r.paper.effectiveness}</div>` : ''}
+      <div class="rec-body">${r.body}</div>
+      <ul style="font-size:12px;color:var(--text-1);margin-left:18px;margin-bottom:12px;line-height:1.8;">
+        ${r.actions.map(a => `<li>${a}</li>`).join('')}
+      </ul>
+      ${r.paper ? `
+      <div class="rec-cite">
+        📚 <strong>${r.paper.authors} (${r.paper.year})</strong>. ${r.paper.title}. <em>${r.paper.journal}</em>.
+        ${r.paper.url ? `<br><a href="${r.paper.url}" target="_blank" rel="noopener">→ ${r.paper.url}</a>` : ''}
+        <br>«${r.paper.quote}»
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderReport() {
+  document.getElementById('report-empty').style.display = 'none';
+  document.getElementById('report-content').style.display = 'block';
+  document.getElementById('reportBody').textContent = S.report;
+}
+
+// Render papers tab (siempre visible)
+function renderPapers() {
+  const grid = document.getElementById('papersGrid');
+  grid.innerHTML = KNOWLEDGE_BASE.map(p => `
+    <div class="paper-card">
+      <div class="paper-year">${p.year} · ${p.effectiveness}</div>
+      <div class="paper-title">${p.title}</div>
+      <div class="paper-authors">${p.authors} — ${p.journal}</div>
+      <div class="paper-insight">${p.insight}</div>
+      <div style="margin-bottom:8px; font-family:var(--font-mono);font-size:11px;color:var(--text-2);">«${p.quote}»</div>
+      <div class="paper-tags">
+        ${p.technique.split(' ').slice(0, 4).map(t => `<span class="paper-tag">${t}</span>`).join('')}
+      </div>
+      ${p.url ? `<br><a class="paper-url" href="${p.url}" target="_blank" rel="noopener">→ ${p.url}</a>` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT & UTILITY
+// ══════════════════════════════════════════════════════════════
+function exportMarkdown() {
+  if (!S.report) { toast('Ejecuta una auditoría primero', 'warn'); return; }
+  const blob = new Blob([S.report], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'audit-report.md';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Informe Markdown descargado', 'ok');
+}
+
+function clearAll() {
+  document.getElementById('processInput').value = '';
+  document.getElementById('stepsList').innerHTML = '';
+  Object.assign(S, { steps:[], metrics:null, bottleneck:null, whys:[], ishikawa:null, recommendations:[], report:'' });
+  ['vsm','metrics','rootcause','recs','report'].forEach(t => {
+    const empty = document.getElementById(t+'-empty') || document.getElementById(`${t === 'rootcause' ? 'rootcause' : t}-empty`);
+    const content = document.getElementById(t+'-content') || document.getElementById(`${t}-content`);
+    if(empty) empty.style.display = 'flex';
+    if(content) content.style.display = 'none';
+  });
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  setMonkey('🐒', 'Sistema listo. <span>Describe tu proceso</span> y presiona AUDITAR.');
+  switchTab('vsm');
+  toast('Datos borrados', 'ok');
+}
+
+// INIT
+updateAuditsLeft();
+renderPapers();
+</script>
+</body>
+</html>
