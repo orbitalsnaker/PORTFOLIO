@@ -1,6 +1,3 @@
-Voy a leer el archivo que has subido primero, y luego acceder a los documentos originales de GitHub.Tengo el manual completo. Ahora voy a leer las líneas truncadas del archivo para tener todo el contenido.Tengo todo el contenido. Ahora voy a redactar el Cuaderno RONIN completo directamente aquí en el chat.
-
----
 
 # CUADERNO RONIN – VERSIÓN ALUMNO
 ## Los 10 Pilares explicados paso a paso para estudiantes de secundaria
