@@ -515,6 +515,3 @@ Zou, A., Wang, Z., Kolter, J. Z., & Fredrikson, M. (2023). Universal and transfe
 
 *Este documento se distribuye con fines de investigación académica y divulgación responsable. Las referencias a experimentos empíricos se presentan a nivel de metodología y resultado, sin reproducción de vectores de ataque específicos. El autor no autoriza el uso de este trabajo para el diseño, implementación o distribución de ataques contra sistemas de IA en producción.*
 
----
-
-**Fin del paper 
