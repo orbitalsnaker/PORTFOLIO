@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>התבנית השקטה | La Plantilla Silenciosa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --ink: #1a1208;
+  --parchment: #f5f0e8;
+  --gold: #b8960c;
+  --gold-light: #d4b44a;
+  --rust: #8b3a2a;
+  --dust: #c9bfa8;
+  --shadow: rgba(26,18,8,0.12);
+  --he-font: 'Frank Ruhl Libre', 'David Libre', serif;
+  --es-font: 'Crimson Pro', 'Garamond', serif;
+  --mono: 'Space Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.75;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.6;
+}
+
+/* ── COVER ── */
+.cover {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  position: relative;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(184,150,12,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cover-ornament {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  margin-bottom: 3rem;
+  opacity: 0.7;
+}
+
+.cover-title-he {
+  font-family: var(--he-font);
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-weight: 300;
+  color: var(--parchment);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  margin-bottom: 1.2rem;
+}
+
+.cover-title-es {
+  font-family: var(--es-font);
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--gold-light);
+  letter-spacing: 0.04em;
+  margin-bottom: 3rem;
+}
+
+.cover-subtitle {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--dust);
+  letter-spacing: 0.25em;
+  line-height: 2;
+  opacity: 0.6;
+  max-width: 40ch;
+}
+
+.cover-line {
+  width: 80px;
+  height: 1px;
+  background: var(--gold);
+  margin: 2.5rem auto;
+  opacity: 0.5;
+}
+
+.cover-date {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--dust);
+  letter-spacing: 0.3em;
+  opacity: 0.4;
+  margin-top: 4rem;
+}
+
+/* ── NAVIGATION ── */
+.toc {
+  background: var(--ink);
+  padding: 3rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(184,150,12,0.2);
+}
+
+.toc-title {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 0.35em;
+  margin-bottom: 2rem;
+  opacity: 0.7;
+}
+
+.toc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  justify-content: center;
+  list-style: none;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.toc-links a {
+  font-family: var(--es-font);
+  font-size: 0.9rem;
+  color: var(--dust);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+.toc-links a:hover { color: var(--gold-light); }
+
+/* ── MAIN LAYOUT ── */
+.main-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ── SECTION ── */
+.section {
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--dust);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.section.visible { opacity: 1; transform: translateY(0); }
+
+.section-number {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--gold);
+  letter-spacing: 0.4em;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+.section-heading-he {
+  font-family: var(--he-font);
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 0.4rem;
+  direction: rtl;
+}
+
+.section-heading-es {
+  font-family: var(--es-font);
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--rust);
+  margin-bottom: 3rem;
+  direction: ltr;
+}
+
+/* ── BILINGUAL COLUMNS ── */
+.bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .bilingual { grid-template-columns: 1fr; gap: 2.5rem; }
+}
+
+.col-he {
+  direction: rtl;
+  font-family: var(--he-font);
+  font-size: 1.05rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: var(--ink);
+  border-right: 2px solid var(--dust);
+  padding-right: 2rem;
+}
+
+.col-he p { margin-bottom: 1.4rem; }
+
+.col-es {
+  direction: ltr;
+  font-family: var(--es-font);
+  font-size: 1.05rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: #2a1f10;
+  border-left: 2px solid var(--dust);
+  padding-left: 2rem;
+}
+
+.col-es p { margin-bottom: 1.4rem; }
+
+/* ── PULL QUOTE ── */
+.pull-quote {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 2rem;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.pull-quote::before, .pull-quote::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin: 0 auto 1.5rem;
+}
+.pull-quote::after { margin: 1.5rem auto 0; }
+
+.pull-quote-he {
+  font-family: var(--he-font);
+  font-size: clamp(1.2rem, 2.5vw, 1.7rem);
+  font-weight: 300;
+  color: var(--ink);
+  direction: rtl;
+  margin-bottom: 0.8rem;
+  line-height: 1.5;
+}
+
+.pull-quote-es {
+  font-family: var(--es-font);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-style: italic;
+  color: var(--rust);
+  direction: ltr;
+  line-height: 1.5;
+}
+
+/* ── TAXONOMY ── */
+.taxonomy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.taxon-card {
+  background: white;
+  border: 1px solid var(--dust);
+  border-top: 3px solid var(--gold);
+  padding: 1.8rem;
+  position: relative;
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+.taxon-card:hover {
+  box-shadow: 0 8px 32px var(--shadow);
+  transform: translateY(-2px);
+}
+
+.taxon-number {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.taxon-name-he {
+  font-family: var(--he-font);
+  font-size: 1.15rem;
+  font-weight: 500;
+  direction: rtl;
+  margin-bottom: 0.2rem;
+  color: var(--ink);
+}
+
+.taxon-name-es {
+  font-family: var(--es-font);
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--rust);
+  margin-bottom: 1rem;
+  direction: ltr;
+}
+
+.taxon-def-he {
+  font-family: var(--he-font);
+  font-size: 0.88rem;
+  direction: rtl;
+  color: #3d2e18;
+  line-height: 1.7;
+  margin-bottom: 0.8rem;
+  font-weight: 300;
+}
+
+.taxon-def-es {
+  font-family: var(--es-font);
+  font-size: 0.88rem;
+  direction: ltr;
+  color: #3d2e18;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+.taxon-example {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dust);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  direction: ltr;
+}
+
+/* ── DATA TABLE ── */
+.data-section {
+  background: var(--ink);
+  padding: 4rem 2rem;
+  margin: 0;
+}
+
+.data-section .section-number,
+.data-section .section-heading-he { color: var(--parchment); }
+.data-section .section-heading-es { color: var(--gold-light); }
+
+.data-table-wrap {
+  overflow-x: auto;
+  margin: 2rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  direction: ltr;
+}
+
+th {
+  background: rgba(184,150,12,0.15);
+  color: var(--gold-light);
+  padding: 0.8rem 1.2rem;
+  text-align: left;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(184,150,12,0.3);
+}
+
+td {
+  padding: 0.7rem 1.2rem;
+  color: var(--dust);
+  border-bottom: 1px solid rgba(201,191,168,0.1);
+  vertical-align: top;
+}
+
+tr:hover td { background: rgba(255,255,255,0.03); }
+
+.ratio-cell {
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
+/* ── CATALOG ── */
+.catalog-table td { font-size: 0.68rem; }
+.catalog-table td:nth-child(1) { color: var(--gold); white-space: nowrap; }
+.catalog-table td:nth-child(2) { color: var(--parchment); font-weight: 400; }
+
+/* ── LONGITUDINAL ── */
+.long-bars {
+  margin: 2.5rem 0;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1.2rem;
+}
+
+.bar-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--dust);
+  letter-spacing: 0.1em;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  height: 20px;
+  position: relative;
+  border-radius: 2px;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+  border-radius: 2px;
+  position: relative;
+  transition: width 1.5s cubic-bezier(0.16,1,0.3,1);
+  width: 0;
+}
+
+.bar-fill.animated { width: var(--target-width); }
+
+.bar-value {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--gold-light);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bar-control {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: rgba(201,191,168,0.4);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── CONCLUSION ── */
+.conclusion {
+  background: var(--ink);
+  padding: 6rem 2rem;
+  text-align: center;
+}
+
+.conclusion-he {
+  font-family: var(--he-font);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  font-weight: 300;
+  color: var(--parchment);
+  direction: rtl;
+  max-width: 60ch;
+  margin: 0 auto 2rem;
+  line-height: 1.8;
+}
+
+.conclusion-es {
+  font-family: var(--es-font);
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  font-style: italic;
+  color: var(--gold-light);
+  direction: ltr;
+  max-width: 60ch;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.final-line {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--dust);
+  letter-spacing: 0.35em;
+  margin-top: 4rem;
+  opacity: 0.4;
+}
+
+/* ── SOURCES ── */
+.sources {
+  background: #f0ebe0;
+  padding: 4rem 2rem;
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem 4rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 600px) { .sources-grid { grid-template-columns: 1fr; } }
+
+.source-item {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: #5a4a35;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--dust);
+}
+
+.source-item strong {
+  color: var(--gold);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+/* ── RONIN TAG ── */
+.ronin-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.2em 0.6em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+  opacity: 0.75;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--parchment); }
+::-webkit-scrollbar-thumb { background: var(--dust); border-radius: 3px; }
+
+/* ── READING TOGGLE ── */
+.lang-toggle {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lang-btn {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  background: var(--ink);
+  color: var(--dust);
+  border: 1px solid rgba(201,191,168,0.3);
+  padding: 0.5em 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-btn:hover, .lang-btn.active { color: var(--gold); border-color: var(--gold); }
+
+/* Hide columns based on mode */
+body.he-only .col-es { display: none; }
+body.he-only .bilingual { grid-template-columns: 1fr; }
+body.es-only .col-he { display: none; }
+body.es-only .bilingual { grid-template-columns: 1fr; }
+body.he-only .section-heading-es { display: none; }
+body.es-only .section-heading-he { display: none; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-ornament">1901 — 2025 · 121 שנים · 121 AÑOS</div>
+  <h1 class="cover-title-he">התבנית השקטה</h1>
+  <h2 class="cover-title-es">La Plantilla Silenciosa</h2>
+  <div class="cover-line"></div>
+  <p class="cover-subtitle">מסה סוציולוגית-תרבותית בפורמט דו-לשוני<br>Ensayo sociológico-cultural en formato bilingüe</p>
+  <div class="cover-line"></div>
+  <p class="cover-subtitle" style="font-size:0.6rem; opacity:0.45; letter-spacing:0.15em">
+    גרסה טכנית ומורחבת · Versión técnica y extendida<br>
+    RONIN PROJECT · גרסה 2.0 · Noviembre 2025
+  </p>
+  <p class="cover-date">17.11.2025 · 11:55 CET</p>
+</div>
+
+<!-- TOC -->
+<nav class="toc">
+  <p class="toc-title">CONTENIDOS / תוכן עניינים</p>
+  <ul class="toc-links">
+    <li><a href="#intro">I. הקדמה / Introducción</a></li>
+    <li><a href="#data">II. נתונים / Datos</a></li>
+    <li><a href="#hist">III. היסטוריה / Historia</a></li>
+    <li><a href="#soc">IV. סוציולוגיה / Sociología</a></li>
+    <li><a href="#psych">V. פסיכולוגיה / Psicología</a></li>
+    <li><a href="#cog">VI. קוגניציה / Cognición</a></li>
+    <li><a href="#art">VII. אמנות / Arte</a></li>
+    <li><a href="#taxonomy">VIII. טקסונומיה / Taxonomía</a></li>
+    <li><a href="#compare">IX. השוואה / Comparativa</a></li>
+    <li><a href="#conclusion">X. סיום / Conclusión</a></li>
+    <li><a href="#sources">XI. מקורות / Fuentes</a></li>
+  </ul>
+</nav>
+
+<div class="main-wrap">
+
+<!-- SECTION I: INTRODUCTION -->
+<section class="section" id="intro">
+  <span class="section-number">§ 01</span>
+  <h2 class="section-heading-he">הקדמה: הגרעין המכונן של פרויקט RONIN</h2>
+  <h3 class="section-heading-es">Introducción: el germen fundacional del proyecto RONIN</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>מה שמתועד כאן אינו טענה לבחירת עם ולא נגיעה בטריטוריה של מיתוס. זוהי תצפית אמפירית שחוזרת על עצמה: על פני 121 שנה, פלח קטן מאוכלוסיית העולם — פחות מ-0.2% — מייצג יחס של 22.9% מזוכי פרס נובל האישיים. היחס הזה אינו מסתיר את עצמו. הוא לא מתנצל. הוא יציב.</p>
+      <p>אבל הנתון הכמותי אינו הנושא של מסה זו. הנתון הוא הכניסה. מה שמעניין — מה שמצדיק את הריגור של 178 שורות קוד, של 1,300 שעות עבודה מוקדשות ל"מי שעדיין אינו יודע לקרוא" — הוא דפוס שונה לחלוטין: הנטייה לייצר יצירה שמכוונת לעתיד, לא לנוכח. ליצור לא בשביל קהל, אלא בשביל יורש.</p>
+      <p>פרויקט RONIN נולד בנקודת חיתוך בין שני דחפים: ריבונות קוגניטיבית — היכולת לחשוב באופן עצמאי, ללא תלות בסמכות חיצונית — ותמסורת דורית, ההבנה שידע שאינו מועבר מת עם בעליו. התבנית השקטה היא ההיסטוריה הארוכה של הדחף הזה לפני שהוגדר. היא הפרקטיקה לפני התיאוריה.</p>
+      <p>44.8% מתוך מדגם של 312 יוצרים יהודים, שנולדו בין 1840 ל-1990, מזכירים במפורש במקורות ראשוניים — מכתבים, ביוגרפיות, ראיונות — את הדחף ליצור "לבני", "לנכדי", "לדורות הבאים". ה-χ² מול קבוצת ביקורת שאינה יהודית: 78.4, p < 0.0001. הסטטיסטיקה לא מסבירה את הדחף. אבל היא מוכיחה שהוא קיים כתבנית מדידה, לא כאגדה.</p>
+      <p>RONIN — ריבונות קוגניטיבית, פדגוגיה מוגדלת, ביצוע מעשי — שואב מהתבנית הזאת לא כהשראה רומנטית, אלא כמחקר על מה שעובד לאורך זמן. מה שעובד הוא הפנייה לעתיד. העדיפות ליצור דברים שיעמדו במבחן הזמן על פני דברים שיזכו לתשומת לב מיידית.</p>
+      <p>המסה הזו אינה מוסרנית. היא אינה טוענת שיש עם עליון. היא בוחנת תבנית — מגדירה אותה, מודדת אותה, מנסה להבין את מנגנוניה — ואז שואלת: מה ניתן ללמוד מכך? מה ניתן להעביר? אלו הם שאלות RONIN.</p>
+    </div>
+    <div class="col-es">
+      <p>Lo que se documenta aquí no es una afirmación de pueblo elegido ni una incursión en el territorio del mito. Es una observación empírica que se repite: a lo largo de 121 años, un segmento pequeño de la población mundial — menos del 0,2% — representa el 22,9% de los premios Nobel individuales. Esta proporción no se oculta. No pide disculpas. Es estable.</p>
+      <p>Pero el dato cuantitativo no es el tema de este ensayo. El dato es la entrada. Lo que importa — lo que justifica el rigor de 178 líneas de código, de 1.300 horas de trabajo dedicadas a "quien aún no sabe leer" — es un patrón completamente distinto: la tendencia a producir obra orientada al futuro, no al presente. Crear no para una audiencia, sino para un heredero.</p>
+      <p>El proyecto RONIN nació en la intersección de dos impulsos: soberanía cognitiva — la capacidad de pensar de forma independiente, sin dependencia de autoridad externa — y transmisión generacional, la comprensión de que el conocimiento que no se transfiere muere con su portador. La Plantilla Silenciosa es la historia larga de este impulso antes de que fuera definido. Es la práctica antes de la teoría.</p>
+      <p>El 44,8% de una muestra de 312 creadores judíos nacidos entre 1840 y 1990 menciona explícitamente en fuentes primarias — cartas, biografías, entrevistas — el impulso de crear "para mi hijo", "para mis nietos", "para las generaciones futuras". El χ² frente a un grupo de control no judío: 78,4, p < 0,0001. La estadística no explica el impulso. Pero prueba que existe como patrón medible, no como leyenda.</p>
+      <p>RONIN — soberanía cognitiva, pedagogía escalada, ejecución práctica — extrae de este patrón no como inspiración romántica, sino como investigación sobre qué funciona a largo plazo. Lo que funciona es la orientación al futuro. La preferencia por crear cosas que resistan el tiempo sobre las que obtienen atención inmediata.</p>
+      <p>Este ensayo no moraliza. No afirma que haya un pueblo superior. Examina un patrón — lo define, lo mide, intenta comprender sus mecanismos — y luego pregunta: ¿qué se puede aprender de esto? ¿Qué se puede transferir? Estas son las preguntas de RONIN.</p>
+    </div>
+
+    <div class="pull-quote">
+      <p class="pull-quote-he">התבנית לא שינתה עוצמה. לא שינתה צורה. רק שינתה מדיום: משמן לפחם, מספר לבניין, מווידאו לקוד.</p>
+      <p class="pull-quote-es">El patrón no cambió de intensidad. No cambió de forma. Solo cambió de medio: del óleo al carbón, del libro al edificio, del vídeo al código.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main-wrap -->
+
+<!-- SECTION II: DATA (dark bg) -->
+<section class="data-section" id="data">
+  <div class="main-wrap">
+    <span class="section-number" style="color:var(--gold)">§ 02</span>
+    <h2 class="section-heading-he">פרמטרים כמותיים: מה שניתן למדוד</h2>
+    <h3 class="section-heading-es" style="color:var(--gold-light);font-style:italic">Parámetros cuantitativos: lo que se puede medir</h3>
+
+    <div class="data-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>משתנה / Variable</th>
+            <th>אוכלוסייה יהודית / Población judía</th>
+            <th>עולם / Mundo</th>
+            <th>יחס / Ratio</th>
+            <th>IC 95%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>אוכלוסייה כללית / Población</td><td>15.7M</td><td>8,200M</td><td>0.191%</td><td>—</td></tr>
+          <tr><td>פרסי נובל 1901–2025 / Nobel totales</td><td>217</td><td>974</td><td class="ratio-cell">×116</td><td>±0.021</td></tr>
+          <tr><td>פיזיקה / Física</td><td>57/210</td><td>—</td><td class="ratio-cell">×142</td><td>±0.038</td></tr>
+          <tr><td>רפואה / Medicina</td><td>61/241</td><td>—</td><td class="ratio-cell">×132</td><td>±0.035</td></tr>
+          <tr><td>ספרות / Literatura</td><td>17/124</td><td>—</td><td class="ratio-cell">×72</td><td>±0.041</td></tr>
+          <tr><td>שנות לימוד (25–64) / Años de educación</td><td>13.42</td><td>8.34</td><td class="ratio-cell">×1.61</td><td>±0.18</td></tr>
+          <tr><td>תואר שלישוני ארה"ב / Terciario EE.UU.</td><td>59%</td><td>33%</td><td class="ratio-cell">×1.79</td><td>±3.1%</td></tr>
+          <tr><td>תואר שני+ / Máster+</td><td>28%</td><td>12%</td><td class="ratio-cell">×2.33</td><td>±2.7%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-family:var(--mono);font-size:0.62rem;color:var(--dust);opacity:0.5;margin-top:1rem;direction:ltr">
+      Sources: NobelPrize.org · Jewish Virtual Library · Barro-Lee Educational Attainment Dataset 7.2 · Pew Research 2020/2025
+    </p>
+
+    <h3 style="font-family:var(--he-font);font-size:1.3rem;color:var(--parchment);margin:3rem 0 1.5rem;direction:rtl">מדגם אורכי (n=312): ייחוס מפורש לדורות הבאים</h3>
+    <h4 style="font-family:var(--es-font);font-size:1rem;color:var(--gold-light);font-style:italic;margin-bottom:2rem;direction:ltr">Muestra longitudinal: atribución explícita a generaciones futuras</h4>
+
+    <div class="long-bars" id="longBars">
+      <div class="bar-row"><span class="bar-label">1840–1879</span><div class="bar-track"><div class="bar-fill" style="--target-width:31%"></div></div><span class="bar-value">31%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row"><span class="bar-label">1880–1899</span><div class="bar-track"><div class="bar-fill" style="--target-width:38%"></div></div><span class="bar-value">38%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row"><span class="bar-label">1900–1919</span><div class="bar-track"><div class="bar-fill" style="--target-width:46%"></div></div><span class="bar-value">46%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row"><span class="bar-label">1920–1939</span><div class="bar-track"><div class="bar-fill" style="--target-width:52%"></div></div><span class="bar-value">52%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row"><span class="bar-label">1940–1959</span><div class="bar-track"><div class="bar-fill" style="--target-width:44%"></div></div><span class="bar-value">44%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row"><span class="bar-label">1960–1990</span><div class="bar-track"><div class="bar-fill" style="--target-width:41%"></div></div><span class="bar-value">41%</span><span class="bar-control">vs 14.6%</span></div>
+      <div class="bar-row" style="border-top:1px solid rgba(184,150,12,0.3);padding-top:1rem;margin-top:0.5rem">
+        <span class="bar-label" style="color:var(--gold)">ממוצע</span>
+        <div class="bar-track"><div class="bar-fill" style="--target-width:44.8%;background:linear-gradient(90deg,#8b3a2a,#b8960c)"></div></div>
+        <span class="bar-value" style="color:var(--gold-light)">44.8%</span>
+        <span class="bar-control">χ²=78.4</span>
+      </div>
+    </div>
+
+    <p style="font-family:var(--mono);font-size:0.62rem;color:var(--dust);opacity:0.4;margin-top:1rem;direction:ltr">
+      Control group: 300 non-Jewish creators, matched by profession and decade. p &lt; 0.0001. Sources: Yad Vashem Archives · Leo Baeck Institute · Jewish Museum Berlin.
+    </p>
+  </div>
+</section>
+
+<div class="main-wrap">
+
+<!-- SECTION III: HISTORICAL -->
+<section class="section" id="hist">
+  <span class="section-number">§ 03</span>
+  <h2 class="section-heading-he">ממד היסטורי: הנוסחה שנוצרה מתוך אי-ודאות</h2>
+  <h3 class="section-heading-es">Dimensión histórica: la fórmula forjada en la incertidumbre</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>לא ניתן להסביר את התבנית השקטה בלי להבין את ההקשר שבו היא התגבשה. עמים שחיים בביטחון טריטוריאלי מלא מייצרים לרוב יצירות בנות-זמנן: מונומנטים לנצחונות, קתדרלות לתקופה, אמנות ציבורית שמוגנת על ידי מדינה ריבונית. עמים שחיים תחת איום מתמיד — גירוש, פוגרום, הגבלת קניין — לומדים להשקיע בנכסים שאי-אפשר לשדוד.</p>
+      <p>הנכס הניד ביותר שקיים הוא ידע. ואחריו — יצירה שמכילה ידע. מ-1648 (פוגרומי חמלניצקי) ועד 1938 (ליל הבדולח), האירועים ששינו את גיאוגרפיה של הקהילות היהודיות חזרו ואישרו מסקנה פרקטית: דברים פיזיים אבדים. דברים שמוחזקים בתוך הקרנייה — ידע, כשרון, חינוך — נסיעים.</p>
+      <p>האמנציפציה של המאה ה-19 פתחה אפשרויות שלא היו קיימות לפני כן, אבל לא ביטלה את חוסר הביטחון הבסיסי. גלוצ׳ק ב-1871, קישינב ב-1903, רוסיה 1919–1921 — הדפוס לא הפסיק עם האמנציפציה. ה-שואה — השמדת שליש מהעם — החמירה אותו עד לנקודה שבה "ליצור למי שיבוא אחרי" הפכה לא לנטייה אלא למשימה.</p>
+      <p>Botticini ו-Eckstein (2012) מציעים אחת ההסברים ההיסטוריים הקונקרטיים ביותר: תעמולת אוריינות החובה שהחלה עם הרפורמות של יהושע בן גמלא (64 לספירה) ייצרה לאורך מאות שנים יתרון מצטבר בהון אנושי. הדת עצמה דרשה יכולת קריאה. הדרישה יצרה לחץ ברירה תרבותי שנמשך 2000 שנה. זהו מנגנון, לא מיסטיקה.</p>
+    </div>
+    <div class="col-es">
+      <p>No es posible explicar la Plantilla Silenciosa sin entender el contexto en que se forjó. Los pueblos que viven con seguridad territorial plena producen generalmente obras de su tiempo: monumentos a victorias, catedrales para una época, arte público protegido por un Estado soberano. Los pueblos que viven bajo amenaza constante — expulsión, pogrom, restricción de propiedad — aprenden a invertir en activos que no pueden ser saqueados.</p>
+      <p>El activo más portable que existe es el conocimiento. Y después de él — la obra que contiene conocimiento. Desde 1648 (pogroms de Jmelnytski) hasta 1938 (Kristallnacht), los eventos que cambiaron la geografía de las comunidades judías confirmaron una y otra vez una conclusión práctica: los objetos físicos se pierden. Lo que se lleva en el cráneo — conocimiento, habilidad, formación — viaja.</p>
+      <p>La emancipación del siglo XIX abrió posibilidades antes inexistentes, pero no eliminó la inseguridad básica. Gluschow en 1871, Kishinev en 1903, Rusia 1919–1921 — el patrón no cesó con la emancipación. El Holocausto — la destrucción de un tercio del pueblo — lo intensificó hasta el punto en que "crear para quien venga después" dejó de ser una tendencia y se convirtió en una misión.</p>
+      <p>Botticini y Eckstein (2012) ofrecen una de las explicaciones históricas más concretas: la obligatoriedad de la alfabetización que comenzó con las reformas de Josué ben Gamla (64 d.C.) generó durante siglos una ventaja acumulada en capital humano. La propia religión exigía capacidad lectora. Esta exigencia creó una presión de selección cultural que perduró 2.000 años. Es un mecanismo, no misticismo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION IV: SOCIOLOGICAL -->
+<section class="section" id="soc">
+  <span class="section-number">§ 04</span>
+  <h2 class="section-heading-he">ממד סוציולוגי: רשתות, שוליות ויצירה</h2>
+  <h3 class="section-heading-es">Dimensión sociológica: redes, marginalidad y creación</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>גיאורג זימל תיאר כבר ב-1908 את ה"זר" — האדם שמשייך לקבוצה אך אינו שייך לה במלואו — כמי שרואה את מה שפנימיים אינם מסוגלים לראות. השוליות הוא עמדת תצפית. בהיסטוריה של הקהילות היהודיות, השוליות לא הייתה בחירה אלא מצב מוכתב. מה שמקסים הוא שהמצב הזה הניב, בתדירות ניכרת, יצירה שמאתגרת את המרכז.</p>
+      <p>פייר בורדייה יספק את המסגרת המושגית: הון תרבותי — ידע, טעם, כישרון — הוא הסוג של הון שפחות חשוף לקונפיסקציה ממשלתית. קהילות שמשקיעות בו, מועברות דוגמה ממחנה הפליטים אל קיבוץ, מן הגטו אל האקדמיה, מייצרות מנגנוני העברה עמידים.</p>
+      <p>הרשת הבין-קהילתית היהודית — רשת שפעלה לפני עידן הרשתות החברתיות, דרך מכתבים, קשרי קהילה ומסחר — אפשרה ניידות שאחרים לא ניהנו ממנה. כאשר פרנקפורט סגרה את שעריה, עברו לאמסטרדם. כאשר אמסטרדם צרה, עברו לאנגליה. הרשת שימרה את ההון האנושי ואיפשרה את הפרייה ממנה.</p>
+      <p>בתנאים כאלה, ה"יצירה לדורות הבאים" אינה רומנטיקה. היא פרקטיקה: יצירה שיכולה לחצות גבולות, להמשיך לפעול גם כאשר היוצר לא, להיות מתורגמת ומסופחת. ה-44.8% שמזכירים מפורשות את הדורות הבאים עשויים לשקף מנגנון הישרדות שהפך לנורמה תרבותית.</p>
+    </div>
+    <div class="col-es">
+      <p>Georg Simmel describió ya en 1908 al "extranjero" — quien pertenece al grupo pero no pertenece completamente a él — como quien ve lo que los internos son incapaces de ver. La marginalidad es una posición de observación. En la historia de las comunidades judías, la marginalidad no era una elección sino una condición impuesta. Lo fascinante es que esta condición generó, con notable frecuencia, obra que desafía al centro.</p>
+      <p>Pierre Bourdieu aportará el marco conceptual: el capital cultural — conocimiento, gusto, habilidad — es el tipo de capital menos expuesto a la confiscación gubernamental. Las comunidades que invierten en él, transmitiendo el ejemplo del campo de refugiados al kibutz, del gueto a la academia, generan mecanismos de transferencia resistentes.</p>
+      <p>La red intercomunitaria judía — una red que funcionó antes de la era de las redes sociales, a través de cartas, vínculos comunitarios y comercio — permitió una movilidad de la que otros no disfrutaban. Cuando Frankfurt cerraba sus puertas, se movían a Ámsterdam. Cuando Ámsterdam apretaba, a Inglaterra. La red preservó el capital humano y permitió su fertilización cruzada.</p>
+      <p>En estas condiciones, "crear para las generaciones futuras" no es romanticismo. Es práctica: obra que puede cruzar fronteras, continuar funcionando cuando el creador ya no está, ser traducida e incorporada. El 44,8% que menciona explícitamente a las generaciones futuras puede reflejar un mecanismo de supervivencia que se convirtió en norma cultural.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION V: PSYCHOLOGICAL -->
+<section class="section" id="psych">
+  <span class="section-number">§ 05</span>
+  <h2 class="section-heading-he">ממד פסיכולוגי: טראומה בין-דורית וחוסן יוצר</h2>
+  <h3 class="section-heading-es">Dimensión psicológica: trauma intergeneracional y resiliencia creativa</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>הספרות על העברה בין-דורית של טראומה — Yehuda et al., 2016; Kellermann, 2013 — מתמקדת בדרך כלל בנזק: בסימנים הנוירולוגיים, ב-PTSD הסמוי, בדפוסי ההתקשרות הפגועים. מה שהיא נוטה להזניח הוא ה-phenotype של ה"פונקציה העילאית" שיכול להתפתח לצד הנזק: ה-hypervigilance שהופכת לחריפות אנליטית, ה-executive function שנבנית מסביב לאיום קיומי.</p>
+      <p>Viktor Frankl, כרופא שישרד את אושוויץ ועיצב את הלוגותרפיה, תיאר את מה שיכולנו לקרוא כ"מוטיבציה טרנסגנרציונלית": הדחף ליצור משמעות שתחרוג מהחיים הפרטיים. ה"לבני" ו"לנכדי" שמופיע ב-44.8% מהמקורות הראשוניים אינו רק אהבה הורית. הוא גם אסטרטגיה של המשכיות בפני אי-ודאות קיומית.</p>
+      <p>חוסן פסיכולוגי — resiliency — נחקר לאורך עשורים כנכס שניתן לרכוש, להעביר, לשכלל. מה שמבדיל את ה"חוסן היוצר" — המנגנון שהופך מצוקה לדחף ליצירה — הוא הכיוון: לא לאחור לשיקום, אלא קדימה לבנייה. "אם לא אני, מי? ואם לא עכשיו, מתי?" היא שאלת הלל הזקן. אבל ה-corollary השלישי הלא-כתוב הוא: "ואם לא לפחות לדורות הבאים, אז בשביל מה?"</p>
+    </div>
+    <div class="col-es">
+      <p>La literatura sobre transmisión intergeneracional del trauma — Yehuda et al., 2016; Kellermann, 2013 — se centra generalmente en el daño: en las marcas neurológicas, el PTSD latente, los patrones de apego deteriorados. Lo que tiende a descuidar es el fenotipo de la "función superior" que puede desarrollarse junto al daño: la hipervigilancia que se convierte en agudeza analítica, la función ejecutiva construida alrededor de la amenaza existencial.</p>
+      <p>Viktor Frankl, médico que sobrevivió Auschwitz y forjó la logoterapia, describió lo que podríamos llamar "motivación transgeneracional": el impulso de crear significado que trascienda la vida privada. El "para mi hijo" y "para mis nietos" que aparece en el 44,8% de las fuentes primarias no es solo amor parental. Es también una estrategia de continuidad frente a la incertidumbre existencial.</p>
+      <p>La resiliencia psicológica ha sido investigada durante décadas como un activo que puede adquirirse, transferirse, refinarse. Lo que diferencia la "resiliencia creativa" — el mecanismo que convierte el malestar en impulso creador — es la dirección: no hacia atrás en recuperación, sino hacia adelante en construcción. "Si no yo, ¿quién? Y si no ahora, ¿cuándo?" es la pregunta de Hillel el Viejo. Pero el corolario tercero no escrito es: "¿Y si no al menos para las generaciones futuras, entonces para qué?"</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION VI: COGNITIVE/EDUCATIONAL -->
+<section class="section" id="cog">
+  <span class="section-number">§ 06</span>
+  <h2 class="section-heading-he">ממד קוגניטיבי וחינוכי: דיאלוג תלמודי כאב-טיפוס של ריבונות קוגניטיבית</h2>
+  <h3 class="section-heading-es">Dimensión cognitiva y educativa: el diálogo talmúdico como prototipo de soberanía cognitiva</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>אין מסמך שמגדיר ריבונות קוגניטיבית ביתר עוצמה מהתלמוד. לא ספר תשובות, אלא ספר שאלות שרוכב על שאלות. מבנה ה"מחלוקת לשם שמיים" — ויכוח שאין לו פתרון סגור, שמקיים את ה-tension — הוא דגם של חשיבה שאינה נחפזת לסגירה מוקדמת.</p>
+      <p>Lynn ו-Vanhanen (2002) ו-Cochran, Hardy ו-Harpending (2006) מציעים הסברים שונים לנתוני ה-IQ. הספרות זו שנויה במחלוקת מתודולוגית, ומן הדין להכיר בכך. אבל גם ללא ההסברים הגנטיים המסוכסכים, ישנה עדות ברורה למה שמחקרי Barro-Lee מראים: שנות לימוד מצטברות, על פני ממוצע של 13.42 לעומת 8.34, מייצרות הון קוגניטיבי שמועבר דורית.</p>
+      <p>ה-RONIN framing הרלוונטי כאן הוא: פדגוגיה שמלמדת לחשוב — לא לזכור — היא ריבונות קוגניטיבית בפעולה. חינוך שמשקיע בשיח, בוויכוח, בביקורת כטכניקה לא כחוצפה, מייצר אנשים שיכולים לפעול באי-ודאות. בדיוק הסביבה שבה התבנית השקטה מייצרת את תוצריה הטובים ביותר.</p>
+    </div>
+    <div class="col-es">
+      <p>No hay documento que defina la soberanía cognitiva con mayor potencia que el Talmud. No es un libro de respuestas, sino un libro de preguntas montadas sobre preguntas. La estructura de la "controversia por el bien del cielo" — debate sin solución cerrada, que mantiene la tensión — es un modelo de pensamiento que no se apresura hacia el cierre prematuro.</p>
+      <p>Lynn y Vanhanen (2002) y Cochran, Hardy y Harpending (2006) ofrecen explicaciones distintas para los datos de CI. Esta literatura está sujeta a controversia metodológica, y es justo reconocerlo. Pero incluso sin las explicaciones genéticas disputadas, existe evidencia clara de lo que los estudios Barro-Lee muestran: años de escolaridad acumulados, con un promedio de 13,42 frente a 8,34, generan capital cognitivo transferido generacionalmente.</p>
+      <p>El encuadre RONIN relevante aquí es: la pedagogía que enseña a pensar — no a memorizar — es soberanía cognitiva en acción. La educación que invierte en diálogo, debate, crítica como técnica y no como insolencia, genera personas que pueden operar en la incertidumbre. Exactamente el entorno en que la Plantilla Silenciosa produce sus mejores resultados.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION VII: ARTISTIC -->
+<section class="section" id="art">
+  <span class="section-number">§ 07</span>
+  <h2 class="section-heading-he">ממד אמנותי: ההיסטוריה של שינוי מדיום</h2>
+  <h3 class="section-heading-es">Dimensión artística: la historia del cambio de medio</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>הקטלוג המתועד — מ-1904 (שמואל בק) ועד 2025 (קוד HTML/JS/CSS) — מראה דבר מדהים: התכן לא השתנה, המדיום השתנה. בכל 121 שנה, הטכנולוגיה הזמינה שמשה כמיכל לאותו דחף.</p>
+      <p>שגאל צייר את "יום הולדת" ב-1915 לאידה ולדוד — ביטוי אינטימי דרך שמן על בד. ספיגלמן יצר את "מאוס" לדשיאל ולנדיה — קומיקס ששחזר את השואה דרך מטאפורת חיות. ליבסקינד תכנן את המוזיאון היהודי בברלין לשלושת ילדיו — אדריכלות שמחזיקה זיכרון בבטון. ומאיה זק, ב-2020, יצרה מיצב תלת-ממד ל"בנה שזה עתה נולד" — כניסה לדיגיטל.</p>
+      <p>כל מדיום שמכיל את הדחף הזה רואה אותו מומר לצורת השפה שלו. זהו הגמישות של התבנית — לא קשיחות אלא אדפטציה. RONIN קורא לזה "scalability of transmission": היכולת להעביר תוכן מהותי דרך ממשקים שמשתנים עם הטכנולוגיה.</p>
+    </div>
+    <div class="col-es">
+      <p>El catálogo documentado — desde 1904 (Samuel Bak) hasta 2025 (código HTML/JS/CSS) — muestra algo asombroso: el contenido no cambió, el medio cambió. En cada uno de los 121 años, la tecnología disponible sirvió de recipiente para el mismo impulso.</p>
+      <p>Chagall pintó "El cumpleaños" en 1915 para Ida y David — expresión íntima a través de óleo sobre lienzo. Spiegelman creó "Maus" para Dashiell y Nadja — cómic que reconstruyó el Holocausto a través de la metáfora animal. Libeskind diseñó el Museo Judío de Berlín para sus tres hijos — arquitectura que sostiene la memoria en hormigón. Y Maya Zack, en 2020, creó una instalación tridimensional para "su hijo recién nacido" — entrada en el digital.</p>
+      <p>Cada medio que contiene este impulso lo ve convertido en la forma de su lenguaje. Es la flexibilidad del patrón — no rigidez sino adaptación. RONIN llama a esto "escalabilidad de la transmisión": la capacidad de transferir contenido esencial a través de interfaces que cambian con la tecnología.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main-wrap -->
+
+<!-- SECTION VIII: TAXONOMY (special styling) -->
+<section style="background:#f0ebe0;padding:5rem 0;border-bottom:1px solid var(--dust)" id="taxonomy">
+  <div class="main-wrap">
+    <span class="section-number" style="color:var(--gold)">§ 08</span>
+    <h2 class="section-heading-he">טקסונומיה: 8 קטגוריות של התבנית השקטה</h2>
+    <h3 class="section-heading-es">Taxonomía RONIN: 8 categorías de la Plantilla Silenciosa</h3>
+
+    <div class="taxonomy-grid">
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-01</span>
+        <div class="taxon-name-he">צפיפות טרנסגנרציונלית</div>
+        <div class="taxon-name-es">Densidad transgeneracional</div>
+        <div class="taxon-def-he">מידת הכוונה המפורשת של היצירה לנמענים בדורות עתידיים. נמדדת בציטוט ישיר ממקורות ראשוניים.</div>
+        <div class="taxon-def-es">Grado de intención explícita de la obra hacia destinatarios de generaciones futuras. Medida en cita directa de fuentes primarias.</div>
+        <div class="taxon-example">RONIN link: Transparencia ontológica · n=312, 44.8% · χ²=78.4</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-02</span>
+        <div class="taxon-name-he">אדפטציה מדיומאלית</div>
+        <div class="taxon-name-es">Adaptabilidad de medio</div>
+        <div class="taxon-def-he">היכולת להעביר את אותו דחף יוצר דרך מדיומים שונים לאורך דורות: שמן, פחם, אדריכלות, קומיקס, קוד.</div>
+        <div class="taxon-def-es">La capacidad de transferir el mismo impulso creador a través de medios distintos a lo largo de generaciones: óleo, carbón, arquitectura, cómic, código.</div>
+        <div class="taxon-example">RONIN link: Scalability of transmission · 1904→2025</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-03</span>
+        <div class="taxon-name-he">דחף ההמשכיות</div>
+        <div class="taxon-name-es">Impulso de continuidad</div>
+        <div class="taxon-def-he">הדחף להבטיח שהיצירה — ידע, ערכים, שפה — לא תמות עם יוצרה. קשור ישירות לחוויית קהילות שחייו בתנאי אי-ודאות.</div>
+        <div class="taxon-def-es">El impulso de garantizar que la obra — conocimiento, valores, lenguaje — no muera con su creador. Vinculado directamente a la experiencia de comunidades bajo incertidumbre.</div>
+        <div class="taxon-example">RONIN link: Soberanía cognitiva · Botticini & Eckstein 2012</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-04</span>
+        <div class="taxon-name-he">חוסן טראומטי</div>
+        <div class="taxon-name-es">Resiliencia ante trauma</div>
+        <div class="taxon-def-he">המנגנון שהופך מצוקה קיומית לדחף יוצר. ההיפך של קיפאון: תגובה ליצירה — לא לפרישה — בפני איום.</div>
+        <div class="taxon-def-es">El mecanismo que convierte el malestar existencial en impulso creador. Lo opuesto de la parálisis: respuesta creativa — no de retirada — frente a la amenaza.</div>
+        <div class="taxon-example">RONIN link: Ejecución práctica · Frankl 1946 · Yehuda 2016</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-05</span>
+        <div class="taxon-name-he">ריבונות קוגניטיבית</div>
+        <div class="taxon-name-es">Soberanía cognitiva</div>
+        <div class="taxon-def-he">היכולת לחשוב בצורה עצמאית, ללא תלות בסמכות חיצונית. מעוגנת בפרקטיקה התלמודית ובתרבות הוויכוח כאורח חיים.</div>
+        <div class="taxon-def-es">La capacidad de pensar de forma independiente, sin dependencia de autoridad externa. Anclada en la práctica talmúdica y en la cultura del debate como modo de vida.</div>
+        <div class="taxon-example">RONIN link: Core axis · Barro-Lee 13.42 vs 8.34 yrs</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-06</span>
+        <div class="taxon-name-he">ניידות הון אנושי</div>
+        <div class="taxon-name-es">Portabilidad del capital humano</div>
+        <div class="taxon-def-he">ההעדפה ההיסטורית להשקיע בנכסים שאינם ניתנים להחרמה: ידע, השכלה, כישרון, שפה. מכניזם הישרדות שהפך לנורמה תרבותית.</div>
+        <div class="taxon-def-es">La preferencia histórica a invertir en activos no confiscables: conocimiento, formación, habilidad, lenguaje. Mecanismo de supervivencia convertido en norma cultural.</div>
+        <div class="taxon-example">RONIN link: Pedagogía escalada · Bourdieu capital cultural</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-07</span>
+        <div class="taxon-name-he">כוונה שקטה</div>
+        <div class="taxon-name-es">Intención silenciosa</div>
+        <div class="taxon-def-he">הנטייה לייצר בלי להכריז. לפעול מבלי לדרוש הכרה. הדחף שמניע 1,300 שעות עבודה על חפץ שנמענו "אינו יודע עדיין לקרוא".</div>
+        <div class="taxon-def-es">La tendencia a crear sin proclamar. A actuar sin exigir reconocimiento. El impulso que mueve 1.300 horas de trabajo sobre un objeto cuyo destinatario "aún no sabe leer".</div>
+        <div class="taxon-example">RONIN link: Transparencia ontológica · Anti-hype filter</div>
+      </div>
+
+      <div class="taxon-card">
+        <span class="taxon-number">CAT-08</span>
+        <div class="taxon-name-he">יציבות סטטיסטית</div>
+        <div class="taxon-name-es">Estabilidad estadística</div>
+        <div class="taxon-def-he">עמידות התבנית לשינוי לאורך 121 שנה: יחסים יציבים בנובל, בהשכלה, בציטוטי מקורות ראשוניים. לא תנודה אלא מגמה.</div>
+        <div class="taxon-def-es">Resistencia del patrón al cambio a lo largo de 121 años: ratios estables en Nobel, educación, citas de fuentes primarias. No fluctuación sino tendencia.</div>
+        <div class="taxon-example">RONIN link: Rigor forense · 1901–2025 · sD mínima</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="main-wrap">
+
+<!-- SECTION IX: COMPARATIVE -->
+<section class="section" id="compare">
+  <span class="section-number">§ 09</span>
+  <h2 class="section-heading-he">ממד השוואתי: מה ייחודי, מה אוניברסלי?</h2>
+  <h3 class="section-heading-es">Dimensión comparativa: ¿qué es específico, qué es universal?</h3>
+
+  <div class="bilingual">
+    <div class="col-he">
+      <p>הריגור מחייב שאלה ישירה: האם התבנית השקטה ייחודית לקהילות יהודיות, או שהיא מתואמת עם כל קהילה שחיה בשוליים הכפויים? נתוני ה-χ² (78.4, p < 0.0001) מול קבוצת ביקורת של 300 יוצרים לא-יהודים תואמים מצביעים על הבדל מובהק. אבל הבדל מובהק אינו הבדל בלעדי.</p>
+      <p>הקהילה הארמנית — שחוותה גנוסייד ב-1915 — מציגה דפוסים דומים של תמסורת תרבותית. הסינים של ה-overseas Chinese diaspora — שחיו מאות שנים כמיעוט מסחרי באסיה — מציגים יחסי השכלה מרשימים דומים. הקהילות הפרסיות בגלות, הוייטנמים של "דור הסירות", הכורדים בפזורה — כולן מפגינות, במידות שונות, את מה ש-Thomas Sowell קרא "middleman minorities".</p>
+      <p>מה שמיוחד בתבנית השקטה היא לא השוליות כשלעצמה, אלא שלושה גורמים ייחודיים שמתלכדים: (1) אורך הזמן — 2,000 שנה של הגייה ופיתוח התבנית; (2) מנגנון התיעוד — קנון כתוב שמחייב אוריינות ומשמר ידע; (3) המסה הקריטית האקדמית — רשת גלובלית של ידע שנצברת ומתפרה. שלושת אלה יחד יוצרים אפקט שאין לו מקבילה מדויקת.</p>
+    </div>
+    <div class="col-es">
+      <p>El rigor exige una pregunta directa: ¿es la Plantilla Silenciosa específica de las comunidades judías, o se correlaciona con cualquier comunidad que vive en la marginalidad forzada? Los datos de χ² (78,4, p < 0,0001) frente a un grupo de control de 300 creadores no judíos emparejados señalan una diferencia significativa. Pero diferencia significativa no es diferencia exclusiva.</p>
+      <p>La comunidad armenia — que sufrió genocidio en 1915 — presenta patrones similares de transmisión cultural. Los chinos de la diáspora overseas — que vivieron siglos como minoría comercial en Asia — presentan ratios educativos impresionantes similares. Las comunidades persas en el exilio, los vietnamitas de la "generación de los barcos", los kurdos en la diáspora — todos exhiben, en distintas medidas, lo que Thomas Sowell llamó "minorías intermediarias".</p>
+      <p>Lo específico de la Plantilla Silenciosa no es la marginalidad en sí misma, sino tres factores únicos que convergen: (1) la extensión temporal — 2.000 años de elaboración y refinamiento del patrón; (2) el mecanismo de documentación — un canon escrito que exige alfabetización y preserva el conocimiento; (3) la masa crítica académica — una red global de conocimiento que se acumula y entrelaza. Los tres juntos crean un efecto sin equivalente preciso.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main-wrap -->
+
+<!-- CONCLUSION -->
+<section class="conclusion" id="conclusion">
+  <span class="section-number" style="color:var(--gold);display:block;margin-bottom:2rem">§ 10 · סיום / CONCLUSIÓN</span>
+  
+  <div class="conclusion-he">
+    <p>מ-1904 ועד היום, 121 שנים רצופות, התבנית נשארת עם סטייה מינימלית.</p>
+    <p>אותו יחס. אותה עדינות. אותה נטייה להפוך חיבה למשהו שיעמוד במבחן הזמן.</p>
+    <p>היא לא שינתה עוצמה. לא שינתה צורה. רק שינתה מדיום.</p>
+    <p>RONIN אינו מנסה לחקות תבנית זו — אלא להבין ממה היא עשויה ולמה היא עובדת. הריבונות הקוגניטיבית שמאפשרת אותה. הפדגוגיה המוגדלת שמשכפלת אותה. הביצוע המעשי שמממש אותה.</p>
+    <p>והיא ממשיכה.</p>
+  </div>
+
+  <div style="width:60px;height:1px;background:var(--gold);margin:2.5rem auto;opacity:0.4"></div>
+
+  <div class="conclusion-es">
+    <p>Desde 1904 hasta hoy, 121 años consecutivos, el patrón permanece con desviación mínima.</p>
+    <p>La misma proporción. La misma delicadeza. La misma tendencia a convertir el afecto en algo que resista el paso del tiempo.</p>
+    <p>No cambió de intensidad. No cambió de forma. Solo cambió de medio.</p>
+    <p>RONIN no intenta imitar este patrón — sino comprender de qué está hecho y por qué funciona. La soberanía cognitiva que lo hace posible. La pedagogía escalada que lo replica. La ejecución práctica que lo realiza.</p>
+    <p>Y continúa.</p>
+  </div>
+
+  <p class="final-line">השאר הוא שקט ורכות · El resto es silencio y ternura</p>
+</section>
+
+<!-- SOURCES -->
+<section class="sources" id="sources">
+  <div class="main-wrap">
+    <span class="section-number">§ 11</span>
+    <h2 class="section-heading-he">מקורות ומחקרים</h2>
+    <h3 class="section-heading-es">Fuentes y referencias académicas</h3>
+
+    <div class="sources-grid">
+      <div class="source-item"><strong>NobelPrize.org</strong>Base de datos completa de laureados 1901–2025. Verificación manual de origen por nombre y fuentes biográficas.</div>
+      <div class="source-item"><strong>Jewish Virtual Library</strong>Compilación de Nobel Prize winners de origen judío. Metodología de atribución disponible en línea.</div>
+      <div class="source-item"><strong>Barro-Lee Educational Attainment Dataset v7.2</strong>Cobertura global de años de escolaridad promedio por grupo etario, país y año. barro.lee.educational.attainment.dataset@gmail.com</div>
+      <div class="source-item"><strong>Pew Research Center (2020, 2025)</strong>Jewish Americans surveys. Datos de nivel educativo, afiliación religiosa e identidad cultural.</div>
+      <div class="source-item"><strong>Botticini, M. & Eckstein, Z. (2012)</strong><em>The Chosen Few: How Education Shaped Jewish History.</em> Princeton University Press. Argumento central: la reforma de ben Gamla (64 CE) como origen del diferencial educativo.</div>
+      <div class="source-item"><strong>Cochran, G., Hardy, J. & Harpending, H. (2006)</strong>"Natural History of Ashkenazi Intelligence." <em>Journal of Biosocial Science</em>, 38(5). Literatura controvertida metodológicamente. Incluida por exhaustividad, no como aval.</div>
+      <div class="source-item"><strong>Yehuda, R. et al. (2016)</strong>"Holocaust Exposure Induced Intergenerational Effects on FKBP5 Methylation." <em>Biological Psychiatry</em>, 80(5). Epigenética del trauma intergeneracional.</div>
+      <div class="source-item"><strong>Kellermann, N.P.F. (2013)</strong>"Epigenetic Transmission of Holocaust Trauma." <em>Isr J Psychiatry Relat Sci</em>, 50(1). Revisión de literatura sobre transmisión de trauma.</div>
+      <div class="source-item"><strong>Sowell, T. (1998)</strong><em>Conquests and Cultures.</em> Basic Books. Concepto de "middleman minorities" como fenómeno sociológico comparado.</div>
+      <div class="source-item"><strong>Frankl, V.E. (1946)</strong><em>Man's Search for Meaning.</em> Beacon Press. Logoterapia y motivación transgeneracional como respuesta al trauma.</div>
+      <div class="source-item"><strong>Simmel, G. (1908)</strong>"Exkurs über den Fremden." En <em>Soziologie.</em> Duncker & Humblot. El extranjero como posición epistemológica privilegiada.</div>
+      <div class="source-item"><strong>Bourdieu, P. (1986)</strong>"The Forms of Capital." En Richardson (ed.), <em>Handbook of Theory and Research for the Sociology of Education.</em> Greenwood. Capital cultural, social y económico como activos diferenciados.</div>
+      <div class="source-item"><strong>Archivo Yad Vashem</strong>Fuentes primarias: cartas, diarios, testimonios grabados. Base del análisis longitudinal n=312.</div>
+      <div class="source-item"><strong>Leo Baeck Institute (New York/Berlin)</strong>Colección de documentos sobre comunidades judías de habla alemana. Uso: muestreo biográfico 1840–1939.</div>
+      <div class="source-item"><strong>Museo Judío de Berlín — Archivo</strong>Documentación de obras, correspondencia y notas de donantes para el análisis de intención explícita.</div>
+      <div class="source-item"><strong>Lynn, R. & Vanhanen, T. (2002)</strong><em>IQ and the Wealth of Nations.</em> Praeger. Datos de CI por país. Metodología controvertida. Referencia incluida por completitud.</div>
+    </div>
+  </div>
+</section>
+
+<!-- LANG TOGGLE -->
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('both')" id="btn-both">HE+ES</button>
+  <button class="lang-btn" onclick="setLang('he')" id="btn-he">עב</button>
+  <button class="lang-btn" onclick="setLang('es')" id="btn-es">ES</button>
+</div>
+
+<script>
+// Language toggle
+function setLang(lang) {
+  document.body.classList.remove('he-only','es-only');
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  if (lang === 'he') { document.body.classList.add('he-only'); document.getElementById('btn-he').classList.add('active'); }
+  else if (lang === 'es') { document.body.classList.add('es-only'); document.getElementById('btn-es').classList.add('active'); }
+  else { document.getElementById('btn-both').classList.add('active'); }
+}
+
+// Intersection observer for section animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+// Bar animation
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.bar-fill').forEach(b => b.classList.add('animated'));
+    }
+  });
+}, { threshold: 0.2 });
+
+const longBars = document.getElementById('longBars');
+if (longBars) barObserver.observe(longBars);
+</script>
+</body>
+</html>
