@@ -41,7 +41,6 @@ Este manual se distribuye bajo **CC BY‑NC‑SA 4.0 + Cláusula Comercial Ronin
 **Cláusula Comercial Ronin:**  
 > *«El conocimiento es libre, pero el negocio con el conocimiento no lo es. Si usted obtiene un beneficio económico directo utilizando este manual, contacte con la Agencia RONIN para acordar una licencia comercial. El incumplimiento de esta cláusula será perseguido conforme a la legislación de propiedad intelectual.»*
 
-Contacto: **ronin@agencia-ronin.com**
 
 ---
 
