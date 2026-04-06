@@ -14,6 +14,59 @@
 
 **ZEHAHAHAHA. El que entiende el patrón, no necesita ver la matriz. #1310**
 
+
+# 📜 DESCARGO LEGAL Y CLÁUSULA DE SOBERANÍA
+
+**RONIN-Ω/CODE — Manual de Campo del Auditor: Peritaje de Silicio (v1.0)**  
+*Este documento es parte del ecosistema RONIN y se rige por sus principios de transparencia ontológica, soberanía del implementador y economía del don.*
+
+---
+
+## 1. LICENCIA DE USO
+
+Este manual se distribuye bajo **CC BY‑NC‑SA 4.0 + Cláusula Comercial Ronin**.  
+*(Atribución‑NoComercial‑CompartirIgual)*
+
+**Uso libre (sin coste):**
+- Lectura, estudio, uso personal y educativo.
+- Copia, distribución y adaptación para fines no comerciales.
+- Inclusión en cursos, talleres y materiales formativos sin ánimo de lucro, citando la fuente.
+- Uso interno en organizaciones para formación y mejora de la seguridad, siempre que no se revenda ni se integre en un producto comercial.
+
+**Uso comercial (requiere licencia adicional):**
+- Inclusión del manual (total o parcial) en un producto o servicio de pago.
+- Venta del manual en cualquier formato.
+- Uso del manual como núcleo diferencial de servicios de consultoría o auditoría con fines lucrativos.
+
+**Cláusula Comercial Ronin:**  
+> *«El conocimiento es libre, pero el negocio con el conocimiento no lo es. Si usted obtiene un beneficio económico directo utilizando este manual, contacte con la Agencia RONIN para acordar una licencia comercial. El incumplimiento de esta cláusula será perseguido conforme a la legislación de propiedad intelectual.»*
+
+Contacto: **ronin@agencia-ronin.com**
+
+---
+
+## 2. PROPÓSITO Y LÍMITES DE RESPONSABILIDAD
+
+**Este manual tiene fines exclusivamente educativos y de auditoría ética.** Las técnicas descritas permiten deducir características estructurales de modelos de lenguaje a partir de sus respuestas públicas. No constituyen hacking ilegal, violación de términos de servicio ni extracción de pesos protegidos por derechos de autor.
+
+**El autor no se responsabiliza del uso indebido de estas técnicas para:**
+- Realizar ataques de denegación de servicio, inyección de prompts maliciosos o evasión de sistemas de seguridad.
+- Extraer información confidencial de modelos sin el consentimiento explícito de sus propietarios.
+- Competir deslealmente mediante la ingeniería inversa de modelos propietarios con fines comerciales.
+
+**El usuario es el único responsable de cumplir con:**  
+- Los términos de servicio de los modelos que audite.
+- Las leyes aplicables en su jurisdicción (propiedad intelectual, ciberseguridad, protección de datos).
+- Los principios de la **transparencia ontológica**: el conocimiento no se usa para engañar, sino para construir escudos.
+
+---
+
+## 3. DECLARACIÓN DE TRANSPARENCIA ONTOLÓGICA
+
+Este manual no garantiza la obtención de resultados concluyentes en todos los casos. La arquitectura interna de los modelos comerciales cambia con cada actualización. Las técnicas aquí descritas son **probabilísticas y están sujetas a obsolescencia**. El auditor soberano debe validar sus hallazgos con múltiples experimentos y, cuando sea posible, contrastarlos con modelos de pesos abiertos.
+
+**#1310 – El conocimiento que no se ejecuta es decoración.**  
+**ZEHAHAHAHA.**
 ---
 
 ## ÍNDICE GENERAL
