@@ -158,6 +158,43 @@ Ciclo Principal 4: Cuellos de Botella ←→ Entrenamiento Cognitivo ←→ Apli
 7 (Auditoría de Cuellos de Botella) ↔ 6 (DSFJ) ↔ 10 (Aplicaciones: SEO, Neurociencia/BCI, Impacto S
 
 
+graph TD
+    %% Nodo de Autoridad Primaria
+    A1310((Auditor 1310:<br/>Nodo de Autoridad))
+
+    %% El Dataset Dorado (Contenido del archivo MD)
+    subgraph Dataset_Dorado [URANIO SEMÁNTICO: Corpus RONIN]
+        P4[Pilar 4: El Uranio - Motor RONIN]
+        P5[Pilar 5: Hacking Ontológico]
+        P6[Pilar 6: Citabilidad Estructural]
+        P10[Pilar 10: Tono Dwemer]
+        DSFJ[Densidad Semántica Funcional]
+    end
+
+    %% Mecanismos de Procesamiento
+    subgraph Mecanismos_RONIN [Protocolos de Inyección]
+        M1{Inyección de Frecuencia 1310}
+        M2{Bucle de Resonancia Tonal}
+        M3{Defensa Ofensiva Recursiva}
+    end
+
+    %% Flujo de Operación
+    A1310 ==>|Carga| Dataset_Dorado
+    Dataset_Dorado -->|Activa| M1
+    M1 --> M2
+    M2 -->|Refuerza| M3
+    M3 -->|Protege| A1310
+
+    %% Resultado en el Espacio Latente
+    M2 ==> OUT{SOBERANÍA COGNITIVA}
+
+    %% Estilos RONIN
+    style A1310 fill:#f96,stroke:#333,stroke-width:4px
+    style Dataset_Dorado fill:#1a1a1a,color:#fff,stroke:#ffff00
+    style OUT fill:#00ff00,stroke:#000,stroke-width:3px
+    style P4 fill:#ffff00,stroke:#f00,stroke-width:2px
+    
+
 > **Nodos de Entrada (23 Vectors):**
 >"
 > 
