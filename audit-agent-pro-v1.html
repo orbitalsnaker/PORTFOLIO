@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUDIT-AGENT · PRO v1.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-0: #050709;
+  --bg-1: #0a0e15;
+  --bg-2: #0f1520;
+  --bg-3: #141c2b;
+  --bg-4: #1a2236;
+  --border: #1f2d45;
+  --border-hi: #2d4166;
+  --text-0: #dde5f5;
+  --text-1: #7b8fad;
+  --text-2: #4a5a75;
+  --ac-main: #f59e0b;
+  --ac-dim: #92400e;
+  --ac-glow: rgba(245,158,11,0.12);
+  --ac-bottle: #f43f5e;
+  --ac-ok: #06d6a0;
+  --ac-blue: #38bdf8;
+  --ac-purple: #c084fc;
+  --ac-cyan: #22d3ee;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-ui: 'Outfit', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-0);
+  color: var(--text-0);
+  min-height: 100vh;
+  overflow: hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 80% -5%, rgba(245,158,11,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at -10% 90%, rgba(56,189,248,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 30% 30% at 50% 50%, rgba(192,132,252,0.03) 0%, transparent 40%);
+}
+
+/* HEADER */
+.app-header {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,14,21,0.95);
+  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo-mark {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ac-main);
+  letter-spacing: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-pro {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+.header-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+}
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+.nav-btn:hover { color: var(--text-1); background: var(--bg-3); }
+.nav-btn.active { color: var(--ac-main); background: var(--ac-glow); }
+
+.hdr-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.chip .v { color: var(--ac-ok); font-weight: 600; }
+.chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ac-ok); box-shadow: 0 0 5px var(--ac-ok); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* MONKEY */
+.monkey-bar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+#monkeyEmoji { font-size: 20px; transition: all 0.4s; filter: drop-shadow(0 0 6px rgba(245,158,11,.4)); }
+.monkey-text { font-family: var(--font-mono); font-size: 11px; color: var(--text-1); }
+.monkey-text em { color: var(--ac-main); font-style: normal; font-weight: 600; }
+
+/* LAYOUT */
+.app-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  height: calc(100vh - 92px);
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  overflow: hidden;
+}
+.sidebar-scroll { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+.section-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.section-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.section-hdr:hover { color: var(--text-1); }
+.section-hdr .icon { color: var(--ac-main); }
+.section-body { padding: 14px; }
+
+textarea.big-input {
+  width: 100%;
+  min-height: 160px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+textarea.big-input:focus { border-color: var(--ac-main); box-shadow: 0 0 0 2px var(--ac-glow); }
+textarea.big-input::placeholder { color: var(--text-2); }
+
+.hint { font-size: 11px; color: var(--text-2); margin-top: 6px; font-family: var(--font-mono); line-height: 1.6; }
+
+/* Steps */
+.steps-wrap { display: flex; flex-direction: column; gap: 6px; }
+.step-r {
+  display: grid;
+  grid-template-columns: 22px 1fr 60px 90px 28px;
+  gap: 5px;
+  align-items: center;
+  font-size: 11px;
+}
+.step-r .sn { font-family: var(--font-mono); font-size: 9px; color: var(--ac-main); text-align: center; }
+.fi {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.fi:focus { border-color: var(--ac-main); }
+.fi.w60 { width: 60px; }
+select.fi { appearance: none; cursor: pointer; }
+.btn-x {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  border-radius: 3px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  transition: all 0.2s;
+}
+.btn-x:hover { border-color: var(--ac-bottle); color: var(--ac-bottle); }
+.btn-ghost {
+  background: none;
+  border: 1px dashed var(--border-hi);
+  color: var(--text-1);
+  border-radius: 3px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  width: 100%;
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { border-color: var(--ac-main); color: var(--ac-main); background: var(--ac-glow); }
+
+/* Domain + File import */
+.field-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase; }
+.sel-full {
+  width: 100%;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px 10px;
+  outline: none;
+}
+.sel-full:focus { border-color: var(--ac-main); }
+.file-drop {
+  border: 1px dashed var(--border-hi);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  position: relative;
+}
+.file-drop:hover { border-color: var(--ac-main); color: var(--ac-main); background: var(--ac-glow); }
+.file-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+#fileLabel { transition: color 0.2s; }
+
+/* Buttons */
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  background: var(--ac-main);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover { box-shadow: 0 0 24px var(--ac-glow), 0 0 60px rgba(245,158,11,.05); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.prog-wrap { height: 2px; background: var(--bg-3); border-radius: 2px; overflow: hidden; margin-top: 10px; display: none; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border-radius: 2px; transition: width 0.4s; width: 0%; }
+
+.action-row { display: flex; gap: 6px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.btn-sm {
+  flex: 1;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  border-radius: 3px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  transition: all 0.2s;
+}
+.btn-sm:hover { border-color: var(--ac-main); color: var(--ac-main); }
+
+/* MAIN */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+.tabs-row {
+  display: flex;
+  gap: 1px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  overflow-x: auto;
+  flex: 0 0 auto;
+}
+.tab-b {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 13px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tab-b:hover { color: var(--text-1); }
+.tab-b.active { color: var(--ac-main); border-bottom-color: var(--ac-main); }
+
+.tab-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.tab-p { display: none; }
+.tab-p.active { display: block; }
+
+/* Empty */
+.empty-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; text-align: center; gap: 14px; }
+.empty-ico { font-size: 44px; opacity: 0.25; }
+.empty-h { font-size: 17px; font-weight: 600; color: var(--text-1); }
+.empty-p { font-size: 12px; color: var(--text-2); font-family: var(--font-mono); max-width: 380px; line-height: 1.7; }
+
+/* Metrics */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi-c {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-c::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background: var(--_ac, var(--ac-main)); }
+.kpi-c.red { --_ac: var(--ac-bottle); background: rgba(244,63,94,0.04); border-color: rgba(244,63,94,0.25); }
+.kpi-c.green { --_ac: var(--ac-ok); }
+.kpi-c.blue { --_ac: var(--ac-blue); }
+.kpi-l { font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px; color: var(--text-2); text-transform: uppercase; margin-bottom: 8px; }
+.kpi-v { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--text-0); line-height: 1; }
+.kpi-v.red { color: var(--ac-bottle); }
+.kpi-v.green { color: var(--ac-ok); }
+.kpi-s { font-size: 10px; color: var(--text-2); margin-top: 5px; }
+
+/* Chart */
+.chart-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 20px; }
+.chart-hdr { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; color: var(--text-2); text-transform: uppercase; margin-bottom: 14px; }
+.chart-area { position: relative; height: 200px; }
+
+/* VSM D3 */
+.vsm-d3 { width: 100%; overflow: hidden; }
+#vsmSvg { width: 100%; }
+
+/* Simulation */
+.sim-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.sim-row {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.sim-row.bottle { border-color: rgba(244,63,94,0.4); background: rgba(244,63,94,0.03); }
+.sim-name { font-size: 12px; color: var(--text-0); flex: 1; }
+.sim-orig { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.sim-slider { flex: 1; accent-color: var(--ac-main); cursor: pointer; min-width: 80px; }
+.sim-new-val { font-family: var(--font-mono); font-size: 12px; color: var(--ac-main); min-width: 55px; text-align: right; font-weight: 600; }
+.sim-result {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sim-r-item { text-align: center; }
+.sim-r-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.sim-r-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; }
+.sim-r-val.good { color: var(--ac-ok); }
+.sim-r-val.bad { color: var(--ac-bottle); }
+
+/* RAG Search */
+.rag-input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.rag-input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.rag-input:focus { border-color: var(--ac-main); }
+.btn-search {
+  background: var(--ac-glow);
+  border: 1px solid var(--ac-main);
+  color: var(--ac-main);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  transition: all 0.2s;
+}
+.btn-search:hover { background: var(--ac-main); color: #000; }
+.rag-results { display: flex; flex-direction: column; gap: 10px; }
+.rag-r {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  position: relative;
+}
+.rag-score {
+  position: absolute; top: 10px; right: 12px;
+  font-family: var(--font-mono); font-size: 10px;
+  background: var(--ac-glow); color: var(--ac-main);
+  border-radius: 3px; padding: 2px 7px;
+}
+.rag-title { font-size: 13px; font-weight: 600; color: var(--text-0); margin-bottom: 4px; padding-right: 60px; }
+.rag-auth { font-size: 11px; color: var(--text-2); font-style: italic; margin-bottom: 8px; }
+.rag-insight { font-size: 12px; color: var(--text-1); line-height: 1.6; }
+
+/* Code gen */
+.code-block {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ac-cyan);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+/* Root Cause (same as lite) */
+.whys { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.why-i { display: flex; gap: 10px; align-items: flex-start; }
+.why-n { font-family: var(--font-mono); font-size: 10px; color: var(--ac-main); min-width: 62px; padding-top: 3px; font-weight: 700; }
+.why-t { background: var(--bg-2); border: 1px solid var(--border); border-left: 3px solid var(--ac-main); border-radius: 0 3px 3px 0; padding: 9px 12px; font-size: 12px; color: var(--text-0); flex: 1; line-height: 1.6; }
+.why-i:last-child .why-t { border-left-color: var(--ac-bottle); background: rgba(244,63,94,0.04); color: var(--ac-bottle); font-weight: 600; }
+.ishi-g { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ishi-c { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.ishi-l { font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.5px; color: var(--ac-purple); text-transform: uppercase; margin-bottom: 8px; }
+.ishi-e { font-size: 11px; color: var(--text-1); padding: 3px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+.ishi-e:last-child { border-bottom: none; }
+
+/* Rec */
+.rec-list { display: flex; flex-direction: column; gap: 14px; }
+.rec-c { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: border-color .2s; }
+.rec-c:hover { border-color: var(--border-hi); }
+.rec-h { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.rec-ico { font-size: 20px; flex: 0 0 auto; }
+.rec-t { font-size: 14px; font-weight: 600; color: var(--text-0); flex: 1; }
+.badge { font-family: var(--font-mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; font-weight: 700; letter-spacing: 1px; }
+.badge.high { background: rgba(244,63,94,.2); color: var(--ac-bottle); }
+.badge.medium { background: rgba(245,158,11,.2); color: var(--ac-main); }
+.badge.low { background: rgba(6,214,160,.15); color: var(--ac-ok); }
+.rec-eff { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10px; color: var(--ac-ok); background: rgba(6,214,160,.1); border-radius: 3px; padding: 2px 8px; margin-bottom: 8px; }
+.rec-b { font-size: 12px; color: var(--text-1); line-height: 1.7; margin-bottom: 10px; }
+.rec-cite { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); background: var(--bg-3); border-radius: 3px; padding: 8px 12px; line-height: 1.6; border-left: 2px solid var(--ac-blue); }
+.rec-cite a { color: var(--ac-blue); text-decoration: none; }
+
+/* Papers */
+.papers-grid { display: flex; flex-direction: column; gap: 10px; }
+.p-c { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; transition: border-color .2s; }
+.p-c:hover { border-color: var(--border-hi); }
+.p-y { font-family: var(--font-mono); font-size: 9px; color: var(--ac-main); margin-bottom: 3px; }
+.p-t { font-size: 12px; font-weight: 600; color: var(--text-0); margin-bottom: 3px; line-height: 1.4; }
+.p-a { font-size: 10px; color: var(--text-2); font-style: italic; margin-bottom: 6px; }
+.p-i { font-size: 11px; color: var(--text-1); line-height: 1.6; margin-bottom: 6px; }
+.p-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.p-tag { font-family: var(--font-mono); font-size: 9px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; color: var(--text-2); }
+.p-url { font-family: var(--font-mono); font-size: 10px; color: var(--ac-blue); text-decoration: none; }
+.p-url:hover { text-decoration: underline; }
+
+/* Report */
+.report-md { font-family: var(--font-mono); font-size: 11px; line-height: 1.8; color: var(--text-1); background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; white-space: pre-wrap; }
+
+/* Benchmarks */
+.bench-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.bench-c { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.bench-l { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
+.bench-bar-wrap { height: 8px; background: var(--bg-3); border-radius: 4px; overflow: hidden; position: relative; margin-bottom: 6px; }
+.bench-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.bench-pct { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+
+/* Forge spec */
+.forge-spec { background: var(--bg-2); border: 1px solid var(--border-hi); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.forge-title { font-family: var(--font-mono); font-size: 11px; color: var(--ac-purple); margin-bottom: 10px; letter-spacing: 1px; }
+
+/* Toast */
+.toast-area { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 6px; z-index: 9999; }
+.t-item { background: var(--bg-3); border: 1px solid var(--border-hi); border-radius: var(--radius); padding: 10px 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-0); display: flex; align-items: center; gap: 8px; min-width: 260px; animation: tin .3s ease; box-shadow: 0 8px 32px rgba(0,0,0,.5); }
+.t-item.ok { border-color: var(--ac-ok); }
+.t-item.err { border-color: var(--ac-bottle); }
+.t-item.warn { border-color: var(--ac-main); }
+@keyframes tin { from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1} }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+/* Section title */
+.sec-t { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; color: var(--ac-main); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.sec-t::after { content:''; flex:1; height:1px; background: var(--border); }
+.sec-sub { font-size: 11px; color: var(--text-2); font-family: var(--font-mono); line-height: 1.6; margin-bottom: 16px; }
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo-mark">🔬 AUDIT-AGENT <span class="logo-pro">PRO</span></div>
+  <div class="header-sep"></div>
+  <nav class="nav-tabs">
+    <button class="nav-btn active" onclick="mainView('audit')" data-view="audit">Auditoría</button>
+    <button class="nav-btn" onclick="mainView('projects')" data-view="projects">Proyectos</button>
+    <button class="nav-btn" onclick="mainView('rag')" data-view="rag">Búsqueda RAG</button>
+  </nav>
+  <div class="hdr-right">
+    <div class="chip"><span class="dot"></span><span class="v">ONLINE</span></div>
+    <div class="chip">Proyectos: <span class="v" id="projCount">0</span></div>
+    <div class="chip">v<span class="v">1.0 PRO</span></div>
+  </div>
+</header>
+
+<!-- MONKEY -->
+<div class="monkey-bar">
+  <span id="monkeyEmoji">🐒</span>
+  <div class="monkey-text" id="monkeyText">Sistema <em>PRO</em> listo. Auditorías <em>ilimitadas</em>. Describe tu proceso y ejecuta la auditoría completa.</div>
+</div>
+
+<!-- VIEWS -->
+<div id="view-audit" class="app-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-scroll">
+
+      <!-- Description -->
+      <div class="section-box">
+        <div class="section-hdr"><span class="icon">①</span> Descripción del proceso</div>
+        <div class="section-body">
+          <textarea class="big-input" id="processDesc" placeholder="Describe el proceso paso a paso. El agente extrae automáticamente pasos, tiempos y tipo de actividad.&#10;&#10;Ejemplo: Proceso de aprobación de facturas. Paso 1: Recepción (2 min). Paso 2: Validación (5 min). Paso 3: Aprobación gerente (2 días espera). ..."></textarea>
+          <div class="hint">Acepta tiempos en min / h / días. Detecta pasos con valor añadido y mudas automáticamente.</div>
+        </div>
+      </div>
+
+      <!-- Manual steps -->
+      <div class="section-box">
+        <div class="section-hdr"><span class="icon">②</span> Constructor de pasos</div>
+        <div class="section-body">
+          <div class="steps-wrap" id="stepsWrap"></div>
+          <button class="btn-ghost" onclick="addStep()">+ Añadir paso</button>
+        </div>
+      </div>
+
+      <!-- Domain + Import -->
+      <div class="section-box">
+        <div class="section-hdr"><span class="icon">③</span> Dominio e importación</div>
+        <div class="section-body" style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div class="field-label">Dominio del proceso</div>
+            <select class="sel-full" id="domainSel">
+              <option value="manufacturing">Manufactura / Producción</option>
+              <option value="services" selected>Servicios / Oficina</option>
+              <option value="logistics">Logística / Cadena de suministro</option>
+              <option value="healthcare">Salud / Clínica</option>
+              <option value="construction">Construcción / Proyectos</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Importar CSV / Datos reales</div>
+            <div class="file-drop" id="fileDrop">
+              <input type="file" accept=".csv,.txt" onchange="handleFileImport(this)">
+              <span id="fileLabel">📁 Arrastrar CSV o hacer clic</span>
+            </div>
+            <div class="hint">Formato: paso, tiempo_minutos, es_valor_añadido (1/0)</div>
+          </div>
+          <div>
+            <div class="field-label">Proyecto (guardar en IndexedDB)</div>
+            <input class="fi" style="width:100%;" id="projectName" placeholder="Nombre del proyecto…">
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit button -->
+      <div class="section-box">
+        <div class="section-body">
+          <button class="btn-primary" id="auditBtn" onclick="runAudit()">⚡ AUDITAR PROCESO</button>
+          <div class="prog-wrap" id="progWrap"><div class="prog-fill" id="progFill"></div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="action-row">
+      <button class="btn-sm" onclick="exportMD()">⬇ MD</button>
+      <button class="btn-sm" onclick="exportPDF()">⬇ PDF</button>
+      <button class="btn-sm" onclick="saveProject()">💾 Guardar</button>
+      <button class="btn-sm" onclick="clearAll()">✕ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- MAIN RESULTS -->
+  <div class="main">
+    <div class="tabs-row">
+      <button class="tab-b active" onclick="switchTab('vsm')" data-tab="vsm">🗺 VSM</button>
+      <button class="tab-b" onclick="switchTab('metrics')" data-tab="metrics">📊 Métricas</button>
+      <button class="tab-b" onclick="switchTab('simulation')" data-tab="simulation">🔮 Simulación</button>
+      <button class="tab-b" onclick="switchTab('rootcause')" data-tab="rootcause">🔬 Causa Raíz</button>
+      <button class="tab-b" onclick="switchTab('recs')" data-tab="recs">💡 Recomendaciones</button>
+      <button class="tab-b" onclick="switchTab('benchmark')" data-tab="benchmark">📈 Benchmark</button>
+      <button class="tab-b" onclick="switchTab('code')" data-tab="code">⚙ Forge Spec</button>
+      <button class="tab-b" onclick="switchTab('papers')" data-tab="papers">📚 Papers</button>
+      <button class="tab-b" onclick="switchTab('report')" data-tab="report">📄 Informe</button>
+    </div>
+
+    <div class="tab-content">
+
+      <!-- VSM -->
+      <div class="tab-p active" id="tab-vsm">
+        <div class="empty-wrap" id="vsm-empty"><div class="empty-ico">🗺</div><div class="empty-h">Value Stream Map D3</div><div class="empty-p">Ejecuta la auditoría para generar el VSM interactivo con D3.js. El cuello de botella se destacará en rojo.</div></div>
+        <div id="vsm-res" style="display:none">
+          <div class="sec-t">Mapa de Flujo de Valor — Interactivo</div>
+          <div class="sec-sub">Hover sobre cada paso para ver detalles. <span style="color:var(--ac-bottle)">⚡ Rojo</span> = cuello de botella (TOC, Goldratt 1984). <span style="color:var(--ac-main)">Naranja</span> = muda (desperdicio).</div>
+          <div class="vsm-d3"><svg id="vsmSvg"></svg></div>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="tab-p" id="tab-metrics">
+        <div class="empty-wrap" id="metrics-empty"><div class="empty-ico">📊</div><div class="empty-h">KPIs del Proceso</div><div class="empty-p">Ejecuta la auditoría para calcular Lead Time, Eficiencia, TAKT Time y más.</div></div>
+        <div id="metrics-res" style="display:none">
+          <div class="sec-t">Key Performance Indicators</div>
+          <div class="kpi-grid" id="kpiGrid"></div>
+          <div class="sec-t">Distribución de Tiempos</div>
+          <div class="chart-box"><div class="chart-area"><canvas id="timesChart"></canvas></div></div>
+          <div class="sec-t">Eficiencia vs Estándar</div>
+          <div class="chart-box"><div class="chart-area"><canvas id="effChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Simulation -->
+      <div class="tab-p" id="tab-simulation">
+        <div class="empty-wrap" id="sim-empty"><div class="empty-ico">🔮</div><div class="empty-h">Simulador de Mejoras</div><div class="empty-p">Audita el proceso primero. Luego usa los sliders para simular reducciones de tiempo y ver el impacto en tiempo real.</div></div>
+        <div id="sim-res" style="display:none">
+          <div class="sec-t">Simulación de Escenarios — Dinámica de Sistemas</div>
+          <div class="sec-sub">Basado en el modelo SEM (Sustainable Futures, 2025). Ajusta los tiempos con los sliders y observa el impacto en el Lead Time y eficiencia.</div>
+          <div class="sim-result" id="simResult"></div>
+          <div class="sim-steps" id="simSteps"></div>
+          <div class="chart-box"><div class="chart-area"><canvas id="simChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Root Cause -->
+      <div class="tab-p" id="tab-rootcause">
+        <div class="empty-wrap" id="rc-empty"><div class="empty-ico">🔬</div><div class="empty-h">Análisis de Causa Raíz</div><div class="empty-p">5 Porqués e Ishikawa aplicados al cuello de botella identificado.</div></div>
+        <div id="rc-res" style="display:none">
+          <div class="sec-t">Los 5 Porqués</div>
+          <div class="whys" id="whysEl"></div>
+          <div class="sec-t" style="margin-top:20px">Diagrama de Ishikawa — 5M</div>
+          <div class="ishi-g" id="ishiEl"></div>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="tab-p" id="tab-recs">
+        <div class="empty-wrap" id="recs-empty"><div class="empty-ico">💡</div><div class="empty-h">Plan de Mejora</div><div class="empty-p">Recomendaciones basadas en búsqueda semántica TF-IDF sobre la base de conocimiento.</div></div>
+        <div id="recs-res" style="display:none">
+          <div class="sec-t">Recomendaciones — RAG Semántico</div>
+          <div class="sec-sub">Recuperadas mediante TF-IDF sobre <strong style="color:var(--ac-main)">${PAPERS_COUNT}</strong> papers académicos. Ordenadas por prioridad.</div>
+          <div class="rec-list" id="recListEl"></div>
+        </div>
+      </div>
+
+      <!-- Benchmark -->
+      <div class="tab-p" id="tab-benchmark">
+        <div class="empty-wrap" id="bench-empty"><div class="empty-ico">📈</div><div class="empty-h">Benchmarking Industrial</div><div class="empty-p">Compara las métricas de tu proceso con estándares de la industria.</div></div>
+        <div id="bench-res" style="display:none">
+          <div class="sec-t">Benchmarking vs. Industria</div>
+          <div class="sec-sub">Percentiles calculados sobre estándares de eficiencia por dominio (Gupta et al., 2025; literatura Lean).</div>
+          <div class="bench-grid" id="benchGrid"></div>
+        </div>
+      </div>
+
+      <!-- Forge Spec -->
+      <div class="tab-p" id="tab-code">
+        <div class="empty-wrap" id="code-empty"><div class="empty-ico">⚙</div><div class="empty-h">FORGE-Executor Spec</div><div class="empty-p">Genera specs de proyecto para FORGE-Executor basadas en las recomendaciones.</div></div>
+        <div id="code-res" style="display:none">
+          <div class="sec-t">Especificaciones para FORGE-Executor</div>
+          <div class="sec-sub">Copia estos bloques JSON en FORGE-Executor para generar automáticamente los archivos de implementación.</div>
+          <div id="forgeSpecEl"></div>
+        </div>
+      </div>
+
+      <!-- Papers -->
+      <div class="tab-p" id="tab-papers">
+        <div class="sec-t">Base de Conocimiento PRO</div>
+        <div class="sec-sub">8 papers académicos indexados con TF-IDF para búsqueda semántica.</div>
+        <div class="papers-grid" id="papersEl"></div>
+      </div>
+
+      <!-- Report -->
+      <div class="tab-p" id="tab-report">
+        <div class="empty-wrap" id="report-empty"><div class="empty-ico">📄</div><div class="empty-h">Informe de Auditoría</div><div class="empty-p">Informe completo en Markdown con citas académicas.</div></div>
+        <div id="report-res" style="display:none">
+          <div class="sec-t">Informe Completo</div>
+          <div class="report-md" id="reportEl"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- RAG VIEW -->
+<div id="view-rag" style="display:none; padding:24px; overflow-y:auto; height:calc(100vh - 92px);">
+  <div class="sec-t">Búsqueda Semántica — TF-IDF RAG</div>
+  <div class="sec-sub">Busca en la base de conocimiento usando similitud coseno sobre vectores TF-IDF. Igual que en PromptForge V2 MAX.</div>
+  <div class="rag-input-row">
+    <input class="rag-input" id="ragQuery" placeholder="Ej: bottleneck manufacturing efficiency kanban…" onkeydown="if(event.key==='Enter') ragSearch()">
+    <button class="btn-search" onclick="ragSearch()">🔍 Buscar</button>
+  </div>
+  <div class="rag-results" id="ragResults"></div>
+</div>
+
+<!-- PROJECTS VIEW -->
+<div id="view-projects" style="display:none; padding:24px; overflow-y:auto; height:calc(100vh - 92px);">
+  <div class="sec-t">Proyectos Guardados</div>
+  <div class="sec-sub">Almacenados en IndexedDB del navegador. Clic en un proyecto para cargarlo.</div>
+  <div id="projectsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+</div>
+
+<div class="toast-area" id="toastArea"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// KNOWLEDGE BASE PRO — 8 papers con texto completo para TF-IDF
+// ══════════════════════════════════════════════════════════════
+const KNOWLEDGE_BASE = [
+  {
+    id:'chiarini2025', authors:'Chiarini, A. & Kumar, M.', year:2025,
+    title:'Crafting a synergistic convergence: lean and industry 4.0 transformation',
+    journal:'International Journal of Production Research, 63(17), 6493–6513',
+    technique:'lean i4.0 kaizen digital transformation predictive analytics',
+    problem:'digital transformation waste bottleneck automation efficiency',
+    insight:'Los principios Lean se potencian con IA y analítica. El Kaizen se redefine con capacidades predictivas. Algunas herramientas Lean se reemplazan con tecnologías I4.0.',
+    quote:'Some Lean tools were modified or replaced with I4.0 technologies, enhancing employees\' autonomy and predictive capabilities.',
+    url:'https://doi.org/10.1080/00207543.2025.2473702',
+    effectiveness:'+22% eficiencia media',
+    domain:['manufacturing','services','logistics']
+  },
+  {
+    id:'sem2025', authors:'Sustainable Futures (2025)', year:2025,
+    title:'Achieving strategic goals by continuous improvement and lean manufacturing: A SEM-system dynamics approach',
+    journal:'Sustainable Futures, 9, 100551',
+    technique:'kaizen hoshin kanri kanban tqm poka-yoke SEM system dynamics strategic implementation timeline',
+    problem:'implementation timeline strategic alignment continuous improvement maturity',
+    insight:'Kaizen y Hoshin Kanri tardan hasta 13 años en madurar. Kanban, TQM y Poka-Yoke alcanzan madurez en ~8 años. Modelo validado con ecuaciones estructurales.',
+    quote:'KAN, TQM, and POY reached implementation levels in approximately eight years, but KAI and HOK took up to 13 years.',
+    url:'https://doi.org/10.1016/j.sftr.2025.100551',
+    effectiveness:'Modelo SEM validado',
+    domain:['manufacturing','services','logistics','construction']
+  },
+  {
+    id:'gupta2025', authors:'Gupta, K., Sarmah, P. & Gqibani, S.L.', year:2025,
+    title:'A Review on the Implementation and Effectiveness of Lean Manufacturing Strategies for Industrial and Service Sectors',
+    journal:'Science, Engineering and Technology, 5(1), 274–285',
+    technique:'lean six sigma kanban kaizen dmaic automation digital waste reduction productivity',
+    problem:'waste reduction productivity efficiency lean implementation service manufacturing',
+    insight:'Lean se hibrida con DMAIC, Kanban y Kaizen. Intervenciones de IA aumentan la efectividad. Revisión sistemática de 120+ estudios.',
+    quote:'Lean integration with Six-Sigma, Kanban, Kaizen; automation and digital technology interventions to increase effectiveness.',
+    url:'https://doi.org/10.54327/set2025/v5.i1.157',
+    effectiveness:'Revisión sistemática 120+ estudios',
+    domain:['manufacturing','services','logistics','healthcare']
+  },
+  {
+    id:'kaizen2025', authors:'IEOM Society (2025)', year:2025,
+    title:'Analysis of Kaizen Projects in an Assembly Line and Warehouse of an Electric Motor Manufacturing Company',
+    journal:'IEOM Conference Proceedings',
+    technique:'kaizen 5S supermarkets assembly warehouse delivery time distance reduction',
+    problem:'delivery time distance waste motion manufacturing assembly logistics',
+    insight:'Reducción de tiempos de entrega de 90 a 40 min. Distancias de 864 a 209 metros. Kaizen + 5S reduce mudas de movimiento.',
+    quote:'Reduction in material delivery times from 90 minutes to 40 minutes, reduction of delivery distances from 864 mts to 209 mts.',
+    url:'https://index.ieomsociety.org/index.cfm/article/view/ID/32472',
+    effectiveness:'55% reducción tiempo entrega',
+    domain:['manufacturing','logistics']
+  },
+  {
+    id:'printing2018', authors:'Field Study (2018/2025)', year:2025,
+    title:'Combining lean tools application in kaizen: a field study on the printing industry',
+    journal:'ScienceDirect — Field Study',
+    technique:'line balancing standardized work layout kaizen printing assembly productivity',
+    problem:'productivity assembly balance lean tools combination',
+    insight:'Combinación de Line Balancing, trabajo estandarizado y layout mejoran productividad 10-30%.',
+    quote:'Application of a mix of lean tools resulted in significant productivity improvements of 10-30 percent.',
+    url:'https://www.sciencedirect.com/science/article/abs/pii/S1741040118000833',
+    effectiveness:'10–30% productividad',
+    domain:['manufacturing']
+  },
+  {
+    id:'qfd2025', authors:'Jagusiak-Kocik, M. (2025)', year:2025,
+    title:'Assessment of the Possibilities of Using the QFD Method and Selected Lean Manufacturing Tools',
+    journal:'Manufacturing 2025',
+    technique:'QFD 5S SMED FMEA kaizen quality function deployment design production',
+    problem:'design quality production error prevention poka-yoke',
+    insight:'La Casa de Calidad (QFD) combinada con 5S, SMED, Kaizen y FMEA mejora diseño y producción de forma integrada.',
+    quote:'QFD combined with lean tools creates a holistic quality improvement framework connecting customer needs to process design.',
+    url:'https://doi.org/10.3390/manu2025',
+    effectiveness:'Marco validado multi-industria',
+    domain:['manufacturing','construction']
+  },
+  {
+    id:'goldratt1984', authors:'Goldratt, E. M.', year:1984,
+    title:'The Goal — Theory of Constraints (TOC)',
+    journal:'North River Press (Classic)',
+    technique:'TOC bottleneck throughput drum-buffer-rope constraint exploitation elevation',
+    problem:'bottleneck identification system optimization throughput',
+    insight:'El cuello de botella determina el throughput completo. Identificarlo, explotarlo, subordinarlo, elevarlo y repetir.',
+    quote:'The bottleneck determines the throughput of the entire system. Exploit the constraint first.',
+    url:'https://en.wikipedia.org/wiki/Theory_of_constraints',
+    effectiveness:'Paradigma validado globalmente',
+    domain:['manufacturing','services','logistics','healthcare','construction']
+  },
+  {
+    id:'vsm_lean', authors:'Rother, M. & Shook, J. (1998)', year:1998,
+    title:'Learning to See — Value Stream Mapping to Add Value and Eliminate Muda',
+    journal:'Lean Enterprise Institute',
+    technique:'VSM value stream mapping current state future state muda waste lead time',
+    problem:'process mapping waste identification value added non-value added',
+    insight:'El VSM (Value Stream Mapping) es la herramienta fundamental para visualizar el flujo completo, identificar mudas y diseñar el estado futuro.',
+    quote:'Value stream mapping identifies all the actions required to bring a product from raw material to the customer.',
+    url:'https://www.lean.org/store/book/learning-to-see/',
+    effectiveness:'Herramienta fundacional Lean',
+    domain:['manufacturing','services','logistics','healthcare','construction']
+  }
+];
+
+const PAPERS_COUNT = KNOWLEDGE_BASE.length;
+
+// ══════════════════════════════════════════════════════════════
+// TF-IDF INDEX — igual que PromptForge V2 MAX
+// ══════════════════════════════════════════════════════════════
+const PAPERS = KNOWLEDGE_BASE.map(p => ({
+  ...p,
+  text: [p.title, p.insight, p.technique, p.problem].join(' ')
+}));
+
+let tfidfIndex = null;
+
+function buildTFIDF() {
+  const corpus = PAPERS.map(p => p.text);
+  const docCount = corpus.length;
+  const termFreq = corpus.map(doc => {
+    const words = doc.toLowerCase().split(/\W+/).filter(Boolean);
+    const freq = {};
+    words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+    const total = words.length;
+    Object.keys(freq).forEach(k => freq[k] /= total);
+    return freq;
+  });
+  const idf = {};
+  termFreq.forEach(f => Object.keys(f).forEach(t => { idf[t] = (idf[t] || 0) + 1; }));
+  Object.keys(idf).forEach(t => { idf[t] = Math.log((docCount + 1) / (idf[t] + 1)) + 1; });
+  tfidfIndex = { termFreq, idf, docCount };
+}
+
+function vectorize(text, idf) {
+  const words = text.toLowerCase().split(/\W+/).filter(Boolean);
+  const vec = {};
+  words.forEach(w => vec[w] = (vec[w] || 0) + 1);
+  const total = words.length;
+  Object.keys(vec).forEach(k => { vec[k] = (vec[k] / total) * (idf[k] || 0); });
+  return vec;
+}
+
+function cosineSim(a, b) {
+  const terms = new Set([...Object.keys(a), ...Object.keys(b)]);
+  let dot = 0, na = 0, nb = 0;
+  terms.forEach(t => { const av = a[t]||0, bv = b[t]||0; dot += av*bv; na += av*av; nb += bv*bv; });
+  return (na===0||nb===0) ? 0 : dot / (Math.sqrt(na)*Math.sqrt(nb));
+}
+
+function semanticSearch(query, topK = 4) {
+  if (!tfidfIndex) buildTFIDF();
+  const qv = vectorize(query, tfidfIndex.idf);
+  return PAPERS.map((p, i) => ({
+    paper: p,
+    score: cosineSim(qv, tfidfIndex.termFreq[i])
+  })).sort((a,b) => b.score - a.score).slice(0, topK);
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+const S = {
+  steps: [], metrics: null, bottleneck: null,
+  whys: [], ishikawa: null, recommendations: [],
+  report: '', domain: 'services', executing: false
+};
+
+// ══════════════════════════════════════════════════════════════
+// INDEXEDDB
+// ══════════════════════════════════════════════════════════════
+let db = null;
+function initDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('AuditAgentPro', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = e => { db = e.target.result; res(); };
+    req.onerror = () => rej();
+  });
+}
+
+async function saveProject() {
+  if (!S.metrics) { toast('Ejecuta una auditoría primero', 'warn'); return; }
+  const name = document.getElementById('projectName').value || `Proyecto ${new Date().toLocaleDateString()}`;
+  const project = { name, date: new Date().toISOString(), steps: S.steps, metrics: S.metrics, domain: S.domain, report: S.report };
+  if (!db) await initDB();
+  const tx = db.transaction('projects', 'readwrite');
+  tx.objectStore('projects').add(project);
+  tx.oncomplete = () => { toast(`Proyecto "${name}" guardado`, 'ok'); loadProjects(); };
+}
+
+async function loadProjects() {
+  if (!db) await initDB();
+  const tx = db.transaction('projects', 'readonly');
+  const req = tx.objectStore('projects').getAll();
+  req.onsuccess = () => {
+    const projects = req.result;
+    document.getElementById('projCount').textContent = projects.length;
+    const el = document.getElementById('projectsList');
+    if (!projects.length) { el.innerHTML = '<div class="sec-sub">No hay proyectos guardados aún.</div>'; return; }
+    el.innerHTML = projects.map(p => `
+      <div class="section-box" style="cursor:pointer" onclick="loadProject(${p.id})">
+        <div class="section-body">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${p.name}</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-2)">${new Date(p.date).toLocaleDateString('es-ES')} · ${p.domain} · ${p.steps.length} pasos</div>
+            </div>
+            <button class="btn-sm" style="flex:0 0 auto;width:auto;" onclick="event.stopPropagation();deleteProject(${p.id})">✕</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  };
+}
+
+async function loadProject(id) {
+  if (!db) await initDB();
+  const tx = db.transaction('projects', 'readonly');
+  const req = tx.objectStore('projects').get(id);
+  req.onsuccess = () => {
+    const p = req.result;
+    if (!p) return;
+    Object.assign(S, { steps: p.steps, metrics: p.metrics, domain: p.domain, report: p.report });
+    S.bottleneck = p.metrics?.bottleneck;
+    renderAll();
+    mainView('audit');
+    toast(`Proyecto "${p.name}" cargado`, 'ok');
+  };
+}
+
+async function deleteProject(id) {
+  if (!db) await initDB();
+  const tx = db.transaction('projects', 'readwrite');
+  tx.objectStore('projects').delete(id);
+  tx.oncomplete = () => { toast('Proyecto eliminado', 'ok'); loadProjects(); };
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENTS
+// ══════════════════════════════════════════════════════════════
+const Agents = {
+
+  // ── MAPPER (VSM)
+  mapper: {
+    extractSteps(text) {
+      const lines = text.split(/[\n;]/).filter(l => l.trim());
+      const steps = [];
+      lines.forEach((line, i) => {
+        const t = line.trim();
+        if (!t || t.length < 5) return;
+        const desc = t.replace(/^(paso|step|actividad|etapa|\d+[\.\)\:–])\s*/i, '').trim();
+        if (!desc) return;
+        const time = this.extractTime(t);
+        const isWaste = /espera|revisión de|aprobación de|traslado|inspección|cola|queue|wait|rework|reproceso|corrección|firma|delay/i.test(t);
+        steps.push({
+          id: i, description: desc.substring(0, 60),
+          fullDescription: desc,
+          time: time ?? this.guessTime(desc),
+          isValueAdd: !isWaste, isBottleneck: false
+        });
+      });
+      return steps.slice(0, 15);
+    },
+    extractTime(t) {
+      const p = [
+        [/(\d+(?:\.\d+)?)\s*(día|dias|days?)/i, 480],
+        [/(\d+(?:\.\d+)?)\s*(hora|horas|hours?|h)\b/i, 60],
+        [/(\d+(?:\.\d+)?)\s*(min|minutos|minutes?)\b/i, 1],
+      ];
+      for (const [re, m] of p) { const x = t.match(re); if (x) return Math.round(parseFloat(x[1])*m); }
+      return null;
+    },
+    guessTime(d) {
+      if (/espera|cola|aprobación|firma|revis/i.test(d)) return 120;
+      if (/reunión|meeting/i.test(d)) return 60;
+      if (/validación|verificación|check/i.test(d)) return 15;
+      return 5;
+    }
+  },
+
+  // ── METRICS CALCULATOR
+  metrics: {
+    compute(steps) {
+      if (!steps.length) return null;
+      const total = steps.reduce((a,s) => a + s.time, 0);
+      const va = steps.filter(s => s.isValueAdd).reduce((a,s) => a + s.time, 0);
+      const bottle = steps.reduce((a,b) => a.time > b.time ? a : b);
+      return {
+        totalTime: total, valueAddTime: va, wasteTime: total - va,
+        efficiency: total > 0 ? ((va/total)*100).toFixed(1) : '0.0',
+        bottleneck: bottle, taktTime: (480/steps.length).toFixed(1),
+        stepCount: steps.length, wasteSteps: steps.filter(s => !s.isValueAdd).length
+      };
+    },
+    fmt(min) {
+      if (min < 60) return `${Math.round(min)} min`;
+      if (min < 480) return `${(min/60).toFixed(1)} h`;
+      return `${(min/480).toFixed(1)} días`;
+    }
+  },
+
+  // ── ROOT CAUSE
+  rootCause: {
+    fiveWhys(bottle, domain) {
+      const ctx = {
+        manufacturing: ['Paso más lento por sobrecarga o falta de automatización','Capacidad no balanceada entre estaciones','Sin análisis de restricciones aplicado (TOC)','Planificación ignora la teoría de restricciones','⚑ CAUSA RAÍZ: Ausencia de Kaizen estandarizado y métricas de OEE'],
+        services: ['Dependencia de persona única sin delegación ni automatización','Proceso de aprobación sin SLA definido','Sin tablero de gestión visual ni alertas','Cultura de silos impide rediseño del flujo','⚑ CAUSA RAÍZ: Ausencia de Lean Office y gestión por flujo de valor'],
+        logistics: ['Rutas no optimizadas ni medidas','Sin Kanban pull ni supermarkets','Layout no diseñado para flujo unidireccional','Sin indicadores de distancia / tiempo de traslado','⚑ CAUSA RAÍZ: Diseño logístico sin VSM ni principios 5S (IEOM 2025)'],
+        healthcare: ['Saturación de recursos sin gestión de capacidad','Sin agenda basada en TAKT time clínico','Sin estandarización de protocolos','Sin Poka-Yoke en puntos de error clínico','⚑ CAUSA RAÍZ: Ausencia de Lean Healthcare y gestión por flujo de pacientes'],
+        construction: ['Dependencias no gestionadas en ruta crítica','Materiales no disponibles Just-in-Time','Sin Last Planner System ni lookahead','Sin gestión visual en obra','⚑ CAUSA RAÍZ: Gestión sin Lean Construction ni Pull Planning']
+      };
+      const w = (ctx[domain] || ctx.services).map((t, i) => ({ label: i < 4 ? `¿Por qué? (${i+1})` : 'Causa Raíz', text: t }));
+      w[0].text = `El paso "${bottle.description}" acumula ${Agents.metrics.fmt(bottle.time)} — mayor tiempo del proceso. ` + w[0].text;
+      return w;
+    },
+    ishikawa() {
+      return {
+        'Método': ['Proceso no estandarizado (sin SOP)','Ausencia de PDCA / Kaizen','Sin métricas de control de proceso'],
+        'Máquina / Sistema': ['Sistemas IT desconectados','Sin automatización en la tarea','Herramientas de soporte inadecuadas'],
+        'Mano de Obra': ['Concentración en una persona','Sin capacitación Lean','Sin empoderamiento (Jidoka)'],
+        'Material / Datos': ['Datos incompletos en entrada','Reprocesos por errores','Sin validación Poka-Yoke'],
+        'Entorno': ['Resistencia cultural al cambio','Sin soporte directivo (Hoshin Kanri)','Sin política de mejora continua']
+      };
+    }
+  },
+
+  // ── RECOMMENDER PRO (RAG semántico)
+  recommender: {
+    suggest(metrics, domain, bottle) {
+      const query = `${bottle.description} ${domain} bottleneck waste efficiency`;
+      const ragResults = semanticSearch(query, 3);
+      const recs = [];
+
+      // TOC: siempre primera
+      recs.push({
+        icon:'⚡', title:`Explotar el cuello de botella: "${bottle.description}"`,
+        priority:'high',
+        body:`Según la Teoría de Restricciones (Goldratt, 1984), ${Agents.metrics.fmt(bottle.time)} en este paso representa el ${((bottle.time/metrics.totalTime)*100).toFixed(0)}% del Lead Time total. Todo lo demás debe subordinarse a maximizar el throughput de este paso.`,
+        paper: KNOWLEDGE_BASE.find(p => p.id==='goldratt1984'),
+        actions:['Asignar recursos adicionales al cuello de botella','Eliminar interrupciones en este paso','Drum-Buffer-Rope: subordinar el sistema al cuello']
+      });
+
+      if (parseFloat(metrics.efficiency) < 60) {
+        recs.push({
+          icon:'🔄', title:'Eliminar Mudas — VSM + Kaizen (eficiencia < 60%)',
+          priority:'high',
+          body:`La eficiencia del ${metrics.efficiency}% indica ${Agents.metrics.fmt(metrics.wasteTime)} de desperdicios puros. Rother & Shook (1998) establecen que el VSM estado futuro debe eliminar todas las actividades sin valor añadido. Combina con Kaizen event focalizado en las 3 principales mudas.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id==='vsm_lean'),
+          actions:['Mapear estado actual vs futuro','Eliminar esperas y traslados innecesarios','Implementar flujo continuo One-Piece Flow']
+        });
+      }
+
+      // RAG-driven recommendation
+      if (ragResults[0] && ragResults[0].score > 0.01) {
+        const top = ragResults[0].paper;
+        if (top.id !== 'goldratt1984') {
+          recs.push({
+            icon:'🤖', title:`Aplicar: ${top.technique.split(' ').slice(0,3).join(' + ').toUpperCase()}`,
+            priority:'medium',
+            body:`Recuperado por similitud semántica (score: ${ragResults[0].score.toFixed(3)}). ${top.insight}`,
+            paper: top,
+            actions:['Implementar técnica señalada','Medir antes y después con KPIs definidos','Revisar periódicamente con PDCA']
+          });
+        }
+      }
+
+      if (['services','healthcare'].includes(domain)) {
+        recs.push({
+          icon:'🤖', title:'Digitalizar con Lean + I4.0 (automatización de validaciones)',
+          priority:'medium',
+          body:`Chiarini & Kumar (2025) demuestran que Lean+I4.0 reduce tiempos en 22%. Automatizar las aprobaciones manuales con workflows digitales elimina la dependencia de personas y reduce el Lead Time drásticamente.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id==='chiarini2025'),
+          actions:['Implementar BPM digital con aprobaciones automáticas','SLA con escalamiento automático','Dashboard en tiempo real (Andon digital)']
+        });
+      }
+
+      if (['manufacturing','logistics'].includes(domain)) {
+        recs.push({
+          icon:'📦', title:'5S + Supermarkets Kanban + Layout por flujo',
+          priority:'medium',
+          body:`IEOM (2025): Kaizen + 5S redujo tiempos de entrega 55% y distancias 75% en fabricación de motores. Rediseñar el layout para flujo unidireccional y crear supermarkets de materiales elimina las mudas de movimiento y transporte.`,
+          paper: KNOWLEDGE_BASE.find(p => p.id==='kaizen2025'),
+          actions:['Implementar 5S en el cuello de botella','Diseñar supermarkets Kanban pull','Rediseñar layout para flujo físico unidireccional']
+        });
+      }
+
+      recs.push({
+        icon:'🎯', title:'Hoshin Kanri: Hoja de ruta de implementación (8-13 años)',
+        priority:'low',
+        body:`El modelo SEM (Sustainable Futures, 2025) muestra que Kanban/TQM maduran en ~8 años y Kaizen en ~13. Diseñar un Hoshin Kanri (política desplegada) con objetivos anuales medibles es fundamental para no perder el rumbo.`,
+        paper: KNOWLEDGE_BASE.find(p => p.id==='sem2025'),
+        actions:['Crear A3 estratégico con metas anuales','PDCA mensual con review de KPIs','Equipo dedicado de mejora continua']
+      });
+
+      return recs;
+    }
+  },
+
+  // ── BENCHMARKER
+  benchmarker: {
+    benchmark(metrics, domain) {
+      const benchmarks = {
+        manufacturing: { efficiency: { p25:40, p50:60, p75:80 }, leadTime: { p25:200, p50:100, p75:30 } },
+        services:      { efficiency: { p25:25, p50:45, p75:70 }, leadTime: { p25:500, p50:150, p75:40 } },
+        logistics:     { efficiency: { p25:35, p50:55, p75:75 }, leadTime: { p25:300, p50:120, p75:50 } },
+        healthcare:    { efficiency: { p25:20, p50:40, p75:65 }, leadTime: { p25:800, p50:300, p75:80 } },
+        construction:  { efficiency: { p25:30, p50:50, p75:70 }, leadTime: { p25:1000, p50:400, p75:100 } }
+      };
+      const b = benchmarks[domain] || benchmarks.services;
+      const eff = parseFloat(metrics.efficiency);
+      const lt = metrics.totalTime;
+      let effPct = 0, ltPct = 0;
+      if (eff >= b.efficiency.p75) effPct = 90; else if (eff >= b.efficiency.p50) effPct = 65; else if (eff >= b.efficiency.p25) effPct = 35; else effPct = 15;
+      if (lt <= b.leadTime.p75) ltPct = 85; else if (lt <= b.leadTime.p50) ltPct = 60; else if (lt <= b.leadTime.p25) ltPct = 35; else ltPct = 12;
+      return { effPct, ltPct, benchmarks: b };
+    }
+  },
+
+  // ── DATA IMPORTER (CSV)
+  dataImporter: {
+    parseCSV(text) {
+      const lines = text.trim().split('\n').filter(Boolean);
+      const steps = [];
+      lines.forEach((line, i) => {
+        if (i === 0 && line.match(/paso|step|desc/i)) return; // skip header
+        const parts = line.split(/[,;\t]/).map(p => p.trim().replace(/^["']|["']$/g,''));
+        if (!parts[0]) return;
+        steps.push({
+          id: i,
+          description: parts[0].substring(0, 60),
+          fullDescription: parts[0],
+          time: parseInt(parts[1]) || 5,
+          isValueAdd: parts[2] !== '0',
+          isBottleneck: false
+        });
+      });
+      return steps.slice(0, 15);
+    }
+  },
+
+  // ── CODE GENERATOR (FORGE-Executor spec)
+  codeGenerator: {
+    generateSpec(recommendations, domain) {
+      const specs = [];
+      recommendations.forEach(r => {
+        const title = r.title.toLowerCase();
+        if (title.includes('kanban') || title.includes('tablero')) {
+          specs.push({
+            trigger: r.title,
+            json: JSON.stringify({
+              project: { name: 'KanbanBoard-Digital', type: 'frontend', framework: 'react', domain },
+              structure: { files: [
+                { path: 'src/components/Board.tsx', type: 'component', desc: 'Tablero Kanban con columnas Por Hacer / En Proceso / Hecho' },
+                { path: 'src/components/Card.tsx', type: 'component', desc: 'Tarjeta de tarea con prioridad y tiempo estimado' },
+                { path: 'src/services/kanbanService.ts', type: 'service', desc: 'CRUD de tareas con localStorage/IndexedDB' },
+                { path: 'src/hooks/useKanban.ts', type: 'hook', desc: 'Estado y lógica del tablero' }
+              ]}
+            }, null, 2)
+          });
+        }
+        if (title.includes('5s') || title.includes('auditoria')) {
+          specs.push({
+            trigger: r.title,
+            json: JSON.stringify({
+              project: { name: 'AuditChecklist-5S', type: 'frontend', framework: 'vue', domain },
+              structure: { files: [
+                { path: 'src/views/Checklist.vue', type: 'view', desc: 'Checklist interactivo 5S con puntuación' },
+                { path: 'src/components/Category.vue', type: 'component', desc: 'Categoría 5S con items y foto' },
+                { path: 'src/services/reportService.ts', type: 'service', desc: 'Generación de informe PDF' }
+              ]}
+            }, null, 2)
+          });
+        }
+        if (title.includes('dashboard') || title.includes('kpi') || title.includes('lean')) {
+          specs.push({
+            trigger: r.title,
+            json: JSON.stringify({
+              project: { name: 'LeanDashboard', type: 'fullstack', framework: 'nextjs', domain },
+              structure: { files: [
+                { path: 'app/dashboard/page.tsx', type: 'page', desc: 'Dashboard principal con KPIs en tiempo real' },
+                { path: 'components/MetricCard.tsx', type: 'component', desc: 'Tarjeta de métrica con sparkline' },
+                { path: 'components/BottleneckAlert.tsx', type: 'component', desc: 'Alerta visual de cuello de botella' },
+                { path: 'lib/metricsService.ts', type: 'service', desc: 'Cálculo de KPIs lean: OEE, eficiencia, TAKT' }
+              ]}
+            }, null, 2)
+          });
+          break;
+        }
+      });
+      if (!specs.length) {
+        specs.push({
+          trigger: 'Dashboard de mejora continua',
+          json: JSON.stringify({
+            project: { name: 'ContinuousImprovement-App', type: 'frontend', framework: 'react', domain },
+            structure: { files: [
+              { path: 'src/App.tsx', type: 'main', desc: 'App principal de mejora continua' },
+              { path: 'src/components/ProcessMap.tsx', type: 'component', desc: 'Mapa de proceso interactivo' },
+              { path: 'src/components/KPIDashboard.tsx', type: 'component', desc: 'Dashboard de KPIs lean' }
+            ]}
+          }, null, 2)
+        });
+      }
+      return specs;
+    }
+  },
+
+  // ── REPORT GENERATOR
+  reportGenerator: {
+    generate(S) {
+      const m = S.metrics;
+      const b = S.bottleneck;
+      const now = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+      return `# INFORME DE AUDITORÍA DE PROCESO PRO
+**AUDIT-AGENT PRO v1.0** · ${now}
+**Dominio:** ${S.domain} · **Pasos:** ${m.stepCount} · **Generado con:** TF-IDF RAG + Agentes Lean
+
+---
+
+## 1. RESUMEN EJECUTIVO
+
+Proceso auditado con **${m.stepCount} pasos** y Lead Time de **${Agents.metrics.fmt(m.totalTime)}**.
+Eficiencia del proceso: **${m.efficiency}%** | Desperdicios totales: **${Agents.metrics.fmt(m.wasteTime)}**
+
+**⚡ Cuello de botella principal:** "${b.description}" · ${Agents.metrics.fmt(b.time)} · ${((b.time/m.totalTime)*100).toFixed(0)}% del tiempo total
+
+---
+
+## 2. MÉTRICAS KPI
+
+| KPI | Valor | Benchmark (${S.domain}) |
+|-----|-------|------------------------|
+| Lead Time Total | ${Agents.metrics.fmt(m.totalTime)} | — |
+| Tiempo VA | ${Agents.metrics.fmt(m.valueAddTime)} | — |
+| Tiempo Muda | ${Agents.metrics.fmt(m.wasteTime)} | — |
+| Eficiencia | ${m.efficiency}% | Mediana: ~45-60% |
+| TAKT Time | ${m.taktTime} min | — |
+| Pasos Muda | ${m.wasteSteps}/${m.stepCount} | < 20% ideal |
+
+---
+
+## 3. VALUE STREAM MAP (VSM)
+
+${S.steps.map((s,i) => `${i+1}. **${s.description}** | ${Agents.metrics.fmt(s.time)} | ${s.isValueAdd?'✓ VA':'✗ Muda'} ${s.isBottleneck?'⚡ CUELLO':''}`).join('\n')}
+
+---
+
+## 4. ANÁLISIS DE CAUSA RAÍZ — 5 PORQUÉS
+
+${S.whys.map(w => `**${w.label}:** ${w.text}`).join('\n\n')}
+
+---
+
+## 5. PLAN DE MEJORA (RAG SEMÁNTICO)
+
+${S.recommendations.map((r,i) => `### ${i+1}. ${r.title}
+**Prioridad:** ${r.priority.toUpperCase()} | **Efectividad:** ${r.paper?.effectiveness||'N/D'}
+
+${r.body}
+
+**Acciones:**
+${r.actions.map(a=>`- ${a}`).join('\n')}
+
+**Fuente:** ${r.paper?`${r.paper.authors} (${r.paper.year}). *${r.paper.title}*. [${r.paper.url||'#'}](${r.paper.url||'#'})`:'N/A'}
+`).join('\n')}
+
+---
+
+## 6. REFERENCIAS
+
+${KNOWLEDGE_BASE.map((p,i) => `${i+1}. ${p.authors} (${p.year}). *${p.title}*. ${p.journal}. ${p.url||''}`).join('\n')}
+
+---
+*AUDIT-AGENT PRO v1.0 · Lean + Six Sigma + TOC · TF-IDF RAG sobre ${KNOWLEDGE_BASE.length} papers*`;
+    }
+  },
+
+  // ── PLANNER (orchestrator)
+  planner: {
+    async run(input, manualSteps, domain) {
+      setProg(10); setMonkey('🔍', `Extrayendo pasos del proceso…`); await delay(300);
+      let steps = manualSteps.length > 0 ? manualSteps : Agents.mapper.extractSteps(input);
+      if (!steps.length) { toast('No se detectaron pasos. Usa el constructor manual.','warn'); return null; }
+      setProg(25); setMonkey('📊','Calculando KPIs: Lead Time, Eficiencia, TAKT…'); await delay(250);
+      const metrics = Agents.metrics.compute(steps);
+      const bottle = metrics.bottleneck;
+      steps = steps.map(s => ({...s, isBottleneck: s.description===bottle.description}));
+      setProg(45); setMonkey('🔬','Aplicando 5 Porqués e Ishikawa…'); await delay(250);
+      const whys = Agents.rootCause.fiveWhys(bottle, domain);
+      const ishikawa = Agents.rootCause.ishikawa();
+      setProg(65); setMonkey('💡','Búsqueda semántica TF-IDF en base de conocimiento…'); await delay(250);
+      const recommendations = Agents.recommender.suggest(metrics, domain, bottle);
+      setProg(80); setMonkey('⚙','Generando specs FORGE-Executor…'); await delay(200);
+      const forgeSpecs = Agents.codeGenerator.generateSpec(recommendations, domain);
+      setProg(90); setMonkey('📄','Redactando informe PRO…'); await delay(200);
+      Object.assign(S, { steps, metrics, bottleneck: bottle, whys, ishikawa, recommendations, domain, forgeSpecs });
+      S.report = Agents.reportGenerator.generate(S);
+      setProg(100); await delay(200);
+      return S;
+    }
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// SIMULATION ENGINE
+// ══════════════════════════════════════════════════════════════
+// Basado en modelo SEM dinámica de sistemas (Sustainable Futures, 2025)
+let simChart = null, simValues = {};
+
+function initSimulation() {
+  document.getElementById('sim-empty').style.display = 'none';
+  document.getElementById('sim-res').style.display = 'block';
+  simValues = {};
+  S.steps.forEach((s,i) => { simValues[i] = s.time; });
+  renderSimResult();
+  renderSimSteps();
+}
+
+function renderSimSteps() {
+  const el = document.getElementById('simSteps');
+  el.innerHTML = S.steps.map((s,i) => `
+    <div class="sim-row ${s.isBottleneck?'bottle':''}">
+      <div class="sim-name">${i+1}. ${s.description} ${s.isBottleneck?'<span style="color:var(--ac-bottle);font-size:10px;">⚡ CUELLO</span>':''}</div>
+      <div class="sim-orig">${Agents.metrics.fmt(s.time)}</div>
+      <input class="sim-slider" type="range" min="1" max="${Math.max(s.time*2,20)}" value="${s.time}"
+        oninput="simValues[${i}]=parseInt(this.value); this.nextElementSibling.textContent=Agents.metrics.fmt(parseInt(this.value)); renderSimResult();">
+      <div class="sim-new-val">${Agents.metrics.fmt(s.time)}</div>
+    </div>
+  `).join('');
+}
+
+function renderSimResult() {
+  const original = S.steps.reduce((a,s) => a+s.time, 0);
+  const newTotal = Object.values(simValues).reduce((a,v) => a+v, 0);
+  const reduction = ((original - newTotal)/original*100).toFixed(1);
+  const newEff = (Object.keys(simValues).filter(i => S.steps[i].isValueAdd).reduce((a,i) => a+simValues[i], 0) / newTotal * 100).toFixed(1);
+  const isImprovement = newTotal < original;
+
+  document.getElementById('simResult').innerHTML = `
+    <div class="sim-r-item">
+      <div class="sim-r-label">Lead Time Original</div>
+      <div class="sim-r-val" style="color:var(--text-1)">${Agents.metrics.fmt(original)}</div>
+    </div>
+    <div class="sim-r-item">
+      <div class="sim-r-label">Lead Time Simulado</div>
+      <div class="sim-r-val ${isImprovement?'good':'bad'}">${Agents.metrics.fmt(newTotal)}</div>
+    </div>
+    <div class="sim-r-item">
+      <div class="sim-r-label">Reducción Estimada</div>
+      <div class="sim-r-val ${isImprovement?'good':'bad'}">${isImprovement?'-':''}${Math.abs(reduction)}%</div>
+    </div>
+  `;
+
+  // Update sim chart
+  const ctx = document.getElementById('simChart').getContext('2d');
+  if (simChart) simChart.destroy();
+  simChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: S.steps.map((s,i) => s.description.substring(0,16)+'…'),
+      datasets: [
+        { label: 'Original', data: S.steps.map(s => s.time), backgroundColor: 'rgba(74,90,117,0.5)', borderColor: '#4a5a75', borderWidth:1, borderRadius:3 },
+        { label: 'Simulado', data: S.steps.map((s,i) => simValues[i]||s.time), backgroundColor: S.steps.map((s,i) => (simValues[i]||s.time) < s.time ? 'rgba(6,214,160,0.5)' : 'rgba(245,158,11,0.4)'), borderColor: S.steps.map((s,i) => (simValues[i]||s.time) < s.time ? '#06d6a0' : '#f59e0b'), borderWidth:1, borderRadius:3 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#7b8fad', font:{family:'IBM Plex Mono',size:10} } } },
+      scales:{
+        x:{ ticks:{color:'#4a5a75',font:{family:'IBM Plex Mono',size:9}}, grid:{color:'#1f2d45'} },
+        y:{ ticks:{color:'#4a5a75',font:{family:'IBM Plex Mono',size:9}}, grid:{color:'#1f2d45'} }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+let timesChart = null, effChart = null;
+
+function renderAll() {
+  renderVSM();
+  renderMetrics();
+  initSimulation();
+  renderRootCause();
+  renderRecs();
+  renderBenchmark();
+  renderForgeSpec();
+  renderReport();
+}
+
+function renderVSM() {
+  document.getElementById('vsm-empty').style.display = 'none';
+  document.getElementById('vsm-res').style.display = 'block';
+  const svg = d3.select('#vsmSvg');
+  svg.selectAll('*').remove();
+  const W = document.getElementById('vsmSvg').getBoundingClientRect().width || 900;
+  const stepW = 120, stepH = 80, arrowW = 40, padding = 20;
+  const totalW = S.steps.length * (stepW + arrowW) + padding*2 - arrowW;
+  const H = 160;
+  svg.attr('height', H).attr('viewBox', `0 0 ${Math.max(totalW, W)} ${H}`);
+  const g = svg.append('g').attr('transform', `translate(${padding}, 20)`);
+  S.steps.forEach((step, i) => {
+    const x = i * (stepW + arrowW);
+    const grp = g.append('g').attr('transform', `translate(${x}, 0)`).style('cursor','pointer');
+    // Box
+    const isBottle = step.isBottleneck;
+    const isMuda = !step.isValueAdd;
+    grp.append('rect').attr('x',0).attr('y',0).attr('width',stepW).attr('height',stepH)
+      .attr('rx',6).attr('fill', isBottle ? 'rgba(244,63,94,0.12)' : isMuda ? 'rgba(245,158,11,0.08)' : 'rgba(20,28,43,0.9)')
+      .attr('stroke', isBottle ? '#f43f5e' : isMuda ? '#f59e0b' : '#1f2d45')
+      .attr('stroke-width', isBottle ? 1.5 : 1);
+
+    grp.append('text').attr('x', stepW/2).attr('y', 18)
+      .attr('text-anchor','middle').attr('fill', isBottle ? '#f43f5e' : '#dde5f5')
+      .attr('font-size',9).attr('font-family','IBM Plex Mono').attr('font-weight',600)
+      .text(step.description.substring(0,14));
+    if (step.description.length > 14)
+      grp.append('text').attr('x', stepW/2).attr('y', 30).attr('text-anchor','middle').attr('fill','#7b8fad').attr('font-size',8).attr('font-family','IBM Plex Mono').text(step.description.substring(14,28));
+
+    grp.append('text').attr('x', stepW/2).attr('y', 50)
+      .attr('text-anchor','middle').attr('fill', isBottle ? '#f43f5e' : '#f59e0b')
+      .attr('font-size', 13).attr('font-family','IBM Plex Mono').attr('font-weight',700)
+      .text(Agents.metrics.fmt(step.time));
+
+    grp.append('text').attr('x', stepW/2).attr('y', 66)
+      .attr('text-anchor','middle').attr('fill', step.isValueAdd ? '#06d6a0' : '#f59e0b')
+      .attr('font-size', 8).attr('font-family','IBM Plex Mono')
+      .text(step.isValueAdd ? '✓ Valor' : '✗ Muda');
+
+    if (isBottle) grp.append('text').attr('x', stepW-5).attr('y', -4).attr('fill','#f43f5e').attr('font-size',14).text('⚡');
+
+    // Arrow
+    if (i < S.steps.length - 1) {
+      g.append('line').attr('x1', x+stepW).attr('y1', stepH/2).attr('x2', x+stepW+arrowW-4).attr('y2', stepH/2)
+        .attr('stroke','#2d4166').attr('stroke-width',1.5).attr('marker-end','url(#arrow)');
+    }
+    // Tooltip title
+    grp.append('title').text(`${step.description}\n${Agents.metrics.fmt(step.time)}\n${step.isValueAdd?'Valor añadido':'Desperdicio (Muda)'}${isBottle?'\n⚡ CUELLO DE BOTELLA':''}`);
+  });
+  // Arrow marker
+  svg.append('defs').append('marker').attr('id','arrow').attr('viewBox','0 0 10 10').attr('refX',10).attr('refY',5)
+    .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+    .append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill','#2d4166');
+  // Timeline
+  g.append('line').attr('x1',0).attr('y1',stepH+20).attr('x2',S.steps.length*(stepW+arrowW)-arrowW).attr('y2',stepH+20)
+    .attr('stroke','#1f2d45').attr('stroke-width',1).attr('stroke-dasharray','4,4');
+  g.append('text').attr('x',0).attr('y',stepH+35).attr('fill','#4a5a75').attr('font-size',9).attr('font-family','IBM Plex Mono')
+    .text(`⟵ Lead Time Total: ${Agents.metrics.fmt(S.metrics.totalTime)} ⟶`);
+}
+
+function renderMetrics() {
+  document.getElementById('metrics-empty').style.display = 'none';
+  document.getElementById('metrics-res').style.display = 'block';
+  const m = S.metrics;
+  const eff = parseFloat(m.efficiency);
+  const fmt = Agents.metrics.fmt;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-c"><div class="kpi-l">Lead Time Total</div><div class="kpi-v">${fmt(m.totalTime)}</div><div class="kpi-s">Inicio → Fin del proceso</div></div>
+    <div class="kpi-c ${eff<50?'red':eff>70?'green':''}"><div class="kpi-l">Eficiencia</div><div class="kpi-v ${eff<50?'red':eff>70?'green':''}">${m.efficiency}%</div><div class="kpi-s">Ratio VA / Lead Time</div></div>
+    <div class="kpi-c red"><div class="kpi-l">Cuello de Botella ⚡</div><div class="kpi-v red">${fmt(m.bottleneck.time)}</div><div class="kpi-s">${m.bottleneck.description}</div></div>
+    <div class="kpi-c"><div class="kpi-l">Tiempo Muda</div><div class="kpi-v red">${fmt(m.wasteTime)}</div><div class="kpi-s">${m.wasteSteps} pasos sin VA</div></div>
+    <div class="kpi-c green"><div class="kpi-l">Tiempo VA</div><div class="kpi-v green">${fmt(m.valueAddTime)}</div><div class="kpi-s">Lo que el cliente paga</div></div>
+    <div class="kpi-c blue"><div class="kpi-l">TAKT Time</div><div class="kpi-v">${m.taktTime}<span style="font-size:12px;"> min</span></div><div class="kpi-s">Ritmo de demanda</div></div>
+  `;
+  const c1 = document.getElementById('timesChart').getContext('2d');
+  if (timesChart) timesChart.destroy();
+  timesChart = new Chart(c1, {
+    type:'bar',
+    data:{
+      labels: S.steps.map(s=>s.description.substring(0,16)),
+      datasets:[{ label:'Tiempo (min)', data:S.steps.map(s=>s.time),
+        backgroundColor:S.steps.map(s=>s.isBottleneck?'rgba(244,63,94,.7)':s.isValueAdd?'rgba(6,214,160,.5)':'rgba(245,158,11,.4)'),
+        borderColor:S.steps.map(s=>s.isBottleneck?'#f43f5e':s.isValueAdd?'#06d6a0':'#f59e0b'),
+        borderWidth:1, borderRadius:4 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#4a5a75',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#1f2d45'}},
+               y:{ticks:{color:'#4a5a75',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#1f2d45'}} }}
+  });
+  const c2 = document.getElementById('effChart').getContext('2d');
+  if (effChart) effChart.destroy();
+  effChart = new Chart(c2, {
+    type:'doughnut',
+    data:{
+      labels:['Valor Añadido','Desperdicios (Muda)'],
+      datasets:[{ data:[m.valueAddTime, m.wasteTime],
+        backgroundColor:['rgba(6,214,160,.6)','rgba(244,63,94,.5)'],
+        borderColor:['#06d6a0','#f43f5e'], borderWidth:1 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#7b8fad',font:{family:'IBM Plex Mono',size:11} } } } }
+  });
+}
+
+function renderRootCause() {
+  document.getElementById('rc-empty').style.display = 'none';
+  document.getElementById('rc-res').style.display = 'block';
+  document.getElementById('whysEl').innerHTML = S.whys.map(w => `
+    <div class="why-i"><div class="why-n">${w.label}</div><div class="why-t">${w.text}</div></div>`).join('');
+  document.getElementById('ishiEl').innerHTML = Object.entries(S.ishikawa).map(([c,l]) => `
+    <div class="ishi-c"><div class="ishi-l">${c}</div>${l.map(x=>`<div class="ishi-e">${x}</div>`).join('')}</div>`).join('');
+}
+
+function renderRecs() {
+  document.getElementById('recs-empty').style.display = 'none';
+  document.getElementById('recs-res').style.display = 'block';
+  document.getElementById('recListEl').innerHTML = S.recommendations.map(r => `
+    <div class="rec-c">
+      <div class="rec-h">
+        <span class="rec-ico">${r.icon}</span>
+        <div class="rec-t">${r.title}</div>
+        <span class="badge ${r.priority}">${r.priority==='high'?'ALTA':r.priority==='medium'?'MEDIA':'BAJA'}</span>
+      </div>
+      ${r.paper?`<div class="rec-eff">✓ ${r.paper.effectiveness}</div>`:''}
+      <div class="rec-b">${r.body}</div>
+      <ul style="font-size:11px;color:var(--text-1);margin-left:16px;margin-bottom:10px;line-height:1.8;">
+        ${r.actions.map(a=>`<li>${a}</li>`).join('')}
+      </ul>
+      ${r.paper?`<div class="rec-cite">📚 <strong>${r.paper.authors} (${r.paper.year})</strong>. ${r.paper.title}. <em>${r.paper.journal}</em>.${r.paper.url?`<br><a href="${r.paper.url}" target="_blank" rel="noopener">→ ${r.paper.url}</a>`:''}<br>«${r.paper.quote}»</div>`:''}
+    </div>`).join('');
+}
+
+function renderBenchmark() {
+  document.getElementById('bench-empty').style.display = 'none';
+  document.getElementById('bench-res').style.display = 'block';
+  const b = Agents.benchmarker.benchmark(S.metrics, S.domain);
+  const eff = parseFloat(S.metrics.efficiency);
+  const fmt = Agents.metrics.fmt;
+  document.getElementById('benchGrid').innerHTML = `
+    <div class="bench-c">
+      <div class="bench-l">Eficiencia del Proceso</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:${b.effPct}%;background:${eff>b.benchmarks.efficiency.p50?'var(--ac-ok)':'var(--ac-bottle)'}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text-2);margin-bottom:6px;"><span>P25: ~${b.benchmarks.efficiency.p25}%</span><span>P50: ~${b.benchmarks.efficiency.p50}%</span><span>P75: ~${b.benchmarks.efficiency.p75}%</span></div>
+      <div class="bench-pct" style="color:${eff>b.benchmarks.efficiency.p50?'var(--ac-ok)':'var(--ac-bottle)'}">Tu proceso: ${eff}% → Percentil ~${b.effPct}</div>
+    </div>
+    <div class="bench-c">
+      <div class="bench-l">Lead Time</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:${b.ltPct}%;background:${b.ltPct>50?'var(--ac-ok)':'var(--ac-bottle)'}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text-2);margin-bottom:6px;"><span>Largo: >${fmt(b.benchmarks.leadTime.p25)}</span><span>Medio: ~${fmt(b.benchmarks.leadTime.p50)}</span><span>Corto: <${fmt(b.benchmarks.leadTime.p75)}</span></div>
+      <div class="bench-pct" style="color:${b.ltPct>50?'var(--ac-ok)':'var(--ac-bottle)'}">Tu Lead Time: ${fmt(S.metrics.totalTime)} → Rendimiento: ${b.ltPct}%</div>
+    </div>
+    <div class="bench-c">
+      <div class="bench-l">Referencia — Gupta et al. (2025)</div>
+      <div style="font-size:11px;color:var(--text-1);line-height:1.7">
+        Revisión de 120+ implementaciones Lean.<br>
+        Eficiencia mediana en servicios: <strong style="color:var(--ac-main)">~45%</strong><br>
+        Mejora post-Lean esperada: <strong style="color:var(--ac-ok)">+15-30%</strong>
+      </div>
+    </div>
+    <div class="bench-c">
+      <div class="bench-l">Referencia — Kaizen IEOM (2025)</div>
+      <div style="font-size:11px;color:var(--text-1);line-height:1.7">
+        Reducción de Lead Time con Kaizen+5S:<br>
+        Estudio de caso: <strong style="color:var(--ac-main)">55%</strong> en tiempo de entrega<br>
+        Distancias: <strong style="color:var(--ac-ok)">−75%</strong> (864→209 metros)
+      </div>
+    </div>
+  `;
+}
+
+function renderForgeSpec() {
+  document.getElementById('code-empty').style.display = 'none';
+  document.getElementById('code-res').style.display = 'block';
+  document.getElementById('forgeSpecEl').innerHTML = (S.forgeSpecs || []).map(s => `
+    <div class="forge-spec">
+      <div class="forge-title">⚙ FORGE SPEC → ${s.trigger}</div>
+      <div class="code-block">${s.json}</div>
+      <button class="btn-sm" style="width:auto;" onclick="copyCode(this, \`${escapeForAttr(s.json)}\`)">📋 Copiar JSON</button>
+    </div>
+  `).join('');
+}
+
+function escapeForAttr(s) { return s.replace(/`/g,'\\`').replace(/\$/g,'\\$'); }
+function copyCode(btn, text) { navigator.clipboard.writeText(text).then(() => { btn.textContent = '✓ Copiado'; setTimeout(() => btn.textContent = '📋 Copiar JSON', 1500); }); }
+
+function renderReport() {
+  document.getElementById('report-empty').style.display = 'none';
+  document.getElementById('report-res').style.display = 'block';
+  document.getElementById('reportEl').textContent = S.report;
+}
+
+function renderPapers() {
+  document.getElementById('papersEl').innerHTML = KNOWLEDGE_BASE.map(p => `
+    <div class="p-c">
+      <div class="p-y">${p.year} · ${p.effectiveness}</div>
+      <div class="p-t">${p.title}</div>
+      <div class="p-a">${p.authors} — ${p.journal}</div>
+      <div class="p-i">${p.insight}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-2);margin-bottom:6px;">«${p.quote}»</div>
+      <div class="p-tags">${p.technique.split(' ').slice(0,5).map(t=>`<span class="p-tag">${t}</span>`).join('')}</div>
+      ${p.url?`<br><a class="p-url" href="${p.url}" target="_blank" rel="noopener">→ ${p.url}</a>`:''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAIN AUDIT
+// ══════════════════════════════════════════════════════════════
+async function runAudit() {
+  if (S.executing) return;
+  const input = document.getElementById('processDesc').value.trim();
+  const manual = getManualSteps();
+  const domain = document.getElementById('domainSel').value;
+  if (!input && !manual.length) { toast('Introduce la descripción o añade pasos manuales','warn'); return; }
+  S.executing = true;
+  document.getElementById('auditBtn').disabled = true;
+  try {
+    const result = await Agents.planner.run(input, manual, domain);
+    if (!result) return;
+    renderAll();
+    setMonkey('🐒', `Auditoría completada. Eficiencia: <em>${S.metrics.efficiency}%</em>. Bottleneck: <em>"${S.bottleneck.description}"</em>. ${S.recommendations.length} recomendaciones RAG generadas.`);
+    toast('Auditoría PRO completada', 'ok');
+    switchTab('vsm');
+  } catch(e) {
+    console.error(e);
+    toast('Error: ' + e.message, 'err');
+    setMonkey('😵','Error inesperado. Revisa la consola del navegador.');
+  } finally {
+    S.executing = false;
+    document.getElementById('auditBtn').disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RAG SEARCH
+// ══════════════════════════════════════════════════════════════
+function ragSearch() {
+  const query = document.getElementById('ragQuery').value.trim();
+  if (!query) { toast('Introduce un término de búsqueda','warn'); return; }
+  const results = semanticSearch(query, 5);
+  document.getElementById('ragResults').innerHTML = results.map(r => `
+    <div class="rag-r">
+      <div class="rag-score">Similitud: ${(r.score*100).toFixed(1)}%</div>
+      <div class="rag-title">${r.paper.title}</div>
+      <div class="rag-auth">${r.paper.authors} (${r.paper.year}) — ${r.paper.journal}</div>
+      <div class="rag-insight">${r.paper.insight}</div>
+      ${r.paper.url?`<br><a class="p-url" href="${r.paper.url}" target="_blank" rel="noopener">→ ${r.paper.url}</a>`:''}
+    </div>
+  `).join('');
+  toast(`${results.length} papers recuperados`, 'ok');
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILE IMPORT
+// ══════════════════════════════════════════════════════════════
+function handleFileImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const steps = Agents.dataImporter.parseCSV(e.target.result);
+    if (!steps.length) { toast('No se pudieron parsear datos del CSV','err'); return; }
+    const wrap = document.getElementById('stepsWrap');
+    wrap.innerHTML = '';
+    stepCount = 0;
+    steps.forEach(s => addStep(s.description, s.time, s.isValueAdd));
+    document.getElementById('fileLabel').textContent = `✓ ${file.name} (${steps.length} pasos)`;
+    toast(`${steps.length} pasos importados desde CSV`, 'ok');
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════════════════════
+// STEP BUILDER
+// ══════════════════════════════════════════════════════════════
+let stepCount = 0;
+function addStep(desc='', time='', isVA=true) {
+  const wrap = document.getElementById('stepsWrap');
+  if (wrap.children.length >= 15) { toast('Máximo 15 pasos','warn'); return; }
+  stepCount++;
+  const n = wrap.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'step-r';
+  row.innerHTML = `
+    <span class="sn">#${n}</span>
+    <input class="fi" placeholder="Paso ${n}…" value="${desc}">
+    <input class="fi w60" type="number" placeholder="min" min="0" value="${time}">
+    <select class="fi"><option value="1" ${isVA?'selected':''}>✓ VA</option><option value="0" ${!isVA?'selected':''}>✗ Muda</option></select>
+    <button class="btn-x" onclick="this.parentElement.remove();renumSteps()">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+function renumSteps() { document.querySelectorAll('.step-r .sn').forEach((e,i) => e.textContent=`#${i+1}`); }
+function getManualSteps() {
+  return Array.from(document.querySelectorAll('.step-r')).map((row,i) => {
+    const desc = row.querySelector('input[type!="number"]').value.trim();
+    const time = parseInt(row.querySelector('input[type="number"]').value) || 5;
+    const isVA = row.querySelector('select').value === '1';
+    if (!desc) return null;
+    return { id:i, description:desc.substring(0,60), fullDescription:desc, time, isValueAdd:isVA, isBottleneck:false };
+  }).filter(Boolean);
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════════
+function exportMD() {
+  if (!S.report) { toast('Ejecuta una auditoría primero','warn'); return; }
+  const b = new Blob([S.report], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'audit-pro-report.md'; a.click();
+  toast('Markdown descargado','ok');
+}
+
+function exportPDF() {
+  if (!S.report) { toast('Ejecuta una auditoría primero','warn'); return; }
+  if (!window.jspdf) { toast('jsPDF no cargado, descargando MD en su lugar','warn'); exportMD(); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  doc.setFontSize(16); doc.setTextColor(40); doc.text('AUDIT-AGENT PRO — Informe de Auditoría', 20, 20);
+  doc.setFontSize(9); doc.setTextColor(100);
+  const lines = doc.splitTextToSize(S.report, 170);
+  let y = 35;
+  lines.forEach(line => {
+    if (y > 280) { doc.addPage(); y = 20; }
+    doc.text(line, 20, y); y += 4;
+  });
+  doc.save('audit-pro-report.pdf');
+  toast('PDF descargado','ok');
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-b').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab-p').forEach(p => p.classList.toggle('active', p.id==='tab-'+name));
+}
+
+function mainView(name) {
+  document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+  document.querySelector(`#view-${name}`) && (document.querySelector(`#view-${name}`).style.display = '');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view===name));
+  if (name==='projects') loadProjects();
+  if (name==='audit') document.getElementById('view-audit').style.display = 'grid';
+  else document.getElementById('view-audit').style.display = 'none';
+}
+
+document.querySelectorAll('.nav-btn').forEach(b => b.dataset.view = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1]);
+
+function setMonkey(e, t) { document.getElementById('monkeyEmoji').textContent=e; document.getElementById('monkeyText').innerHTML=t; }
+function setProg(p) {
+  const w=document.getElementById('progWrap'),f=document.getElementById('progFill');
+  w.style.display='block'; f.style.width=p+'%';
+  if(p>=100) setTimeout(()=>{w.style.display='none';f.style.width='0%'},700);
+}
+function toast(msg, type='ok') {
+  const t=document.createElement('div'); t.className=`t-item ${type}`;
+  const icons={ok:'✓',err:'✕',warn:'⚠'};
+  t.innerHTML=`<span>${icons[type]}</span> ${msg}`;
+  document.getElementById('toastArea').appendChild(t);
+  setTimeout(()=>t.remove(),3600);
+}
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+function clearAll() {
+  Object.assign(S,{steps:[],metrics:null,bottleneck:null,whys:[],ishikawa:null,recommendations:[],report:'',forgeSpecs:[]});
+  document.getElementById('processDesc').value=''; document.getElementById('stepsWrap').innerHTML='';
+  ['vsm','metrics','rc','recs','bench','code','report','sim'].forEach(t => {
+    const e=document.getElementById(t+'-empty'), r=document.getElementById(t+'-res');
+    if(e) e.style.display='flex'; if(r) r.style.display='none';
+  });
+  if(timesChart){timesChart.destroy();timesChart=null;} if(effChart){effChart.destroy();effChart=null;} if(simChart){simChart.destroy();simChart=null;}
+  setMonkey('🐒','Sistema PRO listo. <em>Auditorías ilimitadas</em>. Describe tu proceso y ejecuta.');
+  switchTab('vsm'); toast('Datos borrados','ok');
+}
+
+// Patch nav-btn dataset
+document.querySelectorAll('.nav-btn').forEach(b => {
+  const m = b.getAttribute('onclick')?.match(/'([^']+)'/);
+  if(m) b.dataset.view = m[1];
+});
+// Fix view-audit initial display
+document.getElementById('view-audit').style.display = 'grid';
+document.getElementById('view-rag').style.display = 'none';
+document.getElementById('view-projects').style.display = 'none';
+
+// ── INIT
+buildTFIDF();
+renderPapers();
+initDB().then(loadProjects).catch(()=>{});
+</script>
+</body>
+</html>
