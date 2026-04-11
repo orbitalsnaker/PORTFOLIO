@@ -2245,14 +2245,3 @@ Este documento es **100% verificable**:
 - Instituciones: NIST, MIT, Stanford, UC Berkeley, UCSB, USNO, PTB, INRIM
 - Fechas: Todas en rango 2019-2026, verificables en fuentes públicas
 
-**NO contiene**:
-- Papeles fabricados
-- Productos ficticio
-- Promesas de "seguridad total"
-- Especulación sin base técnica
-
----
-
-**Compilado por**: Claude (Anthropic)
-**Verificación**: 150+ referencias, todas accesibles públicamente
-**Última actualización**: 11 de abril de 2026
