@@ -2501,3 +2501,518 @@ chaos-test:
     - main
 ```
 
+### **CAPA 8: CI/CD, GITOPS Y SUPPLY CHAIN SECURITY**
+
+La entrega continua es el corazón de la ingeniería cloud-native, pero también es una de las mayores superficies de ataque. **GitOps** ha emergido como el paradigma dominante: el estado deseado del sistema se almacena en Git, y un operador (ArgoCD, Flux) lo reconcilia continuamente con el clúster. La seguridad de la cadena de suministro (supply chain) aborda desde el código hasta la ejecución: dependencias vulnerables, imágenes firmadas, builds reproducibles.
+
+---
+
+#### **SECCIÓN 8.1: GITOPS — EL PARADIGMA DEL ESTADO DESEADO EN GIT**
+
+**Principios GitOps (definidos por Weaveworks):**
+1. **Declarativo:** Todo el estado del sistema se describe mediante manifiestos (Kubernetes YAML, Helm, Kustomize).
+2. **Versionado e inmutable:** Git es la fuente única de verdad. Todos los cambios pasan por pull requests.
+3. **Aplicado automáticamente:** Un operador (ArgoCD, Flux) sincroniza el clúster con Git.
+4. **Convergencia continua:** El operador corrige automáticamente las desviaciones (drift).
+5. **Auditable:** Cada cambio está asociado a un commit, un autor y una revisión.
+
+**Beneficios:**
+- **Rollback instantáneo:** Revertir un commit en Git restaura el estado anterior.
+- **Menor superficie de ataque:** No se necesitan credenciales de clúster en CI; solo el operador tiene acceso.
+- **Mayor velocidad de desarrollo:** Los equipos trabajan con PRs, no con comandos `kubectl`.
+- **Cumplimiento:** Todo cambio es trazable y revisado.
+
+**Arquitectura GitOps típica:**
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────────────────┐
+│   Repo de   │     │  CI System  │     │     GitOps Operator         │
+│  Código     │────▶│ (GitHub     │────▶│  (ArgoCD / Flux)            │
+│  (app/src)  │     │  Actions)   │     │  - Observa repo de config   │
+└─────────────┘     └──────┬──────┘     │  - Sincroniza con cluster   │
+                           │            │  - Auto-healing             │
+                           ▼            └──────────────┬──────────────┘
+                    ┌─────────────┐                    │
+                    │   Repo de   │                    │ pulls
+                    │ Configura-  │◀───────────────────┘
+                    │   ción      │
+                    │ (manifiestos)│
+                    └─────────────┘
+```
+
+**ArgoCD — El operador GitOps más popular:**
+
+```bash
+# Instalación de ArgoCD
+$ kubectl create namespace argocd
+$ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Exponer el servidor web (NodePort o LoadBalancer)
+$ kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+
+# Obtener contraseña inicial
+$ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# CLI de ArgoCD
+$ curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+$ chmod +x argocd
+$ sudo mv argocd /usr/local/bin/
+```
+
+**Configuración de una aplicación ArgoCD:**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/company/k8s-config.git
+    targetRevision: main
+    path: apps/guestbook/overlays/production
+    # Soporte para Helm, Kustomize, Jsonnet
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: true      # Eliminar recursos que no están en Git
+      selfHeal: true   # Corregir desviaciones manuales
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+```
+
+**ApplicationSet: Desplegar en múltiples clústeres / entornos**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-env-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: staging
+        url: https://staging-api.example.com
+        env: staging
+      - cluster: production
+        url: https://prod-api.example.com
+        env: production
+  template:
+    metadata:
+      name: '{{cluster}}-guestbook'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/company/k8s-config
+        targetRevision: main
+        path: apps/guestbook/overlays/{{env}}
+      destination:
+        server: '{{url}}'
+        namespace: '{{env}}'
+      syncPolicy:
+        automated: {}
+```
+
+**Flux (alternativa a ArgoCD):**
+
+```bash
+# Instalación de Flux CLI
+$ curl -s https://fluxcd.io/install.sh | sudo bash
+
+# Bootstrap en un clúster (crea los componentes y sincroniza)
+$ flux bootstrap github \
+  --owner=company \
+  --repository=k8s-config \
+  --branch=main \
+  --path=./clusters/production \
+  --personal
+```
+
+**Diferencias clave:**
+- **ArgoCD:** Interfaz web más madura, dashboard visual, UI para gestión de aplicaciones.
+- **Flux:** Más simple, se integra nativamente con OCI (registros de contenedores) y soporta Kustomize nativo.
+
+---
+
+#### **SECCIÓN 8.2: CI/CD PIPELINES EN KUBERNETES (GITHUB ACTIONS, GITLAB CI, JENKINS X)**
+
+El pipeline CI/CD típico para GitOps:
+
+1. **Push de código** a repositorio de aplicación.
+2. **CI ejecuta:**
+   - Tests unitarios y de integración.
+   - Build de imagen Docker.
+   - Escaneo de vulnerabilidades (Trivy, Snyk).
+   - Firma de imagen (Cosign).
+   - Push de imagen a registry (ECR, GCR, Docker Hub).
+3. **Actualización automática** del repositorio de configuración (manifiestos) con la nueva etiqueta de imagen (Pull Request automático).
+4. **ArgoCD/Flux** detecta el cambio en Git y sincroniza el clúster.
+5. **Monitoreo** de rollout (Prometheus, Kiali) para detectar problemas.
+
+**Ejemplo con GitHub Actions y ArgoCD Image Updater:**
+
+```yaml
+# .github/workflows/ci.yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Scan image for vulnerabilities (Trivy)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Sign image with Cosign
+      run: |
+        cosign sign -y ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --identity-token ${{ steps.id-token.outputs.token }}
+      env:
+        COSIGN_EXPERIMENTAL: true
+
+    - name: Update Kubernetes manifests (PR automático)
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITOPS_PAT }}
+        repository: company/k8s-config
+        branch: update-image-${{ github.sha }}
+        title: "chore: update app image to ${{ github.sha }}"
+        body: |
+          Updated image to `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}`
+          - Built from commit ${{ github.sha }}
+          - Vulnerability scan: no CRITICAL or HIGH findings
+          - Image signed with Cosign
+        path: apps/myapp/overlays/production/kustomization.yaml
+        commit-message: "Update image tag to ${{ github.sha }}"
+```
+
+**Kustomize para gestión de entornos:**
+
+```yaml
+# apps/myapp/base/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/company/myapp  # tag se inyecta con kustomize
+```
+
+```yaml
+# apps/myapp/overlays/production/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+- ../../base
+
+images:
+- name: ghcr.io/company/myapp
+  newTag: v1.2.3  # Actualizado por CI
+
+patchesStrategicMerge:
+- increase-replicas.yaml
+- add-resources.yaml
+
+namespace: production
+
+commonLabels:
+  env: production
+```
+
+---
+
+#### **SECCIÓN 8.3: SUPPLY CHAIN SECURITY — SLSA FRAMEWORK Y SBOM**
+
+La seguridad de la cadena de suministro de software (Supply Chain Security) se ha vuelto crítica tras ataques como SolarWinds (2020), Codecov (2021) o la dependencia `colors` (2022). **SLSA** (Supply chain Levels for Software Artifacts) es un marco de seguridad definido por Google y la industria.
+
+**Niveles SLSA (de L1 a L4):**
+
+| Nivel | Requisitos | Descripción |
+|-------|-----------|-------------|
+| L1   | Scripted build, provenance (origen) | Build automatizado, se documenta cómo se construyó |
+| L2   | Versioned, service-generated provenance | Build se ejecuta en un servicio gestionado (GitHub Actions, GitLab CI) |
+| L3   | Hardened build, isolated, verifiable | Build aislado, sin permisos de escritura en red, provenance verificado |
+| L4   | Two-person review, hermetic build | Revisión de dos personas, build reproducible, dependencias fijadas |
+
+**SBOM (Software Bill of Materials):** Lista de todas las dependencias y componentes de una aplicación. Obligatorio en muchas regulaciones (EO 14028 en EE.UU., CRA en Europa).
+
+```bash
+# Generar SBOM con Syft
+$ syft ghcr.io/company/myapp:latest -o spdx-json > sbom.json
+
+# Subir SBOM al registry (OCI artifact)
+$ oras push ghcr.io/company/myapp:sbom --content-type application/spdx+json sbom.json
+
+# Verificar contra base de datos de vulnerabilidades con Grype
+$ grype sbom:sbom.json
+```
+
+**Cosign — Firma de imágenes (provenance y certificación):**
+
+```bash
+# Generar par de claves (privada y pública)
+$ cosign generate-key-pair
+Enter password for private key: ****
+Private key written to cosign.key
+Public key written to cosign.pub
+
+# Firmar una imagen
+$ cosign sign --key cosign.key ghcr.io/company/myapp:latest
+
+# Verificar firma
+$ cosign verify --key cosign.pub ghcr.io/company/myapp:latest
+
+# Firmar con Keyless (OIDC, GitHub Actions)
+$ cosign sign ghcr.io/company/myapp:latest --identity-token ${{ secrets.ID_TOKEN }}
+
+# Verificar keyless (contra identidad del GitHub repo)
+$ cosign verify ghcr.io/company/myapp:latest \
+  --certificate-identity https://github.com/company/myapp/.github/workflows/ci.yaml@refs/heads/main \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+**Policy Controller (Kyverno, OPA/Gatekeeper) para verificar firmas en el clúster:**
+
+```yaml
+# Kyverno policy: solo permitir imágenes firmadas por Cosign
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signature
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check-signature
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    verifyImages:
+    - imageReferences:
+      - "ghcr.io/company/*"
+      attestors:
+      - count: 1
+        entries:
+        - keys:
+            publicKeys: |
+              -----BEGIN PUBLIC KEY-----
+              MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...
+              -----END PUBLIC KEY-----
+      - attestors:
+        - entries:
+          - keyless:
+              issuer: "https://token.actions.githubusercontent.com"
+              subject: "https://github.com/company/myapp/.github/workflows/ci.yaml@refs/heads/main"
+```
+
+---
+
+#### **SECCIÓN 8.4: ESCANEO DE VULNERABILIDADES Y DEPENDENCIAS**
+
+**Trivy (de Aqua Security):** Escanea imágenes de contenedor, sistemas de archivos, repositorios Git, SBOMs.
+
+```bash
+# Escanear imagen local
+$ trivy image ghcr.io/company/myapp:latest --severity CRITICAL,HIGH
+
+# Escanear Dockerfile (detectar malas prácticas)
+$ trivy config Dockerfile
+
+# Escanear dependencias de Python (requirements.txt)
+$ trivy fs ./ --severity CRITICAL
+
+# Salida en formato SARIF para integración con GitHub
+$ trivy image --format sarif --output trivy-results.sarif ghcr.io/company/myapp:latest
+```
+
+**Integración continua (pre-commit hook):**
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: trivy-image
+        name: Trivy image scan
+        entry: trivy image --severity HIGH,CRITICAL --exit-code 1
+        language: system
+        files: Dockerfile
+```
+
+**Snyk (plataforma comercial):** Ofrece escaneo de dependencias, contenedores, IaC (Terraform, Kubernetes).
+
+```bash
+# Autenticación
+$ snyk auth
+
+# Escanear imagen
+$ snyk container test ghcr.io/company/myapp:latest --file=Dockerfile
+
+# Escanear proyecto Python/Node/Java
+$ snyk test --severity-threshold=high
+```
+
+---
+
+#### **SECCIÓN 8.5: DEPENDENCY CONFUSION Y ATAQUES A LA CADENA DE SUMINISTRO**
+
+**Dependency Confusion (2021):** Un atacante publica un paquete con el mismo nombre que un paquete privado en el registro público (npm, PyPI, Maven). Si el gestor de paquetes está mal configurado, descarga el paquete público malicioso.
+
+**Mitigación:**
+- Configurar `npmrc`, `pip.conf`, `settings.xml` para que solo use registros privados para paquetes internos.
+- Usar `--extra-index-url` solo para paquetes públicos específicos.
+- Implementar `npm install --dry-run` en CI para detectar cambios sospechosos.
+
+**Ejemplo de ataque (Python):**
+
+```bash
+# El atacante publica 'mycompany-internal-utils' en PyPI público
+# La empresa tiene un requirement.txt con:
+# mycompany-internal-utils==1.0.0
+# pip install buscará en PyPI primero si --index-url no apunta a un repo privado
+```
+
+**Mitigación con `pip.conf` seguro:**
+
+```ini
+# /etc/pip.conf
+[global]
+index-url = https://my-private-repo.company.com/simple/
+extra-index-url = https://pypi.org/simple/   # Solo para paquetes no encontrados
+```
+
+**Ataques a dependencias transitivas:** Un paquete popular (ej. `lodash`) es comprometido y se publica una versión maliciosa.
+
+**Mitigación:**
+- **Pin de versiones exactas** (`lodash@4.17.21` no `^4.17.21`).
+- **Lockfiles** (`package-lock.json`, `poetry.lock`, `Cargo.lock`) en el repositorio.
+- **Dependabot / Renovate** para actualizaciones automáticas con revisión de seguridad.
+- **SBOM + escaneo** continuo de dependencias.
+
+---
+
+#### **SECCIÓN 8.6: GITOPS SECURITY — PRINCIPIOS AVANZADOS**
+
+1. **Repositorios de configuración separados por entorno:** `config/staging`, `config/production` con protecciones diferentes.
+2. **Protección de ramas:** Requerir aprobación de al menos 2 personas para cambios en `production`.
+3. **Firma de commits (GPG):** Verificar que los commits en la rama main están firmados por un desarrollador autorizado.
+4. **Escanear manifiestos de Kubernetes (Kubesec, Checkov):** Detectar pods privilegiados, hostPath, escalación de privilegios.
+5. **Secrets cifrados en Git:** Usar Sealed Secrets (Bitnami) o SOPS (Mozilla) para almacenar secrets en Git.
+
+**Sealed Secrets (Bitnami):**
+
+```bash
+# Instalar Sealed Secrets controller
+$ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
+
+# Generar un SealedSecret (el controller tiene la clave privada)
+$ kubectl create secret generic db-password --dry-run=client --from-literal=password=S3cr3t -o json | \
+  kubeseal --controller-name sealed-secrets-controller --format yaml > sealed-secret.yaml
+
+# El SealedSecret puede almacenarse en Git (está cifrado)
+$ cat sealed-secret.yaml
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: db-password
+spec:
+  encryptedData:
+    password: AgBy3i4OJrjU... (cifrado con clave pública del controller)
+
+# Al aplicarlo en el clúster, el controller lo descifra y crea un Secret normal
+```
+
+**SOPS (Secrets OPerationS) + age / PGP:**
+
+```bash
+# Cifrar un archivo YAML completo (por ejemplo, secrets.yaml)
+$ sops --encrypt --age age1xyz... secrets.yaml > secrets.enc.yaml
+
+# Integración con ArgoCD (plugin para descifrar)
+# https://github.com/argoproj-labs/argocd-vault-plugin
+```
+
+---
+
+#### **SECCIÓN 8.7: CI/CD TOOLING — COMPARATIVA PARA DECISIONES ARQUITECTÓNICAS**
+
+| Herramienta | Tipo | Ventajas | Desventajas |
+|-------------|------|----------|-------------|
+| **GitHub Actions** | CI/CD integrado en GitHub | Gran ecosistema, runners efímeros, fácil de usar | Límites de minutos, menos control en auto-hosted |
+| **GitLab CI** | CI/CD integrado | Un solo producto para código, CI, registry, Kubernetes | Curva de aprendizaje, más pesado |
+| **Jenkins X** | CI/CD nativo de Kubernetes | Integración profunda con Kubernetes, preview environments | Complejidad, menos adopción |
+| **Tekton** | Pipelines nativos de Kubernetes | Extremadamente flexible, nativo de Kubernetes, usado por OpenShift Pipelines | Curva de aprendizaje alta, falta de UI por defecto |
+| **Argo Workflows** | Orquestación de workflows | Ideal para tareas batch y pipelines complejos, integración con ArgoCD | No es un sistema CI tradicional |
+
+**Recomendación:**
+- Para equipos pequeños/medianos: **GitHub Actions** (si usas GitHub) o **GitLab CI** (si usas GitLab). Ambos son suficientes y más sencillos.
+- Para empresas con requisitos estrictos de cumplimiento y auto-hosted: **Tekton** + **ArgoCD**.
+- Para data pipelines o ML: **Argo Workflows**.
+
+ 
