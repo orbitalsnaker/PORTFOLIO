@@ -1727,3 +1727,777 @@ spec:
 
 ---
 
+### **CAPA 5: ALMACENAMIENTO, PERSISTENCIA Y GESTIÓN DE DATOS EN KUBERNETES**
+
+El almacenamiento persistente es uno de los aspectos más críticos y, a menudo, mal entendidos en Kubernetes. La naturaleza efímera de los Pods (pueden ser eliminados y recreados en cualquier momento) requiere un mecanismo que separe los datos del ciclo de vida del Pod. Este mecanismo es **PersistentVolume (PV)** y **PersistentVolumeClaim (PVC)**.
+
+**Conceptos fundamentales:**
+- **PersistentVolume (PV):** Recurso de clúster que representa un volumen de almacenamiento real (disco EBS, GCE PD, NFS, Ceph RBD, etc.). Es independiente de cualquier Pod.
+- **PersistentVolumeClaim (PVC):** Solicitud de almacenamiento por parte de un usuario o aplicación. Especifica tamaño, modo de acceso (ReadWriteOnce, ReadOnlyMany, ReadWriteMany) y StorageClass.
+- **StorageClass:** Permite el aprovisionamiento dinámico de PVs. Define un "proveedor" (por ejemplo, `ebs.csi.aws.com`) y parámetros como tipo de disco, IOPS, zona.
+
+#### **SECCIÓN 5.1: VOLÚMENES EFÍMEROS VS PERSISTENTES**
+
+**Volúmenes efímeros (emptyDir, configMap, secret):**
+- `emptyDir`: Directorio vacío creado cuando el Pod se asigna a un nodo. Vive mientras el Pod esté en ese nodo. Útil para caché, datos temporales.
+- `configMap` y `secret`: Montados como volúmenes de solo lectura. Se eliminan con el Pod.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ephemeral-demo
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - name: cache
+      mountPath: /cache
+    - name: config
+      mountPath: /etc/config
+      readOnly: true
+  volumes:
+  - name: cache
+    emptyDir:
+      medium: Memory    # Usa tmpfs (RAM) para alto rendimiento
+      sizeLimit: 256Mi
+  - name: config
+    configMap:
+      name: app-config
+```
+
+**Volúmenes persistentes (PV/PVC):** Los datos sobreviven a la eliminación del Pod.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: database-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce   # Solo un Pod puede escribir simultáneamente
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres
+spec:
+  containers:
+  - name: postgres
+    image: postgres:15
+    volumeMounts:
+    - name: data
+      mountPath: /var/lib/postgresql/data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: database-pvc
+```
+
+#### **SECCIÓN 5.2: CSI (CONTAINER STORAGE INTERFACE) Y PROVISIONAMIENTO DINÁMICO**
+
+CSI es el estándar que permite a los proveedores de almacenamiento (AWS, GCP, Azure, Ceph, NetApp, etc.) desarrollar plugins que se integren con Kubernetes sin modificar el código base.
+
+**Arquitectura de un driver CSI:**
+- **Controller Plugin:** Corriendo en el control plane (como un Deployment). Crea, elimina, hace snapshots de volúmenes.
+- **Node Plugin:** Corriendo en cada nodo (como un DaemonSet). Monta/desmonta volúmenes en el nodo.
+
+**Ejemplo: CSI driver para AWS EBS (elastic block store):**
+
+```bash
+# Instalación del driver EBS CSI
+$ helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+$ helm upgrade --install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+  --namespace kube-system \
+  --set enableVolumeScheduling=true \
+  --set enableVolumeResizing=true \
+  --set enableVolumeSnapshot=true
+```
+
+```yaml
+# StorageClass para volúmenes de alto rendimiento (io2 con IOPS provisionadas)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io2
+  iops: "16000"
+  encrypted: "true"
+  fsType: ext4
+volumeBindingMode: WaitForFirstConsumer   # Espera a que el Pod esté programado para crear el volumen en la misma zona
+reclaimPolicy: Retain                     # No borrar el volumen físico al eliminar el PVC
+allowVolumeExpansion: true
+---
+# StorageClass para logs (optimizado para throughput, bajo costo)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: log-storage
+provisioner: ebs.csi.aws.com
+parameters:
+  type: st1
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+```
+
+**Modos de acceso (accessModes):**
+- `ReadWriteOnce` (RWO): Volumen que puede ser montado en lectura-escritura por un solo Pod.
+- `ReadOnlyMany` (ROX): Puede ser montado en solo lectura por muchos Pods (NFS, CephFS).
+- `ReadWriteMany` (RWX): Puede ser montado en lectura-escritura por muchos Pods simultáneamente (requiere almacenamiento compartido como NFS, CephFS, EFS).
+- `ReadWriteOncePod` (alpha en 1.27+): Solo un Pod en todo el clúster puede montar el volumen (evita split-brain).
+
+#### **SECCIÓN 5.3: STATEFULSETS Y APLICACIONES CON ESTADO**
+
+Los StatefulSets son la herramienta adecuada para bases de datos, colas de mensajes y cualquier aplicación que requiera identidad estable y almacenamiento persistente por instancia.
+
+**Características clave:**
+1. **Identidad estable:** Cada Pod tiene un nombre predecible (ej. `mysql-0`, `mysql-1`, `mysql-2`).
+2. **Almacenamiento persistente estable:** Cada Pod tiene su propio PVC que persiste incluso si el Pod se mueve a otro nodo.
+3. **Orden de inicio y apagado:** Los Pods se crean secuencialmente (de 0 a N-1) y se eliminan en orden inverso.
+4. **DNS estable:** Cada Pod tiene su propio registro DNS: `<pod-name>.<headless-service>.<namespace>.svc.cluster.local`.
+
+**Ejemplo: StatefulSet para MySQL con replicación maestro-esclavo:**
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: database
+spec:
+  clusterIP: None   # Headless service
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: database
+spec:
+  serviceName: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: root-password
+        - name: MYSQL_REPLICATION_USER
+          value: "replicator"
+        - name: MYSQL_REPLICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: replication-password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        # Script de configuración para determinar si es master (pod-0) o esclavo
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - |
+                if [[ $(hostname) == "mysql-0" ]]; then
+                  echo "Configuring as master"
+                  mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "CREATE USER IF NOT EXISTS '$MYSQL_REPLICATION_USER'@'%' IDENTIFIED BY '$MYSQL_REPLICATION_PASSWORD'; GRANT REPLICATION SLAVE ON *.* TO '$MYSQL_REPLICATION_USER'@'%'; FLUSH PRIVILEGES;"
+                else
+                  echo "Configuring as replica"
+                  MASTER_HOST="mysql-0.mysql.database.svc.cluster.local"
+                  mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "CHANGE MASTER TO MASTER_HOST='$MASTER_HOST', MASTER_USER='$MYSQL_REPLICATION_USER', MASTER_PASSWORD='$MYSQL_REPLICATION_PASSWORD', MASTER_AUTO_POSITION=1; START SLAVE;"
+                fi
+      volumeClaimTemplates:
+      - metadata:
+          name: data
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: fast-ssd
+          resources:
+            requests:
+              storage: 100Gi
+```
+
+**Operadores de bases de datos:** Para bases de datos en producción, se recomienda usar operadores como **CloudNativePG** (PostgreSQL), **KubeDB**, **Percona Operator for MySQL**, o **Zalando Postgres Operator**. Estos operadores automatizan backups, failover, escalado y actualizaciones.
+
+#### **SECCIÓN 5.4: BACKUP Y RECUPERACIÓN DE DATOS CON VELERO**
+
+Velero (antes Heptio Ark) es la herramienta estándar de CNCF para backups de clústeres Kubernetes. Permite:
+- **Backup de recursos de Kubernetes:** Todos los YAMLs (Deployments, Services, ConfigMaps, etc.) almacenados en object storage (S3, GCS, Azure Blob).
+- **Backup de volúmenes persistentes:** A través de snapshots nativos de la nube (EBS snapshots, GCE PD snapshots) o con herramientas de respaldo de archivos (restic).
+
+**Arquitectura de Velero:**
+- **Velero Controller:** Pod en el clúster que ejecuta los backups programados.
+- **Object Storage:** Donde se guardan los tarballs de los recursos y los snapshots.
+- **Restic (opcional):** Para hacer backups de volúmenes que no soportan snapshots nativos.
+
+**Instalación de Velero con AWS S3 como backend:**
+
+```bash
+# Crear bucket S3 para backups
+$ aws s3 mb s3://my-k8s-backups --region us-east-1
+
+# Crear IAM policy para Velero
+$ cat > velero-policy.json <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSnapshot",
+        "ec2:DeleteSnapshot",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeVolumesModifications",
+        "ec2:CreateTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:PutObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": "arn:aws:s3:::my-k8s-backups/*"
+    }
+  ]
+}
+EOF
+
+$ aws iam create-policy --policy-name VeleroBackupPolicy --policy-document file://velero-policy.json
+
+# Instalar Velero con Helm
+$ helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+$ helm install velero vmware-tanzu/velero \
+  --namespace velero \
+  --create-namespace \
+  --set configuration.backupStorageLocation.name=default \
+  --set configuration.backupStorageLocation.bucket=my-k8s-backups \
+  --set configuration.backupStorageLocation.config.region=us-east-1 \
+  --set configuration.volumeSnapshotLocation.name=aws \
+  --set configuration.volumeSnapshotLocation.config.region=us-east-1 \
+  --set credentials.secretContents.cloud="$(cat ~/.aws/credentials | base64 -w 0)"
+```
+
+**Estrategias de backup en producción:**
+
+```bash
+# Backup programado cada 6 horas para todos los namespaces excepto kube-system
+$ velero schedule create daily-backup \
+  --schedule="0 */6 * * *" \
+  --ttl=168h \
+  --include-namespaces production,staging,database \
+  --exclude-resources events,events.events.k8s.io
+
+# Backup manual antes de una actualización crítica
+$ velero backup create pre-upgrade-backup \
+  --include-namespaces production \
+  --snapshot-volumes=true \
+  --wait
+
+# Verificar estado del backup
+$ velero backup describe pre-upgrade-backup
+Name:         pre-upgrade-backup
+Namespace:    velero
+Labels:       velero.io/storage-location=default
+Phase:        Completed
+Errors:       0
+Warnings:     0
+Backup Volumes:
+  production/pvc-data-0: snapshot-abc123
+  production/pvc-data-1: snapshot-def456
+
+# Restaurar un backup
+$ velero restore create --from-backup pre-upgrade-backup --namespace-mappings production:production-restored
+
+# Verificar restauración
+$ velero restore describe pre-upgrade-backup-20250414120000
+```
+
+**Backup de volúmenes sin snapshots nativos (Restic):**
+
+```yaml
+# Anotar un pod para que Velero backup sus volúmenes con restic
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+  annotations:
+    backup.velero.io/backup-volumes: data,config
+spec:
+  containers:
+  - name: app
+    image: myapp
+    volumeMounts:
+    - name: data
+      mountPath: /data
+    - name: config
+      mountPath: /etc/config
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: app-data
+  - name: config
+    configMap:
+      name: app-config
+```
+
+---
+
+### **CAPA 6: DISASTER RECOVERY (DR) Y MIGRACIÓN ENTRE CLOUDS**
+
+El Disaster Recovery no es un "nice to have" sino un requisito para cualquier sistema en producción. La estrategia de DR debe contemplar dos escenarios:
+1. **Pérdida de un namespace o clúster completo** (error humano, ataque, corrupción de etcd).
+2. **Indisponibilidad de toda una región de la nube** (caída de AWS us-east-1, GCP europe-west1).
+
+#### **SECCIÓN 6.1: MÉTRICAS RTO Y RPO**
+
+- **RTO (Recovery Time Objective):** Tiempo máximo aceptable desde la interrupción hasta la restauración del servicio.
+- **RPO (Recovery Point Objective):** Cantidad máxima de datos que se puede perder (expresada en tiempo). Ej: RPO de 1 hora significa que si el desastre ocurre a las 12:00, se puede perder hasta una hora de datos (último backup a las 11:00).
+
+| Escenario | RTO objetivo | RPO objetivo | Estrategia típica |
+|-----------|-------------|--------------|-------------------|
+| Blog corporativo | 24 horas | 24 horas | Backup diario a S3, restore manual |
+| Aplicación interna | 4 horas | 1 hora | Backup horario + script de restore semi-automático |
+| API crítica | 30 minutos | 15 minutos | Replicación activa-passiva con DNS failover |
+| Base de datos financiera | 5 minutos | 0 (zero data loss) | Replicación síncrona multi-región (Spanner, CockroachDB) |
+
+#### **SECCIÓN 6.2: ESTRATEGIAS DE DR MULTI-CLÚSTER**
+
+**1. Activo-Pasivo (caliente):**
+- Clúster primario en región A, clúster secundario en región B.
+- Replicación asíncrona de datos (ej. MySQL semi-síncrono, MongoDB replica sets).
+- DNS con failover automático (Route53, Cloudflare).
+- Tiempo de conmutación: 1-5 minutos.
+
+**2. Activo-Activo (multi-región):**
+- Múltiples clústeres sirviendo tráfico simultáneamente.
+- Requiere base de datos distribuida con consistencia eventual o fuerte (CockroachDB, YugabyteDB, Spanner).
+- Balanceo de carga global (Google Cloud Load Balancer, AWS Global Accelerator).
+- Tolerancia a fallo de región completa sin downtime.
+
+**3. Pilot Light (linterna):**
+- Clúster primario completo. Clúster secundario con solo servicios mínimos (bases de datos replicadas, pero no los Pods de aplicación).
+- En caso de desastre, se escala el secundario (se crean Pods) y se redirige tráfico.
+- RTO más alto (10-30 minutos) pero menor costo.
+
+**Implementación de failover con ArgoCD y Route53:**
+
+```yaml
+# ApplicationSet para desplegar la misma aplicación en dos clústeres
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: app-dr
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: primary
+        url: https://api.primary-cluster.example.com
+      - cluster: secondary
+        url: https://api.secondary-cluster.example.com
+  template:
+    metadata:
+      name: '{{cluster}}-app'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/company/manifests
+        targetRevision: main
+        path: app/overlays/{{cluster}}
+      destination:
+        server: '{{url}}'
+        namespace: production
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+```
+
+**Automatización de failover con Global Accelerator y health checks:**
+
+```bash
+# Crear health check en Route53 para el endpoint del clúster primario
+$ aws route53 create-health-check \
+  --caller-reference "$(date +%s)" \
+  --health-check-config '{
+    "Type": "HTTPS",
+    "FullyQualifiedDomainName": "api.primary.company.com",
+    "Port": 443,
+    "ResourcePath": "/healthz",
+    "RequestInterval": 10,
+    "FailureThreshold": 3
+  }'
+
+# Crear registro DNS con failover
+$ aws route53 change-resource-record-sets --hosted-zone-id Z123456 --change-batch '{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "api.company.com",
+        "Type": "CNAME",
+        "SetIdentifier": "primary",
+        "Failover": "PRIMARY",
+        "TTL": 60,
+        "ResourceRecords": [{"Value": "api.primary.company.com"}],
+        "HealthCheckId": "abc123"
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "api.company.com",
+        "Type": "CNAME",
+        "SetIdentifier": "secondary",
+        "Failover": "SECONDARY",
+        "TTL": 60,
+        "ResourceRecords": [{"Value": "api.secondary.company.com"}]
+      }
+    }
+  ]
+}'
+```
+
+**Recuperación de un clúster completo desde Velero (DR drill):**
+
+```bash
+# Simular desastre: eliminar namespace completo
+$ kubectl delete namespace production
+
+# Restaurar desde el último backup
+$ velero restore create --from-backup daily-backup-20250414 --namespace-mappings production:production
+
+# Verificar que todos los recursos se restauraron
+$ velero restore describe daily-backup-20250414-12345
+Phase: Completed
+Items restored: 234
+Errors: 0
+
+# Para bases de datos con PVC, Velero también restaurará los snapshots
+# Los pods de base de datos deben ser reiniciados para montar los volúmenes restaurados
+$ kubectl rollout restart statefulset/mysql -n production
+```
+
+#### **SECCIÓN 6.3: MIGRACIÓN ENTRE CLOUDS (AWS → GCP, ON-PREM → CLOUD)**
+
+Velero permite migrar clústeres completos entre proveedores de nube, incluso con datos persistentes.
+
+**Migración de AWS a GCP con Velero:**
+
+```bash
+# En el clúster de origen (AWS):
+$ velero backup create migration-backup \
+  --include-namespaces production \
+  --default-volumes-to-fs-backup  # Usa restic para copiar datos en lugar de snapshots nativos
+
+# Copiar el bucket de S3 a GCS
+$ aws s3 sync s3://my-backups s3://temp-migration
+$ gsutil rsync -r s3://temp-migration gs://my-gcs-backups
+
+# En el clúster de destino (GCP):
+$ velero install \
+  --provider gcp \
+  --bucket my-gcs-backups \
+  --secret-file ./gcp-credentials.json \
+  --backup-location-config region=us-central1
+
+$ velero restore create --from-backup migration-backup \
+  --namespace-mappings production:production-gcp
+
+# Verificar que los PVCs se crearon con StorageClass equivalente en GCP
+$ kubectl get pvc -n production-gcp
+NAME              STATUS   VOLUME                                     CAPACITY
+data-mysql-0      Bound    pvc-abc123                                  100Gi
+```
+
+---
+
+### **CAPA 7: CHAOS ENGINEERING Y RESILIENCIA APLICADA**
+
+El Chaos Engineering es la disciplina de experimentar en sistemas distribuidos para generar confianza en su capacidad para soportar condiciones turbulentas en producción. No es "romper cosas por diversión", sino un enfoque científico para descubrir debilidades antes de que los clientes las encuentren.
+
+**Principios (basados en el paper de Netflix, 2015):**
+1. **Hipótesis de comportamiento estable:** Define una métrica (ej. "latencia p99 < 500ms") y un estado de estabilidad.
+2. **Variedad de eventos del mundo real:** Usa fallos realistas (pérdida de paquetes, latencia, fallo de nodos, certificados expirados).
+3. **Ejecutar en producción:** Los entornos de staging no reproducen la complejidad real.
+4. **Minimizar el radio de explosión:** Comienza con experimentos de bajo impacto y aumenta gradualmente.
+
+#### **SECCIÓN 7.1: HERRAMIENTAS DE CHAOS ENGINEERING**
+
+**LitmusChaos (CNCF):** Plataforma completa con CRDs para definir experimentos. Soporta cientos de escenarios.
+
+**Gremlin:** Herramienta comercial con interfaz gráfica y ataques predefinidos (CPU, memoria, red, estado, shutdown).
+
+**Chaos Mesh:** Desarrollado por PingCAP, muy integrado con Kubernetes.
+
+**Instalación de LitmusChaos:**
+
+```bash
+$ helm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/
+$ helm install litmus litmuschaos/litmus --namespace litmus --create-namespace
+$ kubectl get pods -n litmus
+NAME                                    READY   STATUS
+litmusportal-frontend-7d8f9b6c4d-abc   1/1     Running
+chaos-operator-ce-5c4b8f6d9-xyz        1/1     Running
+```
+
+**Definición de un experimento: pod-kill**
+
+```yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-kill-experiment
+  namespace: production
+spec:
+  appinfo:
+    appns: production
+    applabel: "app=api"
+    appkind: deployment
+  jobCleanUpPolicy: delete
+  experiments:
+  - name: pod-delete
+    spec:
+      components:
+        env:
+        - name: TOTAL_CHAOS_DURATION
+          value: "60"       # Duración total del caos (segundos)
+        - name: PODS_AFFECTED_PERC
+          value: "30"       # Porcentaje de pods a matar
+        - name: RAMP_TIME
+          value: "10"       # Tiempo entre matar pods
+```
+
+**Ejecutar el experimento:**
+
+```bash
+$ kubectl apply -f pod-kill-experiment.yaml
+$ kubectl get chaosengine -n production
+NAME                   STATUS    AGE
+pod-kill-experiment    Running   10s
+
+# Observar logs del experimento
+$ kubectl logs -f -n production chaos-runner-pod-kill-experiment-xxxxx
+
+# Verificar que el deployment se recuperó (recreación de pods)
+$ kubectl get pods -n production -l app=api -w
+NAME                   READY   STATUS    RESTARTS   AGE
+api-7d8f9b6c4d-abc     1/1     Running   0          5m
+api-7d8f9b6c4d-def     1/1     Running   0          5m
+api-7d8f9b6c4d-ghi     0/1     Terminating   1          4m
+api-7d8f9b6c4d-jkl     1/1     Running   0          10s   # Nuevo pod creado
+```
+
+#### **SECCIÓN 7.2: ESCENARIOS DE CHAOS AVANZADOS**
+
+**1. Latencia de red simulada (para probar timeouts y circuit breakers):**
+
+```yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: network-latency
+spec:
+  experiments:
+  - name: pod-network-latency
+    spec:
+      components:
+        env:
+        - name: NETWORK_LATENCY
+          value: "200ms"      # 200 milisegundos de latencia añadida
+        - name: NETWORK_JITTER
+          value: "50ms"       # Variación aleatoria
+        - name: TARGET_PODS
+          value: "app=api"    # Solo afectar a pods con esta label
+        - name: DESTINATION_IPS
+          value: "10.0.0.0/8" # Tráfico hacia esta red
+```
+
+**2. Pérdida de paquetes (packet loss) para probar retries:**
+
+```yaml
+env:
+- name: PACKET_LOSS_PERCENTAGE
+  value: "10"        # 10% de paquetes perdidos
+- name: NETWORK_LATENCY
+  value: "0ms"
+```
+
+**3. Caída de un nodo completo (Node Drain):**
+
+```yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: node-drain
+spec:
+  experiments:
+  - name: node-drain
+    spec:
+      components:
+        env:
+        - name: NODE_LABEL
+          value: "kubernetes.io/hostname=worker-1"
+        - name: TOTAL_CHAOS_DURATION
+          value: "120"
+```
+
+**4. Saturación de CPU en un contenedor:**
+
+```yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cpu-hog
+spec:
+  experiments:
+  - name: pod-cpu-hog
+    spec:
+      components:
+        env:
+        - name: CPU_CORES
+          value: "2"
+        - name: TOTAL_CHAOS_DURATION
+          value: "180"
+```
+
+#### **SECCIÓN 7.3: PATRONES DE RESILIENCIA (THE BIG FOUR)**
+
+**1. Circuit Breaker (interruptor):**
+Cuando un servicio falla repetidamente, el circuito se abre y las requests fallan inmediatamente sin intentar la conexión, dando tiempo a recuperarse.
+
+```yaml
+# En Istio (DestinationRule)
+trafficPolicy:
+  connectionPool:
+    http:
+      http1MaxPendingRequests: 100
+      http2MaxRequests: 1000
+  outlierDetection:
+    consecutive5xxErrors: 5
+    interval: 30s
+    baseEjectionTime: 30s
+    maxEjectionPercent: 50
+```
+
+**2. Retry con backoff exponencial:**
+Reintentar operaciones fallidas con tiempos de espera crecientes (1s, 2s, 4s, 8s...). Evita sobrecargar el sistema.
+
+```python
+# Ejemplo en Python
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
+def call_unreliable_service():
+    response = requests.get("http://api/service")
+    response.raise_for_status()
+    return response.json()
+```
+
+**3. Timeout:**
+Siempre establecer timeouts en llamadas a servicios externos. Es mejor fallar rápido que esperar indefinidamente.
+
+```yaml
+# En VirtualService de Istio
+timeout: 3s
+```
+
+**4. Bulkhead (compartimentación):**
+Aislar recursos para que un servicio saturado no afecte a otros. En Kubernetes se logra con:
+- Límites de recursos (CPU/memory limits).
+- Límites de conexiones por pod (Istio connection pool).
+- Namespaces separados con ResourceQuota.
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: bulkhead-quota
+  namespace: risky-ns
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+```
+
+#### **SECCIÓN 7.4: CHAOS ENGINEERING COMO CULTURA**
+
+**GameDays (días de caos):**
+Ejercicios planificados donde el equipo de ingeniería inyecta fallos y el equipo de operaciones debe responder como si fuera un incidente real. Netflix realiza GameDays trimestrales.
+
+**Pasos para un GameDay exitoso:**
+1. **Definir alcance:** ¿Qué sistema se va a probar? ¿Qué métricas son críticas?
+2. **Establecer hipótesis:** "El sistema mantendrá latencia p99 < 500ms incluso si el 30% de los pods mueren."
+3. **Preparar monitoreo:** Dashboards de Prometheus/Grafana, alertas, logs centralizados.
+4. **Ejecutar caos en horario de baja carga (pero en producción).**
+5. **Medir y documentar desviaciones:** Si la hipótesis falla, es un bug de resiliencia.
+6. **Automatizar la corrección:** Añadir retries, circuit breakers, o mejorar el readiness probe.
+
+**Ejemplo de GameDay con Gremlin (automatizado):**
+
+```bash
+# Script para atacar un servicio específico
+$ gremlin attack container \
+  --name chaos-attack \
+  --duration 180 \
+  --target deployment/production/api \
+  --type cpu \
+  --cpu-cores 4
+
+# Mientras tanto, Prometheus alerta si la latencia sube
+$ prometheus_query 'histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="api"}[5m])) > 0.5'
+
+# Si la alerta se dispara, el experimento ha revelado una debilidad
+```
+
+**Integración con CI/CD:**
+Los experimentos de caos pueden ejecutarse automáticamente en pipelines de staging antes de cada release.
+
+```yaml
+# GitLab CI job para chaos testing
+chaos-test:
+  stage: chaos
+  script:
+    - kubectl apply -f chaos/pod-kill.yaml
+    - sleep 60
+    - kubectl get pods -n production -l app=api | grep -c "Running"  # Debe ser >= 3
+  only:
+    - main
+```
+
