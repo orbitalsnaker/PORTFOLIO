@@ -897,3 +897,833 @@ spec:
       topic: orders
       lagThreshold: "50"
 ```
+### **CAPA 2: SEGURIDAD EN LA RED PROFUNDA — SERVICE MESH, ZERO TRUST Y eBPF**
+
+La red en Kubernetes es uno de los aspectos más complejos y, a la vez, el más crítico para la seguridad y la observabilidad. Por defecto, el modelo de red de Kubernetes es **plano**: todos los Pods pueden comunicarse con todos los Pods, y cualquier Service puede ser alcanzado desde cualquier namespace. Este modelo, aunque sencillo, es intrínsecamente inseguro para entornos de producción multi-tenant.
+
+**Principio de Zero Trust en la red:** "Nunca confíes, siempre verifica". En un clúster Kubernetes, esto significa:
+- Todo el tráfico entre servicios debe estar cifrado (mTLS).
+- El acceso solo debe permitirse explícitamente (denegar por defecto).
+- La identidad de cada servicio debe ser verificable (certificados x509).
+- El tráfico debe ser observable y auditado.
+
+Para lograr esto, se necesitan dos capas de abstracción:
+1. **NetworkPolicy** (nativo de Kubernetes): firewalls a nivel L3/L4 (y L7 con algunos CNIs).
+2. **Service Mesh** (Istio, Linkerd, Cilium): gestión avanzada de tráfico, mTLS, trazabilidad y circuit breaking.
+
+---
+
+#### **SECCIÓN 3.1: NETWORKPOLICY — FIREWALLS L3/L4 NATIVOS**
+
+NetworkPolicy es un recurso de Kubernetes que define cómo los Pods pueden comunicarse entre sí y con otros endpoints. **Por defecto, no hay NetworkPolicy**, lo que significa "allow-all". Aplicar una NetworkPolicy cambia el comportamiento a "deny-all" para los Pods seleccionados, a menos que se permita explícitamente.
+
+```yaml
+# Política de denegación total (baseline de seguridad)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: production
+spec:
+  podSelector: {}   # Aplica a todos los Pods del namespace
+  policyTypes:
+  - Ingress
+  - Egress
+  # Sin reglas de ingress ni egress → todo el tráfico entrante y saliente está denegado
+---
+# Política que permite tráfico específico
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:     # Solo desde el namespace 'frontend'
+        matchLabels:
+          kubernetes.io/metadata.name: frontend
+      podSelector:           # Y solo desde Pods con label 'app: web'
+        matchLabels:
+          app: web
+    ports:
+    - protocol: TCP
+      port: 8080
+  - from:
+    - ipBlock:               # Tráfico desde la red de monitoreo (externa al clúster)
+        cidr: 10.0.10.0/24
+    ports:
+    - protocol: TCP
+      port: 9090             # Puerto de métricas
+```
+
+**Limitaciones de NetworkPolicy nativo:**
+- Solo L3/L4 (protocolo, puerto, IP). No puede inspeccionar HTTP (método, path, headers).
+- Depende del plugin CNI. Flannel no implementa NetworkPolicy; Calico, Cilium, Weave sí.
+- No cifra el tráfico; solo controla el acceso.
+
+Para inspección L7 y cifrado, se necesita un Service Mesh.
+
+---
+
+#### **SECCIÓN 3.2: SERVICE MESH — ISTIO EN PROFUNDIDAD**
+
+Un Service Mesh es una capa de infraestructura dedicada a gestionar la comunicación entre servicios. Se implementa mediante **sidecar proxies** (generalmente Envoy) inyectados en cada Pod. Todo el tráfico que entra o sale del Pod pasa por el proxy, que aplica políticas, establece mTLS, recopila métricas y genera trazas.
+
+**Arquitectura de Istio:**
+- **Data Plane:** Proxies Envoy (sidecars) que interceptan el tráfico.
+- **Control Plane:** `istiod` que gestiona configuración, certificados y políticas.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Istio Control Plane (istiod)            │
+│  - Pilot: distribución de configuraciones a Envoy          │
+│  - Citadel: emisión de certificados mTLS                    │
+│  - Galley: validación de configuraciones                    │
+└─────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ Pod A         │   │ Pod B         │   │ Pod C         │
+│ ┌───────────┐ │   │ ┌───────────┐ │   │ ┌───────────┐ │
+│ │ Contenedor│ │   │ │ Contenedor│ │   │ │ Contenedor│ │
+│ │ app       │ │   │ │ app       │ │   │ │ app       │ │
+│ └─────┬─────┘ │   │ └─────┬─────┘ │   │ └─────┬─────┘ │
+│       │       │   │       │       │   │       │       │
+│       ▼       │   │       ▼       │   │       ▼       │
+│ ┌───────────┐ │   │ ┌───────────┐ │   │ ┌───────────┐ │
+│ │ Envoy     │ │   │ │ Envoy     │ │   │ │ Envoy     │ │
+│ │ sidecar   │◄┼───┼─┤ sidecar   │◄┼───┼─┤ sidecar   │ │
+│ └───────────┘ │   │ └───────────┘ │   │ └───────────┘ │
+└───────────────┘   └───────────────┘   └───────────────┘
+```
+
+**Instalación de Istio (perfil de producción):**
+
+```bash
+# Descargar Istio
+$ curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.24.0 sh -
+$ cd istio-1.24.0
+$ export PATH=$PWD/bin:$PATH
+
+# Instalar con perfil "demo" o "production"
+$ istioctl install --set profile=production -y
+
+# Etiquetar namespace para inyección automática de sidecar
+$ kubectl label namespace production istio-injection=enabled
+
+# Verificar que los pods reiniciados tengan 2 contenedores (app + sidecar)
+$ kubectl get pods -n production
+NAME                        READY   STATUS    RESTARTS   AGE
+api-7d8f9b6c4d-abc         2/2     Running   0          1m
+```
+
+**Configuración fundamental: mTLS obligatorio**
+
+```yaml
+# PeerAuthentication: exige mTLS en todo el namespace
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT   # STRICT: solo tráfico mTLS; PERMISSIVE: acepta también texto plano
+---
+# DestinationRule: configuración de conexión a nivel de servicio
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: api-dr
+  namespace: production
+spec:
+  host: api
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    outlierDetection:      # Circuit breaker
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+```
+
+**Gestión de tráfico: canary, A/B testing, fault injection**
+
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: api-vs
+  namespace: production
+spec:
+  hosts:
+  - api
+  http:
+  # Canary: 5% del tráfico a v2 (nueva versión)
+  - route:
+    - destination:
+        host: api
+        subset: v1
+      weight: 95
+    - destination:
+        host: api
+        subset: v2
+      weight: 5
+    # Inyección de fallos para chaos testing
+    fault:
+      delay:
+        percentage:
+          value: 0.5
+        fixedDelay: 3s
+      abort:
+        percentage:
+          value: 0.1
+        httpStatus: 503
+    # Timeout y reintentos
+    timeout: 5s
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+      retryOn: gateway-error,connect-failure,retriable-4xx
+  # A/B testing basado en header
+  - match:
+    - headers:
+        x-user-group:
+          exact: "beta"
+    route:
+    - destination:
+        host: api
+        subset: v2
+      weight: 100
+```
+
+**Autorización granular con AuthorizationPolicy (L7)**
+
+```yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-policy
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: api
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/frontend/sa/web-sa"]   # ServiceAccount
+        namespaces: ["frontend"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/v1/*"]
+        ports: ["8080"]
+    when:
+    - key: request.headers[x-api-version]
+      values: ["v1", "v2"]
+  - from:
+    - source:
+        ipBlocks: ["10.0.10.0/24"]   # Prometheus externo
+    to:
+    - operation:
+        paths: ["/metrics"]
+        ports: ["9090"]
+```
+
+**Observabilidad con Istio (sin modificar la aplicación):**
+Istio genera automáticamente:
+- **Métricas:** Envoy genera métricas detalladas (requests, latencia, códigos HTTP, tamaño de respuestas). Se pueden exportar a Prometheus.
+- **Trazas distribuídas:** Istio inyecta headers (`x-request-id`, `x-b3-traceid`) y propaga el contexto. Jaeger o Zipkin pueden recolectarlas.
+- **Logs de acceso:** Envoy puede registrar cada request (formato JSON o texto).
+
+```bash
+# Configurar Prometheus para scrapear métricas de Istio
+$ kubectl apply -f samples/addons/prometheus.yaml
+$ kubectl apply -f samples/addons/jaeger.yaml
+
+# Acceder a dashboards
+$ istioctl dashboard kiali   # Topología de servicios
+$ istioctl dashboard jaeger  # Trazas
+```
+
+**Coste y trade-offs de Istio:**
+- Overhead de memoria: ~50-100 MB por sidecar (por Pod).
+- Overhead de latencia: ~5-10 ms adicionales por request (depende de la carga).
+- Complejidad operativa: gestión de certificados, actualizaciones de Envoy, resolución de problemas.
+- Alternativas más ligeras: **Linkerd** (menor overhead, sin Envoy sino proxy en Rust), **Cilium Service Mesh** (usa eBPF, sin sidecar).
+
+---
+
+#### **SECCIÓN 3.3: eBPF Y CILIUM — EL FUTURO DEL NETWORKING EN KUBERNETES**
+
+eBPF (Extended Berkeley Packet Filter) es una tecnología que permite ejecutar código de usuario de forma segura dentro del kernel de Linux. Ha revolucionado el networking, la observabilidad y la seguridad al permitir programar el kernel sin modificar su código fuente.
+
+**Ventajas de eBPF frente a iptables/envoy:**
+- **Rendimiento:** El código eBPF se ejecuta en el kernel, sin cambios de contexto a espacio de usuario. Las operaciones de red son O(1) en lugar de O(n) con iptables.
+- **Visibilidad:** Se puede acceder a eventos del kernel (syscalls, paquetes, sockets) sin overhead.
+- **Programabilidad:** Se pueden escribir políticas complejas (L7) sin sidecars.
+
+**Cilium** es un CNI (Container Network Interface) construido sobre eBPF que reemplaza a kube-proxy, ofrece NetworkPolicy avanzada (L7), y puede actuar como Service Mesh sin sidecar.
+
+```bash
+# Instalar Cilium con reemplazo completo de kube-proxy
+$ cilium install \
+  --set kubeProxyReplacement=strict \
+  --set clusterPoolIPv4PodCIDR=10.0.0.0/16 \
+  --set clusterPoolIPv4MaskSize=24
+
+# Verificar que kube-proxy no está ejecutándose
+$ kubectl -n kube-system get pods | grep kube-proxy
+# (no debe aparecer ninguno)
+
+# Ver estado de Cilium
+$ cilium status
+    /¯¯\
+ /¯¯\__/¯¯\    Cilium:         OK
+ \__/¯¯\__/    Operator:       OK
+ /¯¯\__/¯¯\    Envoy DaemonSet:   deployed
+ \__/¯¯\__/    Hubble:         OK
+    \__/       ClusterMesh:    disabled
+
+KubeProxyReplacement:   Strict   [eth0 10.0.0.100 (Direct Routing)]
+```
+
+**CiliumNetworkPolicy con inspección L7 (HTTP, gRPC, Kafka, DNS):**
+
+```yaml
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "http-l7-policy"
+  namespace: production
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+          path: "/api/v1/users"
+        - method: "POST"
+          path: "/api/v1/orders"
+          headers:
+          - "Content-Type: application/json"
+  - from:
+    - podSelector:
+        matchLabels:
+          app: monitoring
+    toPorts:
+    - ports:
+      - port: "9090"
+        protocol: TCP
+---
+# Política para Kafka (inspección de topics)
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "kafka-policy"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: kafka-producer
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        app: kafka-broker
+    toPorts:
+    - ports:
+      - port: "9092"
+        protocol: TCP
+      rules:
+        kafka:
+        - role: "produce"
+          topic: "orders"
+        - role: "produce"
+          topic: "payments"
+```
+
+**Hubble: Observabilidad con eBPF**
+
+Hubble es el plano de observabilidad de Cilium. Proporciona visibilidad de flujos de red, métricas y seguridad sin instrumentar aplicaciones.
+
+```bash
+# Habilitar Hubble
+$ cilium hubble enable
+
+# Ver flujos de red en tiempo real
+$ hubble observe --namespace production --pod api-7d8f9b6c4d-abc
+TIME       SRC                 DST                 TYPE   VERDICT
+10:00:01   api:8080            frontend:54321      HTTP   FORWARDED (GET /api/v1/users)
+10:00:02   api:8080            db:3306             TCP    FORWARDED
+10:00:03   api:8080            frontend:54322      HTTP   DROPPED (403)
+
+# Métricas de flujo por servicio
+$ hubble metrics list
+```
+
+**Cilium como Service Mesh (sin sidecar):**
+Cilium 1.12+ introduce **Cilium Service Mesh** que utiliza eBPF y un proxy Envoy por nodo (no por pod), reduciendo drásticamente el overhead.
+
+```yaml
+# Configuración de mTLS sin sidecar
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "mtls-policy"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+          path: "/api/v1/users"
+    # mTLS implícito gracias a Cilium con SPIFFE
+    authentication:
+      mode: "required"
+      spiffe:
+        trustDomain: "cluster.local"
+```
+
+---
+
+#### **SECCIÓN 3.4: INGRESS CONTROLLER Y GATEWAY API**
+
+El recurso **Ingress** de Kubernetes es la forma estándar de exponer servicios HTTP(S) al exterior. Sin embargo, tiene limitaciones (solo L7, sin routing TCP/UDP, sin capacidades avanzadas de weight/header). La **Gateway API** es el sucesor, más expresivo y extensible.
+
+**Ingress con nginx-ingress:**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.example.com
+    secretName: tls-secret
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /v1
+        pathType: Prefix
+        backend:
+          service:
+            name: api-v1
+            port:
+              number: 80
+      - path: /v2
+        pathType: Prefix
+        backend:
+          service:
+            name: api-v2
+            port:
+              number: 80
+```
+
+**Gateway API (más moderna, recomendada para nuevos proyectos):**
+
+```yaml
+# GatewayClass (provisionado por el administrador)
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: cilium
+spec:
+  controllerName: "io.cilium/gateway-controller"
+---
+# Gateway (instancia concreta)
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: external-gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: https
+    protocol: HTTPS
+    port: 443
+    tls:
+      certificateRefs:
+      - name: tls-secret
+---
+# HTTPRoute (routing avanzado)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-route
+spec:
+  parentRefs:
+  - name: external-gateway
+  rules:
+  - matches:
+    - headers:
+      - name: x-canary
+        value: "true"
+    backendRefs:
+    - name: api-canary
+      port: 8080
+      weight: 100
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /v1
+    backendRefs:
+    - name: api-v1
+      port: 8080
+      weight: 90
+    - name: api-v2
+      port: 8080
+      weight: 10
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+        - name: x-version
+          value: "canary"
+```
+
+---
+
+### **CAPA 4: CONTROL DE ACCESO Y SEGURIDAD EN PROFUNDIDAD**
+
+#### **SECCIÓN 4.1: RBAC — ROLE-BASED ACCESS CONTROL**
+
+RBAC es el sistema de autorización estándar en Kubernetes. Define **quién** puede hacer **qué** sobre **qué recursos**.
+
+**Componentes:**
+- **Role/ClusterRole:** Conjunto de permisos (verbs: get, list, create, update, delete, watch) sobre recursos específicos.
+- **RoleBinding/ClusterRoleBinding:** Vincula un Role/ClusterRole a un usuario, grupo o ServiceAccount.
+
+**Principio de mínimo privilegio:** Cada ServiceAccount debe tener exactamente los permisos necesarios y ninguno más.
+
+```yaml
+# Role: permisos para leer y listar pods en el namespace 'production'
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: production
+  name: pod-reader
+rules:
+- apiGroups: [""]   # core API group
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+---
+# RoleBinding: asigna el Role a un usuario
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: production
+  name: read-pods-binding
+subjects:
+- kind: User
+  name: jane@example.com
+  apiGroup: rbac.authorization.k8s.io
+- kind: ServiceAccount
+  name: monitoring-sa
+  namespace: monitoring
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**ClusterRole (permisos a nivel de clúster):**
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-admin
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets", "daemonsets"]
+  verbs: ["*"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["*"]
+```
+
+**Verificación de permisos:**
+
+```bash
+# Verificar si el usuario actual puede crear deployments
+$ kubectl auth can-i create deployments --namespace production
+yes
+
+# Verificar con un ServiceAccount específico
+$ kubectl auth can-i list pods --as=system:serviceaccount:monitoring:monitoring-sa
+no
+
+# Ver todos los permisos de un usuario (requiere RBAC debugging)
+$ kubectl get rolebindings,clusterrolebindings --all-namespaces -o wide | grep jane
+```
+
+**Buenas prácticas:**
+- Usar **ServiceAccounts** para aplicaciones, no usuarios humanos.
+- No usar `cluster-admin` salvo para operadores del clúster.
+- Rotar credenciales de ServiceAccount (con `--automountServiceAccountToken=false` si no se necesita).
+- Auditar regularmente con herramientas como `rbac-lookup`, `kubectl-who-can`, o `Fairwinds RBAC Manager`.
+
+---
+
+#### **SECCIÓN 4.2: POD SECURITY STANDARDS (PSS) Y POD SECURITY ADMISSION (PSA)**
+
+Las **Pod Security Standards** (PSS) son tres políticas predefinidas que cubren los aspectos de seguridad más críticos de los Pods:
+
+| Perfil | Descripción | Uso recomendado |
+|--------|-------------|----------------|
+| **Privileged** | Sin restricciones. Permite escalación de privilegios, host namespaces, capabilities peligrosas. | Solo para sistemas confiables (storage plugins, network daemons). |
+| **Baseline** | Restricciones mínimas pero evita escalación conocida. Prohíbe `hostNetwork`, `hostPID`, `privileged`, `allowPrivilegeEscalation: true`. | La mayoría de las cargas de trabajo. |
+| **Restricted** | Seguridad máxima. Prohíbe todo lo de Baseline, más `runAsNonRoot: true`, `readOnlyRootFilesystem: true`, seccomp por defecto. | Aplicaciones críticas, multi-tenant, exposición pública. |
+
+**Pod Security Admission (PSA)** es el controlador de admisión que aplica estas políticas a nivel de namespace.
+
+```yaml
+# Etiquetar un namespace para aplicar la política 'restricted'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: baseline
+---
+# Un pod que viola 'restricted' (por ejemplo, runAsRoot) será rechazado
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+spec:
+  containers:
+  - name: app
+    image: nginx
+    securityContext:
+      runAsNonRoot: false   # Violación: Restricted requiere runAsNonRoot: true
+```
+
+**Excepciones:** Si un workload legítimo necesita privilegios (por ejemplo, un DaemonSet de red), se puede crear un namespace específico con política `privileged` o usar anotaciones de exención.
+
+```yaml
+# Exención para un namespace específico (no recomendado para producción)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: system-networking
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+```
+
+---
+
+#### **SECCIÓN 4.3: SECCOMP, APPARMOR Y SELINUX**
+
+Estos mecanismos del kernel Linux proporcionan control de acceso obligatorio (MAC) y filtrado de syscalls.
+
+**Seccomp (Secure Computing Mode):** Filtra las syscalls que un proceso puede hacer. Es esencial para reducir la superficie de ataque.
+
+```json
+// Perfil seccomp personalizado (permitir solo syscalls necesarias)
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "architectures": ["SCMP_ARCH_X86_64"],
+  "syscalls": [
+    {
+      "names": ["read", "write", "open", "close", "stat", "fstat", "lstat", "poll", "select", "accept", "bind", "connect", "listen", "getsockname", "getsockopt", "setsockopt", "socket", "socketpair", "exit", "exit_group", "brk", "mmap", "munmap", "mprotect", "clone", "fork", "vfork", "execve", "execveat", "wait4", "waitid", "kill", "sigaction", "sigreturn", "rt_sigaction", "rt_sigreturn", "getpid", "gettid", "gettid", "getuid", "geteuid", "getgid", "getegid", "prctl", "futex", "sched_yield"],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}
+```
+
+```yaml
+# Pod usando perfil seccomp personalizado
+apiVersion: v1
+kind: Pod
+metadata:
+  name: seccomp-pod
+spec:
+  securityContext:
+    seccompProfile:
+      type: Localhost
+      localhostProfile: profiles/audited.json
+  containers:
+  - name: app
+    image: myapp
+```
+
+**AppArmor:** Restringe el acceso a archivos, capacidades y recursos del sistema. Se define mediante perfiles (por ejemplo, `docker-default`).
+
+```bash
+# Cargar un perfil AppArmor personalizado
+$ cat <<EOF | sudo tee /etc/apparmor.d/deny-write
+#include <tunables/global>
+profile deny-write flags=(attach_disconnected) {
+  #include <abstractions/base>
+  file,
+  deny /tmp/** w,
+  deny /var/** w,
+}
+EOF
+$ sudo apparmor_parser -r /etc/apparmor.d/deny-write
+
+# Aplicar el perfil a un Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: apparmor-pod
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/app: localhost/deny-write
+spec:
+  containers:
+  - name: app
+    image: myapp
+```
+
+**SELinux (estándar en Red Hat / CentOS / RHEL):** Etiquetas de contexto que definen qué puede acceder un proceso. Más complejo pero muy granular.
+
+---
+
+#### **SECCIÓN 4.4: SECRETS Y GESTIÓN DE CREDENCIALES — VULNERABILIDADES COMUNES**
+
+**¡CRÍTICO!** Los Secrets de Kubernetes están **codificados en base64**, no cifrados. Cualquiera con acceso a etcd (o con permisos `get secrets`) puede leerlos.
+
+```bash
+# Ejemplo: secreto "aparentemente" seguro
+$ kubectl create secret generic db-creds --from-literal=password=supersecret
+$ kubectl get secret db-creds -o yaml
+apiVersion: v1
+kind: Secret
+data:
+  password: c3VwZXJzZWNyZXQ=   # base64 de "supersecret"
+# Decodificar:
+$ echo "c3VwZXJzZWNyZXQ=" | base64 -d
+supersecret
+```
+
+**Soluciones:**
+1. **Cifrado en reposo (etcd encryption):** Configurar el apiserver para cifrar secrets antes de escribirlos en etcd.
+2. **Vault externo (HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager):** Las aplicaciones obtienen credenciales bajo demanda, nunca almacenadas en Kubernetes.
+3. **Sealed Secrets / External Secrets Operator:** Cifrar el secreto en Git y desplegarlo solo en el clúster.
+
+**Cifrado en etcd (paso a paso):**
+
+```yaml
+# /etc/kubernetes/encryption-config.yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: <base64-encoded-32-byte-key>
+      - identity: {}   # fallback para lectura de secrets no cifrados
+```
+
+```bash
+# Generar clave de 32 bytes
+$ head -c 32 /dev/urandom | base64
+# Modificar apiserver manifest para incluir --encryption-provider-config
+$ sed -i 's|--service-account-key-file|--encryption-provider-config=/etc/kubernetes/encryption-config.yaml\n    --service-account-key-file|' /etc/kubernetes/manifests/kube-apiserver.yaml
+```
+
+**External Secrets Operator (ESO):** Sincroniza secrets desde Vault/AWS/GSM a Kubernetes.
+
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: "https://vault.example.com"
+      path: "secret"
+      version: "v2"
+      auth:
+        tokenSecretRef:
+          name: vault-token
+          key: token
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: db-creds
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: db-secret
+  data:
+  - secretKey: password
+    remoteRef:
+      key: secret/data/database
+      property: password
+```
+
+---
+
