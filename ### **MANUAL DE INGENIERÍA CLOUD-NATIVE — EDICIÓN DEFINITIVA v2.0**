@@ -3823,3 +3823,780 @@ deny[msg] {
   annotations:
     summary: "Team backend monthly cost exceeds $5000"
 ```
+
+### **CAPA 11: KUBERNETES EN EL EXTREMO — EDGE, HPC Y GPU**
+
+La orquestación de contenedores no se limita a centros de datos y nubes públicas. Cada vez más, Kubernetes se despliega en entornos de **cómputo de alto rendimiento (HPC)** con GPUs, en **el borde (edge)** con recursos limitados, y en **clústeres híbridos** que combinan on-premise y nube. Esta capa aborda los desafíos específicos de estos escenarios.
+
+---
+
+#### **SECCIÓN 11.1: ACELERACIÓN POR GPU (NVIDIA, AMD, AWS INFERENTIA)**
+
+Las cargas de trabajo de machine learning (entrenamiento e inferencia) requieren GPUs. Kubernetes soporta GPUs mediante **Device Plugins** que exponen los recursos de hardware a los contenedores.
+
+**NVIDIA GPU Operator:** Instala automáticamente los drivers, el device plugin, y herramientas de monitoreo (DCGM).
+
+```bash
+# Instalación del NVIDIA GPU Operator
+$ helm repo add nvidia https://nvidia.github.io/gpu-operator
+$ helm install gpu-operator nvidia/gpu-operator \
+  --namespace gpu-operator \
+  --create-namespace \
+  --set driver.enabled=true \
+  --set toolkit.enabled=true \
+  --set devicePlugin.enabled=true
+
+# Verificar que los nodos con GPU exponen el recurso
+$ kubectl get nodes -o json | jq '.items[].status.capacity."nvidia.com/gpu"'
+"4"
+```
+
+**Pod que solicita GPU:**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-pod
+spec:
+  containers:
+  - name: cuda-container
+    image: nvidia/cuda:12.0-base
+    command: ["nvidia-smi"]
+    resources:
+      limits:
+        nvidia.com/gpu: 1   # Solicita 1 GPU
+      requests:
+        nvidia.com/gpu: 1
+```
+
+**Múltiples GPUs y GPU sharing (MIG):** NVIDIA Multi-Instance GPU (MIG) permite particionar una GPU A100 en hasta 7 instancias más pequeñas.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mig-pod
+spec:
+  containers:
+  - name: mig-container
+    image: nvidia/cuda:12.0-base
+    resources:
+      limits:
+        nvidia.com/mig-1g.10gb: 1   # Partición de 1 GPU slice
+```
+
+**Monitoreo de GPUs con DCGM (Data Center GPU Manager) y Prometheus:**
+
+```yaml
+# ServiceMonitor para DCGM
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dcgm-exporter
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  endpoints:
+  - port: metrics
+    interval: 30s
+```
+
+**Métricas clave de GPU:** uso de memoria GPU, temperatura, consumo de energía, uso de PCIe, errores de ECC.
+
+```promql
+# Uso de memoria GPU (porcentaje)
+dcgm_gpu_mem_used_bytes / dcgm_gpu_mem_total_bytes * 100
+
+# Temperatura de la GPU
+dcgm_gpu_temp
+```
+
+**AWS Inferentia (chip de inferencia) y Neuron SDK:**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inferentia-pod
+spec:
+  containers:
+  - name: neuron-app
+    image: neuron-ubuntu:latest
+    resources:
+      limits:
+        aws.amazon.com/neuron: 1
+```
+
+---
+
+#### **SECCIÓN 11.2: KUBERNETES EN EL EDGE — K3S, K0S Y MICROK8S**
+
+El edge computing implica recursos limitados (Raspberry Pi, gateways industriales, dispositivos IoT) con conectividad intermitente. Distribuciones ligeras de Kubernetes:
+
+| Distribución | Tamaño | RAM requerida | Almacenamiento | Caso de uso |
+|-------------|--------|---------------|----------------|-------------|
+| **K3s** (Rancher) | ~40 MB | 512 MB | 1 GB | IoT, edge, CI/CD |
+| **K0s** (Mirantis) | ~60 MB | 512 MB | 1 GB | Edge, bare metal |
+| **MicroK8s** (Canonical) | ~100 MB | 1 GB | 2 GB | Desarrollo local, edge |
+| **KubeEdge** | ~70 MB | 256 MB | 1 GB | Edge nativo con offloading |
+
+**Instalación de K3s en una Raspberry Pi 4 (4GB):**
+
+```bash
+$ curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --flannel-backend wireguard --disable-agent
+# --disable-agent: solo control plane (para nodos master)
+# En los workers:
+$ curl -sfL https://get.k3s.io | K3S_URL=https://<master-ip>:6443 K3S_TOKEN=<token> sh -
+```
+
+**Despliegue de aplicaciones edge con tolerancias y afinidad de nodos:**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-sensor-processor
+spec:
+  replicas: 3
+  template:
+    spec:
+      nodeSelector:
+        node-type: edge
+      tolerations:
+      - key: "edge.local"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: processor
+        image: edge-app:v1
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+```
+
+**KubeEdge:** Extiende Kubernetes al edge con componentes `CloudCore` (en la nube) y `EdgeCore` (en el dispositivo). Permite desconexión total (el edge sigue ejecutando pods incluso sin conexión a la nube).
+
+```bash
+# Instalación de KubeEdge (modo cloud)
+$ helm install cloudcore kubeedge/cloudcore --namespace kubeedge
+
+# En el edge device (requiere Docker)
+$ ./keadm join --cloudcore-ipport=<cloud-ip>:10000 --token=<token>
+```
+
+---
+
+#### **SECCIÓN 11.3: CÓMPUTO DE ALTO RENDIMIENTO (HPC) CON KUBERNETES**
+
+Tradicionalmente, HPC se ejecuta en clústeres Slurm o PBS. Kubernetes está ganando terreno gracias a la portabilidad y el ecosistema de operadores.
+
+**Desafíos de HPC en Kubernetes:**
+- **Trabajos paralelos (MPI):** Necesitan comunicación de baja latencia (RDMA, InfiniBand).
+- **Pods efímeros con alta densidad:** Los jobs de HPC pueden requerir miles de núcleos por unos minutos.
+- **Colas y prioridades:** Similar a Slurm, se necesita gestión de colas.
+
+**Solución: MPI Operator (Kubeflow) + RDMA**
+
+```yaml
+apiVersion: kubeflow.org/v1
+kind: MPIJob
+metadata:
+  name: mpijob-launcher
+spec:
+  slotsPerWorker: 1
+  cleanPodPolicy: Running
+  runPolicy:
+    cleanPodPolicy: None
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          containers:
+          - image: mpi-benchmark:latest
+            command: ["mpirun", "-n", "8", "./all_reduce"]
+    Worker:
+      replicas: 8
+      template:
+        spec:
+          containers:
+          - image: mpi-benchmark:latest
+            resources:
+              limits:
+                cpu: "16"
+                memory: "64Gi"
+                rdma/ib: "1"   # Recurso RDMA (device plugin)
+```
+
+**Configuración de red RDMA (InfiniBand) con Device Plugin:**
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rdma-device-plugin-config
+data:
+  config.json: |
+    {
+      "mode": "rdma",
+      "resourceList": [
+        {
+          "resourceName": "ib",
+          "rdmaHcaMax": 1
+        }
+      ]
+    }
+```
+
+**Volcano (scheduler para HPC y AI):** Proporciona colas, prioridades, gang scheduling (todos los pods de un job deben programarse juntos).
+
+```yaml
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: hpc-queue
+spec:
+  weight: 1
+  reclaimable: true
+  capability:
+    cpu: 1000
+    memory: 4000Gi
+---
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: hpc-job
+spec:
+  schedulerName: volcano
+  queue: hpc-queue
+  tasks:
+  - replicas: 16
+    name: worker
+    template:
+      spec:
+        containers:
+        - name: hpc
+          image: hpc-app
+          resources:
+            requests:
+              cpu: "32"
+              memory: "128Gi"
+```
+
+---
+
+### **CAPA 12: CASOS DE USO REALES Y TROUBLESHOOTING EN PROFUNDIDAD**
+
+Esta capa recopila los escenarios más comunes de fallo en producción y sus soluciones, basados en experiencia operativa en cientos de clústeres.
+
+---
+
+#### **SECCIÓN 12.1: POD STUCK EN PENDING**
+
+**Síntomas:** `kubectl get pods` muestra estado `Pending` durante minutos.
+
+**Causas posibles y diagnóstico:**
+
+```bash
+# Ver eventos del pod
+$ kubectl describe pod mypod
+Events:
+  Type     Reason            Message
+  ----     ------            -------
+  Warning  FailedScheduling  0/3 nodes available: 1 Insufficient cpu, 2 Insufficient memory.
+```
+
+**Soluciones:**
+
+1. **Recursos insuficientes:** Aumentar nodos (cluster autoscaler) o reducir requests.
+   ```bash
+   $ kubectl top nodes
+   $ kubectl describe nodes | grep -A5 "Allocated resources"
+   ```
+
+2. **PersistentVolumeClaim no disponible:**
+   ```bash
+   $ kubectl get pvc
+   $ kubectl describe pvc <pvc-name>  # Ver eventos: "Waiting for first consumer" o "storageclass not found"
+   ```
+
+3. **NodeSelector / Affinity no coincidente:**
+   ```bash
+   $ kubectl get nodes --show-labels
+   $ kubectl describe pod mypod | grep "Node-Selectors"
+   ```
+
+4. **Taints/Tolerations:** Ver taints del nodo y toleraciones del pod.
+   ```bash
+   $ kubectl describe nodes | grep Taints
+   $ kubectl get pod mypod -o yaml | grep tolerations -A5
+   ```
+
+---
+
+#### **SECCIÓN 12.2: CRASHLOOPBACKOFF**
+
+**Síntomas:** El pod se inicia, falla, Kubernetes lo reinicia, vuelve a fallar.
+
+**Diagnóstico paso a paso:**
+
+```bash
+# Ver logs del último intento (crucial)
+$ kubectl logs mypod --previous
+
+# Ver el código de salida (Exit Code)
+$ kubectl describe pod mypod | grep "Exit Code"
+Exit Code:    137   # 128 + SIGKILL (OOMKilled)
+Exit Code:    1     # Error general
+Exit Code:    126   # Comando no ejecutable
+Exit Code:    127   # Comando no encontrado
+
+# Ver si el contenedor tiene liveness probe mal configurada
+$ kubectl describe pod mypod | grep -A5 "Liveness"
+```
+
+**Causas comunes y soluciones:**
+
+| Exit Code | Causa probable | Solución |
+|-----------|---------------|----------|
+| 0 | Contenedor completó (Job) | Normal, si no es Job revisar CMD |
+| 1 | Aplicación falló (error no manejado) | Revisar logs, añadir manejo de excepciones |
+| 137 | OOMKilled (memoria excedida) | Aumentar memory limit o fix memory leak |
+| 139 | Segmentation fault | Revisar código nativo (C, Rust) |
+| 143 | SIGTERM (terminación graceful) | Puede ser normal si se recibe señal |
+| 255 | Error de entrada/salida | Posible problema de volumen o filesystem |
+
+**Probe mal configurada:** Si `livenessProbe` falla consistentemente, Kubernetes reinicia el pod aunque la aplicación esté sana.
+
+```yaml
+# Configuración correcta:
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 30   # Dar tiempo a que la app arranque
+  periodSeconds: 10
+  failureThreshold: 3
+```
+
+---
+
+#### **SECCIÓN 12.3: IMAGEPULLBACKOFF**
+
+**Síntomas:** Pod en `ImagePullBackOff` o `ErrImagePull`.
+
+**Diagnóstico:**
+
+```bash
+$ kubectl describe pod mypod | grep -A10 "Events"
+Events:
+  Type     Reason     Age   Message
+  ----     ------     ----  -------
+  Warning  Failed     10s   Failed to pull image "myregistry/app:latest": rpc error: code = NotFound
+```
+
+**Causas y soluciones:**
+
+1. **Imagen no existe:** Verificar nombre y tag (mayúsculas/minúsculas sensibles).
+   ```bash
+   $ docker pull myregistry/app:latest  # Probar manualmente
+   ```
+
+2. **Credenciales inválidas:** El registry requiere autenticación.
+   ```bash
+   # Crear secret de pull
+   $ kubectl create secret docker-registry regcred \
+     --docker-server=myregistry \
+     --docker-username=user \
+     --docker-password=pass \
+     --docker-email=email
+   # Añadir al pod:
+   spec:
+     imagePullSecrets:
+     - name: regcred
+   ```
+
+3. **Rate limiting (Docker Hub):** Usar un mirror o credenciales pagadas.
+   ```bash
+   # Configurar imagePullPolicy: IfNotPresent (usar caché local)
+   ```
+
+4. **Registry no accesible (red):** Verificar desde el nodo.
+   ```bash
+   $ kubectl debug node/my-node -it --image=busybox -- ping myregistry.com
+   ```
+
+---
+
+#### **SECCIÓN 12.4: OOMKILLED (MEMORIA INSUFICIENTE)**
+
+**Síntomas:** Pod se reinicia con razón `OOMKilled`. No hay logs de error de la aplicación porque el kernel mata el proceso.
+
+**Diagnóstico:**
+
+```bash
+# Ver el límite de memoria y el uso antes de morir
+$ kubectl top pod mypod --containers
+$ kubectl describe pod mypod | grep -A5 "State"
+    State:      Terminated
+      Reason:   OOMKilled
+      Exit Code: 137
+```
+
+**Métricas históricas (Prometheus):**
+
+```promql
+# Uso de memoria del pod antes del OOMKill
+container_memory_working_set_bytes{pod="mypod"}  # Buscar el pico
+
+# Número de OOMKills por pod
+kube_pod_container_status_terminated_reason{reason="OOMKilled"}
+```
+
+**Soluciones:**
+1. **Aumentar memory limit** (si es un pico justificado).
+2. **Optimizar la aplicación** (memory leak, caché excesiva).
+3. **Usar memory QoS:** Configurar `memory.high` para ralentizar antes de matar (cgroups v2).
+
+```yaml
+# En el pod (solo con runtime configurable)
+annotations:
+  container.apparmor.security.beta.kubernetes.io/app: runtime/default
+  # No hay anotación directa para memory.high, se configura en kubelet
+```
+
+---
+
+#### **SECCIÓN 12.5: RED — NETWORK POLICY BLOQUEANDO TRÁFICO**
+
+**Síntomas:** Después de aplicar una NetworkPolicy, los pods no pueden comunicarse.
+
+**Diagnóstico:**
+
+```bash
+# Ver todas las NetworkPolicies en el namespace
+$ kubectl get networkpolicies -A
+
+# Ver reglas de iptables (si usas kube-proxy) o eBPF (Cilium)
+$ kubectl exec -it <pod> -- iptables -L -n
+
+# Probar conectividad desde otro pod
+$ kubectl exec -it <client-pod> -- curl -v http://<service>:<port>
+
+# Si usas Cilium, ver políticas aplicadas
+$ kubectl exec -n kube-system cilium-xxxxx -- cilium endpoint list
+$ kubectl exec -n kube-system cilium-xxxxx -- cilium policy get
+```
+
+**Solución temporal:** Aplicar una política "allow-all" para aislar el problema.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - {}
+  egress:
+  - {}
+```
+
+**Corregir la política original:** Verificar que los selectores de pods y namespaces son correctos, y que los puertos están bien definidos.
+
+---
+
+#### **SECCIÓN 12.6: NODE NOTREADY — NODO MUERTO O PARTICIONADO**
+
+**Síntomas:** `kubectl get nodes` muestra `NotReady`. Los pods en ese nodo se quedan en `Terminating` o `Unknown`.
+
+**Diagnóstico:**
+
+```bash
+# Ver estado del nodo
+$ kubectl describe node worker-3 | grep -A10 "Conditions"
+Conditions:
+  Type             Status  LastHeartbeat
+  Ready            False   2m ago
+  MemoryPressure   False
+  DiskPressure     False
+  PIDPressure      False
+  NetworkUnavailable False
+
+# Ver los eventos del nodo
+$ kubectl get events --field-selector involvedObject.kind=Node,involvedObject.name=worker-3
+```
+
+**Causas comunes:**
+- **Fallo de red (network partition):** El kubelet no puede comunicarse con el apiserver.
+- **Kubelet detenido:** `systemctl status kubelet` en el nodo.
+- **Nodo apagado o reiniciado:** Verificar con el proveedor cloud.
+- **Fallo de disco:** `/var` lleno, etcd no puede escribir.
+
+**Acciones automáticas de Kubernetes:**
+- Después de `--node-monitor-grace-period` (por defecto 40s), el nodo se marca `NotReady`.
+- Después de `--pod-eviction-timeout` (por defecto 5m), los pods se eliminan y recrean en otros nodos.
+
+**Recuperación manual:**
+
+```bash
+# Drenar el nodo (mover pods)
+$ kubectl drain worker-3 --ignore-daemonsets --delete-emptydir-data
+
+# Si el nodo vuelve a estar sano:
+$ kubectl uncordon worker-3
+```
+
+---
+
+#### **SECCIÓN 12.7: API SERVER LENTO — ETCD SATURADO**
+
+**Síntomas:** `kubectl` commands tardan >5 segundos. Los pods se crean lentamente.
+
+**Diagnóstico:**
+
+```bash
+# Latencia de etcd
+$ ETCDCTL_API=3 etcdctl endpoint status --endpoints=https://etcd:2379 --write-out=table
++----------------+------------------+---------+---------+-----------+------------+
+|    ENDPOINT    |        HASH      | REVISION| DB SIZE | IS LEADER | RAFT TERM |
++----------------+------------------+---------+---------+-----------+------------+
+| https://etcd:2379 | 123456789 |  1847234| 7.2 GB  | true      | 42        |
++----------------+------------------+---------+---------+-----------+------------+
+# DB SIZE > 8GB (límite recomendado) → necesita compactación
+
+# Verificar el tamaño de la base de datos de etcd
+$ du -sh /var/lib/etcd/member/snap/db
+7.2G
+
+# Velocidad de escritura de etcd (debe ser < 10ms)
+$ etcdctl check perf
+```
+
+**Soluciones:**
+1. **Compactación y desfragmentación:**
+   ```bash
+   $ etcdctl compact $(etcdctl endpoint status --write-out="json" | jq '.[0].Status.header.revision')
+   $ etcdctl defrag
+   ```
+
+2. **Aumentar cuota de etcd:** Modificar `--quota-backend-bytes` (default 8GB).
+3. **Mover etcd a discos SSD de alta IOPS.**
+4. **Limitar el número de watches:** Algunos controllers abren watches sin límite.
+
+**Monitoreo de etcd (Prometheus):**
+
+```promql
+# Latencia de escritura p99 (debe ser < 10ms)
+histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
+
+# Tamaño de la base de datos
+etcd_debugging_mvcc_db_total_size_in_bytes
+```
+
+---
+
+#### **SECCIÓN 12.8: PERSISTENTVOLUMECLAIM STUCK EN PENDING**
+
+**Síntomas:** El PVC no se vincula a un PV.
+
+**Diagnóstico:**
+
+```bash
+$ kubectl get pvc
+NAME          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+data-pvc      Pending                                      fast-ssd       10m
+
+$ kubectl describe pvc data-pvc
+Events:
+  Type     Reason              Age   Message
+  ----     ------              ----  -------
+  Warning  ProvisioningFailed  2m    failed to provision volume with StorageClass "fast-ssd": rpc error: code = Internal desc = Could not create volume: insufficient capacity in zone
+```
+
+**Causas y soluciones:**
+
+1. **StorageClass no existe:**
+   ```bash
+   $ kubectl get storageclass
+   # Si no aparece "fast-ssd", crearlo o cambiar el nombre en el PVC.
+   ```
+
+2. **Capacidad insuficiente en la zona:** El nodo del pod está en zona A pero el StorageClass solo tiene capacidad en zona B.
+   - Solución: Usar `volumeBindingMode: WaitForFirstConsumer` para crear el volumen en la misma zona que el pod.
+
+3. **Quota de almacenamiento excedida** (en cloud): Verificar límites de cuenta.
+
+4. **CSI driver no instalado o caído:**
+   ```bash
+   $ kubectl get pods -n kube-system | grep csi
+   # Si no hay pods, instalar el driver.
+   ```
+
+---
+
+#### **SECCIÓN 12.9: HIGH LATENCY EN EL CLUSTER (RED O APLICACIÓN)**
+
+**Síntomas:** Las requests a servicios toman >1 segundo cuando deberían tomar <100ms.
+
+**Diagnóstico con trazabilidad (Jaeger/Tempo):**
+
+```bash
+# Ver trazas de una request lenta
+$ kubectl port-forward service/tempo-query-frontend 16686:16686
+# Abrir http://localhost:16686, buscar por servicio y ver la traza.
+```
+
+**Causas comunes y soluciones:**
+
+| Causa | Diagnóstico | Solución |
+|-------|-------------|----------|
+| **Scheduling desigual** (pods en un solo nodo) | `kubectl top nodes` | Añadir podAntiAffinity |
+| **CNI overlay overhead** (VXLAN) | Medir latencia entre pods | Cambiar a routing directo (Calico BGP, Cilium) |
+| **Etcd saturado** (ver sección 12.7) | Métricas de etcd | Compactar, desfragmentar, mover a SSD |
+| **Almacenamiento lento** (PVC en HDD) | `kubectl exec` con `dd` | Migrar a SSD, usar `emptyDir: medium: Memory` |
+| **Limitación de CPU (throttling)** | `container_cpu_cfs_throttled_seconds_total` | Aumentar CPU limit o reducir requests |
+| **DNS lento** (CoreDNS) | `dig` dentro del pod | Aumentar réplicas de CoreDNS, usar `ndots:2` |
+
+**Solución para DNS lento (cambiar ndots):**
+
+```yaml
+# En el pod spec
+dnsConfig:
+  options:
+  - name: ndots
+    value: "2"   # Por defecto 5, causa muchas consultas FQDN innecesarias
+  - name: timeout
+    value: "1"
+  - name: attempts
+    value: "2"
+```
+
+---
+
+#### **SECCIÓN 12.10: CERTIFICADOS EXPIRADOS (KUBERNETES PKI)**
+
+**Síntomas:** `kubectl` devuelve `Unable to connect to the server: x509: certificate has expired or is not yet valid`. Los pods no pueden comunicarse con el apiserver.
+
+**Diagnóstico:**
+
+```bash
+# Ver fechas de expiración de certificados
+$ kubeadm certs check-expiration
+CERTIFICATE                EXPIRES                  RESIDUAL TIME   CERTIFICATE AUTHORITY   EXTERNALLY MANAGED
+admin.conf                 Apr 14, 2026 10:00 UTC   364d            ca                      no
+apiserver                  Apr 14, 2025 10:00 UTC   0d (EXPIRED)    ca                      no
+# ...
+
+# Para clusters gestionados (EKS, GKE, AKS), los certificados se renuevan automáticamente.
+```
+
+**Renovación manual (kubeadm):**
+
+```bash
+# Respaldar configuraciones
+$ cp -r /etc/kubernetes /etc/kubernetes.bak
+
+# Renovar todos los certificados
+$ kubeadm certs renew all
+
+# Reiniciar componentes estáticos (apiserver, controller-manager, scheduler)
+$ docker ps | grep kube-apiserver | awk '{print $1}' | xargs docker restart
+
+# Actualizar kubeconfig del usuario
+$ cp /etc/kubernetes/admin.conf $HOME/.kube/config
+```
+
+**Renovación automática (kubeadm):** Por defecto, kubeadm renueva los certificados durante `kubeadm upgrade`. También se puede configurar un cronjob.
+
+---
+
+### **GLOSARIO TÉCNICO EXTENDIDO (VERSIÓN DEFINITIVA)**
+
+| Término | Definición |
+|---------|-------------|
+| **AppArmor** | Módulo de seguridad de Linux que restringe las capacidades de los programas mediante perfiles por aplicación. |
+| **ArgoCD** | Herramienta de entrega continua declarativa para Kubernetes, basada en GitOps. |
+| **Burn Rate** | Velocidad a la que se consume el error budget. Una burn rate de 1 agota el budget exactamente en el período definido. |
+| **cgroup v2** | Mecanismo del kernel Linux para limitar, contabilizar y aislar recursos (CPU, memoria, I/O) de grupos de procesos. |
+| **Chaos Engineering** | Disciplina de experimentar en sistemas distribuidos en producción para generar confianza en su resiliencia. |
+| **Cilium** | CNI de código abierto basado en eBPF que proporciona redes, seguridad y observabilidad de alto rendimiento. |
+| **CNI (Container Network Interface)** | Estándar para configurar interfaces de red en contenedores, utilizado por Kubernetes. |
+| **Cosign** | Herramienta para firmar y verificar imágenes de contenedor, parte de Sigstore. |
+| **CSI (Container Storage Interface)** | Estándar para exponer sistemas de almacenamiento arbitrarios a contenedores. |
+| **DaemonSet** | Controlador de Kubernetes que asegura que un pod se ejecute en cada nodo (o en un subconjunto). |
+| **eBPF** | Tecnología del kernel Linux que ejecuta programas de usuario de forma segura en el kernel, usada para redes, observabilidad y seguridad. |
+| **Error Budget** | El margen de error permitido por un SLO. Si se consume, se detienen los despliegues. |
+| **etcd** | Base de datos clave-valor distribuida que almacena el estado de Kubernetes. |
+| **FinOps** | Práctica de gestionar el gasto en la nube, combinando finanzas, ingeniería y operaciones. |
+| **Gateway API** | Sucesor de Ingress, proporciona routing L7 más expresivo (HTTP, gRPC, TCP, UDP). |
+| **GitOps** | Paradigma donde el estado deseado del sistema se almacena en Git y se sincroniza automáticamente. |
+| **HPA (Horizontal Pod Autoscaler)** | Componente que ajusta el número de réplicas de un deployment basándose en métricas. |
+| **Ingress** | Recurso de Kubernetes que expone servicios HTTP/HTTPS al exterior con routing basado en host/path. |
+| **Istio** | Service mesh de código abierto con gestión de tráfico, seguridad mTLS y observabilidad. |
+| **Karpenter** | Autoscaler de nodos para AWS que provisiona instancias a medida, mejorando la eficiencia. |
+| **Kubelet** | Agente que se ejecuta en cada nodo worker, responsable de ejecutar los pods. |
+| **Kubecost** | Herramienta de monitorización de costos para Kubernetes, con desglose por equipo/namespace. |
+| **Kustomize** | Herramienta de personalización de manifiestos Kubernetes sin plantillas. |
+| **LimitRange** | Recurso que establece valores por defecto y límites para requests/limits en un namespace. |
+| **Loki** | Sistema de agregación de logs, ligero y económicamente eficiente, de Grafana Labs. |
+| **mTLS (mutual TLS)** | Autenticación mutua mediante TLS donde cliente y servidor se verifican recíprocamente. |
+| **Namespace** | Mecanismo de aislamiento de recursos en Linux (PID, NET, MNT, UTS, IPC, USER, CGROUP). |
+| **NetworkPolicy** | Recurso de Kubernetes para controlar el tráfico de red a nivel L3/L4 entre pods. |
+| **OOMKilled** | Estado de un pod cuando el kernel mata el contenedor por exceder el límite de memoria. |
+| **OpenTelemetry** | Estándar CNCF para instrumentación de observabilidad (métricas, logs, trazas). |
+| **Pod Security Standards (PSS)** | Políticas predefinidas (privileged, baseline, restricted) para seguridad de pods. |
+| **Prometheus** | Sistema de monitorización y alerta de código abierto, estándar en Kubernetes. |
+| **RBAC (Role-Based Access Control)** | Sistema de autorización de Kubernetes que controla acceso a recursos mediante roles. |
+| **Reconciliation Loop** | Mecanismo central de Kubernetes que compara estado deseado con actual y actúa para converger. |
+| **ResourceQuota** | Límite de recursos (CPU, memoria, número de objetos) que puede consumir un namespace. |
+| **RTO / RPO** | Recovery Time Objective (tiempo máximo de inactividad) y Recovery Point Objective (datos máximos perdidos). |
+| **SBOM (Software Bill of Materials)** | Lista de componentes y dependencias de una aplicación. |
+| **Seccomp** | Mecanismo del kernel Linux para filtrar syscalls que un proceso puede realizar. |
+| **Service Mesh** | Capa de infraestructura dedicada a la comunicación entre servicios (gestión de tráfico, seguridad, observabilidad). |
+| **SLI / SLO / SLA** | Service Level Indicator (métrica), Objective (objetivo), Agreement (contrato). |
+| **Spot Instance** | Instancia de nube con descuento (60-90%) que puede ser terminada con aviso. |
+| **StatefulSet** | Controlador para aplicaciones con estado que proporciona identidad estable y almacenamiento persistente. |
+| **Tempo** | Sistema de trazas distribuidas de Grafana, optimizado para almacenamiento en object storage. |
+| **Trazas (traces)** | Representación del camino de una request a través de múltiples servicios, usada para depuración de latencia. |
+| **Velero** | Herramienta de backup y recuperación de clústeres Kubernetes, con soporte para snapshots de volúmenes. |
+| **VictoriaMetrics** | Base de datos de series temporales compatible con Prometheus, más eficiente en memoria. |
+| **VPA (Vertical Pod Autoscaler)** | Componente que ajusta requests/limits de pods basándose en uso histórico (requiere reinicio). |
+
+---
+
+### **CONCLUSIONES FINALES Y PRINCIPIOS DEL INGENIERO CLOUD-NATIVE**
+
+**La paradoja de Kubernetes:** Reduce la complejidad operativa de sistemas distribuidos a costa de aumentar la complejidad del conocimiento necesario para operarlos. Quien domina Kubernetes no domina un software, sino una disciplina que abarca sistemas operativos, redes, seguridad, economía de la nube y patrones de resiliencia.
+
+**Diez principios fundamentales (expansión de las versiones anteriores):**
+
+1. **Soberanía técnica:** Conoce los límites de seguridad de cada abstracción. Kubernetes no aísla del kernel; da herramientas para gestionar el aislamiento.
+2. **Presunción de fallo:** Todo falla. Diseña para que el fallo sea el caso normal, no la excepción.
+3. **Estado es tu enemigo:** El estado distribuido es la fuente de los problemas difíciles. Minimízalo, externalízalo, trátalo como efímero.
+4. **Menor privilegio:** Cada pod, ServiceAccount y usuario debe tener los permisos estrictamente necesarios.
+5. **Observabilidad antes que funcionalidad:** No puedes depurar ni optimizar lo que no puedes medir. Instrumenta antes del incidente.
+6. **GitOps como fuente de verdad:** El estado deseado debe estar en Git, con historial, revisión y rollback trivial.
+7. **Error budget como disciplina:** Los SLOs y error budgets son el contrato entre ingeniería y negocio. Gestionarlos activamente es ingeniería de fiabilidad.
+8. **Seguridad en profundidad:** No hay una capa única. Necesitas namespaces, cgroups, seccomp, AppArmor, NetworkPolicy, RBAC, mTLS, image scanning y runtime security.
+9. **Costo como métrica de primer orden:** El sobreaprovisionamiento es un bug. FinOps debe ser parte del ciclo de ingeniería, no un análisis post-mortem.
+10. **Caos como cultura:** Los fallos no probados te sorprenderán. El chaos engineering sistemático convierte incidentes sorpresivos en experimentos conocidos. La resiliencia no se diseña, se verifica.
+
+---
+
+**FIN DEL MANUAL DE INGENIERÍA CLOUD-NATIVE — EDICIÓN DEFINITIVA v2.0**
+
+Documentación compilada bajo Protocolo Ronin v4.0, ampliada con papers académicos (2020-2025), estándares CNCF y experiencia operativa en cientos de clústeres de producción.
+
+.  
+**Última revisión:** Abril 2026 
+
+**⚙️ 🐳 ☸️ 🔒 📊 ⚡ 🌐 💾 🚀**
