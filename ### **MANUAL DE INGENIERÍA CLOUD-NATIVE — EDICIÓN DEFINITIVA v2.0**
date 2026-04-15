@@ -1,0 +1,76 @@
+### **MANUAL DE INGENIERÍA CLOUD-NATIVE — EDICIÓN DEFINITIVA v2.0**
+
+**Docker, Kubernetes y Orquestación de Contenedores: De los Fundamentos a la Resiliencia en Producción**
+
+---
+
+#### **INTRODUCCIÓN EJECUTIVA**
+
+Este manual representa la consolidación y expansión de dos obras previas, unificadas y enriquecidas con el estado del arte en orquestación de contenedores. No es una guía de "cómo usar" Kubernetes, sino un tratado sobre **cómo comprenderlo** con la profundidad necesaria para tomar decisiones arquitectónicas informadas, depurar problemas complejos en entornos de producción y diseñar sistemas inherentemente resilientes.
+
+La contenedorización y la orquestación han pasado de ser tecnologías emergentes a convertirse en el pilar sobre el que se sostienen los sistemas más críticos del planeta. Empresas como Google, Netflix y Amazon gestionan a diario volúmenes masivos de peticiones y recursos a través de Kubernetes. Sin embargo, la mayoría de los profesionales que trabajan con estas tecnologías lo hacen con una comprensión superficial que, a menudo, resulta en sistemas frágiles, inseguros y con costes desorbitados.
+
+La investigación académica más reciente confirma esta brecha de conocimiento. Por ejemplo, un estudio de 2024 identifica que los mecanismos de aislamiento del kernel, como los **namespaces y cgroups**, sufren de desincronizaciones a lo largo de su ciclo de vida, lo que puede derivar en vulnerabilidades críticas como escapes de contenedores. Comprender estos problemas a nivel de kernel es, por tanto, una necesidad, no un lujo.
+
+**La Metáfora del Submarino Nuclear:**
+Imagina Kubernetes como el sistema de control de un submarino nuclear. Desde fuera, parece una cápsula opaca. Pero por dentro, es una maraña de sistemas interdependientes: reactores, sistemas de propulsión, soporte vital, comunicaciones. Un operario puede aprender a accionar las palancas. Un ingeniero, en cambio, debe entender qué sucede en los conductos de vapor cuando acciona esa palanca, qué otros sistemas se ven afectados y cómo responder si el sistema de refrigeración falla a 300 metros de profundidad. **Docker es el sistema de soporte vital** que crea el ambiente controlado dentro del casco. **Kubernetes es el sistema de control**, que decide cómo repartir la energía, qué hacer cuando un componente falla y cómo comunicarse con otros submarinos de la flota.
+
+Este manual es para quienes aspiran a ser ese ingeniero.
+
+##### **Audiencia Objetivo**
+
+*   Arquitectos de sistemas con 5+ años de experiencia.
+*   Ingenieros de Plataforma que construyen PaaS internos.
+*   Ingenieros de DevOps/SRE que necesitan tomar decisiones estratégicas.
+*   Auditores de seguridad en entornos containerizados.
+*   Especialistas FinOps que buscan optimizar el gasto en la nube.
+
+##### **Supuestos Previos (Requisitos)**
+
+*   Conocimiento profundo de Linux: kernel, procesos, gestión de memoria.
+*   Familiaridad con redes TCP/IP: protocolos de capa 4, DNS, routing, NAT.
+*   Experiencia con al menos un orquestador (Swarm, Mesos o Kubernetes básico).
+*   Comprensión de teoría de sistemas distribuidos: teorema CAP, algoritmos de consenso.
+*   Programación en al menos un lenguaje de sistemas (Go, Rust, Python).
+
+---
+
+#### **CAPA 0: LA ANATOMÍA DEL HIERRO — Fundamentos de Aislamiento del Kernel**
+
+##### **Sección 1.1: El Triángulo de la Ilusión — Namespaces, Cgroups y UnionFS**
+
+Un contenedor **no es una máquina virtual**. Esta es la distinción más importante y fundamental para entender su modelo de seguridad, rendimiento y modos de fallo. Un contenedor es un proceso de Linux con restricciones elaboradamente construidas.
+
+**La metáfora del edificio de apartamentos:**
+Una máquina virtual es una casa independiente con sus propios cimientos y estructura. Un contenedor es un apartamento: tiene sus propias paredes y llave, pero **comparte los cimientos (el kernel)**, la electricidad principal (el hardware) y las alcantarillas (las syscalls). Si los cimientos tienen una grieta (una CVE en el kernel), todos los apartamentos se ven afectados.
+
+**1. NAMESPACES: La Ilusión de Aislamiento**
+
+Un namespace es una **vista**. Crea la ilusión de que un proceso tiene su propio árbol de procesos (PID namespace), su propia tabla de red (network namespace) y su propio sistema de archivos (mount namespace). Sin embargo, por debajo de esa ilusión, todos los contenedores comparten el **mismo kernel Linux**. Las investigaciones más recientes destacan que esta compartición es el vector de ataque principal, responsable de la gran mayoría de los CVEs críticos documentados. Un estudio de 2024-2025 sobre los riesgos de desincronización en namespaces y cgroups advierte que la compartición de namespaces expande el perímetro de seguridad de un contenedor más allá de lo que a menudo se cree, pudiendo dar lugar a nuevas vulnerabilidades.
+
+*   **PILAR 1: NAMESPACES → La Ilusión de Aislamiento**
+    Un namespace es simplemente UNA VISTA. Crea la ilusión de que un proceso tiene su propio árbol de procesos (PID namespace), su propia tabla de red (network namespace), su propio sistema de archivos (mount namespace). Pero por debajo de esa ilusión, todos los contenedores siguen compartiendo el MISMO kernel Linux.
+
+*   **PILAR 2: CGROUPS → La Aplicación de Límites Reales**
+    Cgroups (control groups) es el mecanismo que REALMENTE limita recursos. Mientras que namespaces crean la ilusión de aislamiento, cgroups implementan límites de CPU, memoria, I/O, network bandwidth. Un cgroup es como un "límite de presupuesto" que el kernel respeta.
+
+*   **PILAR 3: UNIONFS / OVERLAY2 → El Sistema de Archivos Inteligente**
+    Docker no copia la imagen completa para cada contenedor. En su lugar, usa layered filesystems. La mayoría de contenedores modernos usan overlay2, que es un mecanismo del kernel que permite "apilar" capas de lectura-escritura sobre capas de solo-lectura.
+
+##### **Sección 1.2: El Vector de Ataque — Kernel Compartido (Actualizado con CVEs 2024-2025)**
+
+La investigación académica y los avisos de seguridad recientes confirman que el kernel compartido sigue siendo la principal fuente de vulnerabilidades críticas. A continuación, se presenta una tabla actualizada que incluye los descubrimientos más recientes, como las vulnerabilidades "Leaky Vessels" y los últimos fallos en `runc`:
+
+| CVE | Año | Tipo | CVSS | Afecta | Mitigación Principal |
+|---|---|---|---|---|---|
+| CVE-2016-5195 | 2016 | Dirty COW | 7.8 | Todos los kernels 2.6.22–4.8.2 | Actualizar kernel |
+| CVE-2019-5736 | 2019 | runc escape | 8.6 | Docker <18.09.2 | Actualizar runc |
+| CVE-2022-0847 | 2022 | Dirty Pipe | 7.8 | Kernel 5.8–5.16.10 | Actualizar kernel |
+| CVE-2024-21626 | 2024 | runc (Leaky Vessels) | 8.6 | runc <1.1.12 | Actualizar runc / Usar User Namespaces |
+| CVE-2024-23651 | 2024 | BuildKit (Leaky Vessels) | 8.6 | BuildKit <0.12.5 | Actualizar BuildKit |
+| CVE-2024-23652 | 2024 | BuildKit (Leaky Vessels) | 8.6 | BuildKit <0.12.5 | Actualizar BuildKit |
+| CVE-2024-23653 | 2024 | BuildKit (Leaky Vessels) | 5.5 | BuildKit <0.12.5 | Actualizar BuildKit |
+| CVE-2025-31133 | 2025 | runc | Alta | runc <1.2.6 | Actualizar runc |
+| CVE-2025-52565 | 2025 | runc | Alta | runc <1.2.6 | Actualizar runc |
+| CVE-2025-52881 | 2025 | runc | Alta | runc <1.2.6 | Actualizar runc / Revisar políticas AppArmor |
+
