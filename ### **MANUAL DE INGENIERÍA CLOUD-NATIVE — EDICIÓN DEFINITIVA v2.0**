@@ -74,3 +74,826 @@ La investigación académica y los avisos de seguridad recientes confirman que e
 | CVE-2025-52565 | 2025 | runc | Alta | runc <1.2.6 | Actualizar runc |
 | CVE-2025-52881 | 2025 | runc | Alta | runc <1.2.6 | Actualizar runc / Revisar políticas AppArmor |
 
+### **SECCIÓN 1.1.3: CGROUPS V2 — EL VERDADERO GUARDIÁN DE RECURSOS (EN PROFUNDIDAD)**
+
+Mientras que los namespaces crean la **ilusión** de aislamiento, los **cgroups** controlan **realmente** cuántos recursos puede consumir un proceso o grupo de procesos. La metáfora definitiva: los namespaces son las **paredes del apartamento** (percepción de privacidad), los cgroups son el **contador de electricidad y agua** (realidad física y límites).
+
+Linux ha evolucionado de cgroups v1 (deprecado) a **cgroups v2** (estándar desde kernel 5.0+, adoptado por defecto en Ubuntu 22.04+, Debian 12+, RHEL 9+). La diferencia fundamental es que cgroups v2 presenta una **jerarquía única** en lugar de múltiples jerarquías por recurso, lo que simplifica la gestión y evita inconsistencias.
+
+**Arquitectura de cgroups v2 en Kubernetes:**
+
+```bash
+# La jerarquía única se monta en /sys/fs/cgroup
+$ ls /sys/fs/cgroup/
+cgroup.controllers  cgroup.max.depth  cgroup.max.descendants
+cgroup.procs        cgroup.stat       cgroup.subtree_control
+cpu.pressure        io.pressure       memory.numa_stat
+memory.pressure     misc.capacity     cpu.stat
+# Los archivos "controllers" listan los controladores disponibles
+$ cat /sys/fs/cgroup/cgroup.controllers
+cpuset cpu io memory hugetlb pids rdma misc
+
+# En un nodo de Kubernetes, la jerarquía refleja los QoS Classes:
+/sys/fs/cgroup/kubepods/
+├── guaranteed/     # Pods con requests == limits
+│   ├── pod<UID>/
+│   │   ├── container-<name>/
+│   │   └── ...
+├── burstable/      # Pods con requests < limits
+│   └── pod<UID>/
+└── besteffort/     # Pods sin requests/limits
+    └── pod<UID>/
+```
+
+**Control de CPU en cgroups v2:**
+
+```bash
+# Cada grupo de control tiene dos parámetros clave:
+# - cpu.max: límite duro (throttling)
+# - cpu.weight: peso relativo para el scheduler CFS (cuando hay contención)
+
+# Ver límite de CPU de un pod en la clase Guaranteed
+$ cat /sys/fs/cgroup/kubepods/guaranteed/pod123456-.../cpu.max
+200000 100000
+# Significado: 200000 microsegundos de CPU por cada período de 100000 microsegundos
+# Esto equivale a 2 CPUs (200000/100000 = 2.0)
+# Si el pod intenta usar más, el kernel lo estrangula (throttle)
+
+# Ver el peso de CPU (solo relevante cuando hay demanda > capacidad)
+$ cat /sys/fs/cgroup/kubepods/guaranteed/pod123456-.../cpu.weight
+100
+# Rango 1-10000, por defecto 100.
+# Un pod con weight=200 obtendrá el doble de CPU que uno con weight=100
+# cuando ambos compiten por los mismos núcleos.
+
+# Ver el uso actual de CPU del pod (en microsegundos)
+$ cat /sys/fs/cgroup/kubepods/guaranteed/pod123456-.../cpu.stat
+usage_usec 123456789
+user_usec 98765432
+system_usec 24691357
+nr_periods 1000
+nr_throttled 5
+throttled_usec 12345
+# nr_throttled > 0 indica que el pod ha sido limitado por exceder cpu.max
+```
+
+**Control de Memoria en cgroups v2:**
+
+La gestión de memoria es más sofisticada que en v1. Introduce conceptos como `memory.low`, `memory.high` y `memory.max`, que permiten una política de reclamación de página granular.
+
+```bash
+# Límites de memoria en cgroups v2
+$ cat /sys/fs/cgroup/kubepods/burstable/podYYY-.../memory.max
+536870912   # 512 MiB (límite duro: si se supera, OOM Killer mata procesos)
+
+$ cat /sys/fs/cgroup/kubepods/burstable/podYYY-.../memory.high
+429496729   # 409 MiB (límite suave: el kernel ralentiza la asignación)
+            # Por defecto es max, pero se puede configurar para presión temprana
+
+$ cat /sys/fs/cgroup/kubepods/burstable/podYYY-.../memory.low
+268435456   # 256 MiB (protección: el kernel evitará reclamar por debajo de esto)
+
+$ cat /sys/fs/cgroup/kubepods/burstable/podYYY-.../memory.current
+450000000   # 429 MiB (uso actual, por encima de memory.high, por debajo de max)
+
+# Si memory.current supera memory.max:
+# 1. El kernel invoca el OOM Killer
+# 2. Selecciona el proceso con mayor uso de memoria dentro del cgroup
+# 3. Envía SIGKILL
+# 4. El contenedor se reinicia (según restartPolicy)
+# 5. Kubernetes incrementa el contador OOMKilled en el estado del pod
+
+$ kubectl describe pod mi-pod
+...
+    Last State:     Terminated
+      Reason:       OOMKilled
+      Exit Code:    137
+      Started:      Mon, 14 Apr 2025 10:00:00
+      Finished:     Mon, 14 Apr 2025 10:05:00
+```
+
+**Control de I/O en cgroups v2:**
+
+A diferencia de CPU y memoria, el control de I/O en Kubernetes no está estandarizado en el API nativo, pero se puede lograr mediante `io.max` en cgroups v2 y utilizando dispositivos de almacenamiento con soporte.
+
+```bash
+# Ver los límites de I/O configurados para un pod
+$ cat /sys/fs/cgroup/kubepods/guaranteed/podZZZ-.../io.max
+8:0 rbps=104857600 wbps=104857600 riops=1000 wiops=1000
+# 8:0 es el número major:minor del dispositivo (por ejemplo, /dev/sda)
+# rbps: 100 MB/s de lectura máxima
+# wbps: 100 MB/s de escritura máxima
+# riops: 1000 operaciones de lectura por segundo
+# wiops: 1000 operaciones de escritura por segundo
+
+# Para configurar esto en Kubernetes, se necesita un controlador de dispositivos
+# o usar anotaciones específicas del runtime (como containerd con configuración de cgroup)
+```
+
+**QoS Classes y su impacto en la evicción:**
+
+Kubernetes asigna una clase de Calidad de Servicio (QoS) a cada Pod basándose en la combinación de `requests` y `limits`. Esta clase determina el orden de evicción cuando el nodo está bajo presión de recursos.
+
+| QoS Class | Condición | Orden de evicción | Política de cgroups |
+|-----------|-----------|-------------------|----------------------|
+| **Guaranteed** | `requests == limits` para CPU y memoria | Último en ser evicción | Límites estrictos (`cpu.max`, `memory.max`) |
+| **Burstable** | `requests < limits` para al menos un recurso | Segundo en ser evicción | Protección baja (`memory.low`) pero límite alto |
+| **BestEffort** | Sin `requests` ni `limits` | Primero en ser evicción | Sin protección, solo límite del nodo |
+
+La evicción ocurre cuando el nodo está en estado de **presión de recursos** (por ejemplo, `memory.available` por debajo de un umbral). El kubelet ordena los pods por QoS y luego por prioridad, y comienza a terminar los de menor prioridad.
+
+```yaml
+# Ejemplo de pod con QoS Guaranteed (recomendado para workloads críticos)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: critical-app
+spec:
+  containers:
+  - name: app
+    image: myapp:v1
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+      limits:
+        cpu: "2"
+        memory: "4Gi"
+```
+
+---
+
+### **SECCIÓN 1.1.4: UNIONFS AVANZADO — OVERLAY2 Y SUS IMPLICACIONES DE RENDIMIENTO**
+
+El sistema de archivos por capas es lo que permite que las imágenes Docker sean eficientes en almacenamiento y tiempo de descarga. **Overlay2** es el driver estándar desde Docker CE 18.09 y utiliza el mecanismo `overlayfs` del kernel Linux.
+
+**Estructura interna de overlay2:**
+
+```bash
+# Cada imagen se compone de capas (layers) almacenadas en /var/lib/docker/overlay2/
+$ ls -la /var/lib/docker/overlay2/
+drwx------ 2 root root ... 5c3b4f2a1b0c9d8e7f6a5b4c3d2e1f0a   # Capa 1
+drwx------ 2 root root ... 6d4c5e3b2a1d0c9b8a7f6e5d4c3b2a1f   # Capa 2
+drwx------ 2 root root ... merged                                 # Punto de montaje unificado
+drwx------ 2 root root ... diff                                   # Cambios del contenedor en ejecución
+drwx------ 2 root root ... work                                   # Directorio de trabajo interno
+
+# El archivo "lower" en el directorio de una capa indica sus dependencias
+$ cat /var/lib/docker/overlay2/5c3b4f2a1b0c9d8e7f6a5b4c3d2e1f0a/lower
+l/6d4c5e3b2a1d0c9b8a7f6e5d4c3b2a1f:l/...  # Lista de capas inferiores separadas por ':'
+
+# El directorio "diff" contiene los archivos que esta capa añade o modifica
+$ ls /var/lib/docker/overlay2/5c3b4f2a1b0c9d8e7f6a5b4c3d2e1f0a/diff/
+etc/ usr/ var/ app/
+```
+
+**Copy-on-Write (CoW) y su costo de rendimiento:**
+
+Cuando un contenedor escribe en un archivo que pertenece a una capa inferior (de solo lectura), el kernel overlayfs realiza una **operación de copia a la capa superior (copy-up)**. Este proceso tiene un costo significativo, especialmente para archivos grandes o muchas escrituras pequeñas.
+
+```bash
+# Benchmark: escritura de 10,000 archivos pequeños dentro de un contenedor
+$ time docker run --rm ubuntu:22.04 bash -c "
+  for i in \$(seq 1 10000); do
+    echo 'data' > /tmp/file-\$i
+  done
+"
+# overlay2: ~45 segundos
+# bind mount a un directorio del host: ~3 segundos
+# El overhead de CoW es de 15x en este escenario
+
+# ¿Por qué? Porque cada primera escritura en un archivo nuevo implica:
+# 1. Verificar si el archivo existe en capas inferiores
+# 2. Crear un "whiteout" si es necesario (para ocultar el archivo original)
+# 3. Copiar el archivo completo a la capa superior (si existía)
+# 4. Escribir los nuevos datos
+```
+
+**Recomendaciones para mitigar el overhead de CoW:**
+
+- **Usar volúmenes para datos de alta frecuencia de escritura** (bases de datos, logs, colas). Los volúmenes (bind mounts o PVC) saltan el sistema de capas y escriben directamente en el filesystem del host.
+- **Minimizar el número de capas** en la imagen. Consolidar múltiples `RUN` en uno solo reduce la profundidad de búsqueda.
+- **Para desarrollo, usar bind mounts** (`-v $(pwd):/app`) para el código fuente. Así los cambios se reflejan sin CoW.
+- **Configurar `--storage-opt size=...`** para limitar el espacio de la capa de escritura y evitar que crezca sin control.
+
+```bash
+# Crear un contenedor con un volumen específico para datos
+$ docker run -v /host/data:/app/data --name myapp myimage
+# El directorio /app/data dentro del contenedor es un bind mount directo
+# Las escrituras en /app/data NO sufren CoW
+
+# En Kubernetes, usar un PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+---
+
+### **SECCIÓN 1.1.5: NAMESPACES EN PROFUNDIDAD — PID, NET, USER Y UTS**
+
+Para dominar la seguridad y el aislamiento, es imprescindible entender cada tipo de namespace con ejemplos concretos y sus implicaciones en producción.
+
+**A) PID Namespace: El árbol de procesos falso**
+
+```bash
+# Demostración: dentro de un contenedor, el proceso principal se ve como PID 1
+$ docker run -d --name test ubuntu:22.04 sleep 3600
+$ docker exec test ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.0   8892  5184 ?        Ss   10:00   0:00 sleep 3600
+root        45  0.0  0.1  12345  2048 ?        Rs   10:01   0:00 ps aux
+
+# En el host, ese proceso tiene un PID diferente (por ejemplo, 2049)
+$ ps aux | grep sleep
+root      2049  0.0  0.0   8892  5184 ?        Ss   10:00   0:00 sleep 3600
+
+# El PID 1 dentro del contenedor tiene responsabilidades especiales:
+# - Debe reaprocesar procesos huérfanos (llamar a wait())
+# - Debe propagar señales a sus hijos
+# - Si el PID 1 muere, el kernel mata todos los procesos del namespace
+
+# Problema común: aplicaciones que no manejan SIGTERM correctamente
+# Por ejemplo, si el PID 1 es un script shell:
+FROM ubuntu:22.04
+CMD ["/bin/bash", "-c", "python3 app.py"]
+# Cuando `docker stop` envía SIGTERM, bash no lo reenvía a python3.
+# Después de 30 segundos, Docker envía SIGKILL y se pierden datos.
+
+# Solución: usar un init process como tini o dumb-init
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y tini
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["python3", "app.py"]
+# tini maneja señales y reaprocesa zombies correctamente.
+```
+
+**B) NET Namespace: El router aislado**
+
+El namespace de red es el más complejo porque virtualiza toda la pila de red: interfaces, tablas de routing, reglas iptables, etc.
+
+```bash
+# Dentro de un contenedor, solo ve su interfaz loopback y una eth0 virtual
+$ docker run --rm ubuntu:22.04 ip link show
+1: lo: <LOOPBACK,UP,LOWER_UP> ...
+2: eth0@if45: <BROADCAST,MULTICAST,UP,LOWER_UP> ...
+
+# En el host, el otro extremo del par veth es visible
+$ ip link show | grep veth
+45: veth3a7f2c1@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> ...
+
+# El tráfico del contenedor al exterior pasa por NAT (Masquerade)
+# Ver las reglas de iptables que Docker crea
+$ iptables -t nat -L -n -v
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+ 1234 123K MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0
+
+# Consecuencias de seguridad:
+# - Por defecto, todos los contenedores en el mismo bridge pueden comunicarse libremente
+# - Para aislar, crear redes personalizadas y usar NetworkPolicy en Kubernetes
+$ docker network create --internal isolated-net
+$ docker run --network isolated-net --name app1 ...
+$ docker run --network isolated-net --name app2 ...
+# app1 y app2 pueden comunicarse entre sí, pero no con el host ni con Internet
+```
+
+**C) USER Namespace: El mapeo de UIDs (crítico para seguridad)**
+
+Este namespace permite que un proceso no privilegiado en el host (UID 100000) se vea como root (UID 0) dentro del contenedor. Es la forma más robusta de mitigar escapes de contenedores.
+
+```bash
+# Sin user namespace remapping, root dentro del contenedor es root en el host
+$ docker run --rm -v /etc:/host-etc ubuntu:22.04 cat /host-etc/shadow
+# Esto imprime el archivo shadow del host, porque UID 0 es root real.
+
+# Con user namespace habilitado en Docker (daemon.json)
+{
+  "userns-remap": "default"
+}
+# El usuario 'dockremap' se crea en el host con subordinación de UIDs:
+# /etc/subuid: dockremap:100000:65536
+# /etc/subgid: dockremap:100000:65536
+
+# Ahora, root dentro del contenedor se mapea a UID 100000 en el host
+$ docker run --rm -v /etc:/host-etc ubuntu:22.04 cat /host-etc/shadow
+cat: /host-etc/shadow: Permission denied
+# El proceso con UID 100000 no tiene permisos para leer /etc/shadow del host.
+
+# En Kubernetes, el soporte para user namespaces es beta desde la versión 1.28
+# Se activa con la feature gate UserNamespacesSupport
+apiVersion: v1
+kind: Pod
+metadata:
+  name: userns-pod
+spec:
+  hostUsers: false   # Activa user namespace para el pod
+  containers:
+  - name: app
+    image: myapp:v1
+    securityContext:
+      runAsUser: 0   # Root dentro del pod, pero sin privilegios en el host
+```
+
+**D) UTS Namespace: Hostname y domainname**
+
+Aunque parece menor, es importante para aplicaciones que dependen del hostname (por ejemplo, algunos servidores de correo, brokers de mensajes, o licencias de software).
+
+```bash
+# Cada contenedor puede tener su propio hostname
+$ docker run --hostname web-server-01 ubuntu:22.04 hostname
+web-server-01
+
+# En Kubernetes, los StatefulSets asignan un hostname basado en el nombre del pod
+# Esto es fundamental para clusters de bases de datos que usan hostname para identificación.
+```
+
+---
+
+### **CAPA 1: ORQUESTACIÓN DE RESTRICCIONES — KUBERNETES COMO MOTOR DE RESOLUCIÓN DE PROBLEMAS**
+
+Kubernetes no es "inteligente" ni "mágico". Es un **motor de control distribuido** que resuelve el problema fundamental: "Dados N Pods con requerimientos de recursos y restricciones, ¿cómo mantener el estado deseado ante fallos continuos, cambios de topología y fluctuaciones de carga?"
+
+La metáfora más precisa no es un director de orquesta, sino un **termostato industrial**: observa continuamente la temperatura actual (estado real), la compara con la temperatura configurada (estado deseado) y activa calefacción o refrigeración (acciones correctivas). Si el calefactor falla, el termostato detecta que la temperatura sigue baja y activa el sistema de respaldo. Este ciclo de **reconciliación** se ejecuta para siempre.
+
+#### **SECCIÓN 2.1: EL CONTROL PLANE — ANATOMÍA COMPLETA**
+
+El **Control Plane** es el conjunto de componentes que toman decisiones globales sobre el clúster. Normalmente se ejecuta en máquinas dedicadas (anteriormente llamadas "masters") y no ejecuta cargas de trabajo de usuario.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CONTROL PLANE                                  │
+│                                                                             │
+│  ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────────┐  │
+│  │   kube-apiserver   │   │       etcd         │   │     kube-scheduler    │  │
+│  │                   │   │  (almacén clave-    │   │                       │  │
+│  │ - Autenticación   │◄─►│   valor distribuido)│   │ - Filtrado (predicados)│  │
+│  │ - Autorización    │   │ - Consenso Raft    │   │ - Puntuación (prioridad)│  │
+│  │ - Admission Ctrl  │   │ - Watch nativo     │   │ - Binding              │  │
+│  │ - API REST        │   │                   │   │                       │  │
+│  └───────────────────┘   └───────────────────┘   └───────────────────────┘  │
+│           │                       │                       │                 │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                    kube-controller-manager                            │  │
+│  │                                                                       │  │
+│  │  Deployment │ ReplicaSet │ StatefulSet │ DaemonSet │ Job │ CronJob    │  │
+│  │  Node │ Service │ EndpointSlice │ PersistentVolume │ RBAC │ Namespace  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                cloud-controller-manager (opcional)                    │  │
+│  │  LoadBalancer │ NodeLifecycle │ Route │ Volume                         │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+            ────────────────────────┼────────────────────────────
+            │                       │                            │
+     ┌──────┴──────┐         ┌──────┴──────┐            ┌───────┴───────┐
+     │ Worker Node │         │ Worker Node │            │  Worker Node  │
+     │             │         │             │            │               │
+     │  kubelet    │         │  kubelet    │            │  kubelet      │
+     │  kube-proxy │         │  kube-proxy │            │  kube-proxy   │
+     │  runtime    │         │  runtime    │            │  runtime      │
+     └─────────────┘         └─────────────┘            └───────────────┘
+```
+
+**2.1.1 kube-apiserver: El guardián central**
+
+El apiserver es el único componente que escribe directamente en etcd. Todo lo demás (kubectl, scheduler, controllers, kubelets) son clientes del apiserver. Esta centralización simplifica la consistencia, la auditoría y el control de acceso.
+
+**Flujo completo de una solicitud `kubectl apply`:**
+
+1. **Autenticación (mTLS, token OIDC, webhook):** ¿Quién eres?
+2. **Autorización (RBAC, ABAC, webhook):** ¿Qué puedes hacer?
+3. **Admission Control (mutating y validating webhooks):** ¿Se puede modificar o validar la solicitud?
+4. **Validación del esquema:** ¿El YAML cumple con la especificación del recurso?
+5. **Escritura en etcd:** Persistencia del nuevo estado.
+6. **Notificación a watchers:** Todos los componentes que observan este tipo de recurso reciben un evento.
+
+```bash
+# Ver la configuración de autenticación del apiserver
+$ kubectl cluster-info dump | grep -A 10 "client-certificate-data"
+
+# Auditar todas las solicitudes (importante para cumplimiento)
+# Configurar política de auditoría en /etc/kubernetes/audit-policy.yaml
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+# Registrar todas las solicitudes a secrets con el cuerpo completo
+- level: RequestResponse
+  resources:
+  - group: ""  # core API group
+    resources: ["secrets"]
+# Registrar todas las solicitudes de modificación a pods
+- level: Request
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+  - group: ""
+    resources: ["pods"]
+# Registrar todo lo demás a nivel de metadatos
+- level: Metadata
+  omitStages: ["RequestReceived"]
+```
+
+**2.1.2 etcd: El alma del clúster**
+
+etcd es una base de datos clave-valor distribuida que utiliza el algoritmo de consenso **Raft**. Almacena **todo** el estado del clúster: desde los nodos y pods hasta los secrets y configmaps. Si etcd se corrompe y no hay backup, el clúster entero está muerto.
+
+```bash
+# Estructura de almacenamiento en etcd (bajo /registry)
+$ ETCDCTL_API=3 etcdctl get /registry/ --prefix --keys-only
+/registry/apiregistration.k8s.io/apiservices/v1.
+/registry/clusterroles/system:node
+/registry/configmaps/kube-system/extension-apiserver-authentication
+/registry/deployments/default/nginx
+/registry/events/default/nginx-abc123.17a2b3c
+/registry/namespaces/default
+/registry/pods/default/nginx-abc123
+/registry/secrets/default/my-secret
+/registry/serviceaccounts/default/default
+
+# Realizar un snapshot de etcd (backup crítico)
+$ ETCDCTL_API=3 etcdctl snapshot save /backup/etcd-snapshot-$(date +%Y%m%d-%H%M%S).db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+
+# Verificar la integridad del snapshot
+$ etcdctl snapshot status /backup/etcd-snapshot-20250414-120000.db --write-out=table
++----------+----------+------------+------------+
+|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
++----------+----------+------------+------------+
+| f9ef8adc |  1847234 |       3842 |      43 MB |
++----------+----------+------------+------------+
+
+# Restaurar un snapshot (procedimiento de disaster recovery)
+# 1. Detener todos los componentes que usan etcd (apiserver, etcd mismo)
+# 2. Restaurar en un nuevo directorio de datos
+$ ETCDCTL_API=3 etcdctl snapshot restore /backup/etcd-snapshot-20250414-120000.db \
+  --name=etcd-1 \
+  --initial-cluster=etcd-1=https://etcd-1:2380,etcd-2=https://etcd-2:2380 \
+  --initial-advertise-peer-urls=https://etcd-1:2380 \
+  --data-dir=/var/lib/etcd-restored
+# 3. Configurar etcd para usar el nuevo data-dir
+# 4. Reiniciar etcd y luego los apiservers
+```
+
+**Prácticas recomendadas para etcd en producción:**
+- Ejecutar siempre un número impar de nodos (3 o 5) para tolerancia a fallos.
+- Usar discos SSD de alta velocidad y baja latencia (etcd es muy sensible a la latencia de escritura).
+- Configurar backups automáticos cada hora (usando CronJob en Kubernetes).
+- Monitorear el tamaño de la base de datos (etcd tiene un límite predeterminado de 8 GB; cerca de ese límite, el rendimiento se degrada).
+- Realizar compactación y desfragmentación regularmente para liberar espacio.
+
+```bash
+# Compactación de revisiones antiguas (liberar espacio lógico)
+$ etcdctl compact $(etcdctl endpoint status --write-out="json" | jq '.[0].Status.header.revision')
+
+# Desfragmentación (liberar espacio físico en disco)
+$ etcdctl defrag
+```
+
+**2.1.3 El modelo de watch y el reconciliation loop**
+
+El **watch** es el mecanismo que hace que Kubernetes sea reactivo. En lugar de que los controllers hagan polling al apiserver (preguntar cada segundo "¿ha cambiado algo?"), establecen un **stream HTTP** y reciben eventos en tiempo real cuando algo cambia.
+
+```go
+// Pseudocódigo del cliente Go de Kubernetes para watch de Deployments
+watch, err := clientset.AppsV1().Deployments("default").Watch(context.TODO(), metav1.ListOptions{
+    ResourceVersion: "0", // "0" significa: tráeme todos los existentes y luego watch
+})
+
+for event := range watch.ResultChan() {
+    deployment := event.Object.(*appsv1.Deployment)
+    switch event.Type {
+    case watch.Added:
+        fmt.Printf("Nuevo deployment: %s\n", deployment.Name)
+    case watch.Modified:
+        fmt.Printf("Deployment modificado: %s\n", deployment.Name)
+        // El controller manager ahora ajustará el número de réplicas si es necesario
+    case watch.Deleted:
+        fmt.Printf("Deployment eliminado: %s\n", deployment.Name)
+    }
+}
+```
+
+El **reconciliation loop** es el corazón de cada controller:
+
+```
+Estado Deseado (YAML)  →  [CONTROLLER]  →  Estado Actual (Cluster)
+        ↑                                      │
+        └──────────────────────────────────────┘
+                 (Acciones correctivas)
+```
+
+**Ejemplo concreto: Deployment controller**
+1. El usuario aplica un Deployment con `replicas: 3`.
+2. El Deployment controller (dentro del kube-controller-manager) observa el evento.
+3. Compara el estado deseado (3 réplicas) con el estado actual (0 réplicas).
+4. Crea un ReplicaSet (otro objeto) con `replicas: 3`.
+5. El ReplicaSet controller, a su vez, observa la creación del ReplicaSet.
+6. El ReplicaSet controller crea 3 Pods.
+7. El scheduler asigna cada Pod a un nodo.
+8. El kubelet en cada nodo crea los contenedores.
+9. El estado actual ahora coincide con el deseado. El controller se duerme hasta el próximo cambio.
+
+Este bucle se ejecuta continuamente para **todos** los tipos de recursos. Si alguien modifica directamente un Pod (por ejemplo, `kubectl delete pod`), el ReplicaSet controller detecta la desviación y crea un nuevo Pod.
+
+---
+
+### **SECCIÓN 2.2: EL SCHEDULER — ALGORITMO DE RESOLUCIÓN PROFUNDO**
+
+El scheduler es el componente que asigna Pods a nodos. Su trabajo es encontrar la **mejor** asignación posible según las restricciones y prioridades configuradas.
+
+**Fases del scheduling:**
+
+1. **Filtrado (Filtering / Predicates):** Elimina nodos que no cumplen los requisitos.
+   - Recursos suficientes (CPU, memoria, etc.)
+   - NodeAffinity (etiquetas del nodo)
+   - Taints/Tolerations
+   - PodAffinity/AntiAffinity
+   - Volúmenes (si un Pod requiere un PVC, el nodo debe estar en la misma zona que el volumen)
+
+2. **Puntuación (Scoring / Priorities):** Asigna una puntuación a cada nodo que pasó el filtro.
+   - LeastAllocated (balanceo): favorece nodos con menos carga.
+   - MostAllocated (packing): favorece nodos con más carga (ahorro energético).
+   - NodeAffinity con peso.
+   - InterPodAffinity.
+
+3. **Selección y Binding:** Elige el nodo con mayor puntuación y actualiza el Pod con `spec.nodeName`.
+
+```bash
+# Ver el scheduler log (para depurar por qué un Pod no se asigna)
+$ kubectl logs -n kube-system kube-scheduler-<pod-id> --tail=100
+
+# Configurar un scheduler personalizado (para workloads especiales)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: custom-scheduled-pod
+spec:
+  schedulerName: my-custom-scheduler   # Usa un scheduler diferente
+  containers:
+  - name: app
+    image: nginx
+```
+
+**Políticas de afinidad y anti-afinidad:**
+
+```yaml
+# Ejemplo: Pods de una base de datos distribuida deben estar en diferentes zonas
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  replicas: 3
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: cassandra
+            topologyKey: "topology.kubernetes.io/zone"   # Un pod por zona
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: cache
+              topologyKey: "kubernetes.io/hostname"      # Prefiere mismo nodo que cache
+```
+
+---
+
+### **SECCIÓN 2.3: CONTROLADORES AVANZADOS**
+
+**2.3.1 Deployment: Rolling updates y rollbacks**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3          # Puede tener hasta 13 pods durante la actualización
+      maxUnavailable: 2    # Máximo 2 pods no disponibles durante la actualización
+  revisionHistoryLimit: 10  # Número de ReplicaSets antiguos a conservar
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        readinessProbe:     # Crucial para que el rolling update progrese
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+```
+
+```bash
+# Pausar un rollout (útil para canary)
+$ kubectl rollout pause deployment/webapp
+
+# Reanudar
+$ kubectl rollout resume deployment/webapp
+
+# Ver historial de revisiones
+$ kubectl rollout history deployment/webapp
+
+# Rollback a revisión anterior
+$ kubectl rollout undo deployment/webapp --to-revision=2
+```
+
+**2.3.2 StatefulSet: Identidad y almacenamiento estable**
+
+A diferencia de los Deployments, los StatefulSets proporcionan:
+- **Identidad de red estable:** cada pod tiene un nombre predecible (pod-0, pod-1, ...).
+- **Almacenamiento persistente estable:** cada pod tiene su propio PVC que persiste incluso si el pod se mueve.
+- **Orden de inicio y apagado:** los pods se crean secuencialmente (pod-0, luego pod-1) y se eliminan en orden inverso.
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql    # Headless service obligatorio
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast
+      resources:
+        requests:
+          storage: 100Gi
+```
+
+**2.3.3 DaemonSet: Un pod por nodo**
+
+Ideal para agentes de monitoreo, logging, redes, almacenamiento.
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      name: fluentd
+  template:
+    metadata:
+      labels:
+        name: fluentd
+    spec:
+      serviceAccountName: fluentd
+      tolerations:        # Permitir ejecución en nodos master también
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: fluent/fluentd-kubernetes-daemonset:v1-debian
+        env:
+        - name:  FLUENT_ELASTICSEARCH_HOST
+          value: "elasticsearch.logging.svc.cluster.local"
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: dockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: dockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+```
+
+---
+
+### **SECCIÓN 2.4: AUTOESCALADO INTELIGENTE (HPA, VPA, KEDA)**
+
+**Horizontal Pod Autoscaler (HPA)** ajusta el número de réplicas basándose en métricas observadas (CPU, memoria, métricas personalizadas).
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 3
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Pods
+    pods:
+      metric:
+        name: requests_per_second
+      target:
+        type: AverageValue
+        averageValue: 1000
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Esperar 5 min antes de reducir
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+```
+
+**Vertical Pod Autoscaler (VPA)** ajusta los requests/limits de los pods basándose en el uso histórico. Requiere reiniciar el pod (aunque en el futuro se planea in-place update).
+
+```yaml
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  updatePolicy:
+    updateMode: "Auto"   # Off, Initial, Recreate, Auto
+  resourcePolicy:
+    containerPolicies:
+    - containerName: "*"
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+```
+
+**KEDA (Kubernetes Event-Driven Autoscaling)** escala basándose en eventos externos (colas Kafka, SQS, RabbitMQ, etc.).
+
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: kafka-worker
+spec:
+  scaleTargetRef:
+    name: worker-deployment
+  minReplicaCount: 0     # Puede escalar a cero
+  maxReplicaCount: 100
+  triggers:
+  - type: kafka
+    metadata:
+      bootstrapServers: kafka:9092
+      consumerGroup: my-group
+      topic: orders
+      lagThreshold: "50"
+```
