@@ -3016,3 +3016,810 @@ $ sops --encrypt --age age1xyz... secrets.yaml > secrets.enc.yaml
 - Para data pipelines o ML: **Argo Workflows**.
 
  
+### **CAPA 9: OBSERVABILIDAD PROFUNDA — MÉTRICAS, LOGS, TRAZAS Y SLO ENGINEERING**
+
+La observabilidad en sistemas distribuidos va más allá del monitoreo tradicional. **Monitoreo** te dice *qué* está fallando (por ejemplo, "la CPU está al 95%"). **Observabilidad** te permite entender *por qué* está fallando mediante la correlación de métricas, logs y trazas. Los tres pilares son:
+
+1. **Métricas:** Datos agregables (contadores, histogramas, medidores). Ej: requests por segundo, latencia p99, uso de CPU.
+2. **Logs:** Eventos discretos con timestamp. Ej: "2025-04-14T10:00:01Z ERROR Connection timeout".
+3. **Trazas (traces):** Representación del camino de una request a través de múltiples servicios. Permiten identificar cuellos de botella.
+
+La metáfora del coche: las métricas son el velocímetro y el cuentarrevoluciones (agregados), los logs son la grabadora de eventos (cada vez que pisas el freno), las trazas son el GPS que muestra la ruta completa.
+
+---
+
+#### **SECCIÓN 9.1: PROMETHEUS — EL ESTÁNDAR DE FACTOR PARA MÉTRICAS**
+
+Prometheus es una base de datos de series temporales (TSDB) con un modelo de extracción (*pull*): el servidor Prometheus hace scraping periódico de los endpoints `/metrics` de las aplicaciones y componentes.
+
+**Arquitectura típica en Kubernetes:**
+
+```
+┌─────────────────┐     ┌─────────────────┐
+│   Pod app       │────▶│  Prometheus     │
+│   /metrics      │◀────│  Server         │
+└─────────────────┘     └────────┬────────┘
+                                 │
+┌─────────────────┐              │
+│   kube-state-   │──────────────┤
+│   metrics       │              │
+└─────────────────┘              ▼
+                         ┌─────────────────┐
+┌─────────────────┐       │  Alertmanager   │
+│   node-exporter │──────▶│  (alertas)      │
+└─────────────────┘       └────────┬────────┘
+                                   │
+                                   ▼
+                            ┌─────────────┐
+                            │  Receiver   │
+                            │  (PagerDuty,│
+                            │   Slack,    │
+                            │   Email)    │
+                            └─────────────┘
+```
+
+**Instalación de Prometheus Operator (recomendado):**
+
+```bash
+$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+$ helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --set grafana.enabled=true \
+  --set prometheus.prometheusSpec.retention=30d \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=100Gi
+```
+
+**ServiceMonitor (CRD para configurar scraping):**
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-monitor
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+  - port: metrics        # Nombre del puerto en el Service
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: production
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  selector:
+    app: api
+  ports:
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+```
+
+**Métricas importantes para aplicaciones (usando cliente Prometheus):**
+
+```python
+# Python con prometheus_client
+from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from flask import Response, Flask
+
+app = Flask(__name__)
+
+# Contador (solo aumenta)
+REQUESTS = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
+
+# Histograma (distribución de latencias)
+LATENCY = Histogram('http_request_duration_seconds', 'HTTP request latency', ['method', 'endpoint'])
+
+# Medidor (sube y baja)
+ACTIVE_CONNECTIONS = Gauge('active_connections', 'Active connections')
+
+@app.route('/api/orders')
+def get_orders():
+    start = time.time()
+    ACTIVE_CONNECTIONS.inc()
+    try:
+        # lógica...
+        REQUESTS.labels(method='GET', endpoint='/api/orders', status='200').inc()
+        LATENCY.labels(method='GET', endpoint='/api/orders').observe(time.time() - start)
+        return '{}'
+    except Exception:
+        REQUESTS.labels(method='GET', endpoint='/api/orders', status='500').inc()
+        raise
+    finally:
+        ACTIVE_CONNECTIONS.dec()
+
+@app.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain')
+```
+
+**PromQL (Prometheus Query Language) — consultas esenciales:**
+
+```promql
+# Tasa de requests por segundo (últimos 5 minutos)
+rate(http_requests_total[5m])
+
+# Latencia p99 (percentil 99)
+histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint))
+
+# Predicción de uso de disco en 4 horas (linear regression)
+predict_linear(node_filesystem_free_bytes[1h], 4*3600)
+
+# CPU usage de pods en namespace production
+sum(rate(container_cpu_usage_seconds_total{namespace="production"}[5m])) by (pod)
+
+# Disponibilidad (ratio de requests exitosas)
+sum(rate(http_requests_total{status!~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
+```
+
+**Alertas críticas (Alertmanager):**
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: critical-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: service-availability
+    rules:
+    - alert: HighErrorRate
+      expr: |
+        (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) > 0.05
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High error rate ({{ $value | humanizePercentage }})"
+        description: "Error rate for {{ $labels.namespace }}/{{ $labels.service }} is above 5%"
+
+    - alert: PodCrashLooping
+      expr: |
+        rate(kube_pod_container_status_restarts_total[15m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.pod }} is crash looping"
+
+    - alert: KubernetesNodeNotReady
+      expr: |
+        kube_node_status_condition{condition="Ready",status="true"} == 0
+      for: 5m
+      labels:
+        severity: critical
+```
+
+---
+
+#### **SECCIÓN 9.2: VICTORIAMETRICS — ALTERNATIVA DE ALTO RENDIMIENTO**
+
+Prometheus tiene limitaciones en clusters muy grandes (retención limitada, uso de memoria, falta de escalado horizontal). **VictoriaMetrics** es una TSDB compatible con PromQL que ofrece:
+
+- **10-20x menos uso de memoria** que Prometheus.
+- **Escalado horizontal** mediante cluster mode (vminsert, vmselect, vmstorage).
+- **Compresión más eficiente** (reduce almacenamiento 5-10x).
+- **Retención larga** (años) sin degradación.
+
+**Instalación de VictoriaMetrics (single-node):**
+
+```bash
+$ helm repo add vm https://victoriametrics.github.io/helm-charts/
+$ helm install victoria-metrics vm/victoria-metrics-single \
+  --namespace monitoring \
+  --set server.persistentVolume.enabled=true \
+  --set server.persistentVolume.size=500Gi \
+  --set server.retentionPeriod=12
+```
+
+**Configurar Prometheus para remote write a VictoriaMetrics:**
+
+```yaml
+# En prometheus.yml
+remote_write:
+  - url: http://victoria-metrics-server:8428/api/v1/write
+    queue_config:
+      capacity: 10000
+      max_shards: 20
+```
+
+**VMAgent (reemplazo de Prometheus con menor consumo):**
+
+```yaml
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: vmagent
+  namespace: monitoring
+spec:
+  scrapeInterval: 30s
+  externalLabels:
+    cluster: prod-us-east1
+  remoteWrite:
+    - url: "http://victoria-metrics-server:8428/api/v1/write"
+  serviceScrapeSelector:
+    matchLabels:
+      app: monitored
+```
+
+---
+
+#### **SECCIÓN 9.3: LOGS CENTRALIZADOS — LOKI Y GRAFANA**
+
+**Loki** (de Grafana Labs) es un sistema de agregación de logs diseñado para ser ligero y económico. A diferencia de ELK (Elasticsearch), Loki no indexa el contenido del log, solo los metadatos (etiquetas). La búsqueda se realiza por filtrado de etiquetas y líneas.
+
+**Instalación de Loki (mono-binary):**
+
+```bash
+$ helm repo add grafana https://grafana.github.io/helm-charts
+$ helm install loki grafana/loki-stack \
+  --namespace monitoring \
+  --set grafana.enabled=true \
+  --set promtail.enabled=true
+```
+
+**Promtail (agente que recolecta logs y los envía a Loki):**
+
+```yaml
+# Configuración de Promtail para recolectar logs de contenedores
+scrape_configs:
+- job_name: kubernetes-pods
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    target_label: app
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: node
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_uid]
+    target_label: pod_uid
+```
+
+**LogQL (lenguaje de consulta de Loki):**
+
+```logql
+# Obtener logs de errores en el namespace production
+{namespace="production"} |= "error"
+
+# Logs con latencia > 500ms (expresiones regulares)
+{app="api"} |~ "latency=[0-9]+ms" | regexp "latency=(?P<lat>[0-9]+)ms" | lat > 500
+
+# Contar logs por minuto
+count_over_time({namespace="production"} |~ "panic" [1m])
+
+# Unir con métricas de Prometheus (ej: correlación)
+{namespace="production"} | json | level="error" and rate(http_requests_total{code="500"}[1m]) > 0
+```
+
+**Grafana (dashboard unificado):** Conecta Prometheus, Loki y Tempo (trazas). Permite correlación: desde un log con traceID, saltar a la traza en Tempo.
+
+---
+
+#### **SECCIÓN 9.4: TRAZAS DISTRIBUIDAS — TEMPO, JAEGER, ZIPKIN**
+
+Las trazas permiten seguir una request desde el cliente hasta el último microservicio, identificando cuellos de botella.
+
+**OpenTelemetry** es el estándar actual (unifica OpenTracing y OpenCensus). Proporciona SDKs para instrumentar aplicaciones.
+
+**Instrumentación automática de una aplicación Python con OpenTelemetry:**
+
+```python
+# requirements: opentelemetry-distro, opentelemetry-exporter-otlp
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+
+# Configurar recurso (identidad del servicio)
+resource = Resource.create({
+    "service.name": "api",
+    "service.version": "1.2.3",
+    "deployment.environment": "production"
+})
+
+provider = TracerProvider(resource=resource)
+processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://tempo:4317", insecure=True))
+provider.add_span_processor(processor)
+trace.set_tracer_provider(provider)
+
+# Instrumentar frameworks automáticamente
+app = Flask(__name__)
+FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()  # Para llamadas HTTP salientes
+
+# Traza manual
+tracer = trace.get_tracer(__name__)
+
+@app.route('/checkout')
+def checkout():
+    with tracer.start_as_current_span("process-payment") as span:
+        span.set_attribute("payment.amount", request.json['amount'])
+        # Llamada a servicio externo (automáticamente propagará el contexto)
+        response = requests.post("http://payment-service/charge", json=request.json)
+        span.set_attribute("payment.status", response.status_code)
+    return "ok"
+```
+
+**Tempo (backend de trazas de Grafana):** Almacena trazas en object storage (S3, GCS) de forma económica.
+
+```yaml
+# Configuración de Tempo
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+data:
+  tempo.yaml: |
+    server:
+      http_listen_port: 3200
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+            http:
+    ingester:
+      lifecycler:
+        ring:
+          kvstore:
+            store: memberlist
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: tempo-traces
+          endpoint: s3.us-east-1.amazonaws.com
+          access_key: ${AWS_ACCESS_KEY}
+          secret_key: ${AWS_SECRET_KEY}
+        block:
+          bloom_filter_false_positive: 0.05
+          v2_index_downsample_bytes: 1000
+        wal:
+          path: /var/tempo/wal
+```
+
+**Correlación en Grafana:** Desde un panel de logs, si hay un campo `trace_id`, Grafana ofrece un enlace directo a la traza en Tempo.
+
+```json
+// Ejemplo de log en JSON que incluye trace_id
+{"level":"error","time":"2025-04-14T10:00:01Z","trace_id":"a1b2c3d4e5f6","msg":"Database timeout"}
+```
+
+---
+
+#### **SECCIÓN 9.5: SLI, SLO Y ERROR BUDGET — LA CIENCIA DE LA FIABILIDAD**
+
+**SLI (Service Level Indicator):** Métrica específica que mide un aspecto del servicio. Ej: latencia de respuesta, tasa de error, disponibilidad.
+
+**SLO (Service Level Objective):** Objetivo numérico para un SLI. Ej: "el 99.9% de las requests deben tener latencia < 200 ms".
+
+**SLA (Service Level Agreement):** Contrato legal con el cliente. Incluye compensaciones si no se cumple el SLO. Normalmente el SLO es más estricto que el SLA (ej: SLO 99.9%, SLA 99.5%).
+
+**Error Budget:** El presupuesto de error permitido. Para un SLO del 99.9%, el error budget es 0.1% del tiempo (43.2 minutos por mes). Si se consume todo, se detienen los cambios (modo "frozen").
+
+**Fórmula del error budget:**
+
+```
+Error Budget = 1 - SLO
+Ejemplo: SLO = 99.9% = 0.999 → Error Budget = 0.001 = 0.1%
+
+En tiempo por mes: 30 días * 24 horas * 60 minutos = 43,200 minutos
+43,200 * 0.001 = 43.2 minutos
+```
+
+**Implementación con Pyrra (SLO dashboard + alertas):**
+
+```yaml
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: api-availability
+  namespace: monitoring
+spec:
+  target: "99.9"
+  window: 28d
+  indicator:
+    ratio:
+      errors:
+        metric: http_requests_total{job="api",code=~"5.."}
+      total:
+        metric: http_requests_total{job="api"}
+  description: "API availability SLO"
+---
+apiVersion: pyrra.dev/v1alpha1
+kind: ServiceLevelObjective
+metadata:
+  name: api-latency
+spec:
+  target: "99"
+  window: 28d
+  indicator:
+    latency:
+      success:
+        metric: http_request_duration_seconds_bucket{job="api",le="0.2"}
+      total:
+        metric: http_request_duration_seconds_count{job="api"}
+```
+
+**Alertas de burn rate (velocidad de consumo del error budget):**
+
+```yaml
+# Alerta crítica: el budget se gastará en 1 hora a esta tasa
+- alert: ErrorBudgetBurnRateCritical
+  expr: |
+    (
+      sum(rate(http_requests_total{code=~"5.."}[1h]))
+      /
+      sum(rate(http_requests_total[1h]))
+    ) > (1 - 0.999) * 14.4
+  for: 2m
+  annotations:
+    summary: "Error budget burning fast (critical)"
+    description: "At current rate, budget exhausted in <1h"
+
+# Alerta warning: se gastará en 6 horas
+- alert: ErrorBudgetBurnRateWarning
+  expr: |
+    (
+      sum(rate(http_requests_total{code=~"5.."}[6h]))
+      /
+      sum(rate(http_requests_total[6h]))
+    ) > (1 - 0.999) * 6
+  for: 5m
+```
+
+**Política de gestión de error budget en la organización:**
+- **Si error budget restante > 50%:** despliegues normales.
+- **Si entre 20% y 50%:** despliegues solo en horario de baja carga, con aprobación.
+- **Si < 20%:** congelación de deploys, solo cambios críticos.
+- **Si error budget agotado:** revertir cambios recientes, equipo dedicado a fiabilidad.
+
+---
+
+#### **SECCIÓN 9.6: ALERTING EFECTIVO — CÓMO EVITAR LA FATIGA DE ALERTAS**
+
+**Problema común:** cientos de alertas inútiles que nadie lee. **Solución:** alertar solo sobre aquello que requiere acción inmediata y está vinculado a SLOs.
+
+**Reglas de oro del alerting:**
+1. **Alerta solo en síntomas, no en causas.** Ej: alertar por alta latencia, no por CPU alta (la CPU alta puede ser normal).
+2. **Usar burn rate en lugar de valores absolutos.** "Error rate > 1%" puede ser normal durante 5 minutos; "error rate alto que consumirá el budget en 1 hora" es crítico.
+3. **Eliminar alertas duplicadas.** Si ya alerta el SLO, no alertar por cada microservicio individualmente.
+4. **Configurar tiempos de espera (for).** Una alerta de "pod restarting" debe esperar 5 minutos para evitar falsos positivos por reinicios normales.
+
+**Ejemplo de alerta mal diseñada:**
+```yaml
+- alert: HighCPU
+  expr: node_cpu_usage > 0.8
+  for: 0s
+  # Generará alertas constantemente, la mayoría no requieren acción.
+```
+
+**Ejemplo de alerta bien diseñada (basada en SLO):**
+```yaml
+- alert: APILatencySLOViolation
+  expr: |
+    histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[10m])) by (le)) > 0.5
+  for: 5m
+  annotations:
+    summary: "API p99 latency > 500ms for 5 minutes, SLO at risk"
+```
+
+**Agrupación de alertas (Alertmanager):**
+
+```yaml
+route:
+  group_by: ['namespace', 'alertname']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'pagerduty'
+  routes:
+  - match:
+      severity: critical
+    receiver: pagerduty-critical
+    continue: false
+  - match:
+      severity: warning
+    receiver: slack-warnings
+```
+
+---
+
+### **CAPA 10: OPTIMIZACIÓN ECONÓMICA Y FINOPS**
+
+El sobreaprovisionamiento es la pandemia silenciosa de Kubernetes. La mayoría de los clústeres tienen una utilización real del 10-30% de los recursos solicitados. **FinOps** es la disciplina de optimizar el gasto en la nube, haciendo responsables a los equipos de ingeniería del costo de sus recursos.
+
+---
+
+#### **SECCIÓN 10.1: RIGHT-SIZING — ELIMINAR DESPERDICIO**
+
+**Problema típico:** Un pod pide `requests.cpu=4` pero usa 0.5. El nodo tiene capacidad, pero el scheduler no puede colocar más pods porque los requests están inflados. Se desperdicia capacidad y dinero.
+
+**Solución:** Usar VPA (Vertical Pod Autoscaler) en modo `Off` (solo recomendaciones) o herramientas como **Goldilocks**.
+
+**Goldilocks (dashboard de recomendaciones):**
+
+```bash
+$ helm repo add fairwinds-stable https://charts.fairwinds.com/stable
+$ helm install goldilocks fairwinds-stable/goldilocks --namespace goldilocks --create-namespace
+$ kubectl label namespace production goldilocks.fairwinds.com/enabled=true
+$ kubectl port-forward svc/goldilocks-dashboard 8080:80 -n goldilocks
+```
+
+**VPA en modo recomendación (sin aplicar automáticamente):**
+
+```yaml
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-vpa-recommend
+  namespace: production
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  updatePolicy:
+    updateMode: "Off"   # Solo recomendar, no cambiar
+  resourcePolicy:
+    containerPolicies:
+    - containerName: "*"
+      minAllowed:
+        cpu: 50m
+        memory: 64Mi
+      maxAllowed:
+        cpu: 8
+        memory: 16Gi
+```
+
+**Ver recomendaciones:**
+
+```bash
+$ kubectl get vpa api-vpa-recommend -o yaml
+status:
+  recommendation:
+    containerRecommendations:
+    - containerName: api
+      lowerBound:
+        cpu: 200m
+        memory: 256Mi
+      target:
+        cpu: 450m
+        memory: 512Mi
+      upperBound:
+        cpu: 1
+        memory: 1Gi
+```
+
+**Ajustar requests manualmente basado en las recomendaciones (o usar VPA en modo Auto con precaución).**
+
+---
+
+#### **SECCIÓN 10.2: SPOT INSTANCES Y KARPENTER**
+
+Las **Spot instances** (AWS) o **Preemptible VMs** (GCP) ofrecen un descuento del 60-90% pero pueden ser terminadas con 2 minutos de aviso. Son ideales para workloads stateless, batch jobs, o servicios tolerantes a fallos.
+
+**Karpenter** (AWS) provisiona automáticamente el tipo exacto de instancia que necesita cada pod, mezclando on-demand y spot.
+
+```yaml
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: spot-pool
+spec:
+  template:
+    spec:
+      requirements:
+      - key: "karpenter.k8s.aws/instance-category"
+        operator: In
+        values: ["c", "m", "r"]
+      - key: "karpenter.sh/capacity-type"
+        operator: In
+        values: ["spot", "on-demand"]
+      - key: "kubernetes.io/arch"
+        operator: In
+        values: ["amd64", "arm64"]   # Instancias Graviton (más baratas)
+      nodeClassRef:
+        name: default
+  limits:
+    cpu: "1000"
+    memory: "4000Gi"
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    consolidateAfter: 30s
+  weight: 10   # Prioridad: intentar usar este pool antes que on-demand
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2
+  role: "KarpenterNodeRole"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "my-cluster"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "my-cluster"
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true
+```
+
+**Uso de interruption handling (drenado graceful de pods spot):**
+
+```bash
+# Karpenter detecta el aviso de interrupción (2 minutos antes) y ejecuta:
+# 1. Marcar el nodo como cordon
+# 2. Drenar los pods (respetando PodDisruptionBudgets)
+# 3. Terminar el nodo
+```
+
+---
+
+#### **SECCIÓN 10.3: KUBECOST Y OPENCOST — ATRIBUCIÓN DE COSTOS**
+
+**Kubecost** proporciona desglose de costos por namespace, deployment, service, label, etc. Se integra con AWS, GCP, Azure, y on-prem.
+
+```bash
+$ helm install kubecost cost-analyzer \
+  --repo https://kubecost.github.io/cost-analyzer/ \
+  --namespace kubecost --create-namespace \
+  --set prometheus.server.persistentVolume.enabled=true \
+  --set kubecostToken="xxxxx"
+```
+
+**Ver costos por namespace:**
+
+```bash
+$ kubectl cost namespace --window 7d
+NAMESPACE          MONTHLY RATE
+production         $1245.32
+staging            $234.10
+monitoring         $89.45
+kube-system        $45.67
+```
+
+**Etiquetas para atribución (chargeback/showback):**
+
+```yaml
+# En los namespaces o deployments, añadir anotaciones:
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    cost-center: "engineering"
+    team: "backend"
+    project: "order-processing"
+    environment: "prod"
+```
+
+**OpenCost (versión open source de Kubecost):** API para consultar costos.
+
+```bash
+$ kubectl port-forward deployment/opencost 9003:9003
+$ curl http://localhost:9003/allocation/compute?window=1d
+```
+
+---
+
+#### **SEPCIÓN 10.4: RESOURCE QUOTAS Y LIMIT RANGES**
+
+**ResourceQuota:** Limita el consumo total de recursos en un namespace.
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-quota
+  namespace: team-a
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    persistentvolumeclaims: "10"
+    services.loadbalancers: "2"
+    count/deployments.apps: "20"
+```
+
+**LimitRange:** Establece valores por defecto para pods que no especifican requests/limits.
+
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+  namespace: team-a
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+```
+
+**Efecto en FinOps:** Los equipos son conscientes de sus cuotas y optimizan sus requests para no excederlas.
+
+---
+
+#### **SECCIÓN 10.5: CLUSTER AUTOSCALER VS KARPENTER**
+
+| Característica | Cluster Autoscaler (CA) | Karpenter |
+|---------------|------------------------|-----------|
+| **Modelo** | Escala grupos de instancias predefinidos | Provisiona instancias a demanda según los pods |
+| **Velocidad** | Lento (1-2 minutos) | Rápido (30-45 segundos) |
+| **Granularidad** | Grupos homogéneos | Instancias exactas (CPU, memoria, GPU) |
+| **Spot** | Soporte básico | Soporte nativo con fallback |
+| **Costo** | Puede tener nodos infrautilizados | Optimizado (consolidación continua) |
+| **Complejidad** | Menor | Mayor curva de aprendizaje |
+
+**Recomendación:** Usar Karpenter en AWS para clusters > 100 nodos o con cargas variables. Mantener Cluster Autoscaler en otros clouds o clusters pequeños.
+
+---
+
+#### **SECCIÓN 10.6: FINOPS COMO PRÁCTICA CONTINUA**
+
+**Ciclo de FinOps (del Marco FinOps Foundation):**
+
+1. **Informar:** Dashboards de costos por equipo/proyecto (Kubecost, OpenCost).
+2. **Optimizar:** Right-sizing, spot instances, eliminación de recursos no utilizados.
+3. **Operar:** Presupuestos, alertas de gasto, políticas de gobernanza (OPA/Gatekeeper).
+
+**Política de OPA para limitar requests máximos:**
+
+```rego
+# Denegar pods con requests.cpu > 4
+package kubernetes.admission
+
+deny[msg] {
+    input.request.kind.kind == "Pod"
+    container := input.request.object.spec.containers[_]
+    resource := container.resources.requests.cpu
+    number := to_number(resource)
+    number > 4
+    msg = sprintf("Pod %v requests too much CPU (%v > 4)", [input.request.object.metadata.name, resource])
+}
+```
+
+**Alertas de gasto (usando Kubecost API + Prometheus):**
+
+```yaml
+- alert: HighSpending
+  expr: |
+    kubecost_total_monthly_rate{team="backend"} > 5000
+  for: 6h
+  annotations:
+    summary: "Team backend monthly cost exceeds $5000"
+```
