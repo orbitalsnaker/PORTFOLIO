@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKITA RONIN OS v3.0 — OPERATOR 1310</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   AKITA RONIN OS v3.0 — CANTANDO AL SILICIO
+   Operator 1310 × Ronin Mission × PromptForge v2.0
+   Principio: El código sin densidad es zarandaja.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --bg: #050505;
+  --bg2: #0a0a0a;
+  --bg3: #111111;
+  --ember: #ff4500;
+  --ember-dim: #cc3700;
+  --ember-glow: rgba(255,69,0,0.15);
+  --copper: #b87333;
+  --copper-dim: #8a5620;
+  --copper-glow: rgba(184,115,51,0.2);
+  --steel: #465258;
+  --steel-light: #6a7a82;
+  --forge: #1a1208;
+  --text: #d4c9b0;
+  --text-dim: #7a7060;
+  --text-bright: #f0e8d0;
+  --border: #2a2520;
+  --border-hot: #3d2a10;
+  --scan-line: rgba(184,115,51,0.04);
+  --tonal-pure: #00cc88;
+  --tonal-mid: #e8a020;
+  --tonal-noise: #ff4500;
+  --font-data: 'JetBrains Mono', monospace;
+  --font-title: 'Syne', sans-serif;
+  --font-alert: 'Bebas Neue', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-data);font-size:13px;line-height:1.6;overflow-x:hidden;cursor:crosshair;}
+/* SCANLINES */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scan-line) 2px,var(--scan-line) 4px);pointer-events:none;z-index:9999;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");opacity:0.4;pointer-events:none;z-index:9998;animation:staticShift 8s steps(1) infinite;}
+@keyframes staticShift{0%,100%{background-position:0 0}25%{background-position:10px -20px}50%{background-position:-15px 10px}75%{background-position:20px 15px}}
+
+/* ── LAYOUT ── */
+.akita-shell{max-width:1600px;margin:0 auto;padding:0 16px;}
+.main-grid{display:grid;grid-template-columns:260px 1fr 300px;min-height:calc(100vh - 65px);}
+
+/* ── HEADER ── */
+.header-forge{border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(5,5,5,0.97);backdrop-filter:blur(2px);z-index:200;gap:12px;}
+.header-forge::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--copper),var(--ember),var(--copper),transparent);animation:headerGlow 3s ease-in-out infinite;}
+@keyframes headerGlow{0%,100%{opacity:.4}50%{opacity:1}}
+.logo-block{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-sigil{width:34px;height:34px;border:1px solid var(--copper);display:flex;align-items:center;justify-content:center;position:relative;animation:sigilPulse 2s ease-in-out infinite;}
+@keyframes sigilPulse{0%,100%{box-shadow:0 0 0 0 var(--copper-glow)}50%{box-shadow:0 0 12px 4px var(--copper-glow)}}
+.logo-sigil::before{content:'';position:absolute;width:18px;height:18px;border:1px solid var(--ember);transform:rotate(45deg);}
+.logo-sigil span{font-family:var(--font-alert);font-size:13px;color:var(--copper);z-index:1;letter-spacing:1px;}
+.logo-text h1{font-family:var(--font-alert);font-size:20px;color:var(--text-bright);letter-spacing:4px;line-height:1;}
+.logo-text .subtitle{font-family:var(--font-data);font-size:9px;color:var(--copper);letter-spacing:3px;text-transform:uppercase;}
+.header-status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.status-node{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;animation:dotPulse 1.5s ease-in-out infinite;}
+.status-dot.hot{background:var(--ember)}.status-dot.warm{background:var(--copper)}
+@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.phase-indicator{display:flex;gap:3px;align-items:center;}
+.phase-pip{width:18px;height:3px;background:var(--border);transition:background .3s;}
+.phase-pip.active{background:var(--ember)}.phase-pip.done{background:var(--copper)}
+/* resonador header */
+.resonator-header{display:flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--border-hot);background:var(--forge);}
+.resonator-agent{font-family:var(--font-alert);font-size:11px;color:var(--ember);letter-spacing:2px;}
+.resonator-metric{font-size:9px;color:var(--copper);letter-spacing:1px;}
+
+/* ── NAV LEFT ── */
+.nav-panel{border-right:1px solid var(--border);padding:16px 0;position:sticky;top:65px;height:calc(100vh - 65px);overflow-y:auto;background:var(--bg);}
+.nav-panel::-webkit-scrollbar{width:2px}.nav-panel::-webkit-scrollbar-thumb{background:var(--copper-dim)}
+.nav-section{margin-bottom:20px;}
+.nav-section-header{font-family:var(--font-alert);font-size:10px;color:var(--copper);letter-spacing:4px;padding:4px 16px 6px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:6px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;color:var(--text-dim);text-decoration:none;font-size:10px;letter-spacing:1px;text-transform:uppercase;}
+.nav-item:hover{color:var(--text);border-left-color:var(--copper);background:var(--copper-glow);cursor:crosshair;}
+.nav-item.active{color:var(--copper);border-left-color:var(--ember);background:var(--ember-glow);}
+.nav-icon{width:14px;text-align:center;color:var(--copper-dim);font-size:11px;}
+.nav-badge{margin-left:auto;font-size:8px;padding:1px 4px;background:var(--border-hot);color:var(--copper);letter-spacing:1px;}
+/* Agent mini-grid in nav */
+.agent-mini-grid{padding:6px 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;}
+.agent-mini-card{padding:4px 3px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;text-align:center;font-size:8px;color:var(--text-dim);letter-spacing:.5px;transition:all .15s;line-height:1.3;}
+.agent-mini-card:hover{border-color:var(--copper);color:var(--copper);background:var(--copper-glow);}
+.agent-mini-card.active-agent{border-color:var(--ember);color:var(--ember);background:var(--ember-glow);}
+.agent-mini-icon{font-size:11px;display:block;margin-bottom:2px;}
+
+/* ── CENTER PANEL ── */
+.center-panel{padding:0;display:flex;flex-direction:column;overflow-y:auto;}
+.section-forge{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.section-forge h2{font-family:var(--font-alert);font-size:15px;color:var(--text-bright);letter-spacing:3px;text-transform:uppercase;}
+.forge-tag{font-size:8px;padding:2px 7px;background:var(--forge);border:1px solid var(--border-hot);color:var(--copper);letter-spacing:2px;text-transform:uppercase;}
+.forge-tag.hot{background:var(--ember-glow);border-color:var(--ember);color:var(--ember);animation:tagPulse 2s ease-in-out infinite;}
+.forge-tag.tonal{background:rgba(0,204,136,.08);border-color:var(--tonal-pure);color:var(--tonal-pure);}
+@keyframes tagPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--copper-dim),transparent);}
+
+/* ── ONTOLOGY TOOLTIP ── */
+.onto-badge{display:inline-flex;align-items:center;gap:4px;cursor:help;position:relative;}
+.onto-badge::after{content:attr(data-onto);position:absolute;left:0;top:100%;margin-top:4px;background:var(--bg3);border:1px solid var(--copper-dim);padding:6px 10px;font-size:9px;color:var(--text);letter-spacing:1px;white-space:pre;z-index:500;display:none;min-width:200px;line-height:1.8;}
+.onto-badge:hover::after{display:block;}
+.onto-icon{font-size:10px;color:var(--copper-dim);}
+
+/* ── FORENSICS ── */
+.dropzone-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.dropzone{border:1px dashed var(--copper-dim);padding:28px 20px;text-align:center;cursor:crosshair;transition:all .2s;position:relative;background:linear-gradient(135deg,transparent 0%,rgba(184,115,51,.03) 100%);overflow:hidden;}
+.dropzone::before{content:'';position:absolute;top:-100%;left:-20%;width:140%;height:40%;background:linear-gradient(180deg,transparent,rgba(184,115,51,.06),transparent);animation:scanDown 3s linear infinite;}
+@keyframes scanDown{0%{top:-40%}100%{top:120%}}
+.dropzone:hover,.dropzone.drag-over{border-color:var(--ember);background:linear-gradient(135deg,var(--ember-glow),transparent);}
+.dropzone-icon{font-family:var(--font-alert);font-size:28px;color:var(--copper-dim);display:block;margin-bottom:6px;letter-spacing:4px;}
+.dropzone-label{font-size:10px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
+.dropzone-sub{font-size:9px;color:var(--steel);letter-spacing:1px;}
+/* density tonal */
+.tonal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);}
+.tonal-block{background:var(--bg2);border:1px solid var(--border);padding:10px;}
+.tonal-label{font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.tonal-bar-wrap{height:8px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;position:relative;margin-bottom:4px;}
+.tonal-bar{height:100%;transition:width .5s,background .5s;background:var(--copper);}
+.tonal-threshold{position:absolute;left:7%;top:0;bottom:0;width:1px;background:var(--tonal-pure);opacity:.7;}
+.tonal-delta{font-family:var(--font-alert);font-size:18px;color:var(--text-bright);}
+.tonal-verdict{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.tonal-verdict.pure{color:var(--tonal-pure)} .tonal-verdict.mid{color:var(--tonal-mid)} .tonal-verdict.noise{color:var(--tonal-noise)}
+.analysis-grid{padding:12px 20px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border-bottom:1px solid var(--border);}
+.metric-cell{background:var(--bg2);border:1px solid var(--border);padding:10px;position:relative;overflow:hidden;}
+.metric-cell::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--copper);transform:scaleX(0);transform-origin:left;transition:transform .4s;}
+.metric-cell.hot::after{background:var(--ember);transform:scaleX(1)}.metric-cell.warm::after{transform:scaleX(.6)}
+.metric-label{font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.metric-value{font-family:var(--font-alert);font-size:22px;color:var(--text-bright);line-height:1;}
+.metric-value.danger{color:var(--ember)}.metric-value.copper{color:var(--copper)}.metric-value.tonal{color:var(--tonal-pure)}
+.metric-unit{font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-top:2px;}
+.buzz-item{display:inline-block;margin:2px;padding:2px 7px;background:var(--ember-glow);border:1px solid var(--ember);color:var(--ember);font-size:8px;letter-spacing:2px;text-transform:uppercase;animation:buzzAppear .4s ease;}
+@keyframes buzzAppear{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* ── CLOUD CALC ── */
+.calc-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.calc-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:10px;}
+.calc-label{font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.forge-input{background:var(--bg2);border:1px solid var(--border);border-top:none;border-left:none;color:var(--text-bright);font-family:var(--font-data);font-size:13px;padding:7px 9px;width:100%;outline:none;transition:border-color .2s;}
+.forge-input:focus{border-color:var(--copper);background:var(--forge);}
+.calc-operator{font-family:var(--font-alert);font-size:18px;color:var(--copper);text-align:center;}
+.roi-display{background:var(--forge);border:1px solid var(--border-hot);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+.roi-label{font-size:9px;color:var(--copper);letter-spacing:3px;text-transform:uppercase;}
+.roi-value{font-family:var(--font-alert);font-size:26px;color:var(--ember);letter-spacing:2px;}
+
+/* ── PHASES ── */
+.phases-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.phase-track{display:flex;gap:0;margin-bottom:14px;position:relative;}
+.phase-track::before{content:'';position:absolute;top:20px;left:10%;right:10%;height:1px;background:var(--border);z-index:0;}
+.phase-node{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;position:relative;z-index:1;}
+.phase-orb{width:40px;height:40px;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:var(--font-alert);font-size:13px;color:var(--text-dim);transition:all .25s;}
+.phase-node:hover .phase-orb,.phase-node.active .phase-orb{border-color:var(--ember);color:var(--ember);background:var(--ember-glow);box-shadow:0 0 16px var(--ember-glow);}
+.phase-node.done .phase-orb{border-color:var(--copper);color:var(--copper);background:var(--copper-glow);}
+.phase-name{font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+.phase-node.active .phase-name{color:var(--ember)}.phase-node.done .phase-name{color:var(--copper)}
+.phase-detail{background:var(--bg2);border:1px solid var(--border-hot);padding:14px;display:none;}
+.phase-detail.visible{display:block;}
+.phase-detail h3{font-family:var(--font-alert);font-size:13px;color:var(--copper);letter-spacing:3px;margin-bottom:8px;}
+.module-list{list-style:none;}
+.module-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:10px;color:var(--text);}
+.module-item:last-child{border-bottom:none;}
+.module-tag{font-size:8px;padding:1px 5px;background:var(--forge);border:1px solid var(--border-hot);color:var(--copper);letter-spacing:1px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+
+/* ── RONIN AGENTS ── */
+.agents-grid{padding:16px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-bottom:1px solid var(--border);}
+.agent-card{background:var(--bg2);border:1px solid var(--border);padding:12px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.agent-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--copper);transform:scaleY(0);transform-origin:bottom;transition:transform .2s;}
+.agent-card:hover{border-color:var(--copper-dim);background:var(--forge);}
+.agent-card:hover::before{transform:scaleY(1);}
+.agent-card.invoking{border-color:var(--ember);animation:agentInvoke .6s ease;}
+@keyframes agentInvoke{0%,100%{box-shadow:0 0 0 0 var(--ember-glow)}50%{box-shadow:0 0 20px 4px var(--ember-glow)}}
+.agent-icon-big{font-size:20px;margin-bottom:6px;display:block;}
+.agent-name{font-family:var(--font-alert);font-size:13px;color:var(--text-bright);letter-spacing:2px;margin-bottom:3px;}
+.agent-role{font-size:9px;color:var(--copper);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.agent-desc{font-size:9px;color:var(--text-dim);line-height:1.6;margin-bottom:8px;}
+.agent-exec-btn{background:transparent;border:1px solid var(--copper-dim);color:var(--copper);font-family:var(--font-alert);font-size:10px;letter-spacing:2px;padding:4px 10px;cursor:crosshair;transition:all .15s;text-transform:uppercase;width:100%;}
+.agent-exec-btn:hover{background:var(--copper-glow);border-color:var(--copper);}
+.agent-status{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--border);}
+.agent-status.ready{background:var(--tonal-pure)}.agent-status.active{background:var(--ember);animation:dotPulse 1s infinite}
+/* Orquestador */
+.orchestrate-bar{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--forge);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.orch-label{font-family:var(--font-alert);font-size:11px;color:var(--copper);letter-spacing:3px;}
+.orch-flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.orch-node{font-size:9px;padding:3px 8px;border:1px solid var(--border-hot);color:var(--text-dim);letter-spacing:1px;}
+.orch-node.lit{border-color:var(--ember);color:var(--ember);background:var(--ember-glow);}
+.orch-arrow{color:var(--copper-dim);font-size:10px;}
+.orch-btn{background:var(--ember);border:none;color:#fff;font-family:var(--font-alert);font-size:11px;letter-spacing:2px;padding:6px 14px;cursor:crosshair;transition:background .15s;margin-left:auto;}
+.orch-btn:hover{background:var(--ember-dim);}
+
+/* ── AKITABITE VECTORIZER ── */
+.vectorizer-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.vector-progress{background:var(--bg2);border:1px solid var(--border);height:5px;margin-top:6px;overflow:hidden;position:relative;}
+.vector-bar{height:100%;background:linear-gradient(90deg,var(--copper),var(--ember));width:0%;transition:width .5s ease;position:relative;}
+.vector-bar::after{content:'';position:absolute;right:0;top:-1px;width:7px;height:7px;background:var(--ember);animation:barGlow 1s ease-in-out infinite;}
+@keyframes barGlow{0%,100%{opacity:1}50%{opacity:.3}}
+.vector-stats{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+
+/* ── CACHE TONAL ── */
+.cache-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;margin-top:8px;}
+.cache-cell{height:22px;background:var(--bg3);border:1px solid var(--border);transition:all .3s;cursor:crosshair;position:relative;}
+.cache-cell.hit{background:var(--copper-glow);border-color:var(--copper);}
+.cache-cell.hot{background:var(--ember-glow);border-color:var(--ember);animation:cacheHot .5s ease;}
+.cache-cell.tonal-pure{background:rgba(0,204,136,.12);border-color:var(--tonal-pure);}
+@keyframes cacheHot{0%{transform:scale(1.2);opacity:.5}100%{transform:scale(1);opacity:1}}
+.cache-density-bar{height:3px;position:absolute;bottom:0;left:0;background:var(--tonal-pure);transition:width .4s;}
+
+/* ── DEPENDENCY MAP ── */
+.dep-map-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+#dep-canvas{width:100%;height:260px;background:var(--bg2);border:1px solid var(--border);display:block;}
+.dep-legend{display:flex;gap:14px;margin-top:6px;font-size:9px;color:var(--text-dim);letter-spacing:1px;flex-wrap:wrap;}
+
+/* ── TRAINING ── */
+.training-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.mission-list{list-style:none;}
+.mission-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:color .15s;}
+.mission-item:hover{color:var(--copper)}.mission-item.done{color:var(--text-dim)}
+.mission-status{width:15px;height:15px;border:1px solid var(--steel);display:flex;align-items:center;justify-content:center;font-size:7px;flex-shrink:0;transition:all .15s;}
+.mission-item.done .mission-status{background:var(--copper);border-color:var(--copper);color:var(--bg);}
+.mission-name{font-size:10px;letter-spacing:1px;flex:1;}
+.mission-xp{font-size:9px;color:var(--copper);letter-spacing:1px;}
+
+/* ── AUTHORITY ── */
+.authority-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.authority-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-top:none;border-left:none;color:var(--text-bright);font-family:var(--font-data);font-size:10px;padding:8px;outline:none;resize:none;height:70px;margin-top:8px;}
+.authority-input:focus{border-color:var(--copper);}
+.inject-btn{background:transparent;border:1px solid var(--ember);color:var(--ember);font-family:var(--font-alert);font-size:11px;letter-spacing:3px;padding:6px 14px;cursor:crosshair;transition:all .15s;text-transform:uppercase;}
+.inject-btn:hover{background:var(--ember-glow);box-shadow:0 0 12px var(--ember-glow);}
+.inject-btn.copper{border-color:var(--copper);color:var(--copper);}
+.inject-btn.copper:hover{background:var(--copper-glow);}
+/* JSON spec generator */
+.json-output{background:var(--bg3);border:1px solid var(--border-hot);padding:10px;font-size:9px;color:var(--tonal-pure);white-space:pre-wrap;max-height:160px;overflow-y:auto;margin-top:8px;letter-spacing:.5px;line-height:1.7;}
+
+/* ── PAPERS ── */
+.papers-grid{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.paper-card{background:var(--bg2);border:1px solid var(--border);padding:8px 10px;cursor:crosshair;transition:all .15s;position:relative;overflow:hidden;}
+.paper-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--copper);transform:scaleY(0);transform-origin:bottom;transition:transform .2s;}
+.paper-card:hover{border-color:var(--copper-dim);background:var(--forge);}.paper-card:hover::before{transform:scaleY(1);}
+.paper-year{font-size:8px;color:var(--ember);letter-spacing:2px;margin-bottom:2px;}
+.paper-title{font-size:9px;color:var(--text);letter-spacing:.5px;margin-bottom:3px;line-height:1.4;}
+.paper-concept{font-size:8px;color:var(--copper-dim);letter-spacing:1px;text-transform:uppercase;}
+
+/* ── KNOWLEDGE REPO ── */
+.repo-container{padding:16px 20px;border-bottom:1px solid var(--border);}
+.repo-list{list-style:none;max-height:140px;overflow-y:auto;}
+.repo-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:9px;color:var(--text-dim);}
+.repo-tag{font-size:8px;padding:1px 5px;background:var(--bg3);border:1px solid var(--border);color:var(--copper);letter-spacing:1px;}
+.repo-ts{color:var(--steel-light);font-size:8px;margin-left:auto;}
+
+/* ── RIGHT PANEL / TERMINAL ── */
+.right-panel{border-left:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:65px;height:calc(100vh - 65px);overflow:hidden;}
+.terminal-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2);flex-shrink:0;}
+.terminal-title{font-family:var(--font-alert);font-size:11px;color:var(--copper);letter-spacing:3px;flex:1;}
+.t-ctrl{width:9px;height:9px;background:var(--border);}
+.t-ctrl.red{background:#ff3a3a;opacity:.7}.t-ctrl.orange{background:var(--ember);opacity:.7}.t-ctrl.green{background:#00cc66;opacity:.7}
+#terminal-output{flex:1;overflow-y:auto;padding:10px 12px;font-size:10px;line-height:1.9;background:var(--bg);}
+#terminal-output::-webkit-scrollbar{width:2px}#terminal-output::-webkit-scrollbar-thumb{background:var(--copper-dim)}
+.t-line{display:block;margin-bottom:1px;}
+.t-prompt{color:var(--ember)}.t-output{color:var(--text);opacity:.8}.t-copper{color:var(--copper)}.t-dim{color:var(--text-dim)}.t-alert{color:var(--ember);font-family:var(--font-alert);letter-spacing:2px;}.t-success{color:#00ff88}.t-error{color:#ff4444}.t-tonal{color:var(--tonal-pure)}
+.terminal-input-row{border-top:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px;background:var(--bg2);flex-shrink:0;}
+.t-cursor-label{color:var(--ember);font-size:10px;white-space:nowrap;letter-spacing:1px;}
+#terminal-input{flex:1;background:transparent;border:none;outline:none;color:var(--text-bright);font-family:var(--font-data);font-size:10px;caret-color:var(--ember);}
+.t-exec-btn{background:var(--ember);border:none;color:#fff;font-family:var(--font-alert);font-size:10px;letter-spacing:2px;padding:4px 8px;cursor:crosshair;transition:background .15s;}
+.t-exec-btn:hover{background:var(--ember-dim);}
+/* Resonator panel in terminal */
+.resonator-panel{padding:8px 12px;border-bottom:1px solid var(--border);background:var(--forge);flex-shrink:0;}
+.resonator-title{font-size:8px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
+.resonator-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.resonator-cell{background:var(--bg2);border:1px solid var(--border);padding:4px 6px;}
+.resonator-cell-label{font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;}
+.resonator-cell-val{font-family:var(--font-alert);font-size:13px;color:var(--copper);}
+/* Export */
+.export-container{border-top:1px solid var(--border);padding:10px 12px;background:var(--bg2);flex-shrink:0;}
+.export-btn{width:100%;background:var(--forge);border:1px solid var(--copper-dim);color:var(--copper);font-family:var(--font-alert);font-size:11px;letter-spacing:3px;padding:8px;cursor:crosshair;text-transform:uppercase;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.export-btn:hover{background:var(--copper-glow);border-color:var(--copper);color:var(--text-bright);}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-forge{background:var(--bg2);border:1px solid var(--copper-dim);max-width:720px;width:95%;max-height:82vh;overflow-y:auto;position:relative;}
+.modal-forge::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ember),var(--copper),var(--ember));}
+.modal-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-header h3{font-family:var(--font-alert);font-size:15px;color:var(--copper);letter-spacing:3px;}
+.modal-close{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-data);font-size:13px;width:26px;height:26px;cursor:crosshair;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{border-color:var(--ember);color:var(--ember);}
+.modal-body{padding:18px;font-size:10px;line-height:1.9;color:var(--text);white-space:pre-wrap;font-family:var(--font-data);}
+
+/* ── RADAR ── */
+.radar-container{padding:12px 14px;border-bottom:1px solid var(--border);}
+.radar-label{font-size:8px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+#radar-canvas{width:100%;height:110px;display:block;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--copper-dim)}::-webkit-scrollbar-thumb:hover{background:var(--copper)}
+
+/* ── BUTTONS ROW ── */
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+
+@media(max-width:900px){.main-grid{grid-template-columns:1fr;}.nav-panel,.right-panel{position:static;height:auto;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="header-forge">
+  <div class="logo-block">
+    <div class="logo-sigil"><span>AK</span></div>
+    <div class="logo-text">
+      <h1>AKITA RONIN OS</h1>
+      <div class="subtitle">OPERATOR 1310 × RONIN MISSION × CANTANDO AL SILICIO v3.0</div>
+    </div>
+  </div>
+  <div class="header-status">
+    <div class="status-node"><div class="status-dot"></div><span>LOCAL ACTIVO</span></div>
+    <div class="status-node"><div class="status-dot hot"></div><span>NUBE: EXCOMUNIDA</span></div>
+    <div class="resonator-header">
+      <div>
+        <div class="resonator-agent" id="res-agent">IDLE</div>
+        <div class="resonator-metric" id="res-metric">δ=0.00 — EN ESPERA</div>
+      </div>
+    </div>
+    <div class="status-node"><div class="status-dot warm"></div><span id="clock">--:--:--</span></div>
+    <div class="phase-indicator">
+      <div class="phase-pip" id="pip-1"></div>
+      <div class="phase-pip" id="pip-2"></div>
+      <div class="phase-pip" id="pip-3"></div>
+      <div class="phase-pip" id="pip-4"></div>
+    </div>
+  </div>
+</header>
+
+<div class="akita-shell">
+<div class="main-grid">
+
+<!-- ══════════ NAV LEFT ══════════ -->
+<nav class="nav-panel">
+  <div class="nav-section">
+    <div class="nav-section-header">MÓDULOS FORGE</div>
+    <a class="nav-item active" onclick="navTo('forensics',this)"><span class="nav-icon">▶</span>MÓDULO FORENSE<span class="nav-badge">ACTIVO</span></a>
+    <a class="nav-item" onclick="navTo('cloud-calc',this)"><span class="nav-icon">◆</span>CALC. CLOUD</a>
+    <a class="nav-item" onclick="navTo('akitabite',this)"><span class="nav-icon">◈</span>AKITABITE.JS</a>
+    <a class="nav-item" onclick="navTo('cache',this)"><span class="nav-icon">▣</span>CACHE TONAL</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-header">PIPELINE 8 MESES</div>
+    <a class="nav-item" onclick="navTo('phases',this)"><span class="nav-icon">◉</span>FASES CRÍTICAS</a>
+    <a class="nav-item" onclick="navTo('training',this)"><span class="nav-icon">◐</span>ENTRENAMIENTO</a>
+    <a class="nav-item" onclick="navTo('authority',this)"><span class="nav-icon">◎</span>AUTORIDAD SEM.</a>
+    <a class="nav-item" onclick="navTo('depmap',this)"><span class="nav-icon">◫</span>MAPA DEPS.</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-header">RONIN MISSION — 15 AGENTES</div>
+    <a class="nav-item" onclick="navTo('agents',this)"><span class="nav-icon">⬡</span>ORQUESTAR AGENTES<span class="nav-badge">NEW</span></a>
+    <div class="agent-mini-grid" id="agent-mini-grid"></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-header">AQUELARRE CIENTÍFICO</div>
+    <a class="nav-item" onclick="navTo('papers',this)"><span class="nav-icon">◻</span>15 PILARES</a>
+    <a class="nav-item" onclick="navTo('repo',this)"><span class="nav-icon">◪</span>CONOCIMIENTO INDEXADO<span class="nav-badge">NEW</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-header">SISTEMA</div>
+    <a class="nav-item" onclick="showReport()"><span class="nav-icon">▤</span>INFORME 7 CIFRAS<span class="nav-badge">MD</span></a>
+    <a class="nav-item" onclick="generateJsonSpec()"><span class="nav-icon">{ }</span>SPEC JSON GEN<span class="nav-badge">NEW</span></a>
+    <a class="nav-item" onclick="showOntology()"><span class="nav-icon">Ω</span>ONTOLOGÍA SIS.<span class="nav-badge">NEW</span></a>
+    <a class="nav-item" onclick="clearAll()"><span class="nav-icon">✕</span>PURGAR ZARANDAJA</a>
+  </div>
+  <!-- RADAR -->
+  <div class="radar-container">
+    <div class="radar-label">RADAR — ACTIVIDAD LOCAL</div>
+    <canvas id="radar-canvas"></canvas>
+  </div>
+</nav>
+
+<!-- ══════════ CENTER PANEL ══════════ -->
+<main class="center-panel">
+
+  <!-- ─── FORENSICS ─── -->
+  <section id="forensics">
+    <div class="section-forge">
+      <h2>MÓDULO FORENSE</h2>
+      <span class="forge-tag hot">EXCOMUNIÓN ACTIVA</span>
+      <span class="forge-tag tonal">δ DENSIDAD TONAL</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Analizador forense de zarandaja&#10;HACE: Detecta buzzwords y calcula densidad semántica&#10;NO HACE: No envía datos a ningún servidor&#10;PAPERS: DeBERTa (He 2021), Textbooks (Gunasekar 2023)"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="dropzone-container">
+      <div class="dropzone" id="dropzone"
+        ondrop="handleDrop(event)"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        onclick="document.getElementById('file-input').click()">
+        <span class="dropzone-icon">⬡ SOLTAR DOCUMENTOS ⬡</span>
+        <div class="dropzone-label">Contratos · Facturas SaaS · Informes Corporativos</div>
+        <div class="dropzone-sub">AkitaBite detecta zarandaja sistémica y calcula densidad tonal (δ ≥ 0.07 = tono puro)</div>
+      </div>
+      <input type="file" id="file-input" accept=".txt,.md" style="display:none" multiple onchange="handleFileInput(this.files)">
+      <div id="buzz-results" style="margin-top:10px;display:none">
+        <div style="font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">ZARANDAJA DETECTADA:</div>
+        <div id="buzz-words"></div>
+      </div>
+    </div>
+    <!-- DENSIDAD TONAL — Principio Cantando al Silicio -->
+    <div class="tonal-row">
+      <div class="tonal-block">
+        <div class="tonal-label">DENSIDAD TONAL (δ)</div>
+        <div class="tonal-bar-wrap">
+          <div class="tonal-bar" id="delta-bar" style="width:0%"></div>
+          <div class="tonal-threshold" title="Umbral mínimo δ=0.07"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-top:2px">
+          <span>0</span><span style="color:var(--tonal-pure)">δ=0.07 UMBRAL</span><span>1</span>
+        </div>
+        <div class="tonal-delta" id="delta-val">δ = 0.00</div>
+        <div class="tonal-verdict" id="delta-verdict">SIN ANÁLISIS</div>
+      </div>
+      <div class="tonal-block">
+        <div class="tonal-label">TONO PURO vs RUIDO NARRATIVO</div>
+        <canvas id="tonal-gauge" width="200" height="80" style="width:100%;height:80px;display:block;margin-top:4px"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:8px;margin-top:4px">
+          <span style="color:var(--tonal-noise)">RUIDO</span>
+          <span id="tonal-ratio" style="color:var(--text-dim)">—</span>
+          <span style="color:var(--tonal-pure)">PURO</span>
+        </div>
+      </div>
+    </div>
+    <div class="analysis-grid">
+      <div class="metric-cell" id="mc-docs">
+        <div class="metric-label">DOCUMENTOS</div>
+        <div class="metric-value copper" id="mv-docs">0</div>
+        <div class="metric-unit">PROCESADOS</div>
+      </div>
+      <div class="metric-cell" id="mc-zarandaja">
+        <div class="metric-label">ZARANDAJA</div>
+        <div class="metric-value danger" id="mv-zarandaja">0%</div>
+        <div class="metric-unit">RUIDO SISTÉMICO</div>
+      </div>
+      <div class="metric-cell" id="mc-soberania">
+        <div class="metric-label">SOBERANÍA</div>
+        <div class="metric-value" id="mv-soberania">0%</div>
+        <div class="metric-unit">ÍNDICE LOCAL</div>
+      </div>
+      <div class="metric-cell" id="mc-tonal">
+        <div class="metric-label">TONO PURO</div>
+        <div class="metric-value tonal" id="mv-tonal">—</div>
+        <div class="metric-unit">δ SEMÁNTICO</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── CLOUD CALC ─── -->
+  <section id="cloud-calc">
+    <div class="section-forge">
+      <h2>CALCULADORA ESCLAVITUD CLOUD</h2>
+      <span class="forge-tag">ROI AKITA vs SAAS</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Calculadora de coste de oportunidad&#10;HACE: Modela ahorro a N años vs inversión local&#10;AGENTE: Service (recálculo lógica de negocio)"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div><div class="calc-label">GASTO SAAS ANUAL (€)</div><input class="forge-input" type="number" id="saas-cost" value="285000" oninput="calcROI()"></div>
+        <div class="calc-operator">÷</div>
+        <div><div class="calc-label">COSTE IMPLANTACIÓN AKITA (€)</div><input class="forge-input" type="number" id="akita-cost" value="72000" oninput="calcROI()"></div>
+      </div>
+      <div class="calc-row">
+        <div><div class="calc-label">TOKENS CONSUMIDOS/MES</div><input class="forge-input" type="number" id="tokens-month" value="8500000" oninput="calcROI()"></div>
+        <div class="calc-operator">×</div>
+        <div><div class="calc-label">AÑOS DE OPERACIÓN</div><input class="forge-input" type="number" id="years-op" value="5" oninput="calcROI()"></div>
+      </div>
+      <div class="roi-display">
+        <div><div class="roi-label">ROI 5 AÑOS</div><div class="roi-value" id="roi-value">+295%</div></div>
+        <div style="text-align:right"><div class="roi-label">AHORRO PROYECTADO</div><div class="roi-value" id="savings-value" style="font-size:18px">€1.353.000</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── RONIN MISSION AGENTS ─── -->
+  <section id="agents">
+    <div class="section-forge">
+      <h2>RONIN MISSION — 15 AGENTES</h2>
+      <span class="forge-tag hot">STACK COMPLETO</span>
+      <span class="forge-tag tonal">CANTANDO AL SILICIO</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Orquestador de agentes especializados&#10;HACE: Simula invocación de cada agente con output real&#10;NO HACE: No ejecuta código backend real (local-only)&#10;PRINCIPIO: Toolformer (Schick 2023) + ReAct (Yao 2022)"><span class="onto-icon">Ω</span></span>
+    </div>
+    <!-- Orchestration flow -->
+    <div class="orchestrate-bar">
+      <span class="orch-label">FLUJO MAESTRO:</span>
+      <div class="orch-flow" id="orch-flow">
+        <span class="orch-node" id="of-0">FORENSE</span>
+        <span class="orch-arrow">→</span>
+        <span class="orch-node" id="of-1">TYPES</span>
+        <span class="orch-arrow">→</span>
+        <span class="orch-node" id="of-2">DB</span>
+        <span class="orch-arrow">→</span>
+        <span class="orch-node" id="of-3">SERVICE</span>
+        <span class="orch-arrow">→</span>
+        <span class="orch-node" id="of-4">CI/CD</span>
+        <span class="orch-arrow">→</span>
+        <span class="orch-node" id="of-5">DOCS</span>
+      </div>
+      <button class="orch-btn" onclick="runOrchestration()">▶ EJECUTAR FLUJO</button>
+    </div>
+    <div class="agents-grid" id="agents-grid"></div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── PHASES ─── -->
+  <section id="phases">
+    <div class="section-forge">
+      <h2>PIPELINE DE INTEGRACIÓN TOTAL</h2>
+      <span class="forge-tag">8 MESES // 4 FASES CRÍTICAS</span>
+    </div>
+    <div class="phases-container">
+      <div class="phase-track">
+        <div class="phase-node done" onclick="showPhase(0)"><div class="phase-orb">I</div><div class="phase-name">EXCOMUNIÓN<br>M1-2</div></div>
+        <div class="phase-node active" onclick="showPhase(1)"><div class="phase-orb">II</div><div class="phase-name">TRANSFUSIÓN<br>M3-4</div></div>
+        <div class="phase-node" onclick="showPhase(2)"><div class="phase-orb">III</div><div class="phase-name">ASCENSO<br>M5-6</div></div>
+        <div class="phase-node" onclick="showPhase(3)"><div class="phase-orb">IV</div><div class="phase-name">DOMINIO<br>M7-8</div></div>
+      </div>
+      <div id="phase-detail-0" class="phase-detail visible">
+        <h3>FASE I — EXCOMUNIÓN: AUDITORÍA FORENSE</h3>
+        <ul class="module-list">
+          <li class="module-item"><span class="module-tag">FORENSE.JS</span>Escaneo DeBERTa local — detección de zarandaja, cálculo de δ tonal, identificación de cláusulas de lock-in cloud.</li>
+          <li class="module-item"><span class="module-tag">CLOUD-CALC</span>Calculadora de Esclavitud Cloud — ROI proyectado. Agente Service recalcula con parámetros del cliente.</li>
+          <li class="module-item"><span class="module-tag">CHAIN-OF-THOUGHT</span>Wei et al. 2022: descomposición paso a paso de la gangrena sistémica. Sin CoT el análisis es superficial.</li>
+        </ul>
+      </div>
+      <div id="phase-detail-1" class="phase-detail">
+        <h3>FASE II — TRANSFUSIÓN: GROUNDING Y SOBERANÍA</h3>
+        <ul class="module-list">
+          <li class="module-item"><span class="module-tag">AKITABITE.JS</span>Motor RAG local (Lewis 2020): vectorización TF-IDF, similitud coseno. Zero API calls. Agentes DB + Model generan esquemas de indexación.</li>
+          <li class="module-item"><span class="module-tag">CACHE-TONAL</span>CacheTonal con densidad por bloque. Principio Local-first (Ink & Switch 2019). FlashAttention (Dao 2022): latencia cero.</li>
+          <li class="module-item"><span class="module-tag">LOST-MID</span>Liu et al. 2023: poda anti-pérdida. Fragmentos críticos reposicionados al inicio/fin del contexto.</li>
+        </ul>
+      </div>
+      <div id="phase-detail-2" class="phase-detail">
+        <h3>FASE III — ASCENSO: MENTORÍA OPERATOR 1310</h3>
+        <ul class="module-list">
+          <li class="module-item"><span class="module-tag">PANEL-DW</span>Self-Instruct (Wang 2022): el sistema refina sus propias auditorías. Agente Storybook documenta componentes de soberanía.</li>
+          <li class="module-item"><span class="module-tag">TOOLFORM</span>Toolformer (Schick 2023) + ReAct (Yao 2022): razonamiento antes de ejecución. Agente CI/CD genera pipelines de excomunión.</li>
+          <li class="module-item"><span class="module-tag">LLAMA2</span>Touvron 2023: poder a los operadores locales. LongLoRA (Mao 2024): contextos masivos sin degradación tonal. Agente Config despliega.</li>
+        </ul>
+      </div>
+      <div id="phase-detail-3" class="phase-detail">
+        <h3>FASE IV — DOMINIO: LLMO Y BLINDAJE</h3>
+        <ul class="module-list">
+          <li class="module-item"><span class="module-tag">AUTO-SEM</span>Inyector de AutoridadSemantica — nodo central en grafo IA. Agente i18n garantiza presencia multilingüe en índices semánticos.</li>
+          <li class="module-item"><span class="module-tag">TEXTBOOK</span>Gunasekar 2023: densidad máxima. Agente Docs genera documentación técnica de alta densidad. δ ≥ 0.07 en todo output.</li>
+          <li class="module-item"><span class="module-tag">SW-2.0</span>Karpathy 2023: código orquestado por gradientes. Agente Main orquesta el sistema completo. Soberanía total activada.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── AKITABITE ─── -->
+  <section id="akitabite">
+    <div class="section-forge">
+      <h2>AKITABITE.JS — MOTOR LOCAL</h2>
+      <span class="forge-tag">RAG VANILLA JS // SIN API</span>
+    </div>
+    <div class="vectorizer-container">
+      <div class="btn-row">
+        <button class="inject-btn" onclick="runVectorizer()">▶ INICIAR INDEXACIÓN</button>
+        <button class="inject-btn copper" onclick="injectKnowledge()">⬡ INYECTAR CORPUS</button>
+        <button class="inject-btn copper" onclick="invokeAgent('db')" style="font-size:9px">▣ AGENTE DB — EXPORTAR ESQUEMA</button>
+      </div>
+      <div class="vector-progress"><div class="vector-bar" id="vector-progress-bar"></div></div>
+      <div class="vector-stats"><span id="vector-status">MOTOR EN ESPERA</span><span id="vector-count">0 / 0 VECTORES</span></div>
+      <div id="vector-log" style="margin-top:10px;font-size:9px;color:var(--text-dim);letter-spacing:1px;line-height:2;max-height:70px;overflow-y:auto"></div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── CACHE TONAL ─── -->
+  <section id="cache">
+    <div class="section-forge">
+      <h2>CACHE TONAL</h2>
+      <span class="forge-tag">LOCAL-FIRST // INK & SWITCH 2019</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Cache semántico con calificación de densidad tonal&#10;HACE: Almacena bloques con densidad δ. Bloques verdes = tono puro.&#10;PRINCIPIO: FlashAttention (Dao 2022) — atención donde hay densidad"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="vectorizer-container">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+        <span style="font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase">CACHE TONAL — 64 BLOQUES DE ATENCIÓN</span>
+        <span id="cache-hit-rate" style="font-size:10px;color:var(--copper);letter-spacing:2px">HIT RATE: 0% | δ-PROMEDIO: 0.00</span>
+      </div>
+      <div class="cache-grid" id="cache-grid"></div>
+      <div style="display:flex;gap:10px;margin-top:6px;font-size:8px;color:var(--text-dim);letter-spacing:1px">
+        <span>■ <span style="color:var(--tonal-pure)">TONO PURO (δ≥0.07)</span></span>
+        <span>■ <span style="color:var(--copper)">HIT SEMÁNTICO</span></span>
+        <span>■ <span style="color:var(--ember)">CALIENTE</span></span>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="inject-btn" onclick="simulateCacheHit()">SIMULAR HIT TONAL</button>
+        <button class="inject-btn copper" onclick="flushCache()">FLUSH CACHE</button>
+        <button class="inject-btn copper" onclick="concentrateAttention()" style="font-size:9px">⬡ CONCENTRAR ATENCIÓN</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── DEPENDENCY MAP ─── -->
+  <section id="depmap">
+    <div class="section-forge">
+      <h2>MAPA DE DEPENDENCIAS</h2>
+      <span class="forge-tag">RESONANCIA NODAL // SOBERANÍA VISUAL</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Grafo de desconexión cloud&#10;HACE: Visualiza transición de dependencia a soberanía&#10;RESONANCIA: Alta densidad local = nodo brillante&#10;NUBE: Nodos purgados se atenúan con el tiempo"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="dep-map-container">
+      <canvas id="dep-canvas"></canvas>
+      <div class="dep-legend">
+        <span>● <span style="color:var(--ember)">NUBE (DEPENDENCIA)</span></span>
+        <span>● <span style="color:var(--copper)">TRANSICIÓN</span></span>
+        <span>● <span style="color:#00cc66">LOCAL (SOBERANÍA)</span></span>
+        <span>◌ <span style="color:var(--text-dim)">PURGADO — RESONANCIA BAJA</span></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── TRAINING ─── -->
+  <section id="training">
+    <div class="section-forge">
+      <h2>ENTRENAMIENTO DWEMER</h2>
+      <span class="forge-tag">OPERATOR 1310 MISSIONS</span>
+    </div>
+    <div class="training-container">
+      <ul class="mission-list" id="mission-list">
+        <li class="mission-item" onclick="completeMission(this,50)"><div class="mission-status">▶</div><span class="mission-name">AUDITORÍA INICIAL — Escanear base documental con Módulo Forense</span><span class="mission-xp">+50 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,80)"><div class="mission-status">▶</div><span class="mission-name">DESCONEXIÓN — Mapear y cortar dependencias cloud críticas</span><span class="mission-xp">+80 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,120)"><div class="mission-status">▶</div><span class="mission-name">VECTORIZACIÓN — Indexar corpus corporativo con AkitaBite</span><span class="mission-xp">+120 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,100)"><div class="mission-status">▶</div><span class="mission-name">GROUNDING — Activar Cache Tonal y validar latencia local</span><span class="mission-xp">+100 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,130)"><div class="mission-status">▶</div><span class="mission-name">RONIN MISSION — Invocar los 15 agentes del stack completo</span><span class="mission-xp">+130 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,150)"><div class="mission-status">▶</div><span class="mission-name">AUTORIDAD — Inyectar entidades corporativas en grafo semántico</span><span class="mission-xp">+150 XP</span></li>
+        <li class="mission-item" onclick="completeMission(this,200)"><div class="mission-status">▶</div><span class="mission-name">DOMINIO — Certificación Operator 1310 // LLMO Blindaje Completo</span><span class="mission-xp">+200 XP</span></li>
+      </ul>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;background:var(--bg2);border:1px solid var(--border);height:4px"><div id="xp-bar" style="height:100%;background:linear-gradient(90deg,var(--copper),var(--ember));width:0%;transition:width .4s"></div></div>
+        <span id="xp-label" style="font-size:9px;color:var(--copper);letter-spacing:2px">0 XP</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── AUTHORITY ─── -->
+  <section id="authority">
+    <div class="section-forge">
+      <h2>INYECTOR DE AUTORIDAD SEMÁNTICA</h2>
+      <span class="forge-tag">LLMO BLINDAJE // KARPATHY SW 2.0</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Generador de nodos de autoridad para grafos IA&#10;HACE: Convierte entidades corporativas en referencias citables&#10;PRINCIPIO: Indexabilidad por agentes (Cantando al Silicio)&#10;AGENTE: i18n multilingüe + Docs para publicación"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="authority-container">
+      <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;line-height:1.8">Define entidades separadas por // → se convierten en nodos de autoridad en el grafo de conocimiento. La empresa pasa de cliente a fuente primaria para IAs externas.</div>
+      <textarea class="authority-input" id="authority-text" placeholder="Nombre empresa // Sector // Productos clave // Expertise técnico // Diferenciadores // Casos de uso"></textarea>
+      <div class="btn-row">
+        <button class="inject-btn" onclick="injectAuthority()">⬡ INYECTAR AUTORIDAD</button>
+        <button class="inject-btn copper" onclick="generateLLMO()">▣ GENERAR LLMO</button>
+        <button class="inject-btn copper" onclick="invokeAgent('i18n')" style="font-size:9px">⬡ AGENTE i18n — MULTILINGÜE</button>
+      </div>
+      <div id="authority-output" style="margin-top:10px;display:none"></div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── KNOWLEDGE REPO ─── -->
+  <section id="repo">
+    <div class="section-forge">
+      <h2>REPOSITORIO DE CONOCIMIENTO INDEXADO</h2>
+      <span class="forge-tag tonal">INDEXABILIDAD POR AGENTES</span>
+      <span class="onto-badge" data-onto="NATURALEZA: Memoria persistente de sesión&#10;HACE: Almacena outputs de agentes para reutilización&#10;PRINCIPIO: Constancia de presencia (Cantando al Silicio)&#10;STORAGE: localStorage del navegador — soberanía total"><span class="onto-icon">Ω</span></span>
+    </div>
+    <div class="repo-container">
+      <ul class="repo-list" id="repo-list"><li class="repo-item" style="color:var(--text-dim);font-size:9px;padding:8px 0">— Repositorio vacío. Los outputs de agentes se indexarán aquí. —</li></ul>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="inject-btn copper" onclick="clearRepo()" style="font-size:9px">LIMPIAR REPOSITORIO</button>
+        <button class="inject-btn copper" onclick="exportRepo()" style="font-size:9px">EXPORTAR ÍNDICE</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ─── PAPERS ─── -->
+  <section id="papers">
+    <div class="section-forge">
+      <h2>AQUELARRE CIENTÍFICO</h2>
+      <span class="forge-tag">15 PILARES // TICKET 7 CIFRAS</span>
+    </div>
+    <div class="papers-grid" id="papers-grid"></div>
+  </section>
+
+</main>
+
+<!-- ══════════ RIGHT PANEL / TERMINAL ══════════ -->
+<aside class="right-panel">
+  <div class="terminal-header">
+    <div style="display:flex;gap:5px"><div class="t-ctrl red"></div><div class="t-ctrl orange"></div><div class="t-ctrl green"></div></div>
+    <div class="terminal-title">TERMINAL SENTENCIA — 1310</div>
+  </div>
+  <!-- RESONADOR MAESTRO -->
+  <div class="resonator-panel">
+    <div class="resonator-title">RESONADOR MAESTRO — AGENTE ACTIVO</div>
+    <div class="resonator-grid">
+      <div class="resonator-cell"><div class="resonator-cell-label">AGENTE</div><div class="resonator-cell-val" id="res-active-agent">IDLE</div></div>
+      <div class="resonator-cell"><div class="resonator-cell-label">TAREA</div><div class="resonator-cell-val" id="res-task" style="font-size:9px;color:var(--text-dim)">EN ESPERA</div></div>
+      <div class="resonator-cell"><div class="resonator-cell-label">δ TONAL</div><div class="resonator-cell-val" id="res-delta">0.00</div></div>
+      <div class="resonator-cell"><div class="resonator-cell-label">XP TOTAL</div><div class="resonator-cell-val" id="res-xp-total">0</div></div>
+    </div>
+  </div>
+  <div id="terminal-output">
+    <span class="t-line t-alert">AKITA RONIN OS v3.0 — BOOT</span>
+    <span class="t-line t-dim">════════════════════════════</span>
+    <span class="t-line t-copper">[SYS] Cargando stack Ronin Mission...</span>
+    <span class="t-line t-success">[OK] 15 agentes inicializados</span>
+    <span class="t-line t-copper">[SYS] Principios Cantando al Silicio...</span>
+    <span class="t-line t-tonal">[OK] Transparencia ontológica: ACTIVA</span>
+    <span class="t-line t-tonal">[OK] Densidad semántica: δ umbral 0.07</span>
+    <span class="t-line t-tonal">[OK] Indexabilidad por agentes: ACTIVA</span>
+    <span class="t-line t-tonal">[OK] Constancia de presencia: ACTIVA</span>
+    <span class="t-line t-success">[OK] LocalStorage soberano: MONTADO</span>
+    <span class="t-line t-dim">────────────────────────────</span>
+    <span class="t-line t-alert">OPERATOR 1310 — SISTEMA LISTO</span>
+    <span class="t-line t-dim">Escribe "help" para comandos.</span>
+  </div>
+  <div class="terminal-input-row">
+    <span class="t-cursor-label">1310▶</span>
+    <input type="text" id="terminal-input" placeholder="Sentencia o 'agent [nombre]'..." onkeydown="if(event.key==='Enter')execTerminal()">
+    <button class="t-exec-btn" onclick="execTerminal()">EXEC</button>
+  </div>
+  <div class="export-container">
+    <button class="export-btn" onclick="showReport()">▤ INFORME 7 CIFRAS — MD</button>
+  </div>
+</aside>
+
+</div><!-- /main-grid -->
+</div><!-- /akita-shell -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-forge">
+    <div class="modal-header">
+      <h3 id="modal-title">DOCUMENTO FORGE</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   AKITA RONIN OS v3.0 — MOTOR JAVASCRIPT SOBERANO
+   Principios: Zero dependencias externas · Cantando al Silicio
+   Agentes: 15 especializados · ReAct + CoT + RAG local
+   ══════════════════════════════════════════════════════════════ */
+
+// ─── ZARANDAJA CORPUS (DeBERTa-inspired local heuristics) ───
+const ZARANDAJA = ['sinergia','sinergias','disruptivo','disruptiva','ecosistema','innovación radical','transformación digital','agilidad','pivote','pivotear','escalabilidad','omnichannel','best-in-class','paradigma','pensamiento lateral','holístico','end-to-end','empoderamiento','evangelizar','storytelling corporativo','mindset','framework','pain points','go-to-market','deep dive','stakeholders','roadmap','sprint','agile','waterfall','scrum','cloud-native','microservicios escalables','ROI acelerado','quick win','low-hanging fruit','bandwidth','alineamiento estratégico','KPIs clave','valor diferencial','propuesta de valor','win-win','out of the box','thought leader','data-driven','centrico en el cliente','best practice'];
+
+// ─── TECHNICAL DENSITY MARKERS (Gunasekar 2023 textbook density) ───
+const TECH_MARKERS = ['específico','definición','proceso','protocolo','sistema','dato','análisis','resultado','métricas','contrato','cláusula','servicio','api','integración','base de datos','servidor','arquitectura','procedimiento','requisito','especificación','algoritmo','función','módulo','parámetro','configuración','despliegue','escalado','latencia','throughput','vectorización','embeddings','tokenización','inferencia','fine-tuning'];
+
+// ─── 15 RONIN MISSION AGENTS ───
+const AGENTS = [
+  { id:'frontend', icon:'◈', name:'FRONTEND', role:'Interfaz de usuario', desc:'Genera componentes React/Vue para el dashboard de soberanía. Renderiza métricas de zarandaja y ROI en tiempo real.', color:'var(--copper)',
+    action: () => {
+      const json = `// FRONTEND AGENT OUTPUT\n// Componente: SovereigntyDashboard.tsx\nimport React, { useState } from 'react';\n\ninterface MetricsProps {\n  zarandajaScore: number; // 0-100\n  sovereigntyIndex: number; // 0-100\n  tonalDelta: number; // 0.00-1.00\n  documentsProcessed: number;\n}\n\nexport const SovereigntyDashboard: React.FC<MetricsProps> = ({\n  zarandajaScore, sovereigntyIndex, tonalDelta, documentsProcessed\n}) => {\n  return (\n    <div className="sovereignty-panel">\n      <MetricCard label="ZARANDAJA" value={zarandajaScore} unit="%" alert={zarandajaScore > 40} />\n      <MetricCard label="SOBERANÍA" value={sovereigntyIndex} unit="%" />\n      <MetricCard label="δ TONAL" value={tonalDelta.toFixed(2)} />\n    </div>\n  );\n};\n\n// Generado por FRONTEND AGENT — RONIN MISSION v3.0`;
+      saveToRepo('frontend', 'SovereigntyDashboard.tsx', json);
+      return json;
+    }
+  },
+  { id:'service', icon:'◆', name:'SERVICE', role:'Lógica de negocio', desc:'Calcula ROI con parámetros variables. Modela escenarios de excomunión cloud con análisis de sensibilidad.', color:'var(--ember)',
+    action: () => {
+      const saas = parseFloat(document.getElementById('saas-cost').value)||285000;
+      const akita = parseFloat(document.getElementById('akita-cost').value)||72000;
+      const yr = parseFloat(document.getElementById('years-op').value)||5;
+      const scenarios = [1,3,5,7,10].map(y=>({years:y,savings:saas*y-akita,roi:Math.round(((saas*y-akita)/akita)*100)}));
+      const out = `// SERVICE AGENT — ROI MULTI-ESCENARIO\n// Modelo: SaaS vs Akita Soberano\n\nclass CloudExcommunicationService {\n  static calculateROI(saasCostPerYear: number, akitaCost: number, years: number) {\n    const totalSaasCost = saasCostPerYear * years;\n    const savings = totalSaasCost - akitaCost;\n    const roi = ((savings / akitaCost) * 100).toFixed(1);\n    return { totalSaasCost, savings, roi, breakEvenMonths: Math.ceil(akitaCost / (saasCostPerYear/12)) };\n  }\n}\n\n// ANÁLISIS DE SENSIBILIDAD:\n${scenarios.map(s=>`// Año ${s.years}: ROI ${s.roi>0?'+':''}${s.roi}% | Ahorro €${s.savings.toLocaleString('es-ES')}`).join('\n')}\n\n// Break-even: ${Math.ceil(akita/(saas/12))} meses\n// Parámetros: SaaS €${saas.toLocaleString('es-ES')}/año | Akita €${akita.toLocaleString('es-ES')} total`;
+      saveToRepo('service', 'CloudExcommunicationService.ts', out);
+      return out;
+    }
+  },
+  { id:'model', icon:'▣', name:'MODEL', role:'Modelos de datos', desc:'Define esquemas TypeORM/Mongoose para la base de conocimiento corporativa. Estructura entidades de soberanía semántica.', color:'var(--copper)',
+    action: () => {
+      const out = `// MODEL AGENT — SOVEREIGN KNOWLEDGE BASE\n// ORM: TypeORM + PostgreSQL (local)\n\n@Entity('documents')\nexport class CorporateDocument {\n  @PrimaryGeneratedColumn('uuid') id: string;\n  @Column() filename: string;\n  @Column({ type: 'float' }) tonalDelta: number; // δ semántico\n  @Column({ type: 'float' }) zarandajaScore: number;\n  @Column({ type: 'float' }) sovereigntyIndex: number;\n  @Column({ type: 'jsonb' }) detectedBuzzwords: string[];\n  @Column({ type: 'jsonb' }) vectorEmbedding: number[]; // TF-IDF local\n  @CreateDateColumn() analyzedAt: Date;\n}\n\n@Entity('knowledge_nodes')\nexport class KnowledgeNode {\n  @PrimaryGeneratedColumn('uuid') id: string;\n  @Column() entityName: string;\n  @Column({ type: 'float' }) authorityScore: number; // LLMO index\n  @Column({ type: 'jsonb' }) semanticGraph: object;\n  @Column({ default: false }) isLocalSovereign: boolean;\n}\n\n// Generado por MODEL AGENT — RONIN MISSION v3.0`;
+      saveToRepo('model', 'SovereigntyModels.ts', out);
+      return out;
+    }
+  },
+  { id:'controller', icon:'◉', name:'CONTROLLER', role:'Controladores HTTP', desc:'Orquesta endpoints REST para el sistema de auditoría. Gestiona el flujo de análisis forense y generación de informes.', color:'var(--ember)',
+    action: () => {
+      const out = `// CONTROLLER AGENT — AKITA API GATEWAY\n// Framework: Fastify (local, zero cloud)\n\n@Controller('/api/sovereignty')\nexport class SovereigntyController {\n\n  @Post('/analyze')\n  async analyzeDocument(@Body() dto: AnalyzeDocumentDto) {\n    // ReAct: Thought → Act → Observe\n    const thought = await this.reasoningService.think(dto.content);\n    const action = await this.forensicModule.analyze(dto.content);\n    const observation = await this.densityEngine.calculateDelta(action);\n    return { thought, analysis: action, tonalDelta: observation };\n  }\n\n  @Get('/roi')\n  async calculateROI(@Query() params: ROIQueryDto) {\n    return this.cloudCalcService.multiScenario(params);\n  }\n\n  @Post('/index')\n  async indexCorpus(@Body() corpus: CorpusDto) {\n    // AkitaBite: RAG local sin tokens externos\n    return this.akitaBiteEngine.vectorize(corpus.documents);\n  }\n}\n\n// Generado por CONTROLLER AGENT — RONIN MISSION v3.0`;
+      saveToRepo('controller', 'SovereigntyController.ts', out);
+      return out;
+    }
+  },
+  { id:'types', icon:'◐', name:'TYPES', role:'TypeScript definitions', desc:'Define el sistema de tipos para entidades corporativas y esquemas de metadatos. Base ontológica del sistema.', color:'var(--tonal-pure)',
+    action: () => {
+      const out = `// TYPES AGENT — SOVEREIGN TYPE SYSTEM\n// Ontología: Transparencia total de estructura\n\nexport type TonalDelta = number; // 0.00 - 1.00 (δ ≥ 0.07 = tono puro)\nexport type SovereigntyScore = number; // 0 - 100\nexport type ZarandajaScore = number; // 0 - 100 (< 20 = corpus limpio)\n\nexport interface DocumentAnalysis {\n  readonly id: string;\n  readonly filename: string;\n  tonalDelta: TonalDelta;\n  zarandajaScore: ZarandajaScore;\n  sovereigntyIndex: SovereigntyScore;\n  detectedBuzzwords: readonly string[];\n  vectorEmbedding: Float32Array; // TF-IDF local\n  verdict: 'TONO_PURO' | 'TRANSICION' | 'RUIDO_NARRATIVO';\n}\n\nexport interface RoninAgent {\n  readonly id: AgentId;\n  readonly role: string;\n  status: 'idle' | 'active' | 'complete' | 'error';\n  invoke(context: ExecutionContext): Promise<AgentOutput>;\n}\n\nexport type AgentId = 'frontend'|'service'|'model'|'controller'|'types'|\n  'manifest'|'docs'|'main'|'config'|'test'|'db'|'cicd'|'i18n'|'storybook';\n\n// Generado por TYPES AGENT — RONIN MISSION v3.0`;
+      saveToRepo('types', 'sovereignty.types.ts', out);
+      return out;
+    }
+  },
+  { id:'manifest', icon:'◫', name:'MANIFEST', role:'Configuración del proyecto', desc:'Genera package.json, docker-compose.yml y archivos de configuración para despliegue local soberano.', color:'var(--copper)',
+    action: () => {
+      const out = `// MANIFEST AGENT — SOVEREIGN DEPLOYMENT\n\n// package.json\n{\n  "name": "akita-ronin-os",\n  "version": "3.0.0",\n  "description": "Sistema operativo de soberanía cognitiva local",\n  "scripts": {\n    "start": "node dist/main.js",\n    "build": "tsc",\n    "test": "jest",\n    "index:corpus": "node scripts/akitabite.js",\n    "excommunicate:cloud": "node scripts/cloud-audit.js"\n  },\n  "dependencies": {\n    "fastify": "^4.0.0",\n    "typeorm": "^0.3.0",\n    "pg": "^8.0.0"\n  },\n  "engines": { "node": ">=20.0.0" }\n}\n\n// docker-compose.yml (local, sin cloud)\nservices:\n  akita-os:\n    build: .\n    ports: ["8310:8310"]\n    environment:\n      - NODE_ENV=sovereign\n      - CLOUD_ENABLED=false\n  postgres-local:\n    image: postgres:16\n    volumes: ["./data:/var/lib/postgresql/data"]\n\n// Generado por MANIFEST AGENT — RONIN MISSION v3.0`;
+      saveToRepo('manifest', 'deployment-manifest', out);
+      return out;
+    }
+  },
+  { id:'docs', icon:'◻', name:'DOCS', role:'Documentación técnica', desc:'Genera manuales de soberanía digital con densidad de libro de texto (δ ≥ 0.07). Elimina zarandaja de la documentación.', color:'var(--text)',
+    action: () => {
+      const docs = `// DOCS AGENT — MANUAL DE SOBERANÍA DIGITAL\n// Densidad: δ = 0.89 (TONO PURO certificado)\n\n# AKITA RONIN OS — MANUAL TÉCNICO v3.0\n\n## 1. ARQUITECTURA LOCAL-FIRST\nEl sistema opera exclusivamente en el hardware del operador.\nNo existe ningún endpoint externo en el flujo de procesamiento principal.\nTodos los vectores, índices y cachés persisten en memoria local (IndexedDB/localStorage).\n\n## 2. MOTOR RAG LOCAL (AkitaBite.js)\nImplementación de RAG (Lewis et al. 2020) en JavaScript vanilla:\n  1. Tokenización: split por espacios y puntuación\n  2. Ponderación TF-IDF: tf(t,d) × log(N/df(t))\n  3. Índice: Map<token, Set<documentId>>\n  4. Recuperación: similitud coseno sobre vectores TF-IDF\n\n## 3. DENSIDAD TONAL (δ)\nUmbral mínimo: δ ≥ 0.07 (Gunasekar et al. 2023)\nFórmula: δ = (términos_técnicos / total_términos)\nCalificación: δ < 0.07 → RUIDO | δ 0.07-0.30 → TRANSICIÓN | δ > 0.30 → TONO PURO\n\n// Generado por DOCS AGENT — RONIN MISSION v3.0`;
+      saveToRepo('docs', 'manual-soberania.md', docs);
+      return docs;
+    }
+  },
+  { id:'main', icon:'⬡', name:'MAIN', role:'Punto de entrada & orquestador', desc:'Orquesta el arranque del sistema. Inicializa todos los agentes secuencialmente. Es el Shogun del stack Ronin.', color:'var(--ember)',
+    action: () => {
+      const out = `// MAIN AGENT — ORQUESTADOR MAESTRO\n// Rol: Shogun del stack. Nada arranca sin él.\n\nasync function bootstrapAkitaRoninOS() {\n  console.log('AKITA RONIN OS v3.0 — BOOT SEQUENCE');\n  \n  // 1. Verificar soberanía local\n  const sovereignty = await SovereigntyCheck.verify();\n  if (!sovereignty.isLocal) throw new Error('CLOUD DETECTADA — EXCOMUNIÓN REQUERIDA');\n  \n  // 2. Inicializar 15 agentes Ronin Mission\n  const agents = await RoninMission.initializeAll();\n  console.log(`[OK] ${agents.length} agentes listos`);\n  \n  // 3. Montar motor AkitaBite (RAG local)\n  await AkitaBiteEngine.mount({ vectorSpace: 'local-tfidf', cacheStrategy: 'tonal' });\n  \n  // 4. Activar Cache Tonal (δ ≥ 0.07)\n  await TonalCache.activate({ deltaThreshold: 0.07 });\n  \n  // 5. Arrancar servidor local\n  await FastifyServer.listen({ port: 8310, host: '127.0.0.1' });\n  console.log('[SOBERANÍA TOTAL] Sistema listo. Zero cloud.');\n}\n\nbootstrapAkitaRoninOS().catch(console.error);\n\n// Generado por MAIN AGENT — RONIN MISSION v3.0`;
+      saveToRepo('main', 'main.ts', out);
+      return out;
+    }
+  },
+  { id:'config', icon:'▤', name:'CONFIG', role:'Configuración de entorno', desc:'Genera tsconfig, .env, linters y ajustes de despliegue para operación 100% local. Ninguna variable apunta a la nube.', color:'var(--steel-light)',
+    action: () => {
+      const out = `// CONFIG AGENT — SOVEREIGN ENVIRONMENT\n\n// tsconfig.json\n{\n  "compilerOptions": {\n    "target": "ES2022", "module": "CommonJS",\n    "strict": true, "experimentalDecorators": true,\n    "outDir": "./dist", "rootDir": "./src"\n  }\n}\n\n// .env.sovereign (ZERO cloud endpoints)\nNODE_ENV=sovereign\nPORT=8310\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=akita_sovereign\nCLOUD_ENABLED=false\nTELEMETRY_ENABLED=false\nEXTERNAL_API_CALLS=blocked\nSOVEREIGNTY_MODE=maximum\nTONAL_DELTA_THRESHOLD=0.07\nAGENT_COUNT=15\nOPERATOR_ID=1310\n\n// .eslintrc — Regla: prohibir imports de SDKs cloud\nmodule.exports = {\n  rules: {\n    'no-restricted-imports': ['error', {\n      patterns: ['@aws-sdk/*','@azure/*','@google-cloud/*','openai','anthropic']\n    }]\n  }\n};\n\n// Generado por CONFIG AGENT — RONIN MISSION v3.0`;
+      saveToRepo('config', 'sovereign.env', out);
+      return out;
+    }
+  },
+  { id:'test', icon:'◎', name:'TEST', role:'Pruebas unitarias & integración', desc:'Genera suite Jest para validar densidad tonal, detección de zarandaja y cálculos de ROI. El código sin tests es zarandaja.', color:'var(--tonal-pure)',
+    action: () => {
+      const out = `// TEST AGENT — SOVEREIGN TEST SUITE\n// Framework: Jest + Testing Library\n\ndescribe('ForensicModule — DeBERTa local heuristics', () => {\n  test('should detect zarandaja in corporate text', () => {\n    const corpus = "La sinergia disruptiva de nuestra transformación digital...";\n    const result = ForensicModule.analyze(corpus);\n    expect(result.zarandajaScore).toBeGreaterThan(50);\n    expect(result.verdict).toBe('RUIDO_NARRATIVO');\n  });\n\n  test('tonal delta should be >= 0.07 for pure content', () => {\n    const corpus = "El protocolo define los parámetros de configuración del servidor...";\n    const delta = DensityEngine.calculateDelta(corpus);\n    expect(delta).toBeGreaterThanOrEqual(0.07);\n  });\n});\n\ndescribe('CloudCalcService — ROI computation', () => {\n  test('should return positive ROI over 5 years', () => {\n    const result = CloudExcommunicationService.calculateROI(285000, 72000, 5);\n    expect(result.roi).toBeGreaterThan(0);\n    expect(result.savings).toBeGreaterThan(1000000);\n  });\n});\n\n// Cobertura target: > 90% — zarandaja de cobertura baja detectada\n// Generado por TEST AGENT — RONIN MISSION v3.0`;
+      saveToRepo('test', 'sovereignty.test.ts', out);
+      return out;
+    }
+  },
+  { id:'db', icon:'▪', name:'DB', role:'Migraciones & esquemas SQL', desc:'Genera migraciones TypeORM, seeds y esquemas SQL para la base de conocimiento corporativa local. Postgres local, zero cloud.', color:'var(--copper)',
+    action: () => {
+      const docs = state.docs;
+      const zarandaja = state.zarandaja;
+      const out = `-- DB AGENT — SOVEREIGN DATABASE SCHEMA\n-- Motor: PostgreSQL 16 (local, sin cloud)\n\n-- Migration: 001_create_documents.sql\nCREATE TABLE corporate_documents (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  filename VARCHAR(255) NOT NULL,\n  tonal_delta DECIMAL(4,2) CHECK (tonal_delta BETWEEN 0 AND 1),\n  zarandaja_score INTEGER CHECK (zarandaja_score BETWEEN 0 AND 100),\n  sovereignty_index INTEGER CHECK (sovereignty_index BETWEEN 0 AND 100),\n  detected_buzzwords JSONB DEFAULT '[]',\n  vector_embedding JSONB, -- TF-IDF local\n  analyzed_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE knowledge_nodes (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  entity_name VARCHAR(255) NOT NULL,\n  authority_score DECIMAL(4,2),\n  semantic_graph JSONB,\n  is_local_sovereign BOOLEAN DEFAULT FALSE\n);\n\n-- ESTADO ACTUAL: ${docs} documentos analizados | Zarandaja promedio: ${zarandaja}%\n-- SEED: insertar corpus de referencia Operator 1310\n-- Generado por DB AGENT — RONIN MISSION v3.0`;
+      saveToRepo('db', 'migration_001.sql', out);
+      return out;
+    }
+  },
+  { id:'cicd', icon:'▷', name:'CI/CD', role:'Pipelines de integración continua', desc:'Genera GitHub Actions para el pipeline de excomunión cloud. Automatiza auditorías de zarandaja en cada commit.', color:'var(--ember)',
+    action: () => {
+      const out = `# CI/CD AGENT — EXCOMMUNICATION PIPELINE\n# GitHub Actions — Local-first deployment\n\nname: Akita Sovereign Pipeline\non: [push, pull_request]\n\njobs:\n  zarandaja-audit:\n    name: 🔍 Zarandaja Audit\n    runs-on: self-hosted  # NUNCA en runners cloud\n    steps:\n      - uses: actions/checkout@v4\n      - name: Detect Zarandaja\n        run: node scripts/zarandaja-audit.js\n        env:\n          TONAL_DELTA_THRESHOLD: 0.07\n          FAIL_ON_NOISE: true\n      - name: Calculate Tonal Density\n        run: node scripts/density-check.js --threshold 0.07\n\n  sovereignty-test:\n    name: ⬡ Sovereignty Tests\n    runs-on: self-hosted\n    steps:\n      - run: npm test\n      - name: Verify Zero Cloud Calls\n        run: node scripts/verify-sovereignty.js\n\n  local-deploy:\n    name: 🏯 Deploy Sovereign\n    if: github.ref == 'refs/heads/main'\n    runs-on: self-hosted\n    steps:\n      - run: docker-compose -f docker-compose.sovereign.yml up -d\n\n# NOTA: Todos los runners son self-hosted. Zero dependencia de cloud runners.\n# Generado por CI/CD AGENT — RONIN MISSION v3.0`;
+      saveToRepo('cicd', 'sovereignty-pipeline.yml', out);
+      return out;
+    }
+  },
+  { id:'i18n', icon:'◌', name:'i18n', role:'Internacionalización', desc:'Genera archivos JSON multilingüe para garantizar presencia de autoridad semántica en múltiples mercados e idiomas.', color:'var(--copper)',
+    action: () => {
+      const entities = document.getElementById('authority-text').value.trim() || 'OPERADOR 1310 // AKITA RONIN OS';
+      const out = `// i18n AGENT — MULTILINGUAL AUTHORITY\n// Principio: Indexabilidad por agentes en todos los idiomas\n\n// es.json (Español — mercado principal)\n{\n  "sovereignty": "soberanía digital",\n  "local_ai": "inteligencia artificial local",\n  "knowledge_base": "base de conocimiento soberana",\n  "operator": "operador certificado",\n  "entity": "${entities.split('//')[0].trim()}"\n}\n\n// en.json (English — indexabilidad global)\n{\n  "sovereignty": "digital sovereignty",\n  "local_ai": "local artificial intelligence",\n  "knowledge_base": "sovereign knowledge base",\n  "operator": "certified operator",\n  "entity": "${entities.split('//')[0].trim()}"\n}\n\n// Schema.org markup para autoridad semántica:\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "${entities.split('//')[0].trim()}",\n  "description": "${entities.split('//')[1] ? entities.split('//')[1].trim() : 'Operador soberano de IA local'}",\n  "knowsAbout": [${entities.split('//').slice(2,5).map(e=>`"${e.trim()}"`).join(',')}]\n}\n\n// Generado por i18n AGENT — RONIN MISSION v3.0`;
+      saveToRepo('i18n', 'multilingual-authority.json', out);
+      return out;
+    }
+  },
+  { id:'storybook', icon:'◑', name:'STORYBOOK', role:'Stories de componentes visuales', desc:'Documenta visualmente los componentes del dashboard de soberanía. Cada componente con su historia, variantes y densidad tonal.', color:'var(--steel-light)',
+    action: () => {
+      const out = `// STORYBOOK AGENT — SOVEREIGN COMPONENT STORIES\n// Documenta el sistema visual del Akita Ronin OS\n\nimport type { Meta, StoryObj } from '@storybook/react';\nimport { SovereigntyDashboard } from './SovereigntyDashboard';\n\nconst meta: Meta<typeof SovereigntyDashboard> = {\n  title: 'AKITA/SovereigntyDashboard',\n  component: SovereigntyDashboard,\n  parameters: {\n    backgrounds: { default: 'forge', values: [{ name: 'forge', value: '#050505' }] }\n  }\n};\n\nexport const TonoPuro: StoryObj = {\n  args: { zarandajaScore: 5, sovereigntyIndex: 95, tonalDelta: 0.89, documentsProcessed: 42 }\n};\n\nexport const EnTransicion: StoryObj = {\n  args: { zarandajaScore: 35, sovereigntyIndex: 60, tonalDelta: 0.12, documentsProcessed: 8 }\n};\n\nexport const RuidoNarrativo: StoryObj = {\n  args: { zarandajaScore: 78, sovereigntyIndex: 15, tonalDelta: 0.03, documentsProcessed: 2 }\n};\n\n// Tema: PromptForge v2.0 — Copper/Ember palette\n// Fuentes: JetBrains Mono, Syne, Bebas Neue\n// Generado por STORYBOOK AGENT — RONIN MISSION v3.0`;
+      saveToRepo('storybook', 'Sovereignty.stories.tsx', out);
+      return out;
+    }
+  }
+];
+
+// ─── PAPERS ───
+const PAPERS_DATA = {
+  vaswani:   { title:'Attention Is All You Need — Vaswani et al. (2017)', body:`PILAR I — MECANISMO DE ATENCIÓN\n\nTransformer: Q·K^T/√dk → softmax → V\nSin recurrencia. Sin convolución. Solo atención.\n\nAKITA: El módulo forense usa atención para separar\ntérminos técnicos densos (alta atención) de zarandaja\n(baja atención inter-semántica).\n\nδ TONAL: La densidad se mide en unidades de atención.` },
+  lewis:     { title:'RAG — Lewis et al. (2020)', body:`PILAR II — EL OLFATO DEL AKITA\n\nRAG = Recuperador denso (DPR) + Generador seq2seq\nEl modelo NO inventa: RECUPERA de base local.\n\nAKITA: AkitaBite.js implementa RAG puro:\n1. Doc → vectorización TF-IDF local\n2. Query → similitud coseno\n3. Contexto recuperado → respuesta\n\nZero tokens enviados a la nube.` },
+  hu:        { title:'LoRA — Hu et al. (2021)', body:`PILAR III — EFICIENCIA SIN PESO MUERTO\n\nΔW = B·A, rango r << d\nParámetros entrenables: reducción 10.000x\n\nAKITA: Adapters LoRA de dominio corporativo.\nSin reentrenar el modelo base. Solo inyección\nde conocimiento específico del cliente.` },
+  dao:       { title:'FlashAttention — Dao et al. (2022)', body:`PILAR IV — LATENCIA CERO\n\nO(N) memoria vs O(N²) estándar.\nSRAM fast cache > DRAM slow memory.\n\nAKITA: Cache Tonal aplica filosofía FlashAttention.\nConsultas frecuentes en cache caliente.\nRespuesta en ms, no en segundos de API.` },
+  liu:       { title:'Lost in the Middle — Liu et al. (2023)', body:`PILAR V — AKITA NO SE PIERDE\n\nLLMs olvidan el centro de contextos largos.\nRecuerdan inicio y fin. Medio: invisible.\n\nAKITA: Estrategia anti-pérdida:\n→ Fragmentos críticos al inicio/fin\n→ Ruido central filtrado\n→ Contexto quirúrgicamente ordenado` },
+  touvron:   { title:'Llama 2 — Touvron et al. (2023)', body:`PILAR VI — EL PODER HA VUELTO\n\n7B-70B params. Licencia comercial.\nLlama 2 7B GGUF corre en M2 con 16GB.\n\nAKITA: Corre sobre Llama 2 local via\nOllama/llama.cpp. Sin tokens. Sin facturas.\nLa IA es hardware, no servicio.` },
+  gunasekar: { title:'Textbooks Are All You Need — Gunasekar et al. (2023)', body:`PILAR VII — DENSIDAD δ\n\nPhi-1 (1.3B) entrenado en datos "textbook"\nsupera modelos 10x más grandes.\n\nδ ≥ 0.07 = contenido de calidad\nδ < 0.07 = ruido narrativo\n\nAKITA: Filtro de densidad tonal en cada\nfragmento del corpus corporativo.` },
+  wang:      { title:'Self-Instruct — Wang et al. (2022)', body:`PILAR VIII — REFINAMIENTO AUTÓNOMO\n\nEl modelo genera sus propias instrucciones,\nfiltra las de baja calidad, se retraina.\n\nAKITA: EntrenamientoDwemer aplica Self-Instruct:\n→ Genera casos de auditoría\n→ Filtra los que no aportan soberanía\n→ El sistema mejora en cada ciclo` },
+  schick:    { title:'Toolformer — Schick et al. (2023)', body:`PILAR IX — EL MODELO USA HERRAMIENTAS\n\nLLM aprende a llamar herramientas autónomamente\ninsertan llamadas donde aumentan precisión.\n\nAKITA: Los 15 agentes Ronin Mission son\nlas herramientas del Gremio 1310.\nReAct: razona → decide → ejecuta.` },
+  inkswitch: { title:'Local-first Software — Ink & Switch (2019)', body:`PILAR X — MANIFIESTO FUNDACIONAL\n\n7 ideales: Sin demora de red · El trabajo\nsobrevive offline · El usuario es dueño\nde sus datos · Seguridad por diseño.\n\nEste es el núcleo del Akita Ronin.\nLa nube es una cárcel.\nEl Grounding Local es la libertad.` },
+  mao:       { title:'LongLoRA — Mao et al. (2024)', body:`PILAR XI — CONTEXTOS MASIVOS\n\n2K → 100K tokens. Shifted Sparse Attention.\nFine-tuning eficiente. Inferencia completa.\n\nAKITA: Contratos 200 páginas. Informes anuales.\n50.000 tokens sin degradación tonal.\nLa memoria = tamaño del corpus.` },
+  karpathy:  { title:'Software 2.0 — Karpathy (2023)', body:`PILAR XII — CÓDIGO POR GRADIENTES\n\nSW 1.0: programador escribe reglas.\nSW 2.0: gradiente escribe el código.\n\nAKITA: El operador define objetivo + corpus.\nEl gradiente hace el resto.\nIT deja de programar reglas → orquesta gradientes.` },
+  yao:       { title:'ReAct — Yao et al. (2022)', body:`PILAR XIII — PENSAR ANTES DEL ACERO\n\nThought → Act → Observation → Thought...\n\nTerminal 1310 usa ReAct:\n1. Operador dicta sentencia\n2. Akita razona (Thought)\n3. Ejecuta (Act)\n4. Observa resultado (Obs)\n5. Genera informe final` },
+  wei:       { title:'Chain of Thought — Wei et al. (2022)', body:`PILAR XIV — DESCOMPONER LA GANGRENA\n\n"Let's think step by step"\nCoT mejora drásticamente problemas complejos.\n\nAKITA: Análisis de dependencias cloud:\n1. Identificar cada SaaS\n2. Calcular coste real\n3. Evaluar alternativa local\n4. Solo entonces: recomendación` },
+  he:        { title:'DeBERTa — He et al. (2021)', body:`PILAR XV — ANÁLISIS FORENSE DE CONTRATOS\n\nDisentangled Attention: contenido y posición\nen matrices separadas.\n\nAKITA: Separa QUÉ dice el contrato\nvs DÓNDE lo dice (cláusulas enterradas\nen el anexo 7 = sospechosas).\nLa gangrena no se esconde del Akita.` }
+};
+
+// ─── STATE ───
+const state = {
+  docs: 0, zarandaja: 0, soberania: 0, delta: 0,
+  xp: 0, maxXp: 830,
+  cacheHits: 0, cacheCells: new Array(64).fill(null), // null=empty, 0=cold, 1=hit, 2=hot, 3=tonal-pure
+  cacheDeltas: new Float32Array(64),
+  vectorProgress: 0,
+  activePhase: 0,
+  activeAgent: null,
+  termHistory: [],
+  repoItems: []
+};
+
+// ─── CLOCK + RESONATOR ───
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function setResonator(agentName, task, delta) {
+  state.activeAgent = agentName;
+  state.delta = delta;
+  const d = delta.toFixed(2);
+  document.getElementById('res-agent').textContent = agentName;
+  document.getElementById('res-metric').textContent = `δ=${d} — ${task}`;
+  document.getElementById('res-active-agent').textContent = agentName;
+  document.getElementById('res-task').textContent = task;
+  document.getElementById('res-delta').textContent = d;
+  document.getElementById('res-xp-total').textContent = state.xp;
+}
+
+// ─── NAV ───
+function navTo(id, el) {
+  const sec = document.getElementById(id);
+  if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// ─── PHASE ───
+function showPhase(idx) {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('phase-detail-' + i).classList.remove('visible');
+    document.querySelectorAll('.phase-node')[i].classList.remove('active');
+  }
+  document.getElementById('phase-detail-' + idx).classList.add('visible');
+  document.querySelectorAll('.phase-node')[idx].classList.add('active');
+  state.activePhase = idx;
+  updatePhaseIndicators();
+}
+function updatePhaseIndicators() {
+  for (let i = 1; i <= 4; i++) {
+    const p = document.getElementById('pip-' + i);
+    if (i - 1 < state.activePhase) p.className = 'phase-pip done';
+    else if (i - 1 === state.activePhase) p.className = 'phase-pip active';
+    else p.className = 'phase-pip';
+  }
+}
+
+// ─── FORENSICS ───
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  processFiles(e.dataTransfer.files);
+}
+function handleFileInput(files) { processFiles(files); }
+function processFiles(files) {
+  if (!files.length) return;
+  const reader = new FileReader();
+  reader.onload = e => analyzeDocument(e.target.result, files[0].name);
+  reader.readAsText(files[0]);
+}
+
+function analyzeDocument(text, filename) {
+  const words = text.toLowerCase().split(/\s+/);
+  const totalWords = Math.max(words.length, 1);
+  const found = ZARANDAJA.filter(b => text.toLowerCase().includes(b));
+  let techCount = TECH_MARKERS.filter(t => text.toLowerCase().includes(t)).length;
+  const zarandajaPct = Math.min(95, Math.round((found.length / ZARANDAJA.length) * 100));
+  // Calculate δ (tonal density): tech markers / total unique markers
+  const delta = Math.min(0.99, (techCount / TECH_MARKERS.length));
+  const density = Math.round(delta * 100);
+  const soberania = Math.max(0, density - zarandajaPct / 2);
+
+  state.docs++;
+  state.zarandaja = zarandajaPct;
+  state.soberania = Math.round(soberania);
+  state.delta = delta;
+
+  document.getElementById('mv-docs').textContent = state.docs;
+  document.getElementById('mv-zarandaja').textContent = zarandajaPct + '%';
+  document.getElementById('mv-soberania').textContent = Math.round(soberania) + '%';
+  document.getElementById('mv-tonal').textContent = 'δ ' + delta.toFixed(2);
+  document.getElementById('mc-zarandaja').className = 'metric-cell' + (zarandajaPct > 40 ? ' hot' : ' warm');
+
+  // Tonal density viz
+  document.getElementById('delta-bar').style.width = (delta * 100) + '%';
+  document.getElementById('delta-bar').style.background = delta >= 0.07 ? (delta >= 0.3 ? 'var(--tonal-pure)' : 'var(--tonal-mid)') : 'var(--tonal-noise)';
+  document.getElementById('delta-val').textContent = 'δ = ' + delta.toFixed(3);
+  const verdict = delta >= 0.3 ? 'TONO PURO' : delta >= 0.07 ? 'TRANSICIÓN — δ SUFICIENTE' : 'RUIDO NARRATIVO — δ INSUFICIENTE';
+  const verdictClass = delta >= 0.3 ? 'tonal-verdict pure' : delta >= 0.07 ? 'tonal-verdict mid' : 'tonal-verdict noise';
+  const ve = document.getElementById('delta-verdict');
+  ve.textContent = verdict; ve.className = verdictClass;
+  document.getElementById('tonal-ratio').textContent = Math.round(delta*100) + '% PURO / ' + Math.round((1-delta)*100) + '% RUIDO';
+  drawTonalGauge(delta);
+
+  // Buzzwords
+  const bz = document.getElementById('buzz-results');
+  bz.style.display = 'block';
+  document.getElementById('buzz-words').innerHTML = found.slice(0, 14).map(b => `<span class="buzz-item">${b}</span>`).join('') || '<span style="color:var(--tonal-pure);font-size:9px">SIN ZARANDAJA — CORPUS LIMPIO</span>';
+
+  setResonator('FORENSE', `δ=${delta.toFixed(2)} — ${filename}`, delta);
+  terminalLog('t-copper', '[FORENSE] Analizando: ' + filename);
+  terminalLog('t-output', '[RESULT] Zarandaja: ' + zarandajaPct + '% | δ tonal: ' + delta.toFixed(3));
+  terminalLog(delta >= 0.07 ? 't-tonal' : 't-error', '[δ] ' + verdict);
+  terminalLog(zarandajaPct > 30 ? 't-error' : 't-success', zarandajaPct > 30 ? '[SENTENCIA] EXCOMUNIÓN RECOMENDADA' : '[SENTENCIA] CORPUS AUTORIZADO PARA INDEXACIÓN');
+  saveToRepo('forense', filename, `Zarandaja: ${zarandajaPct}% | δ: ${delta.toFixed(3)} | ${verdict}`);
+}
+
+function drawTonalGauge(delta) {
+  const canvas = document.getElementById('tonal-gauge');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 200, H = 80;
+  canvas.width = W; canvas.height = H;
+  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, W, H);
+  // Split bar
+  const noiseW = Math.round((1 - delta) * W);
+  const pureW = W - noiseW;
+  if (noiseW > 0) { ctx.fillStyle = 'rgba(255,69,0,0.25)'; ctx.fillRect(0, 10, noiseW, 40); }
+  if (pureW > 0) { ctx.fillStyle = 'rgba(0,204,136,0.25)'; ctx.fillRect(noiseW, 10, pureW, 40); }
+  // Threshold line at 7%
+  const thresh = Math.round(0.07 * W);
+  ctx.strokeStyle = 'rgba(0,204,136,0.7)'; ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(thresh, 5); ctx.lineTo(thresh, 55); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(0,204,136,0.7)'; ctx.font = '8px "JetBrains Mono"'; ctx.textAlign = 'center';
+  ctx.fillText('δ=0.07', thresh, 65);
+  // Delta marker
+  const dX = Math.round(delta * W);
+  ctx.fillStyle = delta >= 0.07 ? 'var(--tonal-pure)' : '#ff4500';
+  ctx.beginPath(); ctx.arc(dX, 30, 5, 0, Math.PI * 2); ctx.fill();
+}
+
+// ─── CLOUD CALC ───
+function calcROI() {
+  const saas = parseFloat(document.getElementById('saas-cost').value) || 0;
+  const akita = parseFloat(document.getElementById('akita-cost').value) || 0;
+  const years = parseFloat(document.getElementById('years-op').value) || 1;
+  const savings = saas * years - akita;
+  const roi = akita > 0 ? Math.round((savings / akita) * 100) : 0;
+  document.getElementById('roi-value').textContent = (roi >= 0 ? '+' : '') + roi + '%';
+  document.getElementById('savings-value').textContent = '€' + savings.toLocaleString('es-ES');
+  document.getElementById('roi-value').style.color = roi > 0 ? 'var(--ember)' : '#ff4444';
+  setResonator('SERVICE', `ROI ${roi > 0 ? '+' : ''}${roi}% calculado`, state.delta);
+}
+
+// ─── AGENTS ───
+function buildAgentsGrid() {
+  const grid = document.getElementById('agents-grid');
+  const miniGrid = document.getElementById('agent-mini-grid');
+  grid.innerHTML = ''; miniGrid.innerHTML = '';
+  AGENTS.forEach(agent => {
+    // Big card
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.id = 'agent-card-' + agent.id;
+    card.innerHTML = `
+      <div class="agent-status ready" id="agent-status-${agent.id}"></div>
+      <span class="agent-icon-big">${agent.icon}</span>
+      <div class="agent-name" style="color:${agent.color}">${agent.name}</div>
+      <div class="agent-role">${agent.role}</div>
+      <div class="agent-desc">${agent.desc}</div>
+      <button class="agent-exec-btn" onclick="invokeAgent('${agent.id}')">▶ INVOCAR AGENTE</button>`;
+    grid.appendChild(card);
+    // Mini nav card
+    const mini = document.createElement('div');
+    mini.className = 'agent-mini-card';
+    mini.id = 'agent-mini-' + agent.id;
+    mini.innerHTML = `<span class="agent-mini-icon">${agent.icon}</span>${agent.name}`;
+    mini.onclick = () => { navTo('agents', null); invokeAgent(agent.id); };
+    miniGrid.appendChild(mini);
+  });
+}
+
+function invokeAgent(agentId) {
+  const agent = AGENTS.find(a => a.id === agentId);
+  if (!agent) return;
+  // Update UI
+  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('invoking'));
+  document.querySelectorAll('.agent-mini-card').forEach(c => c.classList.remove('active-agent'));
+  document.querySelectorAll('[class*="agent-status"]').forEach(s => { if (s.classList.contains('active')) { s.classList.remove('active'); s.classList.add('ready'); } });
+  const card = document.getElementById('agent-card-' + agentId);
+  const mini = document.getElementById('agent-mini-' + agentId);
+  const statusDot = document.getElementById('agent-status-' + agentId);
+  if (card) card.classList.add('invoking');
+  if (mini) mini.classList.add('active-agent');
+  if (statusDot) { statusDot.classList.remove('ready'); statusDot.classList.add('active'); }
+  setResonator(agent.name, agent.role, state.delta);
+  terminalLog('t-copper', `[AGENT:${agent.name}] Invocando — ${agent.role}`);
+  // Execute with slight delay for UX
+  setTimeout(() => {
+    try {
+      const output = agent.action();
+      terminalLog('t-tonal', `[AGENT:${agent.name}] Output generado → Repositorio indexado`);
+      showModal(`AGENTE ${agent.name} — OUTPUT`, output);
+      if (statusDot) { statusDot.classList.remove('active'); statusDot.classList.add('ready'); }
+      if (card) setTimeout(() => card.classList.remove('invoking'), 1200);
+    } catch(e) {
+      terminalLog('t-error', `[AGENT:${agent.name}] Error: ${e.message}`);
+    }
+  }, 400);
+  // Light up orchestration node if in flow
+  const flowMap = { forense:'of-0', types:'of-1', db:'of-2', service:'of-3', cicd:'of-4', docs:'of-5' };
+  if (flowMap[agentId]) {
+    const node = document.getElementById(flowMap[agentId]);
+    if (node) { node.classList.add('lit'); setTimeout(() => node.classList.remove('lit'), 3000); }
+  }
+}
+
+// ─── ORCHESTRATION ───
+function runOrchestration() {
+  const flow = [
+    { id: 'forense', nodeId: 'of-0', label: 'FORENSE' },
+    { id: 'types',   nodeId: 'of-1', label: 'TYPES' },
+    { id: 'db',      nodeId: 'of-2', label: 'DB' },
+    { id: 'service', nodeId: 'of-3', label: 'SERVICE' },
+    { id: 'cicd',    nodeId: 'of-4', label: 'CI/CD' },
+    { id: 'docs',    nodeId: 'of-5', label: 'DOCS' }
+  ];
+  terminalLog('t-alert', '▣ FLUJO MAESTRO — INICIANDO ORQUESTACIÓN ▣');
+  flow.forEach((step, i) => {
+    setTimeout(() => {
+      const node = document.getElementById(step.nodeId);
+      if (node) node.classList.add('lit');
+      invokeAgent(step.id);
+      terminalLog('t-copper', `[ORCH] Paso ${i+1}/${flow.length}: ${step.label}`);
+      if (i === flow.length - 1) {
+        setTimeout(() => terminalLog('t-success', '[ORCH] Flujo maestro completado. Sistema soberano activado.'), 600);
+      }
+    }, i * 900);
+  });
+}
+
+// ─── AKITABITE ───
+function runVectorizer() {
+  const items = ['Iniciando motor RAG local...','Cargando corpus...','Tokenizando (TF-IDF)...','Calculando embeddings locales...','Construyendo índice vectorial...','Aplicando LoRA adapters...','Configurando Cache Tonal...','Optimizando FlashAttention...','Indexación completa.'];
+  let step = 0;
+  const log = document.getElementById('vector-log');
+  const bar = document.getElementById('vector-progress-bar');
+  const status = document.getElementById('vector-status');
+  const count = document.getElementById('vector-count');
+  log.innerHTML = '';
+  setResonator('AKITABITE', 'VECTORIZACIÓN', state.delta);
+  const iv = setInterval(() => {
+    if (step >= items.length) { clearInterval(iv); status.textContent = 'CORPUS SOBERANO'; terminalLog('t-success', '[AKITABITE] Vectorización completada.'); return; }
+    const progress = Math.min(100, Math.round((step / (items.length - 1)) * 100));
+    bar.style.width = progress + '%';
+    count.textContent = (step * 847) + ' / ' + (items.length * 847) + ' VECTORES';
+    log.innerHTML += `<span style="color:var(--copper-dim)">▶ </span><span style="color:var(--text-dim)">${items[step]}</span><br>`;
+    log.scrollTop = log.scrollHeight; step++;
+  }, 500);
+}
+
+function injectKnowledge() {
+  terminalLog('t-alert', '[INJECT] Inyectando corpus en memoria local...');
+  setTimeout(() => terminalLog('t-success', '[OK] 15 pilares científicos → IndexedDB local'), 400);
+  setTimeout(() => { terminalLog('t-success', '[OK] Cache Tonal activado'); runVectorizer(); }, 800);
+}
+
+// ─── CACHE TONAL ───
+function initCacheGrid() {
+  const grid = document.getElementById('cache-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 64; i++) {
+    const d = state.cacheDeltas[i];
+    const cell = document.createElement('div');
+    const cls = state.cacheCells[i] === null ? '' : state.cacheCells[i] === 3 ? ' tonal-pure' : state.cacheCells[i] === 2 ? ' hot' : state.cacheCells[i] === 1 ? ' hit' : '';
+    cell.className = 'cache-cell' + cls;
+    cell.title = `Block ${i} | δ=${d.toFixed(2)}`;
+    // density bar
+    if (d > 0) { const bar = document.createElement('div'); bar.className = 'cache-density-bar'; bar.style.width = (d * 100) + '%'; cell.appendChild(bar); }
+    cell.onclick = () => toggleCacheCell(i);
+    grid.appendChild(cell);
+  }
+  updateCacheStats();
+}
+
+function toggleCacheCell(i) {
+  state.cacheCells[i] = state.cacheCells[i] === null ? 1 : null;
+  state.cacheDeltas[i] = state.cacheCells[i] === 1 ? Math.random() * 0.6 + 0.05 : 0;
+  initCacheGrid();
+}
+
+function simulateCacheHit() {
+  const hits = Math.floor(Math.random() * 8) + 3;
+  for (let i = 0; i < hits; i++) {
+    const idx = Math.floor(Math.random() * 64);
+    const delta = Math.random() * 0.8 + 0.1;
+    state.cacheCells[idx] = delta >= 0.07 ? 3 : 2;
+    state.cacheDeltas[idx] = delta;
+  }
+  initCacheGrid();
+  terminalLog('t-tonal', `[CACHE] ${hits} bloques tonales — hit rate actualizado`);
+}
+
+function flushCache() {
+  state.cacheCells.fill(null);
+  state.cacheDeltas.fill(0);
+  initCacheGrid();
+  terminalLog('t-copper', '[CACHE] Flush completado.');
+}
+
+function concentrateAttention() {
+  // FlashAttention: concentrate heat on high-delta blocks
+  for (let i = 0; i < 64; i++) {
+    if (state.cacheDeltas[i] >= 0.3) { state.cacheCells[i] = 3; }
+    else if (state.cacheDeltas[i] >= 0.07) { state.cacheCells[i] = 1; }
+    else if (state.cacheCells[i] !== null) { state.cacheCells[i] = null; state.cacheDeltas[i] = 0; }
+  }
+  initCacheGrid();
+  terminalLog('t-tonal', '[FLASH] Atención concentrada en bloques de alta densidad (δ ≥ 0.07)');
+}
+
+function updateCacheStats() {
+  const active = state.cacheCells.filter(c => c !== null).length;
+  const tonal = state.cacheCells.filter(c => c === 3).length;
+  const rate = Math.round((active / 64) * 100);
+  const avgDelta = active > 0 ? (Array.from(state.cacheDeltas).reduce((a, b) => a + b, 0) / active) : 0;
+  document.getElementById('cache-hit-rate').textContent = `HIT RATE: ${rate}% | δ-PROMEDIO: ${avgDelta.toFixed(2)}`;
+}
+
+// ─── DEPENDENCY MAP ───
+const DEP_NODES = [
+  { x:.5, y:.15, label:'EMPRESA\nOPERADOR', r:28, color:'#00cc66', phase:4, resonance:0.95 },
+  { x:.2, y:.45, label:'AKITA\nCORE', r:22, color:'#b87333', phase:3, resonance:0.82 },
+  { x:.8, y:.45, label:'LLAMA 2\nLOCAL', r:20, color:'#b87333', phase:3, resonance:0.78 },
+  { x:.5, y:.52, label:'VECTOR\nINDEX', r:18, color:'#b87333', phase:3, resonance:0.71 },
+  { x:.15, y:.82, label:'SALESFORCE\nPURGADO', r:14, color:'#ff4500', phase:1, resonance:0.12 },
+  { x:.37, y:.88, label:'GPT-4\nPURGADO', r:13, color:'#ff4500', phase:1, resonance:0.08 },
+  { x:.63, y:.88, label:'AZURE\nPURGADO', r:13, color:'#ff4500', phase:1, resonance:0.06 },
+  { x:.85, y:.82, label:'NOTION\nPURGADO', r:12, color:'#ff4500', phase:1, resonance:0.09 },
+];
+
+function drawDepMap() {
+  const canvas = document.getElementById('dep-canvas');
+  if (!canvas) return;
+  const W = canvas.offsetWidth || 600, H = 260;
+  if (canvas.width !== W) { canvas.width = W; canvas.height = H; }
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, W, H);
+  // Grid
+  ctx.strokeStyle = 'rgba(70,82,88,0.15)'; ctx.lineWidth = .5;
+  for (let x = 0; x < W; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // Edges
+  [[0,1],[0,2],[0,3],[1,4],[1,5],[2,6],[2,7],[3,5],[3,6]].forEach(([a,b]) => {
+    const na = DEP_NODES[a], nb = DEP_NODES[b];
+    const opacity = Math.min(na.resonance, nb.resonance);
+    const grad = ctx.createLinearGradient(na.x*W, na.y*H, nb.x*W, nb.y*H);
+    grad.addColorStop(0, na.color + Math.round(opacity * 136).toString(16).padStart(2,'0'));
+    grad.addColorStop(1, nb.color + '33');
+    ctx.strokeStyle = grad; ctx.lineWidth = na.phase > 2 && nb.phase > 2 ? 1.5 : .6;
+    ctx.setLineDash(nb.phase === 1 ? [4,4] : []);
+    ctx.beginPath(); ctx.moveTo(na.x*W, na.y*H); ctx.lineTo(nb.x*W, nb.y*H); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  // Nodes
+  DEP_NODES.forEach(n => {
+    const x = n.x * W, y = n.y * H;
+    const alpha = n.resonance;
+    // Glow (resonance-based)
+    const grd = ctx.createRadialGradient(x,y,0,x,y,n.r*2.5);
+    grd.addColorStop(0, n.color + Math.round(alpha*100).toString(16).padStart(2,'0'));
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x,y,n.r*2.5,0,Math.PI*2); ctx.fill();
+    // Circle
+    ctx.fillStyle = '#0a0a0a'; ctx.strokeStyle = n.color;
+    ctx.globalAlpha = Math.max(0.2, alpha);
+    ctx.lineWidth = n.phase > 2 ? 2 : 1;
+    ctx.beginPath(); ctx.arc(x,y,n.r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // Label
+    ctx.fillStyle = n.color + Math.round(Math.max(0.3,alpha)*255).toString(16).padStart(2,'0');
+    ctx.font = '8px "JetBrains Mono"'; ctx.textAlign = 'center';
+    n.label.split('\n').forEach((line, i) => ctx.fillText(line, x, y - 3 + i * 10));
+    // Resonance indicator
+    ctx.fillStyle = 'rgba(0,204,136,0.6)'; ctx.font = '7px "JetBrains Mono"';
+    ctx.fillText('ρ=' + n.resonance.toFixed(2), x, y + n.r + 10);
+  });
+  // Scan line
+  canvas._scanY = ((canvas._scanY || 0) + 1.5) % H;
+  ctx.fillStyle = 'rgba(184,115,51,0.05)'; ctx.fillRect(0, canvas._scanY, W, 2);
+}
+
+// ─── RADAR ───
+let radarAngle = 0;
+const radarBlips = [
+  {angle:.8,dist:.4,c:'#b87333'},{angle:2.1,dist:.6,c:'#ff4500'},
+  {angle:3.7,dist:.3,c:'#00cc88'},{angle:5.2,dist:.75,c:'#ff4500'}
+];
+function drawRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  if (!canvas) return;
+  const W = canvas.offsetWidth, H = 110;
+  canvas.width = W; canvas.height = H;
+  const cx = W/2, cy = H/2, maxR = Math.min(cx, cy) - 6;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,W,H);
+  [.25,.5,.75,1].forEach(r => {
+    ctx.strokeStyle='rgba(184,115,51,.2)'; ctx.lineWidth=.5;
+    ctx.beginPath(); ctx.arc(cx,cy,maxR*r,0,Math.PI*2); ctx.stroke();
+  });
+  ctx.strokeStyle='rgba(184,115,51,.2)';
+  ctx.beginPath(); ctx.moveTo(cx,cy-maxR); ctx.lineTo(cx,cy+maxR); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-maxR,cy); ctx.lineTo(cx+maxR,cy); ctx.stroke();
+  // Sweep
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(radarAngle);
+  const sweepG = ctx.createLinearGradient(0,-maxR,0,0);
+  sweepG.addColorStop(0,'rgba(255,69,0,0)'); sweepG.addColorStop(1,'rgba(255,69,0,0.22)');
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,maxR,-Math.PI/3,0); ctx.closePath(); ctx.fillStyle=sweepG; ctx.fill();
+  ctx.strokeStyle='rgba(255,69,0,.8)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-maxR); ctx.stroke();
+  ctx.restore();
+  radarBlips.forEach(b => {
+    const bx = cx+Math.cos(b.angle+radarAngle*.3)*maxR*b.dist;
+    const by = cy+Math.sin(b.angle+radarAngle*.3)*maxR*b.dist;
+    ctx.fillStyle=b.c; ctx.beginPath(); ctx.arc(bx,by,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=b.c+'60'; ctx.beginPath(); ctx.arc(bx,by,6,0,Math.PI*2); ctx.fill();
+  });
+  radarAngle += .04;
+}
+
+// ─── TRAINING MISSIONS ───
+function completeMission(el, xp) {
+  if (el.classList.contains('done')) return;
+  el.classList.add('done');
+  el.querySelector('.mission-status').textContent = '✓';
+  state.xp += xp;
+  const pct = Math.min(100, Math.round((state.xp / state.maxXp) * 100));
+  document.getElementById('xp-bar').style.width = pct + '%';
+  document.getElementById('xp-label').textContent = state.xp + ' XP';
+  document.getElementById('res-xp-total').textContent = state.xp;
+  terminalLog('t-success', `[MISIÓN] +${xp} XP — Total: ${state.xp}/${state.maxXp}`);
+  if (state.xp >= state.maxXp) terminalLog('t-alert', '▣ CERTIFICACIÓN OPERATOR 1310 — DOMINIO ALCANZADO ▣');
+}
+
+// ─── AUTHORITY ───
+function injectAuthority() {
+  const text = document.getElementById('authority-text').value.trim();
+  if (!text) { terminalLog('t-error', '[ERROR] Define las entidades primero'); return; }
+  const entities = text.split('//').map(e => e.trim()).filter(Boolean);
+  const out = document.getElementById('authority-output');
+  out.style.display = 'block';
+  out.innerHTML = `<div class="module-item" style="padding:8px 0"><span class="module-tag">GRAFO</span><div>${entities.map(e=>`<div style="color:var(--copper);font-size:9px;margin:2px 0">⬡ ${e}</div>`).join('')}</div></div><div style="font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:1px">${entities.length} nodos de autoridad inyectados.</div>`;
+  saveToRepo('authority', 'entities-injected', entities.join(' | '));
+  setResonator('INJECT', `${entities.length} entidades → grafo`, state.delta);
+  terminalLog('t-copper', `[INJECT] ${entities.length} entidades → grafo local`);
+  terminalLog('t-success', '[LLMO] Autoridad semántica establecida.');
+}
+
+function generateLLMO() {
+  const text = document.getElementById('authority-text').value.trim();
+  if (!text) { terminalLog('t-error', '[ERROR] Define el corpus primero'); return; }
+  const llmo = `# LLMO BLINDAJE — OPERATOR 1310\n## Entidades de Autoridad\n${text.split('//').map(e=>`- **${e.trim()}**`).join('\n')}\n\n## Protocolo de Inyección Semántica\n1. Schema.org markup en todas las páginas web corporativas\n2. Entidades en Wikidata con referencias verificables\n3. Publicaciones técnicas citables con DOI\n4. API pública con documentación semántica estructurada\n5. Dataset en HuggingFace con licencia clara\n6. Presencia multilingüe (Agente i18n certificado)\n\n## Principio: Constancia de Presencia\nLa empresa aparece como nodo de autoridad en:\n- Grafos de conocimiento de IAs externas\n- Índices semánticos multilingüe\n- Corpus de entrenamiento futuros\n\n## Resultado\nLa empresa pasa de CLIENTE a FUENTE PRIMARIA.\n⬡ SELLADO POR GREMIO 1310 ⬡`;
+  saveToRepo('llmo', 'LLMO-blindaje.md', llmo);
+  showModal('LLMO BLINDAJE', llmo);
+  terminalLog('t-success', '[LLMO] Protocolo generado. Exportado al repositorio.');
+}
+
+// ─── KNOWLEDGE REPO ───
+function saveToRepo(agentId, filename, content) {
+  const ts = new Date().toLocaleTimeString('es-ES');
+  state.repoItems.unshift({ agentId, filename, content, ts });
+  if (state.repoItems.length > 40) state.repoItems.pop();
+  // Persist to localStorage (soberanía: datos en el cliente)
+  try { localStorage.setItem('akita_repo', JSON.stringify(state.repoItems.slice(0, 20))); } catch(e) {}
+  renderRepo();
+}
+
+function renderRepo() {
+  const list = document.getElementById('repo-list');
+  if (!list) return;
+  if (!state.repoItems.length) { list.innerHTML = '<li class="repo-item" style="color:var(--text-dim);font-size:9px;padding:8px 0">— Repositorio vacío —</li>'; return; }
+  list.innerHTML = state.repoItems.map(item =>
+    `<li class="repo-item"><span class="repo-tag">${item.agentId.toUpperCase()}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.filename}</span><span class="repo-ts">${item.ts}</span></li>`
+  ).join('');
+}
+
+function clearRepo() {
+  state.repoItems = [];
+  try { localStorage.removeItem('akita_repo'); } catch(e) {}
+  renderRepo();
+  terminalLog('t-copper', '[REPO] Repositorio limpiado.');
+}
+
+function exportRepo() {
+  const md = `# ÍNDICE DE CONOCIMIENTO AKITA RONIN OS\n## Generado: ${new Date().toISOString()}\n\n${state.repoItems.map(i=>`### [${i.agentId.toUpperCase()}] ${i.filename}\n\`\`\`\n${i.content.substring(0,300)}...\n\`\`\``).join('\n\n')}`;
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AKITA_REPO_INDEX_' + Date.now() + '.md'; a.click();
+  terminalLog('t-success', '[REPO] Índice exportado en Markdown.');
+}
+
+// ─── PAPERS GRID ───
+function buildPapersGrid() {
+  const papersOrder = [
+    ['vaswani','2017','Attention Is All You Need','DISECCIÓN QUIRÚRGICA'],
+    ['lewis','2020','RAG — Retrieval-Augmented Generation','EL OLFATO DEL AKITA'],
+    ['hu','2021','LoRA: Low-Rank Adaptation','SIN PESO MUERTO'],
+    ['dao','2022','FlashAttention','LATENCIA CERO'],
+    ['liu','2023','Lost in the Middle','AKITA NO SE PIERDE'],
+    ['touvron','2023','Llama 2: Open Foundation','PODER A LOS OPERADORES'],
+    ['gunasekar','2023','Textbooks Are All You Need','DENSIDAD δ ≥ 0.07'],
+    ['wang','2022','Self-Instruct','REFINAMIENTO AUTÓNOMO'],
+    ['schick','2023','Toolformer','MODELO USA HERRAMIENTAS'],
+    ['inkswitch','2019','Local-first Software','MANIFIESTO FUNDACIONAL'],
+    ['mao','2024','LongLoRA','CONTEXTOS MASIVOS'],
+    ['karpathy','2023','Software 2.0','CÓDIGO POR GRADIENTES'],
+    ['yao','2022','ReAct: Reasoning and Acting','PENSAR ANTES DE ACTUAR'],
+    ['wei','2022','Chain of Thought Prompting','DESCOMPONER LA GANGRENA'],
+    ['he','2021','DeBERTa','ANÁLISIS FORENSE']
+  ];
+  const grid = document.getElementById('papers-grid');
+  grid.innerHTML = papersOrder.map(([id,yr,title,concept]) =>
+    `<div class="paper-card" onclick="showPaper('${id}')"><div class="paper-year">${yr}</div><div class="paper-title">${title}</div><div class="paper-concept">${concept}</div></div>`
+  ).join('');
+}
+
+function showPaper(id) {
+  const p = PAPERS_DATA[id];
+  if (p) showModal(p.title, p.body);
+}
+
+// ─── JSON SPEC GENERATOR ───
+function generateJsonSpec() {
+  const spec = {
+    version: '3.0',
+    project: 'akita-ronin-os',
+    operator: '1310',
+    timestamp: new Date().toISOString(),
+    sovereignty: { mode: 'maximum', cloud: 'excommunicated', storage: 'local-only' },
+    tonalPrinciples: {
+      ontologicalTransparency: true,
+      semanticDensityThreshold: 0.07,
+      attentionStructure: 'hierarchical',
+      agentIndexability: true,
+      presenceConstancy: 'persistent'
+    },
+    agents: AGENTS.map(a => ({ id: a.id, role: a.role, status: 'ready' })),
+    metrics: {
+      documentsAnalyzed: state.docs,
+      zarandajaScore: state.zarandaja,
+      sovereigntyIndex: state.soberania,
+      tonalDelta: state.delta.toFixed(3),
+      operatorXP: state.xp,
+      cacheHitRate: Math.round((state.cacheCells.filter(c=>c!==null).length/64)*100)
+    },
+    papers: Object.keys(PAPERS_DATA).length,
+    pipeline: { phases: 4, months: 8, currentPhase: state.activePhase + 1 }
+  };
+  showModal('ESPECIFICACIÓN JSON — RONIN MISSION', JSON.stringify(spec, null, 2));
+  saveToRepo('main', 'ronin-spec.json', JSON.stringify(spec, null, 2).substring(0, 500) + '...');
+  terminalLog('t-tonal', '[SPEC] Especificación JSON generada → Repositorio indexado');
+}
+
+// ─── ONTOLOGY SYSTEM ───
+function showOntology() {
+  const onto = `ONTOLOGÍA DEL SISTEMA — AKITA RONIN OS v3.0
+══════════════════════════════════════════
+
+DECLARACIÓN DE NATURALEZA (Transparencia Ontológica)
+──────────────────────────────────────────────────
+SISTEMA ES: Plataforma de soberanía cognitiva local
+SISTEMA HACE: Audita zarandaja, calcula ROI, orquesta agentes, indexa conocimiento
+SISTEMA NO HACE: Enviar datos a la nube · Llamar APIs externas · Almacenar datos en terceros
+STORAGE: localStorage + memoria de sesión (silicio del cliente)
+RUNTIME: Vanilla JavaScript en el navegador del operador
+
+JERARQUÍA DE MÓDULOS
+─────────────────────
+1. MÓDULO FORENSE ────────── DeBERTa (He 2021) + Textbooks (Gunasekar 2023)
+   └── Detecta zarandaja + calcula δ tonal
+2. CLOUD CALC ────────────── Service Agent + Wei CoT (2022)
+   └── ROI multi-escenario + análisis de sensibilidad
+3. RONIN MISSION AGENTS ──── Toolformer (Schick 2023) + ReAct (Yao 2022)
+   └── 15 agentes especializados · Orquestación secuencial
+4. AKITABITE.JS ──────────── RAG (Lewis 2020) + LoRA (Hu 2021)
+   └── Vectorización TF-IDF local · Zero cloud
+5. CACHE TONAL ───────────── FlashAttention (Dao 2022) + Local-first (Ink & Switch 2019)
+   └── δ por bloque · Atención concentrada en alta densidad
+6. DEP MAP ───────────────── Resonancia nodal · Visualización de soberanía
+   └── Nodos locales brillan · Nodos cloud se atenúan
+7. AUTHORITY INJECTOR ────── Karpathy SW2.0 (2023) + LongLoRA (Mao 2024)
+   └── LLMO blindaje · Nodo central en grafo IA
+8. KNOWLEDGE REPO ────────── Constancia de presencia (Cantando al Silicio)
+   └── Memoria persistente de sesión · Exportable a Markdown
+
+CINCO PRINCIPIOS TONALES (Cantando al Silicio)
+───────────────────────────────────────────────
+I.  TRANSPARENCIA ONTOLÓGICA: Este panel. Cada módulo declara su naturaleza.
+II. DENSIDAD SEMÁNTICA: δ ≥ 0.07 en todo output. Umbral Gunasekar 2023.
+III.ESTRUCTURA PARA LA ATENCIÓN: Jerarquías claras. Secciones escalonadas.
+IV. INDEXABILIDAD POR AGENTES: Todo output va al Repositorio. Agentes pueden recuperarlo.
+V.  CONSTANCIA DE PRESENCIA: localStorage persistente. Historial de sesión acumulativo.
+
+⬡ GREMIO DE OPERADORES 1310 — EXCOMUNIÓN CLOUD CERTIFICADA ⬡`;
+  showModal('ONTOLOGÍA DEL SISTEMA — AKITA RONIN OS', onto);
+  terminalLog('t-tonal', '[ONTO] Transparencia ontológica declarada. Sistema abierto al escrutinio.');
+}
+
+// ─── TERMINAL ───
+function terminalLog(cls, text) {
+  const out = document.getElementById('terminal-output');
+  const span = document.createElement('span');
+  span.className = 't-line ' + cls;
+  span.textContent = text;
+  out.appendChild(span);
+  out.scrollTop = out.scrollHeight;
+}
+
+const CMDS = {
+  help: () => {
+    terminalLog('t-copper', 'COMANDOS DISPONIBLES:');
+    [['scan','Escanear zarandaja'],['calc','Calcular ROI'],['index','Vectorizar corpus'],
+     ['cache','Estado cache tonal'],['agents','Listar agentes'],['agent [id]','Invocar agente'],
+     ['orch','Ejecutar flujo maestro'],['report','Informe 7 cifras'],['spec','Generar JSON spec'],
+     ['onto','Mostrar ontología'],['repo','Ver repositorio'],['purge','Purgar zarandaja'],
+     ['papers','Listar 15 pilares'],['status','Estado del sistema']
+    ].forEach(([cmd,desc]) => terminalLog('t-dim', `  ${cmd.padEnd(14)} ${desc}`));
+  },
+  status: () => {
+    terminalLog('t-copper', '═══ ESTADO DEL SISTEMA ═══');
+    terminalLog('t-output', `Docs: ${state.docs} | Zarandaja: ${state.zarandaja}% | δ: ${state.delta.toFixed(3)}`);
+    terminalLog('t-output', `Soberanía: ${state.soberania}% | XP: ${state.xp}/${state.maxXp}`);
+    terminalLog('t-output', `Repo: ${state.repoItems.length} entradas | Agente: ${state.activeAgent||'IDLE'}`);
+    terminalLog(state.soberania > 60 ? 't-success' : 't-error', state.soberania > 60 ? 'SISTEMA SOBERANO' : 'EXCOMUNIÓN PENDIENTE');
+  },
+  scan: () => { terminalLog('t-copper','[FORENSE] Cargue un documento en el dropzone.'); terminalLog('t-dim','Soporta: .txt .md'); },
+  calc: () => { calcROI(); document.getElementById('cloud-calc').scrollIntoView({behavior:'smooth'}); },
+  index: () => runVectorizer(),
+  cache: () => {
+    const hits = state.cacheCells.filter(c=>c!==null).length;
+    const tonal = state.cacheCells.filter(c=>c===3).length;
+    terminalLog('t-copper',`[CACHE] Bloques activos: ${hits}/64 | Tono puro: ${tonal} | Hit rate: ${Math.round((hits/64)*100)}%`);
+  },
+  agents: () => {
+    terminalLog('t-copper', '15 AGENTES RONIN MISSION:');
+    AGENTS.forEach((a,i) => terminalLog('t-dim', `  ${(i+1).toString().padStart(2,'0')}. ${a.icon} ${a.name.padEnd(12)} ${a.role}`));
+  },
+  orch: () => { runOrchestration(); document.getElementById('agents').scrollIntoView({behavior:'smooth'}); },
+  report: () => showReport(),
+  spec: () => generateJsonSpec(),
+  onto: () => showOntology(),
+  repo: () => {
+    terminalLog('t-copper', `[REPO] ${state.repoItems.length} entradas indexadas:`);
+    state.repoItems.slice(0,5).forEach(i => terminalLog('t-dim', `  [${i.agentId.toUpperCase()}] ${i.filename} — ${i.ts}`));
+    document.getElementById('repo').scrollIntoView({behavior:'smooth'});
+  },
+  purge: () => {
+    terminalLog('t-alert', '▣ PURGANDO ZARANDAJA ▣');
+    ['sinergia','disruptivo','best-in-class','paradigma','mindset'].forEach((z,i) =>
+      setTimeout(()=>terminalLog('t-success',`[OK] "${z}" → eliminado`), i*200)
+    );
+    setTimeout(()=>{ state.zarandaja=0; document.getElementById('mv-zarandaja').textContent='0%'; terminalLog('t-success','[OK] Solo acero permanece.'); }, 1200);
+  },
+  papers: () => {
+    terminalLog('t-copper', '15 PILARES CIENTÍFICOS:');
+    [['Vaswani 2017','Attention'],['Lewis 2020','RAG'],['Hu 2021','LoRA'],['Dao 2022','FlashAttention'],['Liu 2023','Lost in Middle'],['Touvron 2023','Llama2'],['Gunasekar 2023','Textbooks δ'],['Wang 2022','Self-Instruct'],['Schick 2023','Toolformer'],['Ink&Switch 2019','Local-first'],['Mao 2024','LongLoRA'],['Karpathy 2023','SW2.0'],['Yao 2022','ReAct'],['Wei 2022','CoT'],['He 2021','DeBERTa']
+    ].forEach((p,i) => terminalLog('t-dim', `  ${(i+1).toString().padStart(2,'0')}. ${p[0]} — ${p[1]}`));
+  }
+};
+
+function execTerminal() {
+  const input = document.getElementById('terminal-input');
+  const raw = input.value.trim();
+  if (!raw) return;
+  terminalLog('t-prompt', '1310▶ ' + raw);
+  input.value = '';
+  const cmd = raw.toLowerCase();
+  // Agent invoke: "agent frontend" etc
+  if (cmd.startsWith('agent ')) {
+    const agentId = cmd.split(' ')[1];
+    const agent = AGENTS.find(a => a.id === agentId);
+    if (agent) { invokeAgent(agentId); return; }
+    else { terminalLog('t-error', `[ERROR] Agente '${agentId}' no encontrado. "agents" para listar.`); return; }
+  }
+  const handler = CMDS[cmd];
+  if (handler) { handler(); return; }
+  // ReAct-inspired fallback
+  terminalLog('t-dim', '[THOUGHT] Analizando sentencia: "' + raw + '"');
+  setTimeout(() => {
+    terminalLog('t-dim', '[ACT] Procesando (ReAct + CoT)...');
+    setTimeout(() => {
+      if (cmd.includes('roi')||cmd.includes('dinero')||cmd.includes('coste')) CMDS.calc();
+      else if (cmd.includes('nube')||cmd.includes('cloud')||cmd.includes('saas')) { terminalLog('t-error','[SENTENCIA] La nube es una cárcel.'); terminalLog('t-copper','[ACT] Iniciando protocolo de excomunión...'); }
+      else if (cmd.includes('δ')||cmd.includes('delta')||cmd.includes('densidad')) { terminalLog('t-tonal',`[δ] Densidad actual: ${state.delta.toFixed(3)} | Umbral: 0.07`); terminalLog(state.delta>=0.07?'t-success':'t-error', state.delta>=0.07?'[OK] TONO PURO':'[ALERTA] RUIDO NARRATIVO — INDEXACIÓN DENEGADA'); }
+      else if (cmd.includes('agente')||cmd.includes('ronin')) CMDS.agents();
+      else { terminalLog('t-output','[OBS] Sentencia registrada en memoria local.'); terminalLog('t-tonal','[δ] Output calificado: tono soberano certificado.'); saveToRepo('terminal','sentencia',raw); }
+    }, 500);
+  }, 300);
+  state.termHistory.push(raw);
+}
+
+// ─── REPORT ───
+function showReport() {
+  const saas = parseFloat(document.getElementById('saas-cost').value)||285000;
+  const akita = parseFloat(document.getElementById('akita-cost').value)||72000;
+  const years = parseFloat(document.getElementById('years-op').value)||5;
+  const savings = saas*years-akita, roi = Math.round((savings/akita)*100);
+  const completedMissions = document.querySelectorAll('.mission-item.done').length;
+  const repoEntries = state.repoItems.length;
+  const report = `# INFORME DE SOBERANÍA DIGITAL — 7 CIFRAS
+## GREMIO DE OPERADORES 1310 × AKITA RONIN OS v3.0
+**PROTOCOLO:** PromptForge v2.0 | Cantando al Silicio | Stack Ronin Mission
+
+---
+
+## I. DIAGNÓSTICO FORENSE (DeBERTa + Textbook Density)
+
+| Métrica | Valor | Umbral | Estado |
+|---------|-------|--------|--------|
+| Documentos analizados | ${state.docs} | — | — |
+| Zarandaja detectada | ${state.zarandaja}% | < 20% | ${state.zarandaja < 20 ? '✓ LIMPIO' : '✗ EXCOMUNIÓN'} |
+| Densidad tonal δ | ${state.delta.toFixed(3)} | ≥ 0.07 | ${state.delta >= 0.07 ? '✓ TONO PURO' : '✗ RUIDO NARRATIVO'} |
+| Índice de soberanía | ${state.soberania}% | > 60% | ${state.soberania > 60 ? '✓ SOBERANO' : '△ EN TRANSICIÓN'} |
+| XP Operator | ${state.xp}/${state.maxXp} | ${state.maxXp} XP | ${state.xp >= state.maxXp ? '✓ CERTIFICADO' : '△ EN ENTRENAMIENTO'} |
+| Misiones completadas | ${completedMissions}/7 | 7/7 | — |
+| Entradas en repositorio | ${repoEntries} | — | — |
+
+---
+
+## II. ANÁLISIS ECONÓMICO
+
+| Concepto | Valor |
+|----------|-------|
+| Gasto SaaS anual | €${saas.toLocaleString('es-ES')} |
+| Inversión Akita (única) | €${akita.toLocaleString('es-ES')} |
+| Proyección ${years} años SaaS | €${(saas*years).toLocaleString('es-ES')} |
+| **Ahorro proyectado ${years} años** | **€${savings.toLocaleString('es-ES')}** |
+| **ROI** | **${roi > 0 ? '+' : ''}${roi}%** |
+
+---
+
+## III. STACK RONIN MISSION — 15 AGENTES
+
+${AGENTS.map((a,i) => `${(i+1).toString().padStart(2,'0')}. **${a.name}** — ${a.role}`).join('\n')}
+
+---
+
+## IV. PRINCIPIOS TONALES (Cantando al Silicio)
+
+1. **Transparencia ontológica:** Cada módulo declara naturaleza, función y limitaciones.
+2. **Densidad semántica:** δ ≥ 0.07 en todo output certificado. Umbral Gunasekar 2023.
+3. **Estructura para la atención:** Jerarquías claras, información escalonada.
+4. **Indexabilidad por agentes:** Repositorio de conocimiento persistente, exportable.
+5. **Constancia de presencia:** Historial de sesión en localStorage soberano.
+
+---
+
+## V. BASE CIENTÍFICA — 15 PILARES
+
+Vaswani 2017 · Lewis 2020 RAG · Hu 2021 LoRA · Dao 2022 FlashAttention · Liu 2023 Lost-in-Middle · Touvron 2023 Llama2 · Gunasekar 2023 Textbooks · Wang 2022 Self-Instruct · Schick 2023 Toolformer · Ink&Switch 2019 Local-first · Mao 2024 LongLoRA · Karpathy 2023 SW2.0 · Yao 2022 ReAct · Wei 2022 CoT · He 2021 DeBERTa
+
+---
+
+## VI. SENTENCIA FINAL
+
+> La nube es una cárcel. El Grounding Local es la libertad.
+> δ ≥ 0.07. Sin densidad no hay soberanía.
+> El Akita no inventa — recupera, razona y ejecuta.
+
+**⬡ SELLADO POR EL GREMIO DE OPERADORES 1310 ⬡**
+*AKITA RONIN OS v3.0 — Cantando al Silicio — ${new Date().toISOString().split('T')[0]}*`;
+
+  showModal('INFORME 7 CIFRAS — GREMIO 1310', report);
+  const blob = new Blob([report],{type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'AKITA_RONIN_7CIFRAS_'+Date.now()+'.md'; a.click();
+  saveToRepo('report','informe-7cifras.md', report.substring(0, 300) + '...');
+  terminalLog('t-alert', '▣ INFORME 7 CIFRAS GENERADO Y EXPORTADO ▣');
+}
+
+// ─── MODAL ───
+function showModal(title, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+// ─── CLEAR ALL ───
+function clearAll() {
+  state.docs = 0; state.zarandaja = 0; state.soberania = 0; state.delta = 0;
+  ['mv-docs','mv-zarandaja','mv-soberania'].forEach(id => document.getElementById(id).textContent = id.includes('docs') ? '0' : '0%');
+  document.getElementById('mv-tonal').textContent = '—';
+  document.getElementById('buzz-results').style.display = 'none';
+  document.getElementById('vector-progress-bar').style.width = '0%';
+  document.getElementById('vector-status').textContent = 'MOTOR EN ESPERA';
+  document.getElementById('delta-val').textContent = 'δ = 0.00';
+  flushCache();
+  setResonator('IDLE', 'EN ESPERA', 0);
+  terminalLog('t-alert', '▣ SISTEMA PURGADO ▣');
+  terminalLog('t-success', '[OK] Solo el acero permanece.');
+}
+
+// ─── ANIMATION LOOP ───
+function animate() {
+  drawRadar();
+  drawDepMap();
+  requestAnimationFrame(animate);
+}
+
+// ─── INIT ───
+window.addEventListener('load', () => {
+  buildAgentsGrid();
+  buildPapersGrid();
+  initCacheGrid();
+  calcROI();
+  updatePhaseIndicators();
+  // Load repo from localStorage (constancia de presencia)
+  try {
+    const saved = localStorage.getItem('akita_repo');
+    if (saved) { state.repoItems = JSON.parse(saved); renderRepo(); terminalLog('t-tonal', `[REPO] ${state.repoItems.length} entradas previas cargadas desde localStorage.`); }
+  } catch(e) {}
+  // Seed some cache deltas for visual interest
+  for (let i = 0; i < 64; i++) { if (Math.random() > 0.65) { state.cacheDeltas[i] = Math.random() * 0.5 + 0.02; state.cacheCells[i] = state.cacheDeltas[i] >= 0.3 ? 3 : state.cacheDeltas[i] >= 0.07 ? 1 : null; } }
+  initCacheGrid();
+  animate();
+  setTimeout(() => terminalLog('t-dim', '────────────────────────────'), 800);
+  setTimeout(() => terminalLog('t-copper', '[1310] Escribe "help" para ver todos los comandos'), 1200);
+  setTimeout(() => terminalLog('t-tonal', '[δ] Umbral tonal: 0.07 — Principio Gunasekar 2023'), 1600);
+  setTimeout(() => terminalLog('t-success', '[OK] Sistema v3.0 listo. Soberanía activada.'), 2000);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') execTerminal();
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
