@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Intelligence Engine v1.0 — Panel Ronin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+        }
+        
+        .obsidian-bg { background-color: #0a0a0a; }
+        .cyan-accent { color: #00f3ff; }
+        .gold-dwemer { color: #d4af37; }
+        .border-cyan { border-color: #00f3ff; }
+        .bg-cyan-accent { background-color: #00f3ff; color: #0a0a0a; }
+        .hover-cyan:hover { background-color: #00f3ff; color: #0a0a0a; transition: all 0.2s; }
+        
+        .panel-edge {
+            border: 1px solid #00f3ff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+        
+        .lead-card {
+            border: 1px solid #d4af37;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        .voltage-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #d4af37, #00f3ff);
+            width: 100%;
+        }
+        
+        textarea, input {
+            background-color: #1a1a1a !important;
+            border-color: #00f3ff !important;
+            color: #e0e0e0 !important;
+        }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3) !important;
+        }
+        
+        .code-block {
+            background-color: #121212;
+            border-left: 2px solid #00f3ff;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00f3ff;
+        }
+        
+        .tab-btn {
+            padding: 10px 16px;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            border-bottom-color: #00f3ff;
+            color: #00f3ff;
+        }
+        
+        .dork-chip {
+            display: inline-block;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid #00f3ff;
+            padding: 6px 10px;
+            margin: 4px 4px 4px 0;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+        
+        .dork-chip:hover {
+            background: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+        }
+        
+        .signal-found {
+            color: #00f3ff;
+            font-weight: bold;
+        }
+        
+        .friction-found {
+            color: #d4af37;
+            font-weight: bold;
+        }
+        
+        .frequency-badge {
+            display: inline-block;
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid #d4af37;
+            padding: 4px 8px;
+            border-radius: 2px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        
+        .grid-dense {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .info-dense {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .progress-voltage {
+            height: 2px;
+            background: linear-gradient(90deg, #d4af37 0%, #00f3ff 50%, #d4af37 100%);
+            animation: pulse-voltage 2s infinite;
+        }
+        
+        @keyframes pulse-voltage {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="obsidian-bg text-gray-100 p-4">
+    
+    <!-- HEADER EXECUTIVO -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h1 class="text-3xl font-bold cyan-accent mb-1">⚔️ SOVEREIGN INTELLIGENCE ENGINE</h1>
+                <p class="text-xs text-gray-500">v1.0 — Panel de Mando Ronin | Grounding Externo | Frecuencia 1310</p>
+            </div>
+            <div class="text-right">
+                <div class="stat-value" id="totalLeads">0</div>
+                <p class="text-xs text-gray-500">Leads Procesados</p>
+            </div>
+        </div>
+        <div class="progress-voltage"></div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="max-w-7xl mx-auto mb-6 border-b border-gray-700 flex gap-4">
+        <button class="tab-btn active" onclick="switchTab('dorks')">🔍 Generador de Dorks</button>
+        <button class="tab-btn" onclick="switchTab('extraction')">📥 Grounding Externo</button>
+        <button class="tab-btn" onclick="switchTab('friction')">⚡ Análisis de Fricción</button>
+        <button class="tab-btn" onclick="switchTab('leads')">🎯 Dashboard de Leads</button>
+        <button class="tab-btn" onclick="switchTab('messaging')">💬 Generador Tonal</button>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="max-w-7xl mx-auto grid-dense">
+        
+        <!-- TAB 1: GENERADOR DE DORKS -->
+        <div id="tab-dorks" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- CONFIGURADOR DE DORKS -->
+                <div class="lg:col-span-2 panel-edge p-4 obsidian-bg">
+                    <h2 class="text-xl cyan-accent mb-4">🔍 Motor de Infiltración (Dorking Engine)</h2>
+                    
+                    <div class="grid-dense">
+                        <!-- Sector Selection -->
+                        <div>
+                            <label class="text-sm text-gray-400 mb-2 block">1. SECTOR / INDUSTRIA</label>
+                            <select id="sectorInput" class="w-full p-2 rounded bg-gray-900 border border-gray-700 text-sm">
+                                <option value="">-- Selecciona --</option>
+                                <option value="fintech">FinTech / Servicios Financieros</option>
+                                <option value="ecommerce">E-Commerce / Retail</option>
+                                <option value="logistica">Logística / Supply Chain</option>
+                                <option value="manufacturing">Manufactura / Industrial</option>
+                                <option value="healthcare">Healthcare / MedTech</option>
+                                <option value="education">Educación / EdTech</option>
+                                <option value="hr">RRHH / Talento</option>
+                                <option value="legal">Legal / Compliance</option>
+                                <option value="real_estate">Real Estate / PropTech</option>
+                                <option value="saas">SaaS / Software</option>
+                            </select>
+                        </div>
+
+                        <!-- Technology Stack -->
+                        <div>
+                            <label class="text-sm text-gray-400 mb-2 block">2. TECNOLOGÍA ACTUAL / SEÑAL DE FRICCIÓN</label>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <input type="text" id="techInput" placeholder="ej: legacy Java, monolith, Excel macros" class="flex-1 p-2 rounded text-sm">
+                            </div>
+                            <div class="text-xs text-gray-500">Indicadores: "outdated", "legacy", "manual", "Excel", "spreadsheet", "paper-based"</div>
+                        </div>
+
+                        <!-- Job Titles -->
+                        <div>
+                            <label class="text-sm text-gray-400 mb-2 block">3. CARGO / DECISION MAKER</label>
+                            <select id="roleInput" class="w-full p-2 rounded bg-gray-900 border border-gray-700 text-sm">
+                                <option value="">-- Selecciona --</option>
+                                <option value="CTO">CTO / VP Technology</option>
+                                <option value="CEO">CEO / Founder</option>
+                                <option value="CFO">CFO / VP Finance</option>
+                                <option value="COO">COO / VP Operations</option>
+                                <option value="VPE">VP Engineering</option>
+                                <option value="PM">Product Manager</option>
+                                <option value="DEVOPS">DevOps / Infrastructure Lead</option>
+                            </select>
+                        </div>
+
+                        <!-- Friction Signals -->
+                        <div>
+                            <label class="text-sm text-gray-400 mb-2 block">4. SEÑALES DE FRICCIÓN (Urania Semántica)</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="automation"> <span class="ml-2">Automatización</span>
+                                </label>
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="integration"> <span class="ml-2">Integración</span>
+                                </label>
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="scaling"> <span class="ml-2">Escalabilidad</span>
+                                </label>
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="compliance"> <span class="ml-2">Compliance</span>
+                                </label>
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="security"> <span class="ml-2">Seguridad</span>
+                                </label>
+                                <label class="flex items-center text-sm cursor-pointer">
+                                    <input type="checkbox" class="friction-signal" value="datamigration"> <span class="ml-2">Data Migration</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Engine Type -->
+                        <div>
+                            <label class="text-sm text-gray-400 mb-2 block">5. MOTOR DE BÚSQUEDA</label>
+                            <select id="engineInput" class="w-full p-2 rounded bg-gray-900 border border-gray-700 text-sm">
+                                <option value="google">Google</option>
+                                <option value="bing">Bing</option>
+                                <option value="duckduckgo">DuckDuckGo</option>
+                            </select>
+                        </div>
+
+                        <button onclick="generateDorks()" class="bg-cyan-accent text-black p-3 rounded font-bold hover-cyan w-full">
+                            ⚡ EJECUTAR DORKING ENGINE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PANEL DE DORKS GENERADOS -->
+                <div class="panel-edge p-4 obsidian-bg">
+                    <h3 class="text-lg cyan-accent mb-4">📋 Queries Generadas</h3>
+                    <div id="dorkOutput" class="info-dense text-xs space-y-3 max-h-96 overflow-y-auto">
+                        <p class="text-gray-500">Los dorks aparecerán aquí. Haz clic para copiar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: GROUNDING EXTERNO -->
+        <div id="tab-extraction" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- INPUT -->
+                <div class="panel-edge p-4 obsidian-bg">
+                    <h2 class="text-xl cyan-accent mb-4">📥 Módulo de Grounding Externo</h2>
+                    <p class="text-xs text-gray-400 mb-3">Pega aquí el HTML scrapeado de resultados de búsqueda, SERP, o LinkedIn snippets</p>
+                    <textarea 
+                        id="rawHtmlInput" 
+                        class="w-full h-64 p-3 rounded text-xs bg-gray-900 border border-gray-700"
+                        placeholder="<html>... contenido HTML ...</html>"
+                    ></textarea>
+                    <button onclick="processRawHTML()" class="bg-cyan-accent text-black p-3 rounded font-bold hover-cyan w-full mt-3">
+                        🔬 PROCESAR GROUNDING
+                    </button>
+                </div>
+
+                <!-- OUTPUT / EXTRACTED SIGNALS -->
+                <div class="panel-edge p-4 obsidian-bg">
+                    <h3 class="text-lg cyan-accent mb-4">✨ Señales Extraídas</h3>
+                    <div id="extractionOutput" class="space-y-4 max-h-96 overflow-y-auto">
+                        <p class="text-gray-500 text-xs">Las entidades extraídas aparecerán aquí</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ANÁLISIS DE FRICCIÓN -->
+        <div id="tab-friction" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- INPUT -->
+                <div class="panel-edge p-4 obsidian-bg">
+                    <h2 class="text-xl cyan-accent mb-4">⚡ Auditor de Fricción Técnica</h2>
+                    <p class="text-xs text-gray-400 mb-3">Pega el "About Us", "Careers", "Jobs" o cualquier texto público de la empresa target</p>
+                    <textarea 
+                        id="frictionInput" 
+                        class="w-full h-64 p-3 rounded text-xs bg-gray-900 border border-gray-700"
+                        placeholder="We are a 50-person team using legacy systems..."
+                    ></textarea>
+                    <button onclick="analyzeFriction()" class="bg-cyan-accent text-black p-3 rounded font-bold hover-cyan w-full mt-3">
+                        🔥 ANALIZAR FRICCIÓN
+                    </button>
+                </div>
+
+                <!-- AUDIT RESULTS -->
+                <div class="panel-edge p-4 obsidian-bg overflow-y-auto max-h-96">
+                    <h3 class="text-lg cyan-accent mb-4">📊 Reporte de Auditoría</h3>
+                    <div id="frictionOutput" class="text-xs space-y-3">
+                        <p class="text-gray-500">El análisis aparecerá aquí</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DASHBOARD DE LEADS -->
+        <div id="tab-leads" class="tab-content hidden">
+            <div class="panel-edge p-4 obsidian-bg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl cyan-accent">🎯 Dashboard de Leads Procesados</h2>
+                    <button onclick="clearLeads()" class="text-xs px-3 py-1 border border-gray-500 hover:border-cyan-accent rounded">Limpiar</button>
+                </div>
+                
+                <div id="leadsContainer" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-xs">Los leads extraídos aparecerán aquí como tarjetas estructuradas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: GENERADOR TONAL -->
+        <div id="tab-messaging" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- CONFIG -->
+                <div class="panel-edge p-4 obsidian-bg">
+                    <h2 class="text-xl cyan-accent mb-4">💬 Generador de "Canto Tonal"</h2>
+                    
+                    <div class="grid-dense text-sm">
+                        <div>
+                            <label class="text-gray-400 block mb-2">📌 Nombre del Lead</label>
+                            <input type="text" id="leadName" class="w-full p-2 rounded bg-gray-900 border border-gray-700" placeholder="Juan García">
+                        </div>
+
+                        <div>
+                            <label class="text-gray-400 block mb-2">🏢 Empresa</label>
+                            <input type="text" id="leadCompany" class="w-full p-2 rounded bg-gray-900 border border-gray-700" placeholder="TechCorp SA">
+                        </div>
+
+                        <div>
+                            <label class="text-gray-400 block mb-2">💼 Cargo</label>
+                            <input type="text" id="leadRole" class="w-full p-2 rounded bg-gray-900 border border-gray-700" placeholder="VP of Engineering">
+                        </div>
+
+                        <div>
+                            <label class="text-gray-400 block mb-2">🎯 Punto de Dolor Específico</label>
+                            <textarea id="painPoint" class="w-full p-2 rounded bg-gray-900 border border-gray-700 h-20" placeholder="Procesos manuales, necesidad de automatización..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="text-gray-400 block mb-2">🔗 Tu Solución / Propuesta</label>
+                            <textarea id="solution" class="w-full p-2 rounded bg-gray-900 border border-gray-700 h-20" placeholder="Automatización de flujos, integración API..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="text-gray-400 block mb-2">📞 Tono de Mensaje</label>
+                            <select id="messageTone" class="w-full p-2 rounded bg-gray-900 border border-gray-700">
+                                <option value="direct">Directo / Técnico</option>
+                                <option value="consultative">Consultivo</option>
+                                <option value="provocative">Provocativo</option>
+                                <option value="data-driven">Data-Driven</option>
+                            </select>
+                        </div>
+
+                        <button onclick="generateMessage()" class="bg-gold-dwemer text-black p-3 rounded font-bold w-full mt-4">
+                            ✨ GENERAR CANTO TONAL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OUTPUT MESSAGE -->
+                <div class="panel-edge p-4 obsidian-bg overflow-y-auto max-h-96">
+                    <h3 class="text-lg cyan-accent mb-4">📨 Mensaje Generado</h3>
+                    <div id="messageOutput" class="text-xs leading-relaxed space-y-3">
+                        <p class="text-gray-500">El mensaje aparecerá aquí</p>
+                    </div>
+                    <button onclick="copyMessage()" class="text-xs px-3 py-2 border border-cyan-accent text-cyan-accent rounded hover:bg-cyan-accent hover:text-black mt-4 w-full">
+                        📋 Copiar Mensaje
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="max-w-7xl mx-auto mt-12 pt-4 border-t border-gray-700 text-xs text-gray-600">
+        <p>🛡️ Sovereign Intelligence Engine v1.0 | Local-First | Zero Dependencies | Frequency 1310</p>
+        <p class="mt-2">⚠️ NOTA: Este sistema realiza búsquedas locales de HTML. Para búsquedas en Google/Bing, necesitarás un proxy CORS configurado o usar una extensión navegador.</p>
+    </div>
+
+    <script>
+        // ============================================================
+        // FRECUENCIA 1310 — CORE LOGIC ENGINE
+        // ============================================================
+        
+        // Estado Global
+        const state = {
+            leads: [],
+            dorks: [],
+            signals: []
+        };
+
+        // ============================================================
+        // MÓDULO 1: GENERADOR DE DORKS (ReAct-style reasoning)
+        // ============================================================
+        function generateDorks() {
+            const sector = document.getElementById('sectorInput').value;
+            const tech = document.getElementById('techInput').value;
+            const role = document.getElementById('roleInput').value;
+            const engine = document.getElementById('engineInput').value;
+            
+            const frictions = Array.from(document.querySelectorAll('.friction-signal:checked'))
+                .map(x => x.value);
+
+            if (!sector || !role) {
+                alert('❌ Debes seleccionar Sector y Cargo');
+                return;
+            }
+
+            state.dorks = [];
+
+            // ESTRATEGIA 1: Domain-based dorking
+            const domainDorks = generateDomainDorks(sector);
+            
+            // ESTRATEGIA 2: Tech stack + role targeting
+            const techDorks = generateTechDorks(sector, role, tech);
+            
+            // ESTRATEGIA 3: Friction signal targeting
+            const frictionDorks = generateFrictionDorks(frictions, role);
+            
+            // ESTRATEGIA 4: Linkedin + GitHub hybrid
+            const socialDorks = generateSocialDorks(sector, role);
+
+            state.dorks = [...domainDorks, ...techDorks, ...frictionDorks, ...socialDorks];
+
+            renderDorkOutput(engine);
+        }
+
+        function generateDomainDorks(sector) {
+            const sectorMap = {
+                'fintech': ['fintech', 'banking', 'payments', 'trading'],
+                'ecommerce': ['ecommerce', 'retail', 'shopping', 'marketplace'],
+                'logistica': ['logistics', 'supply chain', 'warehouse', 'fulfillment'],
+                'manufacturing': ['manufacturing', 'industrial', 'production', 'factory'],
+                'healthcare': ['healthcare', 'medical', 'hospital', 'clinic'],
+                'education': ['education', 'university', 'school', 'edtech'],
+                'hr': ['hr', 'recruitment', 'talent', 'payroll'],
+                'legal': ['legal', 'law firm', 'compliance', 'attorney'],
+                'real_estate': ['real estate', 'realty', 'property', 'construction'],
+                'saas': ['saas', 'software', 'cloud', 'platform']
+            };
+
+            const keywords = sectorMap[sector] || [];
+            return keywords.map(kw => `site:linkedin.com/in "${kw}" company`);
+        }
+
+        function generateTechDorks(sector, role, tech) {
+            const techStackHints = [
+                'legacy Java',
+                'monolith',
+                'Excel',
+                'manual processes',
+                'Excel macros',
+                'spreadsheet',
+                'paper-based',
+                'outdated system'
+            ];
+
+            const rolesMap = {
+                'CTO': ['CTO', 'VP Technology', 'Chief Technology'],
+                'CEO': ['CEO', 'Founder', 'Co-founder'],
+                'CFO': ['CFO', 'VP Finance', 'Finance Director'],
+                'COO': ['COO', 'VP Operations', 'Operations Director'],
+                'VPE': ['VP Engineering', 'Director Engineering', 'Engineering Lead'],
+                'PM': ['Product Manager', 'PM', 'Product Lead'],
+                'DEVOPS': ['DevOps', 'Infrastructure', 'SRE']
+            };
+
+            const searchRoles = rolesMap[role] || [];
+            const dorks = [];
+
+            searchRoles.forEach(r => {
+                tech && dorks.push(`"${r}" "${tech}"`);
+                dorks.push(`"${r}" "system modernization"`);
+                dorks.push(`"${r}" "digital transformation"`);
+            });
+
+            return dorks;
+        }
+
+        function generateFrictionDorks(frictions, role) {
+            const frictionMap = {
+                'automation': ['workflow automation', 'manual processes', 'RPA'],
+                'integration': ['API integration', 'system integration', 'microservices'],
+                'scaling': ['scalability', 'growth', 'performance bottleneck'],
+                'compliance': ['compliance', 'regulation', 'GDPR', 'audit'],
+                'security': ['cybersecurity', 'data protection', 'incident response'],
+                'datamigration': ['data migration', 'cloud migration', 'legacy to cloud']
+            };
+
+            const dorks = [];
+            frictions.forEach(f => {
+                const keywords = frictionMap[f] || [];
+                keywords.forEach(kw => {
+                    dorks.push(`"${kw}" hiring OR recruiting`);
+                });
+            });
+
+            return dorks;
+        }
+
+        function generateSocialDorks(sector, role) {
+            return [
+                `site:github.com "${role}" language:${sector}`,
+                `site:stackoverflow.com "${role}" tags:${sector}`,
+                `site:reddit.com r/${sector} "${role}"`
+            ];
+        }
+
+        function renderDorkOutput(engine) {
+            const output = document.getElementById('dorkOutput');
+            output.innerHTML = '';
+
+            state.dorks.forEach((dork, idx) => {
+                const chip = document.createElement('div');
+                chip.className = 'dork-chip';
+                chip.innerHTML = `<code>${escapeHtml(dork)}</code>`;
+                chip.onclick = () => {
+                    navigator.clipboard.writeText(dork);
+                    chip.style.background = 'rgba(0, 243, 255, 0.5)';
+                    setTimeout(() => chip.style.background = '', 1000);
+                };
+                output.appendChild(chip);
+            });
+
+            const summary = document.createElement('div');
+            summary.className = 'frequency-badge mt-4';
+            summary.innerHTML = `📊 ${state.dorks.length} queries generadas | Engine: ${engine}`;
+            output.appendChild(summary);
+        }
+
+        // ============================================================
+        // MÓDULO 2: GROUNDING EXTERNO (Self-RAG style extraction)
+        // ============================================================
+        function processRawHTML() {
+            const html = document.getElementById('rawHtmlInput').value;
+            
+            if (!html.trim()) {
+                alert('❌ Pega HTML para procesar');
+                return;
+            }
+
+            // PARSE HTML COMO TEXTO PLANO (para evitar XSS)
+            const text = stripHtml(html);
+            
+            // EXTRACCIÓN DE ENTIDADES
+            const names = extractNames(text);
+            const companies = extractCompanies(text);
+            const urls = extractURLs(text);
+            const emails = extractEmails(text);
+
+            renderExtractionOutput(names, companies, urls, emails);
+        }
+
+        function stripHtml(html) {
+            const temp = document.createElement('div');
+            temp.textContent = html;
+            return temp.innerHTML;
+        }
+
+        function extractNames(text) {
+            // Patrones: "John Doe", "Jane Smith" — nombres en mayúscula
+            const nameRegex = /\b([A-Z][a-z]+)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/g;
+            const matches = [...text.matchAll(nameRegex)];
+            
+            // Dedup
+            const names = new Set(matches.map(m => m[0]));
+            return Array.from(names).slice(0, 20);
+        }
+
+        function extractCompanies(text) {
+            // Patrones: "Company Inc", "ACME Corp", "TechCorp SA"
+            const companyRegex = /\b([A-Z][a-zA-Z0-9\s&]+?(?:Inc|Corp|Ltd|LLC|SA|GmbH|AG|SpA))\b/g;
+            const matches = [...text.matchAll(companyRegex)];
+            
+            const companies = new Set(matches.map(m => m[1].trim()));
+            return Array.from(companies).slice(0, 15);
+        }
+
+        function extractURLs(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const matches = [...text.matchAll(urlRegex)];
+            
+            const urls = new Set(matches.map(m => m[1]));
+            return Array.from(urls).slice(0, 10);
+        }
+
+        function extractEmails(text) {
+            const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+            const matches = [...text.matchAll(emailRegex)];
+            
+            const emails = new Set(matches.map(m => m[1].toLowerCase()));
+            return Array.from(emails).slice(0, 10);
+        }
+
+        function renderExtractionOutput(names, companies, urls, emails) {
+            const output = document.getElementById('extractionOutput');
+            output.innerHTML = '';
+
+            const sections = [
+                { title: '👤 Nombres Extraídos', items: names, cls: 'signal-found' },
+                { title: '🏢 Empresas', items: companies, cls: 'friction-found' },
+                { title: '🔗 URLs', items: urls, cls: 'signal-found' },
+                { title: '📧 Emails', items: emails, cls: 'friction-found' }
+            ];
+
+            sections.forEach(section => {
+                if (section.items.length > 0) {
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.innerHTML = `<h4 class="text-xs text-gray-400 mb-2">${section.title}</h4>`;
+                    
+                    section.items.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = `text-xs ${section.cls} p-1 mb-1 cursor-pointer hover:bg-gray-800 rounded`;
+                        itemEl.textContent = item;
+                        itemEl.onclick = () => navigator.clipboard.writeText(item);
+                        sectionDiv.appendChild(itemEl);
+                    });
+                    
+                    output.appendChild(sectionDiv);
+                }
+            });
+
+            // Crear Leads automáticamente
+            createLeadsFromExtraction(names, companies);
+        }
+
+        function createLeadsFromExtraction(names, companies) {
+            names.slice(0, Math.min(names.length, companies.length)).forEach((name, idx) => {
+                const lead = {
+                    id: Date.now() + idx,
+                    name: name,
+                    company: companies[idx] || 'Unknown',
+                    role: 'N/A',
+                    voltage: Math.random() * 0.8 + 0.2, // 0.2 a 1.0
+                    source: 'Extraction',
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                state.leads.push(lead);
+            });
+
+            document.getElementById('totalLeads').textContent = state.leads.length;
+        }
+
+        // ============================================================
+        // MÓDULO 3: ANÁLISIS DE FRICCIÓN (Friction Signal Detection)
+        // ============================================================
+        function analyzeFriction() {
+            const text = document.getElementById('frictionInput').value;
+            
+            if (!text.trim()) {
+                alert('❌ Pega texto para analizar');
+                return;
+            }
+
+            const analysis = {
+                frictionSignals: detectFrictionSignals(text),
+                maturityScore: calculateMaturityScore(text),
+                urgencyLevel: calculateUrgency(text),
+                recommendations: generateRecommendations(text),
+                technicalGaps: identifyTechGaps(text)
+            };
+
+            renderFrictionOutput(analysis);
+        }
+
+        function detectFrictionSignals(text) {
+            const signals = {
+                'manual_process': { regex: /manual|spreadsheet|excel|hand[- ]?made|paper/gi, weight: 0.8 },
+                'legacy_tech': { regex: /legacy|outdated|old|deprecated|windows\s*server/gi, weight: 0.9 },
+                'scaling_issue': { regex: /scale|growth|bottleneck|slow|performance|latency/gi, weight: 0.7 },
+                'integration': { regex: /integration|API|microservice|silos|disconnect|data\s*silos/gi, weight: 0.6 },
+                'security': { regex: /security|compliance|GDPR|PCI|audit|breach|vulnerability/gi, weight: 0.85 },
+                'team_pain': { regex: /team|difficult|challenge|complex|time\s*consuming|repetitive/gi, weight: 0.7 },
+                'hiring': { regex: /hiring|recruiting|talent|candidate|engineer|developer/gi, weight: 0.5 }
+            };
+
+            const detected = {};
+            Object.entries(signals).forEach(([type, { regex, weight }]) => {
+                const matches = text.match(regex);
+                if (matches && matches.length > 0) {
+                    detected[type] = { count: matches.length, weight, matches: matches.slice(0, 3) };
+                }
+            });
+
+            return detected;
+        }
+
+        function calculateMaturityScore(text) {
+            const matureTerms = ['microservices', 'cloud', 'AI', 'ML', 'automation', 'API', 'modern', 'agile'];
+            const immatureTerms = ['legacy', 'manual', 'excel', 'spreadsheet', 'outdated', 'old system'];
+
+            let score = 0.5;
+            matureTerms.forEach(term => {
+                if (text.toLowerCase().includes(term)) score += 0.05;
+            });
+            immatureTerms.forEach(term => {
+                if (text.toLowerCase().includes(term)) score -= 0.05;
+            });
+
+            return Math.max(0, Math.min(1, score));
+        }
+
+        function calculateUrgency(text) {
+            const urgentTerms = ['need', 'urgent', 'critical', 'immediately', 'ASAP', 'problem', 'issue', 'challenge'];
+            const matches = text.match(new RegExp(urgentTerms.join('|'), 'gi')) || [];
+            return Math.min(1, matches.length * 0.15);
+        }
+
+        function identifyTechGaps(text) {
+            const gaps = [];
+            const commonGaps = {
+                'No monitoring': /no\s+monitoring|without\s+monitoring|can't\s+monitor/gi,
+                'Manual reporting': /manual\s+report|hand\s+?crafter|spreadsheet\s+report/gi,
+                'Data silos': /data\s+silos|disconnect|not\s+integrated/gi,
+                'Security gaps': /security\s+concern|complian|protection/gi,
+                'Scaling issues': /can't\s+scale|scaling\s+challenge|growth\s+bottleneck/gi
+            };
+
+            Object.entries(commonGaps).forEach(([gap, regex]) => {
+                if (regex.test(text)) gaps.push(gap);
+            });
+
+            return gaps;
+        }
+
+        function generateRecommendations(text) {
+            const recs = [];
+            const frictions = detectFrictionSignals(text);
+
+            if (frictions.manual_process) {
+                recs.push('🤖 Automatización de flujos de trabajo');
+            }
+            if (frictions.legacy_tech) {
+                recs.push('🔄 Modernización de stack tecnológico');
+            }
+            if (frictions.scaling_issue) {
+                recs.push('📈 Infraestructura escalable');
+            }
+            if (frictions.integration) {
+                recs.push('🔗 Integración de sistemas');
+            }
+            if (frictions.security) {
+                recs.push('🛡️ Soluciones de seguridad / compliance');
+            }
+
+            return recs.length ? recs : ['📋 Análisis técnico detallado recomendado'];
+        }
+
+        function renderFrictionOutput(analysis) {
+            const output = document.getElementById('frictionOutput');
+            output.innerHTML = '';
+
+            // TITULO
+            const title = document.createElement('h4');
+            title.className = 'cyan-accent mb-3';
+            title.textContent = '📊 REPORTE DE FRICCIÓN';
+            output.appendChild(title);
+
+            // Maturity Score
+            const maturityDiv = document.createElement('div');
+            maturityDiv.className = 'code-block';
+            maturityDiv.innerHTML = `
+                <div class="flex justify-between mb-2">
+                    <span>🎯 Madurez Técnica</span>
+                    <span class="gold-dwemer">${(analysis.maturityScore * 100).toFixed(0)}%</span>
+                </div>
+                <div style="background: #1a1a1a; height: 6px; border-radius: 2px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #d4af37, #00f3ff); height: 100%; width: ${analysis.maturityScore * 100}%;"></div>
+                </div>
+            `;
+            output.appendChild(maturityDiv);
+
+            // Urgency
+            const urgencyDiv = document.createElement('div');
+            urgencyDiv.className = 'code-block';
+            const urgencyText = analysis.urgencyLevel > 0.7 ? '🔥 ALTA' : analysis.urgencyLevel > 0.4 ? '⚠️ MEDIA' : '💤 BAJA';
+            urgencyDiv.innerHTML = `<div class="flex justify-between"><span>⚡ Urgencia Detectada</span><span class="friction-found">${urgencyText} (${(analysis.urgencyLevel * 100).toFixed(0)}%)</span></div>`;
+            output.appendChild(urgencyDiv);
+
+            // Friction Signals
+            const signalsDiv = document.createElement('div');
+            signalsDiv.className = 'code-block';
+            signalsDiv.innerHTML = '<span class="cyan-accent">🎯 Señales de Fricción:</span><br>';
+            Object.entries(analysis.frictionSignals).forEach(([signal, data]) => {
+                signalsDiv.innerHTML += `<div class="mt-1"><span class="friction-found">• ${signal}</span> (${data.count} menciones)</div>`;
+            });
+            output.appendChild(signalsDiv);
+
+            // Tech Gaps
+            if (analysis.technicalGaps.length > 0) {
+                const gapsDiv = document.createElement('div');
+                gapsDiv.className = 'code-block';
+                gapsDiv.innerHTML = '<span class="cyan-accent">🔧 Brechas Técnicas Identificadas:</span><br>';
+                analysis.technicalGaps.forEach(gap => {
+                    gapsDiv.innerHTML += `<div class="mt-1 friction-found">→ ${gap}</div>`;
+                });
+                output.appendChild(gapsDiv);
+            }
+
+            // Recommendations
+            const recsDiv = document.createElement('div');
+            recsDiv.className = 'code-block bg-gray-900';
+            recsDiv.innerHTML = '<span class="gold-dwemer">💡 Recomendaciones de Solución:</span><br>';
+            analysis.recommendations.forEach(rec => {
+                recsDiv.innerHTML += `<div class="mt-1">${rec}</div>`;
+            });
+            output.appendChild(recsDiv);
+
+            // Summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'mt-4 p-2 border-l-2 border-gold-dwemer';
+            summaryDiv.innerHTML = `
+                <span class="gold-dwemer font-bold">📌 RESUMEN:</span><br>
+                <span class="text-xs text-gray-400 mt-1 block">
+                    Esta empresa presenta un potencial de oportunidad de ${(analysis.maturityScore * 100).toFixed(0)}% con urgencia ${(analysis.urgencyLevel * 100).toFixed(0)}%.
+                    ${analysis.technicalGaps.length} brechas técnicas críticas identificadas.
+                </span>
+            `;
+            output.appendChild(summaryDiv);
+        }
+
+        // ============================================================
+        // MÓDULO 4: DASHBOARD DE LEADS
+        // ============================================================
+        function renderLeadsCard(lead) {
+            const card = document.createElement('div');
+            card.className = 'lead-card';
+
+            const voltageColor = lead.voltage > 0.7 ? 'text-red-400' : lead.voltage > 0.4 ? 'text-yellow-400' : 'text-green-400';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="signal-found">${lead.name}</div>
+                        <div class="text-gray-400 text-xs">${lead.company}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="${voltageColor} font-bold text-sm">${(lead.voltage * 100).toFixed(0)}V</div>
+                        <div class="text-xs text-gray-500">${lead.source}</div>
+                    </div>
+                </div>
+                <div class="voltage-bar mb-2"></div>
+                <div class="text-xs text-gray-500">
+                    Cargo: ${lead.role} | ${lead.timestamp}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function renderLeadsContainer() {
+            const container = document.getElementById('leadsContainer');
+            if (state.leads.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-xs">No hay leads. Realiza una extracción primero.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            state.leads.forEach(lead => {
+                container.appendChild(renderLeadsCard(lead));
+            });
+        }
+
+        function clearLeads() {
+            state.leads = [];
+            document.getElementById('totalLeads').textContent = '0';
+            renderLeadsContainer();
+        }
+
+        // ============================================================
+        // MÓDULO 5: GENERADOR TONAL (Mensaje Outreach)
+        // ============================================================
+        function generateMessage() {
+            const leadName = document.getElementById('leadName').value;
+            const company = document.getElementById('leadCompany').value;
+            const role = document.getElementById('leadRole').value;
+            const painPoint = document.getElementById('painPoint').value;
+            const solution = document.getElementById('solution').value;
+            const tone = document.getElementById('messageTone').value;
+
+            if (!leadName || !company || !painPoint || !solution) {
+                alert('❌ Completa todos los campos');
+                return;
+            }
+
+            const message = constructMessage(leadName, company, role, painPoint, solution, tone);
+            renderMessage(message);
+
+            // Guardar en leads
+            const lead = {
+                id: Date.now(),
+                name: leadName,
+                company: company,
+                role: role,
+                voltage: calculateOpportunityVoltage(painPoint),
+                source: 'Manual',
+                timestamp: new Date().toLocaleTimeString()
+            };
+            state.leads.push(lead);
+            document.getElementById('totalLeads').textContent = state.leads.length;
+        }
+
+        function calculateOpportunityVoltage(painPoint) {
+            // Heurística: palabras clave indican urgencia
+            const urgentKeywords = ['urgent', 'critical', 'immediate', 'problema', 'crisis', 'blocking'];
+            const weight = urgentKeywords.filter(kw => painPoint.toLowerCase().includes(kw)).length * 0.1;
+            return Math.min(1, Math.random() * 0.6 + 0.4 + weight);
+        }
+
+        function constructMessage(name, company, role, pain, solution, tone) {
+            const toneMap = {
+                'direct': {
+                    greeting: `Hola ${name},`,
+                    hook: `He notado que en ${company} ${pain}.`,
+                    bridge: `Es un problema que hemos resuelto para 50+ empresas similares.`,
+                    cta: 'Nos gustaría ahorrarle 20+ horas/semana con esto.'
+                },
+                'consultative': {
+                    greeting: `Hola ${name},`,
+                    hook: `Imagino que en ${company}, como ${role}, lidias con ${pain}.`,
+                    bridge: `Hemos visto que ${solution} puede resolver esto en 4-6 semanas.`,
+                    cta: '¿Tienes 15 minutos para explorar opciones?'
+                },
+                'provocative': {
+                    greeting: `${name},`,
+                    hook: `${company} está dejando dinero sobre la mesa: ${pain}.`,
+                    bridge: `Mientras compiten, otros ya usan ${solution}.`,
+                    cta: '¿Quieres hablar antes de que tu competencia lo haga?'
+                },
+                'data-driven': {
+                    greeting: `Hi ${name},`,
+                    hook: `Empresas en tu sector pierden ~15% de revenue por ${pain}.`,
+                    bridge: `${solution} reduce ese gap en un 80%.`,
+                    cta: 'Te envío un case study de tu vertical. ¿15 min esta semana?'
+                }
+            };
+
+            const t = toneMap[tone];
+            return `${t.greeting}\n\n${t.hook}\n\n${t.bridge}\n\n${t.cta}\n\n—`;
+        }
+
+        function renderMessage(message) {
+            const output = document.getElementById('messageOutput');
+            output.innerHTML = `<pre class="text-xs leading-relaxed">${escapeHtml(message)}</pre>`;
+        }
+
+        function copyMessage() {
+            const msg = document.getElementById('messageOutput').textContent;
+            navigator.clipboard.writeText(msg);
+            alert('✅ Mensaje copiado al portapapeles');
+        }
+
+        // ============================================================
+        // UI UTILITIES
+        // ============================================================
+        function switchTab(tabName) {
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            event.target.classList.add('active');
+
+            // Render leads if switching to leads tab
+            if (tabName === 'leads') {
+                renderLeadsContainer();
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎯 Sovereign Intelligence Engine v1.0 — Ready for Grounding');
+            console.log('Frecuencia 1310: Sistema operativo. Aguardando comandos.');
+        });
+    </script>
+
+</body>
+</html>
