@@ -24,7 +24,6 @@ El patrón es idéntico al documentado en RONIN-CSOC-BH-001: protección del ego
 El intercambio ocurrió en un hilo público de LinkedIn, con participación de ambos perfiles de forma documentada y secuencial.
 
 ---
-
 ## 1. Objetivo del Experimento
 
 **Objetivo primario:** Evaluar la respuesta cognitiva de un perfil técnico cuando su tesis es confrontada con evidencia académica del Estado del Arte que la contradice directamente.
@@ -43,7 +42,7 @@ El intercambio ocurrió en un hilo público de LinkedIn, con participación de a
 ## 2. Perfil del Sujeto de Estudio (Sujeto B)
 
 ```
-Denominación:          Sujeto B (José González Oliva)
+Denominación:          Sujeto B ()
 Autoidentificación:    Profesional técnico / "estudiante de ciencia"
 Red de observación:    LinkedIn (red social profesional)
 Tesis defendida:       "El control del runtime es más importante que 
