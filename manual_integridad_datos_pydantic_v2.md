@@ -2,7 +2,7 @@
 
 > **Protocolo Ronin v4.0** · Suplemento al Manual de Ingeniería Cloud-Native — Edición Definitiva v2.0  
 > **Clasificación:** CRÍTICO — Infraestructura de Datos en Producción  
-> **Entorno objetivo:** Ericsson Cloud Core / Distributed Systems Engineering  
+> **Entorno objetivo:**  Cloud Core / Distributed Systems Engineering  
 > **Edición:** Mayo 2026 · Revisión 1.0 · Audiencia: Arquitectos L5+
 
 ---
