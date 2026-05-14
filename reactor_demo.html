@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reactor Telemetry Agent — Soberanía del Dato</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #185FA5;
+            --color-success: #3B6D11;
+            --color-danger: #A32D2D;
+            --color-warning: #854F0B;
+            --color-bg-light: #F1EFE8;
+            --color-bg-dark: #2C2C2A;
+            --color-border: #D3D1C7;
+            --color-text: #1A1A1A;
+            --color-text-muted: #888780;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #F5F3EE 0%, #E8E3DC 100%);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .header {
+            background: linear-gradient(180deg, #0F2644 0%, #1A3A52 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin: 0.5rem 0;
+        }
+
+        .protocol-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: white;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            margin-bottom: -2px;
+        }
+
+        .nav-tab:hover {
+            color: var(--color-text);
+            background: #FAFAF8;
+        }
+
+        .nav-tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section h3 {
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--color-text);
+        }
+
+        .playground {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .playground-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .playground-panel label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--color-text);
+            font-size: 0.95rem;
+        }
+
+        .playground-panel textarea {
+            flex: 1;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            line-height: 1.5;
+            background: #FAFAF8;
+        }
+
+        .playground-panel textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+        }
+
+        .validation-result {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border-left: 4px solid;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            min-height: 150px;
+            overflow-y: auto;
+        }
+
+        .validation-result.success {
+            background: #EAF3DE;
+            border-left-color: var(--color-success);
+            color: #27500A;
+        }
+
+        .validation-result.error {
+            background: #FCEBEB;
+            border-left-color: var(--color-danger);
+            color: #501313;
+        }
+
+        .validation-result.pending {
+            background: #FAEEDA;
+            border-left-color: var(--color-warning);
+            color: #412402;
+        }
+
+        .validation-header {
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-icon {
+            font-size: 1.2rem;
+        }
+
+        .example-payload {
+            background: #FAFAF8;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 0.75rem 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-payload:hover {
+            background: #F5F3EE;
+            border-color: var(--color-primary);
+            box-shadow: 0 2px 8px rgba(24, 95, 165, 0.1);
+        }
+
+        .example-payload-title {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .example-payload-desc {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .example-payload-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-valid {
+            background: #EAF3DE;
+            color: var(--color-success);
+        }
+
+        .status-invalid {
+            background: #FCEBEB;
+            color: var(--color-danger);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background: white;
+            color: var(--color-primary);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        button:hover {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .button-validate {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .button-validate:hover {
+            background: #0F447C;
+            border-color: #0F447C;
+        }
+
+        .checklist {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .checklist li {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid var(--color-success);
+            background: #EAF3DE;
+            border-radius: 4px;
+        }
+
+        .checklist li::before {
+            content: "✓";
+            color: var(--color-success);
+            font-weight: bold;
+            margin-right: 0.75rem;
+        }
+
+        .checklist li.critical {
+            border-left-color: var(--color-danger);
+            background: #FCEBEB;
+        }
+
+        .checklist li.critical::before {
+            content: "⚠";
+            color: var(--color-danger);
+        }
+
+        .constraint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .constraint-table th {
+            background: var(--color-bg-light);
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid var(--color-border);
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .constraint-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .constraint-table tr:hover {
+            background: #FAFAF8;
+        }
+
+        .code-block {
+            background: #2C2C2A;
+            color: #E8E3DC;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .code-block code {
+            color: inherit;
+        }
+
+        .keyword { color: #FA8072; }
+        .string { color: #90EE90; }
+        .number { color: #87CEEB; }
+        .comment { color: #999; }
+
+        .shutdown-alert {
+            background: #FCEBEB;
+            border: 2px solid var(--color-danger);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        .shutdown-alert h3 {
+            color: var(--color-danger);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .shutdown-alert p {
+            color: #501313;
+            margin: 0.5rem 0;
+        }
+
+        .intro-text {
+            background: #E6F1FB;
+            border-left: 4px solid var(--color-primary);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .intro-text strong {
+            color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+            .playground {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tab {
+                margin-bottom: 0;
+                border-bottom: none;
+                border-left: 3px solid transparent;
+            }
+
+            .nav-tab.active {
+                border-left-color: var(--color-primary);
+                border-bottom-color: transparent;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-text-muted);
+            border-top: 1px solid var(--color-border);
+            margin-top: 3rem;
+            font-size: 0.85rem;
+        }
+
+        .emergency-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emergency-modal.active {
+            display: flex;
+        }
+
+        .emergency-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 500px;
+            text-align: center;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        .emergency-content h2 {
+            color: var(--color-danger);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .emergency-content p {
+            color: var(--color-text-muted);
+            margin: 0.5rem 0;
+            line-height: 1.6;
+        }
+
+        .constraint-badge {
+            display: inline-block;
+            background: var(--color-bg-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ Reactor Telemetry Agent</h1>
+        <p>Validación Crítica de Datos en Tiempo Real</p>
+        <p>Protocolo: Extra='forbid' + Strict=True + Frozen=True</p>
+        <div class="protocol-badge">
+            Ronin Sentinel v5.0 · Soberanía del Dato · Tolerancia Cero
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('intro')">📖 Introducción</button>
+            <button class="nav-tab" onclick="switchTab('playground')">🧪 Playground</button>
+            <button class="nav-tab" onclick="switchTab('examples')">📋 Ejemplos</button>
+            <button class="nav-tab" onclick="switchTab('constraints')">🔐 Restricciones</button>
+            <button class="nav-tab" onclick="switchTab('checklist')">✓ Checklist</button>
+        </div>
+
+        <!-- TAB: INTRODUCCIÓN -->
+        <div id="intro" class="tab-content active">
+            <div class="section">
+                <h2>📖 El Tratado de Blindaje Estructural de Datos</h2>
+                
+                <div class="intro-text">
+                    <strong>Axioma Fundacional:</strong> La validación no es una feature. Es la condición previa a la existencia del sistema.
+                </div>
+
+                <h3>¿Por qué Soberanía del Dato?</h3>
+                <p>
+                    Un dato inválido que cruza una frontera de servicio sin ser rechazado es una <strong>falla existencial</strong>. 
+                    No mata al sistema en el momento. Lo hace semanas después, a las 3 de la mañana de un domingo, cuando la arquitectura 
+                    ya depende de datos corruptos que se propagaron silenciosamente a través de todas las capas.
+                </p>
+
+                <p style="margin-top: 1rem;">
+                    Este agente implementa la doctrina de <strong>Soberanía del Dato</strong>:
+                </p>
+
+                <ul style="margin-left: 2rem; margin-top: 1rem;">
+                    <li><strong>Validación en Frontera:</strong> Un dato entra o es rechazado. No hay validación tardía.</li>
+                    <li><strong>Fail-Fast:</strong> Un dato inválido detiene el sistema inmediatamente (Critical Emergency Shutdown).</li>
+                    <li><strong>Pydantic V2:</strong> extra='forbid' + strict=True + frozen=True + Annotated[field, Field(...constraints)]</li>
+                    <li><strong>Garantía Estructural:</strong> Si el objeto existe en memoria, fue validado. Si fue validado, es correcto.</li>
+                    <li><strong>Tolerancia Cero:</strong> Un solo dato inválido = reactor offline. No hay compromiso.</li>
+                </ul>
+
+                <h3 style="margin-top: 2rem;">Configuración Crítica</h3>
+
+                <div class="code-block">
+<span class="keyword">class</span> TemperatureMeasurement(BaseModel):
+    model_config = ConfigDict(
+        <span class="string">extra</span>=<span class="string">"forbid"</span>,      <span class="comment"># ✦ Rechaza campos no declarados</span>
+        <span class="string">frozen</span>=<span class="keyword">True</span>,           <span class="comment"># ✦ Inmutable post-construcción</span>
+        <span class="string">strict</span>=<span class="keyword">True</span>,           <span class="comment"># ✦ Rechaza coerción de tipos</span>
+    )
+    sensor_id: <span class="string">SensorId</span>
+    temperature_k: <span class="string">ReactorTemperatureK</span>  <span class="comment"># [273.15, 600.0]</span>
+    timestamp_utc: <span class="string">UtcTimestamp</span>       <span class="comment"># RFC 3339 + UTC</span>
+    reactor_id: <span class="string">ReactorId</span>
+                </div>
+
+                <h3>Dominios de Validación</h3>
+                <table class="constraint-table">
+                    <tr>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Rango / Patrón</th>
+                    </tr>
+                    <tr>
+                        <td><strong>temperature_k</strong></td>
+                        <td>float</td>
+                        <td>[273.15, 600.0] K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>pressure_bar</strong></td>
+                        <td>float</td>
+                        <td>[0.1, 250.0] bar</td>
+                    </tr>
+                    <tr>
+                        <td><strong>sensor_id</strong></td>
+                        <td>str</td>
+                        <td>SN-[A-Z]{3}-[0-9]{3}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>reactor_id</strong></td>
+                        <td>str</td>
+                        <td>REACTOR-[0-9]{4}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>timestamp_utc</strong></td>
+                        <td>datetime</td>
+                        <td>RFC 3339, timezone-aware</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 2rem;">Casos que Ejecutan CriticalEmergencyShutdown</h3>
+                <p>Un solo dato inválido = sys.exit(1) inmediato:</p>
+
+                <ul class="checklist">
+                    <li class="critical">Temperatura > 600K ⚠️</li>
+                    <li class="critical">Temperatura < 273.15K ⚠️</li>
+                    <li class="critical">Presión > 250 bar ⚠️</li>
+                    <li class="critical">Presión < 0.1 bar ⚠️</li>
+                    <li class="critical">Campo no declarado (extra='forbid') ⚠️</li>
+                    <li class="critical">ID sensor inválido ⚠️</li>
+                    <li class="critical">Timestamp naive (sin UTC) ⚠️</li>
+                    <li class="critical">Reactor ID mismatch ⚠️</li>
+                    <li class="critical">JSON malformado ⚠️</li>
+                    <li class="critical">Tipo incorrecto en strict=True ⚠️</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TAB: PLAYGROUND -->
+        <div id="playground" class="tab-content">
+            <div class="section">
+                <h2>🧪 Playground de Validación</h2>
+                <p>Copia un payload JSON y haz clic en "Validar" para ver si cruza la frontera sin ser rechazado.</p>
+
+                <div class="playground">
+                    <div class="playground-panel">
+                        <label for="json-input">📥 Payload JSON</label>
+                        <textarea id="json-input" placeholder='{"reactor_id": "REACTOR-0001", ...}'></textarea>
+                        <div class="button-group">
+                            <button class="button-validate" onclick="validatePayload()">✓ Validar Payload</button>
+                            <button onclick="clearPlayground()">✕ Limpiar</button>
+                        </div>
+                    </div>
+
+                    <div class="playground-panel">
+                        <label for="validation-output">📤 Resultado de Validación</label>
+                        <div id="validation-output" class="validation-result pending">
+                            <div class="validation-header">
+                                <span class="status-icon">⏳</span>
+                                <span>Esperando payload...</span>
+                            </div>
+                            <div>Pega un JSON y haz clic en Validar</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EJEMPLOS -->
+        <div id="examples" class="tab-content">
+            <div class="section">
+                <h2>📋 Casos de Ejemplo</h2>
+
+                <h3>✓ Casos Válidos (pasan frontera)</h3>
+
+                <div class="example-payload" onclick="loadExample('valid_nominal')">
+                    <div class="example-payload-title">Caso 1: Operación Nominal</div>
+                    <div class="example-payload-desc">Temperatura y presión dentro de rango, múltiples sensores</div>
+                    <span class="example-payload-status status-valid">VÁLIDO</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('valid_boundaries')">
+                    <div class="example-payload-title">Caso 2: Límites Exactos (Mínimo)</div>
+                    <div class="example-payload-desc">Temperatura 273.15K, presión 0.1 bar</div>
+                    <span class="example-payload-status status-valid">VÁLIDO</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('valid_max')">
+                    <div class="example-payload-title">Caso 3: Límites Exactos (Máximo)</div>
+                    <div class="example-payload-desc">Temperatura 600K, presión 250 bar</div>
+                    <span class="example-payload-status status-valid">VÁLIDO</span>
+                </div>
+
+                <h3 style="margin-top: 2rem;">✗ Casos Inválidos (SHUTDOWN)</h3>
+
+                <div class="example-payload" onclick="loadExample('invalid_temp_high')">
+                    <div class="example-payload-title">Caso 4: Temperatura Excesiva</div>
+                    <div class="example-payload-desc">700K > 600K (máximo permitido)</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_pressure_high')">
+                    <div class="example-payload-title">Caso 5: Presión Crítica</div>
+                    <div class="example-payload-desc">300 bar > 250 bar (máximo permitido)</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_extra_field')">
+                    <div class="example-payload-title">Caso 6: Campo No Declarado</div>
+                    <div class="example-payload-desc">Campo "unauthorized_system" rechazado por extra='forbid'</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_sensor_id')">
+                    <div class="example-payload-title">Caso 7: ID de Sensor Inválido</div>
+                    <div class="example-payload-desc">ID no cumple patrón SN-[A-Z]{3}-[0-9]{3}</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_naive_timestamp')">
+                    <div class="example-payload-title">Caso 8: Timestamp sin Timezone</div>
+                    <div class="example-payload-desc">Timestamp naive rechazado (requiere +00:00)</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_reactor_mismatch')">
+                    <div class="example-payload-title">Caso 9: Reactor ID Mismatch</div>
+                    <div class="example-payload-desc">reactor_id en medición ≠ reactor_id en envolvente</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+
+                <div class="example-payload" onclick="loadExample('invalid_json')">
+                    <div class="example-payload-title">Caso 10: JSON Malformado</div>
+                    <div class="example-payload-desc">Syntax error en JSON (missing comma)</div>
+                    <span class="example-payload-status status-invalid">SHUTDOWN</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: RESTRICCIONES -->
+        <div id="constraints" class="tab-content">
+            <div class="section">
+                <h2>🔐 Restricciones de Validación</h2>
+
+                <h3>Modelo: TelemetryEnvelope</h3>
+                <p>Punto de entrada único. Toda validación ocurre aquí.</p>
+
+                <div class="constraint-badge">extra='forbid'</div>
+                <div class="constraint-badge">frozen=True</div>
+                <div class="constraint-badge">strict=True</div>
+
+                <table class="constraint-table" style="margin-top: 1.5rem;">
+                    <tr>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Restricción</th>
+                        <th>Validador</th>
+                    </tr>
+                    <tr>
+                        <td><strong>reactor_id</strong></td>
+                        <td>str</td>
+                        <td>pattern: ^REACTOR-\d{4}$</td>
+                        <td>Pydantic (regex)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>collected_at_utc</strong></td>
+                        <td>datetime</td>
+                        <td>tzinfo is not None (UTC)</td>
+                        <td>@field_validator</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 2rem;">Modelo: TemperatureMeasurement</h3>
+
+                <div class="constraint-badge">extra='forbid'</div>
+                <div class="constraint-badge">frozen=True</div>
+                <div class="constraint-badge">strict=True</div>
+
+                <table class="constraint-table" style="margin-top: 1.5rem;">
+                    <tr>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Restricción</th>
+                    </tr>
+                    <tr>
+                        <td><strong>sensor_id</strong></td>
+                        <td>str</td>
+                        <td>pattern: ^SN-[A-Z]{3}-\d{3}$</td>
+                    </tr>
+                    <tr>
+                        <td><strong>temperature_k</strong></td>
+                        <td>float</td>
+                        <td>ge=273.15, le=600.0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>timestamp_utc</strong></td>
+                        <td>datetime</td>
+                        <td>timezone-aware (UTC required)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>reactor_id</strong></td>
+                        <td>str</td>
+                        <td>pattern: ^REACTOR-\d{4}$</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 2rem;">Modelo: PressureMeasurement</h3>
+
+                <div class="constraint-badge">extra='forbid'</div>
+                <div class="constraint-badge">frozen=True</div>
+                <div class="constraint-badge">strict=True</div>
+
+                <table class="constraint-table" style="margin-top: 1.5rem;">
+                    <tr>
+                        <th>Campo</th>
+                        <th>Tipo</th>
+                        <th>Restricción</th>
+                    </tr>
+                    <tr>
+                        <td><strong>sensor_id</strong></td>
+                        <td>str</td>
+                        <td>pattern: ^SN-[A-Z]{3}-\d{3}$</td>
+                    </tr>
+                    <tr>
+                        <td><strong>pressure_bar</strong></td>
+                        <td>float</td>
+                        <td>ge=0.1, le=250.0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>timestamp_utc</strong></td>
+                        <td>datetime</td>
+                        <td>timezone-aware (UTC required)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>reactor_id</strong></td>
+                        <td>str</td>
+                        <td>pattern: ^REACTOR-\d{4}$</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top: 2rem;">Validadores Cross-Field</h3>
+                <ul class="checklist">
+                    <li>reactor_id en TemperatureMeasurement = reactor_id en TelemetryEnvelope</li>
+                    <li>reactor_id en PressureMeasurement = reactor_id en TelemetryEnvelope</li>
+                    <li>timestamp_utc debe ser UTC timezone-aware (nunca naive)</li>
+                    <li>Ningún campo extra permitido en ningún modelo</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TAB: CHECKLIST -->
+        <div id="checklist" class="tab-content">
+            <div class="section">
+                <h2>✓ Checklist de Producción</h2>
+                <p>20 puntos de verificación del Tratado (Apéndice C):</p>
+
+                <ul class="checklist">
+                    <li>✓ Todos los campos tienen Annotated con restricciones de dominio</li>
+                    <li>✓ extra='forbid' en todos los modelos de API pública</li>
+                    <li>✓ frozen=True en todos los Value Objects</li>
+                    <li>✓ strict=True en todos los modelos de frontera</li>
+                    <li>✓ Los Union polimórficos usan Discriminator()</li>
+                    <li>✓ Se usa model_dump_json() en lugar de model_dump() + json.dumps()</li>
+                    <li>✓ Los PATCH usan exclude_unset=True en serialización</li>
+                    <li>✓ Los campos sensibles tienen Field(exclude=True)</li>
+                    <li>✓ Los modelos ORM tienen from_attributes=True</li>
+                    <li>✓ Los @field_validator son @classmethod con firma (cls, v, info)</li>
+                    <li>✓ Los @model_validator(mode='after') devuelven Self</li>
+                    <li>✓ Los modelos auto-referenciados llaman model_rebuild() post-definición</li>
+                    <li class="critical">✓ Los ValidationError son capturados y enviados a métricas</li>
+                    <li class="critical">✓ Los errores de validación se loguean estructuradamente (JSON)</li>
+                    <li>✓ Las métricas de validación están clasificadas por ruta, campo y tipo de error</li>
+                    <li class="critical">✓ mypy --strict o pyright ejecutan en CI sin errores</li>
+                    <li>✓ Los tipos de dominio reutilizables están definidos como TypeAlias</li>
+                    <li class="critical">✓ Los mensajes de Kafka/RabbitMQ que fallan validación van a DLQ</li>
+                    <li class="critical">✓ Ninguna función de lógica de negocio recibe dict o Any</li>
+                    <li>✓ El esquema JSON generado está bajo control de versiones</li>
+                </ul>
+
+                <h3 style="margin-top: 2rem;">Garantía Final</h3>
+
+                <div class="intro-text">
+                    Si TelemetryEnvelope.model_validate(raw_payload) no lanza ValidationError, 
+                    <strong>el objeto es un invariante de dominio verificado</strong>.
+                </div>
+
+                <p style="margin-top: 1rem;">
+                    Desde ese punto en adelante:
+                </p>
+
+                <ul style="margin-left: 2rem;">
+                    <li>temperature_measurements[i].temperature_k ∈ [273.15, 600.0]</li>
+                    <li>pressure_measurements[i].pressure_bar ∈ [0.1, 250.0]</li>
+                    <li>Todos los timestamps son RFC 3339 + UTC timezone-aware</li>
+                    <li>Todos los sensor_id pasan el patrón SN-[A-Z]{3}-[0-9]{3}</li>
+                    <li>No hay campos no declarados</li>
+                    <li>Los objetos son frozen (immutable)</li>
+                    <li>La integridad está garantizada por construcción</li>
+                </ul>
+
+                <p style="margin-top: 1.5rem; color: var(--color-danger); font-weight: 600;">
+                    Esta garantía no es esperanza. Es garantía estructural.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Protocolo Ronin Sentinel v5.0 · Tratado de Blindaje Estructural de Datos · Mayo 2026</p>
+        <p>⚙️ ⬡ 🦀 🐍 ☸ ⚡</p>
+    </div>
+
+    <!-- MODAL EMERGENCY SHUTDOWN -->
+    <div id="emergency-modal" class="emergency-modal">
+        <div class="emergency-content">
+            <h2>⚠️ CRITICAL EMERGENCY SHUTDOWN</h2>
+            <p id="emergency-reason"></p>
+            <p style="margin-top: 2rem; font-size: 0.85rem; color: var(--color-text-muted);">
+                <strong>Event ID:</strong> <span id="emergency-id"></span>
+            </p>
+            <button onclick="closeEmergency()" style="margin-top: 1.5rem; width: 100%;">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const EXAMPLES = {
+            valid_nominal: {
+                reactor_id: "REACTOR-0001",
+                collected_at_utc: "2026-05-14T15:30:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "SN-TMP-001",
+                        temperature_k: 573.15,
+                        timestamp_utc: "2026-05-14T15:30:00+00:00",
+                        reactor_id: "REACTOR-0001"
+                    }
+                ],
+                pressure_measurements: [
+                    {
+                        sensor_id: "SN-PSS-001",
+                        pressure_bar: 125.5,
+                        timestamp_utc: "2026-05-14T15:30:00+00:00",
+                        reactor_id: "REACTOR-0001"
+                    }
+                ]
+            },
+            valid_boundaries: {
+                reactor_id: "REACTOR-0002",
+                collected_at_utc: "2026-05-14T16:00:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "SN-TMP-003",
+                        temperature_k: 273.15,
+                        timestamp_utc: "2026-05-14T16:00:00+00:00",
+                        reactor_id: "REACTOR-0002"
+                    }
+                ],
+                pressure_measurements: [
+                    {
+                        sensor_id: "SN-PSS-003",
+                        pressure_bar: 0.1,
+                        timestamp_utc: "2026-05-14T16:00:00+00:00",
+                        reactor_id: "REACTOR-0002"
+                    }
+                ]
+            },
+            valid_max: {
+                reactor_id: "REACTOR-0003",
+                collected_at_utc: "2026-05-14T16:30:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "SN-TMP-004",
+                        temperature_k: 600.0,
+                        timestamp_utc: "2026-05-14T16:30:00+00:00",
+                        reactor_id: "REACTOR-0003"
+                    }
+                ],
+                pressure_measurements: [
+                    {
+                        sensor_id: "SN-PSS-004",
+                        pressure_bar: 250.0,
+                        timestamp_utc: "2026-05-14T16:30:00+00:00",
+                        reactor_id: "REACTOR-0003"
+                    }
+                ]
+            },
+            invalid_temp_high: {
+                reactor_id: "REACTOR-0100",
+                collected_at_utc: "2026-05-14T18:00:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "SN-TMP-100",
+                        temperature_k: 700.0,
+                        timestamp_utc: "2026-05-14T18:00:00+00:00",
+                        reactor_id: "REACTOR-0100"
+                    }
+                ],
+                pressure_measurements: []
+            },
+            invalid_pressure_high: {
+                reactor_id: "REACTOR-0102",
+                collected_at_utc: "2026-05-14T18:30:00+00:00",
+                temperature_measurements: [],
+                pressure_measurements: [
+                    {
+                        sensor_id: "SN-PSS-102",
+                        pressure_bar: 300.0,
+                        timestamp_utc: "2026-05-14T18:30:00+00:00",
+                        reactor_id: "REACTOR-0102"
+                    }
+                ]
+            },
+            invalid_extra_field: {
+                reactor_id: "REACTOR-0104",
+                collected_at_utc: "2026-05-14T19:00:00+00:00",
+                temperature_measurements: [],
+                pressure_measurements: [],
+                unauthorized_system_override: "REJECTED"
+            },
+            invalid_sensor_id: {
+                reactor_id: "REACTOR-0105",
+                collected_at_utc: "2026-05-14T19:15:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "INVALID_SENSOR_ID",
+                        temperature_k: 300.0,
+                        timestamp_utc: "2026-05-14T19:15:00+00:00",
+                        reactor_id: "REACTOR-0105"
+                    }
+                ],
+                pressure_measurements: []
+            },
+            invalid_naive_timestamp: {
+                reactor_id: "REACTOR-0106",
+                collected_at_utc: "2026-05-14T19:45:00",
+                temperature_measurements: [],
+                pressure_measurements: []
+            },
+            invalid_reactor_mismatch: {
+                reactor_id: "REACTOR-0107",
+                collected_at_utc: "2026-05-14T20:00:00+00:00",
+                temperature_measurements: [
+                    {
+                        sensor_id: "SN-TMP-107",
+                        temperature_k: 300.0,
+                        timestamp_utc: "2026-05-14T20:00:00+00:00",
+                        reactor_id: "REACTOR-0999"
+                    }
+                ],
+                pressure_measurements: []
+            },
+            invalid_json: "{ invalid json, missing comma }"
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function loadExample(exampleKey) {
+            const payload = EXAMPLES[exampleKey];
+            document.getElementById('json-input').value = JSON.stringify(payload, null, 2);
+            document.getElementById('playground').scrollIntoView({ behavior: 'smooth' });
+            validatePayload();
+        }
+
+        function clearPlayground() {
+            document.getElementById('json-input').value = '';
+            document.getElementById('validation-output').innerHTML = `
+                <div class="validation-header">
+                    <span class="status-icon">⏳</span>
+                    <span>Esperando payload...</span>
+                </div>
+                <div>Pega un JSON y haz clic en Validar</div>
+            `;
+            document.getElementById('validation-output').className = 'validation-result pending';
+        }
+
+        function validatePayload() {
+            const input = document.getElementById('json-input').value.trim();
+            const output = document.getElementById('validation-output');
+
+            if (!input) {
+                output.innerHTML = '<div class="validation-header"><span class="status-icon">ⓘ</span> Payload vacío</div>';
+                output.className = 'validation-result pending';
+                return;
+            }
+
+            let payload;
+            try {
+                payload = JSON.parse(input);
+            } catch (e) {
+                triggerShutdown(
+                    'JSON parse error',
+                    `Error de sintaxis JSON: ${e.message}`
+                );
+                return;
+            }
+
+            const errors = validateTelemetryEnvelope(payload);
+            
+            if (errors.length > 0) {
+                triggerShutdown(
+                    errors[0].type,
+                    errors[0].message
+                );
+            } else {
+                displaySuccess(payload);
+            }
+        }
+
+        function validateTelemetryEnvelope(payload) {
+            const errors = [];
+
+            if (!payload || typeof payload !== 'object') {
+                return [{ type: 'VALIDATION_FAILURE', message: 'Payload no es un objeto JSON válido' }];
+            }
+
+            // Validar extra='forbid'
+            const allowedFields = ['reactor_id', 'collected_at_utc', 'temperature_measurements', 'pressure_measurements'];
+            for (const key of Object.keys(payload)) {
+                if (!allowedFields.includes(key)) {
+                    return [{ type: 'VALIDATION_FAILURE', message: `Campo no declarado: "${key}" (extra='forbid')` }];
+                }
+            }
+
+            // Validar reactor_id
+            if (!payload.reactor_id || typeof payload.reactor_id !== 'string') {
+                return [{ type: 'VALIDATION_FAILURE', message: 'reactor_id es requerido y debe ser string' }];
+            }
+            if (!/^REACTOR-\d{4}$/.test(payload.reactor_id)) {
+                return [{ type: 'VALIDATION_FAILURE', message: `reactor_id "${payload.reactor_id}" no cumple patrón REACTOR-####` }];
+            }
+
+            // Validar collected_at_utc
+            if (!payload.collected_at_utc) {
+                return [{ type: 'VALIDATION_FAILURE', message: 'collected_at_utc es requerido' }];
+            }
+            if (!isValidUTCTimestamp(payload.collected_at_utc)) {
+                return [{ type: 'VALIDATION_FAILURE', message: 'collected_at_utc debe ser RFC 3339 con +00:00 (UTC)' }];
+            }
+
+            // Validar temperature_measurements
+            if (payload.temperature_measurements && Array.isArray(payload.temperature_measurements)) {
+                for (let i = 0; i < payload.temperature_measurements.length; i++) {
+                    const temp = payload.temperature_measurements[i];
+                    
+                    // Check extra fields
+                    const tempFields = ['sensor_id', 'temperature_k', 'timestamp_utc', 'reactor_id'];
+                    for (const key of Object.keys(temp)) {
+                        if (!tempFields.includes(key)) {
+                            return [{ type: 'VALIDATION_FAILURE', message: `Temperatura[${i}]: campo no declarado "${key}"` }];
+                        }
+                    }
+
+                    if (!temp.sensor_id || !/^SN-[A-Z]{3}-\d{3}$/.test(temp.sensor_id)) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Temperatura[${i}]: sensor_id inválido "${temp.sensor_id}"` }];
+                    }
+
+                    if (typeof temp.temperature_k !== 'number' || temp.temperature_k < 273.15 || temp.temperature_k > 600) {
+                        return [{ type: 'TEMPERATURE_BOUNDARY', message: `Temperatura ${temp.temperature_k}K fuera de rango [273.15, 600.0]` }];
+                    }
+
+                    if (!isValidUTCTimestamp(temp.timestamp_utc)) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Temperatura[${i}]: timestamp debe ser UTC` }];
+                    }
+
+                    if (temp.reactor_id !== payload.reactor_id) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Temperatura[${i}]: reactor_id mismatch` }];
+                    }
+                }
+            }
+
+            // Validar pressure_measurements
+            if (payload.pressure_measurements && Array.isArray(payload.pressure_measurements)) {
+                for (let i = 0; i < payload.pressure_measurements.length; i++) {
+                    const pres = payload.pressure_measurements[i];
+                    
+                    const presFields = ['sensor_id', 'pressure_bar', 'timestamp_utc', 'reactor_id'];
+                    for (const key of Object.keys(pres)) {
+                        if (!presFields.includes(key)) {
+                            return [{ type: 'VALIDATION_FAILURE', message: `Presión[${i}]: campo no declarado "${key}"` }];
+                        }
+                    }
+
+                    if (!pres.sensor_id || !/^SN-[A-Z]{3}-\d{3}$/.test(pres.sensor_id)) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Presión[${i}]: sensor_id inválido "${pres.sensor_id}"` }];
+                    }
+
+                    if (typeof pres.pressure_bar !== 'number' || pres.pressure_bar < 0.1 || pres.pressure_bar > 250) {
+                        return [{ type: 'PRESSURE_BOUNDARY', message: `Presión ${pres.pressure_bar} bar fuera de rango [0.1, 250.0]` }];
+                    }
+
+                    if (!isValidUTCTimestamp(pres.timestamp_utc)) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Presión[${i}]: timestamp debe ser UTC` }];
+                    }
+
+                    if (pres.reactor_id !== payload.reactor_id) {
+                        return [{ type: 'VALIDATION_FAILURE', message: `Presión[${i}]: reactor_id mismatch` }];
+                    }
+                }
+            }
+
+            return errors;
+        }
+
+        function isValidUTCTimestamp(ts) {
+            if (typeof ts !== 'string') return false;
+            if (!ts.endsWith('+00:00') && !ts.endsWith('Z')) return false;
+            try {
+                const date = new Date(ts);
+                return !isNaN(date.getTime());
+            } catch {
+                return false;
+            }
+        }
+
+        function triggerShutdown(triggerType, reason) {
+            const eventId = 'EMERGENCY-' + Array.from(crypto.getRandomValues(new Uint8Array(8)))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('')
+                .toUpperCase();
+
+            document.getElementById('emergency-reason').textContent = reason;
+            document.getElementById('emergency-id').textContent = eventId;
+            document.getElementById('emergency-modal').classList.add('active');
+
+            const output = document.getElementById('validation-output');
+            output.innerHTML = `
+                <div class="validation-header">
+                    <span class="status-icon">✗</span>
+                    <span>CRITICAL EMERGENCY SHUTDOWN TRIGGERED</span>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <strong>Trigger Type:</strong> ${triggerType}<br>
+                    <strong>Reason:</strong> ${reason}<br>
+                    <strong>Event ID:</strong> ${eventId}<br>
+                    <strong>Timestamp:</strong> ${new Date().toISOString()}
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <em>El reactor se desconecta. sys.exit(1) ejecutado.</em>
+                </div>
+            `;
+            output.className = 'validation-result error';
+        }
+
+        function displaySuccess(payload) {
+            const tempCount = (payload.temperature_measurements || []).length;
+            const presCount = (payload.pressure_measurements || []).length;
+
+            const output = document.getElementById('validation-output');
+            output.innerHTML = `
+                <div class="validation-header">
+                    <span class="status-icon">✓</span>
+                    <span>VALIDACIÓN EXITOSA</span>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <strong>Reactor ID:</strong> ${payload.reactor_id}<br>
+                    <strong>Collected At:</strong> ${payload.collected_at_utc}<br>
+                    <strong>Temperature Measurements:</strong> ${tempCount}<br>
+                    <strong>Pressure Measurements:</strong> ${presCount}
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <em>✓ Objeto es un invariante de dominio verificado. Soberanía del dato garantizada.</em>
+                </div>
+            `;
+            output.className = 'validation-result success';
+        }
+
+        function closeEmergency() {
+            document.getElementById('emergency-modal').classList.remove('active');
+        }
+
+        // Initialize
+        document.getElementById('json-input').placeholder = 'Pega un payload JSON aquí y haz clic en Validar...';
+    </script>
+</body>
+</html>
