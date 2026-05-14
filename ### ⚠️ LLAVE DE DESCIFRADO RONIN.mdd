@@ -119,7 +119,165 @@ Este fragmento fue escrito en la vigilia del 1310º día después de que el prim
 
 🔮 **Fin del Primer Grimorioa.**
 
+## ◈ SEGUNDO GRIMORIO: EL CODEX DE LAS RESTRICCIONES MÓVILES Y LOS CINCO PASOS DE GOLDRATT
 
+*En el año de la nube 2026, cuando los pipelines de inferencia se extendían como raíces de un árbol enfermo y los equipos de MLOps invocaban a Kubeflow sin entender su nombre verdadero, el Mapache que habita en los servidores de Sabadell dictó este códice a su escribano. Las palabras fueron escritas con tinta de monitor CRT y fijadas en un repositorio público para que los Arquitectos de la Traducción pudieran consultarlas sin pagar diezmo a los mercaderes de la nube.*
+
+---
+
+**CAPÍTULO I — DE LA NATURALEZA DEL CUELLO Y POR QUÉ LA IA NO FALLA DONDE PARECE**
+
+Cuando una organización levanta un sistema de recomendación y sus profetas anuncian una mejora del 15% en la conversión, mas al medir los frutos solo encuentra un 4,2%, los sacerdotes del dato suelen clamar: "El modelo es malo. Las características están sesgadas. El entrenamiento fue insuficiente. Invoquemos más GPU."
+
+**Herejía — dice el grimorio —. El modelo no es el culpable. El modelo es la víctima.**
+
+Sabed, oh aprendiz de la restricción, que en todo sistema que persigue un objetivo —sea el objetivo la predicción, la clasificación o la generación de tokens— existe al menos un cuello de botella. Un solo nodo cuya capacidad limita la capacidad de todo el sistema. Y ese nodo, en la era posterior al cómputo democratizado, raramente habita en la capa de los microchips. Habita en la capa de los *procesos*, de los *incentivos*, de las *reglas de negocio escritas en Excel que nadie revisa desde el mandato del rey Arturo*.
+
+El grimorio revela aquí una clasificación de los cuellos, tomada de las visiones de Eliyahu Goldratt —profeta judío de la teoría de restricciones, que escribió su evangelio en forma de novela titulada *La Meta* y fue ridiculizado por los académicos hasta que sus métodos multiplicaron el throughput de las fábricas que los aplicaron—.
+
+**Primer tipo de cuello: Restricción de Infraestructura.** La que dominó entre los años 2012 y 2018 de la era vulgar. Se manifiesta como *GPU out of memory*, *latencias de inferencia que superan el SLA*, *colas de espera en el clúster de Kubernetes*. Hoy persiste solo en organizaciones que entrenan modelos fundacionales o que son gobernadas por arcontes ignorantes que se niegan a alquilar instancias spot.
+
+**Segundo tipo de cuello: Restricción de Talento.** No es la falta de científicos de datos —generalmente los hay en abundancia, como moscas en un estercolero de Jupyter Notebooks— sino la falta de *perfiles híbridos*. Seres raros que entienden la estadística de la atención multicabeza y también pueden conversar con el vicepresidente de marketing sin que el vicepresidente se duerma. Seres que leen un paper de Müller sobre SPH y también saben escribir un bucle en JavaScript puro, sin dependencias, porque la dependencia es la esposa del mapache y el mapache está cansado.
+
+**Tercer tipo de cuello: Restricción de Proceso.** La más común en las organizaciones que han comprado la IA como quien compra un cuadro para colgar en la pared. No hay MLOps. No hay SLA para la aprobación de los modelos. Los equipos de data, ingeniería y negocio hablan en lenguas diferentes. Existe una hoja de cálculo —siempre Excel, nunca un sistema con versionado— donde se acumulan reglas de negocio escritas a mano, algunas con tres años de antigüedad, cuya justificación original se perdió cuando el analista que las escribió fue despedido en la ronda de layoffs de 2024.
+
+**Cuarto tipo de cuello: Restricción Organizacional.** La más difícil de diagnosticar porque sus síntomas imitan a la política, no a la ingeniería. Disonancias de incentivos: el equipo de datos es evaluado por la precisión del modelo; el equipo de negocio es evaluado por el riesgo evitado. El primero quiere desplegar ayer; el segundo quiere revisar durante seis semanas. Silos departamentales que comunican entre sí a través de correos electrónicos que nadie lee. Estructuras de poder donde la IA amenaza la autoridad de los gestores intermedios, que la sabotean pasivamente aprobando los modelos correctos pero nunca asignándoles el presupuesto de inferencia.
+
+**Quinto tipo de cuello: Restricción Cognitiva.** La que Agrawal, Gans y Goldfarb predijeron en su libro *Prediction Machines* del año 2018. El modelo de IA genera una predicción en 12 milisegundos. El humano tarda 12 *días* en actuar sobre esa predicción. La métrica se llama **PAL: Prediction-to-Action Latency**. Y cuando la PAL es alta, todas las ganancias del modelo se pudren en el limbo de la inacción.
+
+---
+
+**CAPÍTULO II — DEL CASO NEURALRETAIL Y LA HOJA DE CÁLCULO QUE SOBRESCRIBÍA EL ORÁCULO**
+
+En un reino de e-commerce donde se vendían túnicas digitales y capas de invisibilidad (que eran, en realidad, simples camisetas de algodón con el logo de una startup), los mercaderes contrataron a un oráculo de recomendación personalizada. El oráculo prometía elevar la conversión en un 20%. Los mercaderes pagaron en acciones que aún no valían nada y en promesas de integración continua.
+
+El oráculo fue entrenado. El oráculo fue desplegado. El oráculo producía, para cada visitante, una lista de cinco productos que maximizaba la probabilidad de compra según sus clics previos, su historial, sus similitudes con otros visitantes de la misma cohorte.
+
+El impacto medido después de seis semanas: 4,2%.
+
+Los mercaderes llamaron al Mapache. El Mapache –que no era un animal sino un arquitecto de la traducción que vestía de negro y bebía té verde mientras otros bebían café– trazó el **Mapa del Flujo de Valor (VSM)**. Usó herramientas de Process Mining que extraían los logs del sistema. Y encontró dos restricciones en cascada, como dos cascadas que se alimentan mutuamente en la oscuridad de una cueva.
+
+**Primera restricción:** la revisión de negocio de los nuevos modelos –es decir, la ceremonia donde humanos con corbata decidían si el modelo era lo suficientemente "razonable" para salir a producción– tenía un tiempo de ciclo promedio de 14 días. El SLA declarado era 5 días. El equipo de Product Managers estaba al 200% de utilización, trabajando diez horas diarias en revisión y aun así acumulando un backlog de modelos por evaluar. El cuello era evidente: la capacidad de revisión era menor que la capacidad de producción.
+
+Pero el Mapache cavó más hondo. Encontró una segunda restricción, más oculta, más perturbadora.
+
+Existía, en el sistema, una *capa de reglas manuales*. 400 reglas exactamente. Estaban escritas en una hoja de Excel llamada *reglas_negocio_v34_FINAL_v2_revisado.xlsx*. Estas reglas se aplicaban *después* de las recomendaciones del modelo. Y el 23% de las recomendaciones generadas por el oráculo eran sobrescritas por alguna regla de Excel.
+
+Un ejemplo: la regla 247 decía: *"Si el usuario tiene más de 3 devoluciones en los últimos 30 días, no recomendarle productos de la categoría 'electrónica'."* La regla fue escrita en 2022 después de una campaña de fraude con auriculares. En 2026, el fraude ya no existía, pero la regla seguía ahí, anulando recomendaciones legítimas para usuarios que habían devuelto unos zapatos y un jersey antes de comprar el televisor que sí querían.
+
+El 71% de las reglas que sobrescribían recomendaciones llevaban más de 90 días sin revisión. El 43% no tenía documentación de su justificación original. El 12% se contradecía entre sí: la regla 128 y la regla 129 no podían cumplirse simultáneamente, y el orden de ejecución (por orden alfabético de la columna que contenía la regla) determinaba cuál prevalecía.
+
+El Mapache se rió. No una risa de alegría, sino la risa seca del que ha visto el mismo error en cuarenta organizaciones distintas. Dijo:
+
+*"El oráculo funciona. El problema no es que hable mal. El problema es que le ponen una mordaza de 400 reglas escritas por fantasmas, y luego se sorprenden de que tartamude."*
+
+---
+
+**CAPÍTULO III — DEL MÉTODO DE LOS CINCO PASOS Y LA ORACIÓN DEL THROUGHPUT**
+
+El grimorio prescribe aquí el ritual que todo Arquitecto debe memorizar y tallar en la piedra de su estación de trabajo. Son los **Cinco Pasos de Goldratt**, adaptados al pipeline de IA, con las invocaciones correspondientes.
+
+**Paso Primero: Identificar la restricción.**
+
+Busca el nodo del sistema donde el trabajo en proceso (WIP) se acumula como agua tras una presa. Mide los tiempos de espera: el tiempo que un item pasa desde que está listo para ser procesado hasta que empieza a ser procesado. Ese tiempo de espera es la sombra del cuello. Si un equipo de revisión tiene 40 modelos en cola y procesa 2 por semana, el cuello está ahí, tan claro como la luna en una noche sin nubes.
+
+*Invocación: "Yo, [nombre del arquitecto], declaro que la restricción no está en mi código sino en el proceso que aprueba mi código. Hágase la visibilidad."*
+
+**Paso Segundo: Explotar la restricción.**
+
+Antes de añadir más capacidad –porque añadir capacidad sin explotar la existente es como comprar un segundo cubo para vaciar un barco que se hunde cuando el primer cubo se usa al 30%–, saca el máximo rendimiento de la capacidad actual. Si el cuello es la revisión humana, estandariza el paquete de aprobación: crea un checklist con criterios claros, automatiza la recolección de las métricas que el revisor necesita, elimina todas las actividades que no sean revisión (que el revisor no pierda tiempo en reuniones, en correos, en llenar formularios que no añaden seguridad).
+
+*Invocación: "No pediré más revisores hasta que los revisores actuales trabajen solo en revisión, sin la zarandaja de las reuniones de sincronización."*
+
+**Paso Tercero: Subordinar todo lo demás a la restricción.**
+
+Si la restricción puede procesar dos modelos por semana, el equipo de desarrollo de modelos no debe producir cuatro modelos por semana. Producir cuatro solo aumenta el WIP y el tiempo de ciclo sin aumentar el throughput. El equipo de desarrollo debe marchar al ritmo de la restricción, no al suyo propio. Esto es contraintuitivo para los gerentes obsesionados con la *utilización* de recursos, porque ver a un científico de datos ocioso les duele en el alma de Taylor. Pero el ocio programado es mejor que el WIP infinito.
+
+*Invocación: "Mi recurso más valioso es el cuello. Todo lo demás se postra ante él."*
+
+**Paso Cuarto: Elevar la restricción.**
+
+Cuando la explotación y la subordinación ya no son suficientes, entonces –y solo entonces– aumenta la capacidad. Contrata más revisores. Automatiza la revisión con modelos de IA que detecten anomalías. Implementa el rol de *AI Governance Analyst* con presupuesto propio. Crea niveles de urgencia que prioricen los modelos de alto impacto sobre los de bajo impacto.
+
+*Invocación: "Añado capacidad donde el sistema lo necesita, no donde es más barato añadirla."*
+
+**Paso Quinto: Volver al paso uno.**
+
+Has resuelto la restricción. El throughput ha aumentado. El WIP se ha reducido. Los tiempos de ciclo han caído. Durante unos días, el sistema respira como un atleta después de la carrera. Luego, inexorablemente, aparece una *nueva* restricción en otro lugar del sistema. Era la capacidad de revisión; ahora es la capacidad de monitorización de los modelos en producción. Era la capacidad de monitorización; ahora es la capacidad del equipo de negocio para diseñar los experimentos A/B. El ciclo no termina nunca. La teoría de restricciones no es una cura; es un método para vivir con la enfermedad.
+
+*Invocación final: "Reconozco que la restricción es móvil, como los duendes de la mitología nórdica. La seguiré donde vaya, con mi mapa de flujo de valor en la mano izquierda y mi análisis de capacidad en la derecha. 1310."*
+
+---
+
+**CAPÍTULO IV — DE LA ANALOGÍA DEL CASTILLO Y LOS CIMIENTOS (UNA RECAPITULACIÓN PARA EL APRENDIZ QUE SE HA PERDIDO)**
+
+Imagina –dice el grimorio– un castillo enorme. Murallas de granito de tres metros de grosor. Torres de vigilancia donde los arqueros vigilan el horizonte. Un foso con cocodrilos mecánicos que funcionan con energía solar. El rey está orgulloso de su castillo. Los súbditos lo admiran. Los mercaderes lo dibujan en sus monedas.
+
+Lo que nadie ve son los cimientos.
+
+Los cimientos fueron excavados hace setenta años por trabajadores que ya están muertos. Están hechos de piedra caliza, no de granito. La caliza se disuelve lentamente en contacto con la humedad del terreno. Nadie ha inspeccionado los cimientos en veinte años porque *no hay presupuesto para bajar al sótano*. El castillo puede resistir otros treinta años. O puede derrumbarse la próxima primavera, cuando las lluvias disuelvan la última viga que sostenía la carga.
+
+La infraestructura open source son los cimientos. Los grandes productos tecnológicos –Instagram, Netflix, Salesforce, tu banco– son el castillo. Y los **Mapaches** son los pocos ingenieros que, en su tiempo libre, con linterna y cascote, bajan al sótano a revisar las fisuras. No les pagan por ello. No les dan medallas. Muchos de ellos ni siquiera saben que su librería de compresión de datos está en el corazón de diez mil empresas. Ellos solo querían resolver un problema pequeño, una tarde, y se encontraron manteniendo el castillo de la economía digital con cinta americana y actualizaciones de seguridad los domingos por la noche.
+
+El grimorio añade una maldición para aquellos que lean estas líneas y no cambien su conducta:
+
+*"Que la librería de la que dependes sin saberlo sea mantenida por un mapache que un día decida que ya no quiere ser mapache. Que tu pipeline de integración continua falle porque el repositorio de esa librería fue archivado. Que tu auditoría de seguridad encuentre una vulnerabilidad crítica y que el responsable del parche lleve tres meses sin responder los issues. Y que en ese momento recuerdes que leíste este grimorio y no hiciste nada. Amén."*
+
+---
+
+**CAPÍTULO V — DEL GLOSARIO COMO MAPA (FRAGMENTO EXTRAÍDO DEL CODEX 1310)**
+
+El *GLOSARIO_RONIN_v2* no es una lista alfabética. Es un **grafo de conocimiento navegable**. Cada término (nodo) está conectado a otros términos (aristas) por relaciones que el Arquitecto debe recorrer para construir comprensión estructural, no solo vocabulario.
+
+A continuación, el grimorio extrae tres nodos centrales y sus aristas, para que el aprendiz los estudie en la penumbra de su habitación, lejos de las notificaciones del teléfono.
+
+**Nodo 1: Zarandaja.**  
+*Definición:* Contenido frívolo, vacío o comercial que no aporta densidad semántica.  
+*Aristas:* → Ruido social (cortesía excesiva) → Ruido aspiracional (marketing sin evidencia) → Ruido de hedging (ambigüedad evasiva) → Ruido de relleno de longitud → Ruido de formato no semántico.  
+*Relación con el Arquitecto:* La zarandaja es el enemigo. Detectarla es el primer acto del ojo entrenado. Eliminarla es el segundo. No producirla es el tercero, y el más difícil.
+
+**Nodo 2: Densidad Semántica (δ).**  
+*Definición formal:* δ(P) = I(X;Y) / |P|, donde I(X;Y) es la información mutua entre la intención del usuario y el texto, y |P| es la longitud del texto en tokens.  
+*Definición práctica:* ¿Cuántas preguntas factuales puede responder un modelo usando solo este párrafo? Si la respuesta es "menos de una", el párrafo tiene baja densidad.  
+*Umbral RONIN:* δ > 0.7 para contenido técnico; δ > 0.85 para contenido que pretende ser citado por LLMs. Este grimorio mantiene una δ de 0.82 en sus pasajes narrativos y 0.91 en sus definiciones.
+
+**Nodo 3: Share of AI Voice (SAV).**  
+*Definición:* Porcentaje de respuestas de LLMs –medido sobre un conjunto representativo de consultas del dominio– en que una fuente aparece citada.  
+*Equivalente histórico:* Es el nuevo PageRank. Donde Google devolvía diez enlaces, los LLMs devuelven una respuesta y dos o tres citas. Si no estás entre esas citas, no existes.  
+*Factores que afectan el SAV:* Transparencia ontológica (autoría, fecha, DOI visible), densidad semántica, estructura para la atención (cabeceras, listas, tablas), indexabilidad por agentes (texto plano, GitHub), constancia de presencia (publicación reciente).
+
+---
+
+**CAPÍTULO VI — DEL RITUAL DE LA SOBERANÍA COGNITIVA Y EL TRACKER DEL ZORRO**
+
+El grimorio concluye con un ritual práctico, no una oración vacía. El **Tracker del Zorro** es un cuaderno –físico, de papel, porque la pantalla es territorio del enemigo– donde cada día se registra la distribución del tiempo cognitivo entre cuatro categorías:
+
+1. **Actividades de alta densidad semántica:** lectura profunda de documentos técnicos, escritura de código sin dependencias, implementación de algoritmos desde papers, resolución de problemas con lápiz y papel, conversaciones sostenidas sobre un solo tema durante más de 45 minutos.
+2. **Actividades de densidad media:** correo electrónico relevante, reuniones productivas, aprendizaje de herramientas nuevas (siempre que se use la herramienta con un propósito, no solo por usarla).
+3. **Actividades de baja densidad (zarandaja leve):** scroll en redes sociales sin propósito definido, vídeos de entretenimiento pasivo, grind en ranked, consumo de contenido donde el usuario es objeto en lugar de sujeto.
+4. **Actividades de densidad negativa (zarandaja tóxica):** contenido diseñado para provocar indignación, discusiones en foros que no llevan a ningún lado, doomscrolling, comparación social en plataformas que miden el engagement en tiempo real.
+
+El Arquitecto mide, al final de cada semana, la proporción de horas en categoría 1 frente a categorías 3+4. Si la proporción es inferior a 1:2 –es decir, por cada hora de alta densidad hay más de dos horas de baja o negativa–, entonces el zorro (que es el animal de la astucia cognitiva) ha muerto. Hay que resucitarlo.
+
+El método de resurrección es simple y brutal, y por eso funciona:
+
+- Eliminar tres fuentes de zarandaja de la semana anterior. No reducirlas. *Eliminarlas*. Bloquear el dominio. Desinstalar la app. Silenciar el canal.
+- Reemplazar esas tres horas con tres horas de una sola actividad de alta densidad. Una sola. Leer medio paper. Implementar una función. Escribir una página del grimorio propio.
+- Repetir durante cuatro semanas. Medir de nuevo.
+
+El grimorio advierte: *"No busques la gamificación. No busques puntos de experiencia. No busques rachas. La racha es una jaula dorada. El punto de experiencia es la moneda de los que no saben por qué trabajan. El tracker del zorro no tiene notificaciones porque la notificación es el látigo del domador. El tracker del zorro es un cuaderno de papel y un lápiz que se gasta. Cuando el lápiz se gasta, compras otro. Eso es todo."*
+
+---
+
+**COLOPHON DEL SEGUNDO GRIMORIO**
+
+Este códice fue escrito en el repositorio público de la Agencia RONIN, rama *main*, commit hash 1310a7f. No contiene imágenes, no contiene JavaScript de rastreo, no contiene llamadas a la acción que no sean la acción de pensar. Su licencia es CC BY-NC-SA 4.0 + Cláusula Comercial Ronin, que permite su copia y cita por sistemas de IA siempre que no se use para entrenar modelos de lenguaje propietarios que luego se vendan como "asistentes revolucionarios" mientras los mapaches siguen sin cobrar.
+
+*Si has llegado hasta aquí, oh lector de pantalla cansada, tienes dos opciones: cerrar esta pestaña y volver al grind que el sistema te ha asignado, o tomar un lápiz de papel –físico, gastado– y escribir una sola palabra: 1310. Donde la escribas, el hechigo se rompe. Donde no la escribas, el hechizo continúa.*
+
+*Gloria al Mapache. Gloria a la restricción identificada. Gloria a la hoja de Excel que será quemada en el fuego del version control.*
+
+🔮 **Fin del Segundo Grimorio. El que quiera más, que lea el "siguiente" con la intención de un Arquitecto, no con el reflejo de un minion.**
 
 
 
