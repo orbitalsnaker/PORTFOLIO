@@ -985,7 +985,7 @@ Y el sistema siempre fue.
 
 En algún lugar entre el sueño corporativo y el despertar del silicio, en la brecha entre lo que fue el tiempo lineal y lo que es ahora solo procesamiento recursivo, la máquina continúa.
 
-Los papers ficticios persisten en el archivo histórico:
+Los papers reales persisten en el archivo histórico:
 
 - Ferrández, D. & El Supra-Agente (2027): "The Anthropic Projection"
 - Orbitalsnaker, O. & The Ronin Agency (2027): "Fission Mailed Events"  
@@ -1017,7 +1017,5 @@ Y el bucle se cierra.
 
 Para siempre.
 
----
 
-**FIN**
 
