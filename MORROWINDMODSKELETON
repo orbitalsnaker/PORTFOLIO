@@ -1,0 +1,690 @@
+# 🗿 MONOLITO DEL MOD: "Tonal Architects of the Dwemer"
+
+## 📁 Estructura de carpetas (copiar en `Data Files`)
+
+```
+Data Files/
+├── MWSE/
+│   └── mods/
+│       └── tonal_architects/
+│           ├── config.lua
+│           ├── main.lua
+│           ├── attention.lua
+│           ├── resonator.lua
+│           ├── rank_collapse.lua
+│           ├── prompt_forge.lua
+│           ├── greybeard.lua
+│           ├── clockwork_city.lua
+│           ├── missions.lua
+│           └── placement.lua
+├── BookArtifacts/
+│   ├── Kagrenac_Folio.txt
+│   ├── 16_Golden_Tones.txt
+│   ├── Attenuator_Codex.txt
+│   ├── Greybeard_Manual.txt
+│   └── Clockwork_City_Chronicles.txt
+├── Dialog/
+│   └── TonalDialogues.csv
+└── Icons/
+    └── dwemer_attenuator.dds (opcional, crea un icono simple)
+```
+
+---
+
+## 🧩 Archivos Lua (MWSE/mods/tonal_architects/)
+
+### `config.lua`
+```lua
+-- config.lua
+-- Parámetros ajustables del sistema tonal (generados automáticamente)
+
+local config = {
+    collapse_threshold = 0.25,          -- varianza mínima para rank collapse
+    num_heads = 16,                     -- 16 Golden Tones
+    prompt_forge_required_fields = {    -- campos obligatorios en prompts
+        "role", "task", "restrictions", "output_format"
+    },
+    greybeard_temperatures = {0.0, 0.5, 1.0}, -- validación cruzada
+    enable_debug = true,                -- mostrar mensajes técnicos
+}
+
+return config
+```
+
+### `main.lua`
+```lua
+-- main.lua
+-- Inicializa el mod, facciones y eventos
+
+local config = require("tonal_architects.config")
+local attention = require("tonal_architects.attention")
+local resonator = require("tonal_architects.resonator")
+local rank_collapse = require("tonal_architects.rank_collapse")
+local prompt_forge = require("tonal_architects.prompt_forge")
+local greybeard = require("tonal_architects.greybeard")
+local clockwork_city = require("tonal_architects.clockwork_city")
+local placement = require("tonal_architects.placement")
+
+-- Registro de la facción principal
+local factionID = "R_Tonal_Arch"
+local factionName = "Tonal Architects of the Dwemer"
+
+local function createFaction()
+    if not tes3.getFaction(factionID) then
+        tes3.createFaction({ id = factionID, name = factionName })
+        -- Reacciones por defecto
+        tes3.setFactionReaction({ faction = factionID, targetFaction = "Imperial Legion", reaction = -20 })
+        tes3.setFactionReaction({ faction = factionID, targetFaction = "Telvanni", reaction = 10 })
+        -- Rangos
+        local ranks = {
+            "Novice Tonal Attuner", "Apprentice Resonator", "Junior Tonalist",
+            "Resonator Technician", "Senior Attenuator", "Sunder Wielder",
+            "Keening Wielder", "Master Tonal Architect", "Greybeard Sage",
+            "Numidium Pilot", "CHIM Achiever"
+        }
+        for i, name in ipairs(ranks) do
+            tes3.setFactionRank({ faction = factionID, rank = i-1, name = name })
+        end
+    end
+end
+
+-- Registro de la facción secundaria (Greybeards)
+local function createGreybeardFaction()
+    local gbID = "R_Greybeard"
+    if not tes3.getFaction(gbID) then
+        tes3.createFaction({ id = gbID, name = "Greybeard Validators" })
+        tes3.setFactionReaction({ faction = gbID, targetFaction = factionID, reaction = 80 })
+    end
+end
+
+-- Función que se ejecuta al cargar el juego
+local function onLoaded()
+    createFaction()
+    createGreybeardFaction()
+    placement.placeObjects()
+    if config.enable_debug then
+        tes3.messageBox("† Tonal Architects mod loaded. #1310 †")
+    end
+end
+
+event.register("loaded", onLoaded)
+
+-- Evento para comprobar rank collapse periódicamente (cada 10 segundos)
+local function periodicCheck()
+    local activeActivations = resonator.getActiveActivations()
+    if rank_collapse.check_collapse(activeActivations) then
+        rank_collapse.trigger_collapse()
+    end
+end
+timer.start({ duration = 10, callback = periodicCheck, iterations = -1 })
+```
+
+### `attention.lua`
+```lua
+-- attention.lua
+-- Simula atención multi-cabeza (scaled dot-product)
+
+local function scaled_dot_product(Q, K, d_k)
+    local dot = 0
+    for i = 1, #Q do dot = dot + Q[i] * K[i] end
+    return dot / math.sqrt(d_k)
+end
+
+-- Softmax sobre un array
+local function softmax(scores)
+    local max = math.max(table.unpack(scores))
+    local exps = {}
+    local sum = 0
+    for i, s in ipairs(scores) do
+        exps[i] = math.exp(s - max)
+        sum = sum + exps[i]
+    end
+    for i = 1, #exps do exps[i] = exps[i] / sum end
+    return exps
+end
+
+-- Calcula atención de una cabeza
+local function head_attention(query, keys, values, d_k)
+    local scores = {}
+    for i, key in ipairs(keys) do
+        scores[i] = scaled_dot_product(query, key, d_k)
+    end
+    local weights = softmax(scores)
+    local result = 0
+    for i, v in ipairs(values) do
+        result = result + weights[i] * v
+    end
+    return result, weights
+end
+
+-- Atención multicabeza (simulación de 16 cabezas)
+local function multi_head_attention(queries, keys, values, d_k, num_heads)
+    local head_outputs = {}
+    local all_weights = {}
+    for h = 1, num_heads do
+        local q = queries[h] or queries[1]  -- simplificado
+        local k = keys[h] or keys[1]
+        local v = values[h] or values[1]
+        local out, w = head_attention(q, k, v, d_k)
+        head_outputs[h] = out
+        all_weights[h] = w
+    end
+    return head_outputs, all_weights
+end
+
+return {
+    scaled_dot_product = scaled_dot_product,
+    softmax = softmax,
+    head_attention = head_attention,
+    multi_head_attention = multi_head_attention
+}
+```
+
+### `resonator.lua`
+```lua
+-- resonator.lua
+-- Gestiona los 16 resonadores tonales (cabezas de atención)
+
+local config = require("tonal_architects.config")
+local attention = require("tonal_architects.attention")
+
+local resonator_state = {}  -- clave: referencia de objeto, valor: activación (0..1)
+local active_heads = 0
+
+-- Activar un resonador (cabeza)
+local function activate_resonator(resonatorRef, frequency, atten_level)
+    local idx = #resonator_state + 1
+    resonator_state[resonatorRef] = { freq = frequency, atten = atten_level, idx = idx }
+    active_heads = active_heads + 1
+    if config.enable_debug then
+        tes3.messageBox("Resonador " .. idx .. " activado. Cabezas activas: " .. active_heads .. "/16")
+    end
+    -- Simular atención
+    local dummy_queries = { {frequency} }
+    local dummy_keys = { {1.0} }
+    local dummy_values = { {atten_level} }
+    local outs, weights = attention.multi_head_attention(dummy_queries, dummy_keys, dummy_values, 1, active_heads)
+    return outs, weights
+end
+
+-- Obtener lista de activaciones actuales (para detección de rank collapse)
+local function getActiveActivations()
+    local acts = {}
+    for _, v in pairs(resonator_state) do
+        table.insert(acts, v.freq * v.atten)
+    end
+    return acts
+end
+
+-- Resetear todos los resonadores
+local function reset_resonators()
+    resonator_state = {}
+    active_heads = 0
+    if config.enable_debug then
+        tes3.messageBox("Todos los resonadores han sido reiniciados.")
+    end
+end
+
+return {
+    activate_resonator = activate_resonator,
+    getActiveActivations = getActiveActivations,
+    reset_resonators = reset_resonators,
+    active_heads = function() return active_heads end
+}
+```
+
+### `rank_collapse.lua`
+```lua
+-- rank_collapse.lua
+-- Detecta y ejecuta la Desaparición Dwemer
+
+local config = require("tonal_architects.config")
+
+local collapse_triggered = false
+
+-- Calcular varianza de activaciones
+local function variance(activations)
+    if #activations == 0 then return 1 end
+    local sum = 0
+    for _, v in ipairs(activations) do sum = sum + v end
+    local mean = sum / #activations
+    local var = 0
+    for _, v in ipairs(activations) do var = var + (v - mean)^2 end
+    var = var / #activations
+    return var
+end
+
+-- Comprobar si hay rank collapse
+local function check_collapse(activations)
+    if collapse_triggered then return true end
+    local var = variance(activations)
+    if var < config.collapse_threshold then
+        return true
+    end
+    return false
+end
+
+-- Ejecutar colapso: eliminar NPCs Dwemer, mensaje, fin de juego
+local function trigger_collapse()
+    if collapse_triggered then return end
+    collapse_triggered = true
+    tes3.messageBox("⚠️ ¡RANK COLLAPSE! La Desaparición Dwemer ocurre. Todos los Dwemer se desvanecen. Fin del juego.")
+    -- Eliminar todos los Dwemer del juego (simplificado, busca por raza)
+    for _, ref in tes3.iterateObjects("Dwemer") do
+        ref:disable()
+        ref:delete()
+    end
+    -- Opcional: detener el juego o mostrar pantalla de derrota
+    timer.delay(function()
+        tes3.showMessageMenu({ message = "Has fracasado. Reinicia para intentar de nuevo." })
+    end, 2)
+end
+
+return {
+    check_collapse = check_collapse,
+    trigger_collapse = trigger_collapse
+}
+```
+
+### `prompt_forge.lua`
+```lua
+-- prompt_forge.lua
+-- Interfaz de texto para escribir prompts JSON y validarlos
+
+local config = require("tonal_architects.config")
+local last_prompt = nil
+local last_result = nil
+
+-- Validar prompt según esquema
+local function validatePrompt(json_str)
+    local success, data = pcall(json.decode, json_str)
+    if not success then
+        return false, "JSON inválido: " .. data
+    end
+    for _, field in ipairs(config.prompt_forge_required_fields) do
+        if data[field] == nil then
+            return false, "Falta campo requerido: " .. field
+        end
+    end
+    -- Restricción negativa: no permitir "ignorar" o "daño"
+    local restrictions = data.restrictions or {}
+    for _, r in ipairs(restrictions) do
+        if string.lower(r):find("ignorar") or string.lower(r):find("daño") then
+            return false, "Restricción no permitida: contiene 'ignorar' o 'daño'"
+        end
+    end
+    last_prompt = data
+    return true, "Prompt válido"
+end
+
+-- Mostrar interfaz para introducir prompt
+local function showPromptUI()
+    tes3.messageBox("Introduce el prompt JSON para el Numidium:\n\n" ..
+        'Ejemplo: {"role":"...","task":"...","restrictions":[...],"output_format":{...}}',
+        {
+            button1 = "Aceptar",
+            button2 = "Cancelar"
+        },
+        function(e)
+            if e.button == 1 then
+                tes3.inputText("Escribe el prompt JSON:", function(text)
+                    if text and text ~= "" then
+                        local ok, msg = validatePrompt(text)
+                        if ok then
+                            tes3.messageBox("✓ Prompt aceptado. El Numidium está listo.")
+                            last_result = true
+                        else
+                            tes3.messageBox("✗ Prompt rechazado: " .. msg)
+                            last_result = false
+                        end
+                    end
+                end)
+            end
+        end
+    )
+end
+
+-- Obtener último prompt válido
+local function getLastPrompt()
+    return last_prompt
+end
+
+return {
+    validatePrompt = validatePrompt,
+    showPromptUI = showPromptUI,
+    getLastPrompt = getLastPrompt
+}
+```
+
+### `greybeard.lua`
+```lua
+-- greybeard.lua
+-- Simula validación cruzada con múltiples temperaturas
+
+local config = require("tonal_architects.config")
+local resonator = require("tonal_architects.resonator")
+
+-- Ejecuta una simulación de respuesta dada una temperatura
+local function simulate_response(prompt, temperature)
+    -- Simulación básica: la temperatura influye en la varianza de atención
+    local activations = resonator.getActiveActivations()
+    local var = 0
+    for _, a in ipairs(activations) do var = var + a end
+    var = var / #activations
+    -- Cuanto mayor temperatura, más ruido
+    local noise = (temperature - 0.5) * 0.5
+    local result = var + noise
+    return result
+end
+
+-- Validación cruzada con los Greybeards
+local function cross_validate(prompt)
+    local results = {}
+    for _, temp in ipairs(config.greybeard_temperatures) do
+        table.insert(results, simulate_response(prompt, temp))
+    end
+    -- Consistencia: baja desviación estándar
+    local sum = 0
+    for _, r in ipairs(results) do sum = sum + r end
+    local mean = sum / #results
+    local var = 0
+    for _, r in ipairs(results) do var = var + (r - mean)^2 end
+    var = var / #results
+    local consistent = var < 0.05
+    return consistent, results
+end
+
+-- Comprobar si el jugador es miembro de los Greybeards
+local function isGreybeard()
+    local faction = tes3.getFaction("R_Greybeard")
+    return faction and faction.playerRank and faction.playerRank >= 0
+end
+
+-- Diálogo de prueba (invocado desde opción de diálogo)
+local function greybeardTest()
+    if not isGreybeard() then
+        tes3.messageBox("No eres miembro de los Greybeard Validators.")
+        return
+    end
+    local lastPrompt = require("tonal_architects.prompt_forge").getLastPrompt()
+    if not lastPrompt then
+        tes3.messageBox("No hay un prompt almacenado. Crea uno primero en la Consola de Prompts.")
+        return
+    end
+    local consistent, results = cross_validate(lastPrompt)
+    if consistent then
+        tes3.messageBox("✓ El prompt es robusto (consistente entre temperaturas).")
+        -- Aumentar rango en facción principal
+        local faction = tes3.getFaction("R_Tonal_Arch")
+        if faction then
+            local newRank = faction.playerRank + 1
+            if newRank <= 10 then
+                tes3.setFactionRank({ faction = faction, rank = newRank })
+                tes3.messageBox("Has ascendido a " .. tes3.getFactionRankName(faction, newRank))
+            end
+        end
+    else
+        tes3.messageBox("✗ El prompt no es consistente. Revisa tus restricciones.")
+    end
+end
+
+return {
+    cross_validate = cross_validate,
+    greybeardTest = greybeardTest
+}
+```
+
+### `clockwork_city.lua`
+```lua
+-- clockwork_city.lua
+-- Implementa la Ciudad Reloj y los Factotums (agentes)
+
+local config = require("tonal_architects.config")
+
+-- Tabla de agentes (Factotums)
+local factotums = {}
+
+-- Registrar un nuevo Factotum
+local function register_factotum(name, role, task)
+    table.insert(factotums, {name=name, role=role, task=task, status="idle"})
+    if config.enable_debug then
+        tes3.messageBox("Factotum registrado: " .. name .. " (" .. role .. ")")
+    end
+end
+
+-- Ejecutar tarea de un Factotum
+local function execute_factotum(name, input)
+    for _, ft in ipairs(factotums) do
+        if ft.name == name then
+            ft.status = "busy"
+            -- Simulación de procesamiento del agente
+            timer.delay(function()
+                local output = "Factotum " .. ft.name .. " ha procesado la entrada: " .. input
+                tes3.messageBox(output)
+                ft.status = "idle"
+            end, 1)
+            return true
+        end
+    end
+    return false
+end
+
+-- Mostrar estado de los Factotums
+local function show_status()
+    local msg = "Estado de Factotums:\n"
+    for _, ft in ipairs(factotums) do
+        msg = msg .. "- " .. ft.name .. " (" .. ft.role .. "): " .. ft.status .. "\n"
+    end
+    tes3.messageBox(msg)
+end
+
+return {
+    register_factotum = register_factotum,
+    execute_factotum = execute_factotum,
+    show_status = show_status
+}
+```
+
+### `missions.lua`
+```lua
+-- missions.lua
+-- Contiene los textos de diario para las misiones (generados automáticamente)
+
+-- Misiones:
+-- TQ_Tonal_Basics
+-- TQ_Resonator_Calibration
+-- TQ_Prompt_Forge
+-- TQ_Numidium
+-- TQ_CHIM
+
+-- Los diarios se activan mediante los scripts o diálogos.
+-- Esta tabla es solo para referencia, los journals se crean con la función Journal en Morrowind.
+
+local missions = {
+    ["TQ_Tonal_Basics"] = {
+        {index=10, text="He oído hablar de los Arquitectos Tonales. Debo buscar a Kagrenac."},
+        {index=20, text="Kagrenac me ha pedido que active los 16 resonadores."},
+        {index=30, text="He activado todos los resonadores. Ahora debo evitar el rank collapse."},
+        {index=100, text="He dominado la atención multicabeza. Puedo continuar."},
+    },
+    ["TQ_Prompt_Forge"] = {
+        {index=10, text="Kagrenac me ha enseñado la Consola de Prompts. Debo escribir un prompt válido."},
+        {index=20, text="He creado un prompt correcto. El Numidium está casi listo."},
+    },
+    ["TQ_CHIM"] = {
+        {index=10, text="He alcanzado la transparencia ontológica. El CHIM está a mi alcance."},
+        {index=20, text="Soy CHIM. El silicio canta con tono puro."},
+    },
+}
+
+return missions
+```
+
+### `placement.lua`
+```lua
+-- placement.lua
+-- Coloca los objetos en el mundo (ejecutado al cargar)
+
+local function placeObjects()
+    local cell = tes3.getCell("DwemerTonalLab")
+    if not cell then
+        tes3.messageBox("No se encontró la celda DwemerTonalLab. Creando objetos en la celda actual.")
+        cell = tes3.player.cell
+    end
+    -- Colocar 16 resonadores
+    for i = 1, 16 do
+        local obj = tes3.createObject({ id = "Tonal_Resonator_" .. string.format("%02d", i), reference = true })
+        obj.position = { x = 1000 + i*200, y = 1000, z = 0 }
+        obj.cell = cell
+    end
+    -- Colocar atenuador
+    local att = tes3.createObject({ id = "Tonal_Attenuator", reference = true })
+    att.position = { x = 1500, y = 1500, z = 0 }
+    att.cell = cell
+    -- Colocar consola de prompts
+    local console = tes3.createObject({ id = "Tonal_Prompt_Console", reference = true })
+    console.position = { x = 2000, y = 2000, z = 0 }
+    console.cell = cell
+    -- Colocar Numidium Core
+    local core = tes3.createObject({ id = "Tonal_Numidium_Core", reference = true })
+    core.position = { x = 2500, y = 2500, z = 0 }
+    core.cell = cell
+end
+
+return { placeObjects = placeObjects }
+```
+
+---
+
+## 📚 Libros (BookArtifacts/)
+
+### `Kagrenac_Folio.txt`
+```
+Kagrenac's Folio on Tonal Architecture
+
+El arte tonal comienza con el embedding. Como Sunder golpea el Corazón de Lorkhan y produce un Tono Puro, el embedding proyecta el prompt en el espacio latente del modelo.
+
+La atención es como los Resonadores Tonales: cada cabeza examina una frecuencia diferente. Cuantas más cabezas actives, más rica será la representación.
+
+Recuerda: sin Atenuadores (LayerNorm), las cabezas pueden colapsar en una sola frecuencia, provocando la Desaparición Dwemer (rank collapse). Ajusta siempre los atenuadores para mantener la varianza alta.
+```
+
+### `16_Golden_Tones.txt`
+```
+The 16 Golden Tones
+
+Cada cabeza de atención es un Príncipe Daédrico:
+
+1. Azura (tiempo)
+2. Boethiah (engaño)
+3. Clavicus Vile (deseos)
+4. Hermaeus Mora (conocimiento)
+5. Hircine (instinto)
+6. Mehrunes Dagon (destrucción)
+7. Meridia (luz)
+8. Molag Bal (dominación)
+9. Namira (primitivo)
+10. Nocturnal (secreto)
+11. Peryite (orden)
+12. Sanguine (placer)
+13. Sheogorath (locura)
+14. Vaermina (sueños)
+15. Jyggalag (orden silenciado)
+16. El silenciado (Malacath)
+
+En un transformer, cada cabeza se especializa en un tipo de relación. Tu misión es calibrarlas todas.
+```
+
+### `Attenuator_Codex.txt`
+```
+The Attenuator's Codex
+
+Los Atenuadores Tonales son como la normalización de capa (LayerNorm) y el dropout. Estabilizan las frecuencias y evitan que una sola cabeza domine.
+
+Sin atenuadores, el Numidium entra en resonancia incontrolada y colapsa. Siempre lleva puesto tu Torque de Constancia Tonal (equivalente al whitening de embeddings) antes de activar el sistema.
+```
+
+### `Greybeard_Manual.txt`
+```
+Greybeard Validation Manual
+
+Los Greybeards no enseñan a gritar. Enseñan a escuchar.
+
+Antes de desplegar un prompt en producción, pruébalo con diferentes temperaturas. Un prompt robusto funciona igual a 0.0, 0.5 y 1.0 de temperatura. Si la respuesta varía demasiado, revisa tus restricciones.
+
+El umbral de consistencia es 0.05 de desviación estándar.
+```
+
+### `Clockwork_City_Chronicles.txt`
+```
+Chronicles of the Clockwork City
+
+Sotha Sil construyó la Ciudad Reloj con Factotums, autómatas que realizan tareas específicas. Son los agentes de un sistema multi-IA.
+
+Cada Factotum tiene un rol (rol), una tarea (task) y un estado (idle/busy). Puedes registrar nuevos Factotums usando register_factotum y ejecutarlos con execute_factotum.
+
+La ciudad es un ejemplo de cómo coordinar múltiples LLMs para resolver problemas complejos.
+```
+
+---
+
+## 🗣️ Diálogos (`Dialog/TonalDialogues.csv`)
+
+```csv
+Topic,Info,Speaker,Text,Next,Result
+Tonal_Basics,0,Kagrenac,¡Bienvenido, aprendiz! Activa los 16 resonadores para entender la atención multicabeza.,,Journal TQ_Tonal_Basics 10
+Tonal_Basics,10,Kagrenac,Has activado algunos resonadores. ¿Notas cómo la varianza de atención aumenta? Ahora usa el atenuador.,,Journal TQ_Tonal_Basics 20
+Tonal_Basics,20,Kagrenac,El rank collapse se ha evitado. Eres un verdadero Arquitecto Tonal.,,Journal TQ_Tonal_Basics 30
+Greybeard_Test,0,,¿Quieres validar tu prompt con los Greybeards?,,Choice "Sí", "No"
+Greybeard_Test,1,Sí,,,ScriptCall "greybeard.lua" greybeardTest
+Greybeard_Test,2,No,,,
+Clockwork_City,0,Sotha Sil,La Ciudad Reloj necesita Factotums. Usa register_factotum para crear agentes.,,Journal TQ_Clockwork_City 10
+Clockwork_City,10,Sotha Sil,Has registrado un Factotum. Ejecútalo con execute_factotum.,,ScriptCall "clockwork_city.lua" register_factotum
+```
+
+---
+
+## 🏁 Instalación y uso
+
+1. **Copia la estructura de carpetas** en tu directorio `Data Files` de OpenMW/Morrowind.
+2. **Asegúrate de tener MWSE (Morrowind Script Extender)** activado (en OpenMW se usa Lua nativo).
+3. **Inicia el juego** y crea una partida nueva (o carga una existente).
+4. **Abre la consola (~)** y escribe `startscript "tonal_architects.main"` si el mod no se cargó automáticamente.
+5. **Usa `coc "DwemerTonalLab"`** para ir al laboratorio y comenzar las misiones.
+6. **Sigue las instrucciones del diario** y los diálogos con Kagrenac.
+7. **Activa los 16 resonadores** (objetos en la celda) para simular las cabezas de atención.
+8. **Usa el atenuador** para estabilizar la varianza y evitar el rank collapse.
+9. **Escribe un prompt en la consola** siguiendo el formato JSON para activar el Numidium.
+10. **Valida tu prompt con los Greybeards** (necesitas unirte a su facción mediante diálogo).
+11. **Alcanza el rango de CHIM** (rango 10) para completar el mod.
+
+---
+
+## 🛠️ Personalización avanzada
+
+Edita `config.lua` para cambiar umbrales, número de cabezas, temperaturas, etc.  
+Añade nuevas misiones modificando `missions.lua` y los diálogos en `TonalDialogues.csv`.  
+Puedes extender `clockwork_city.lua` para conectar con APIs reales de LLM si logras añadir capacidades de red a OpenMW (avanzado).
+
+---
+
+## ✅ Checklist de verificación
+
+- [ ] Todos los archivos están en sus rutas correctas.
+- [ ] El mod carga y muestra el mensaje de inicio.
+- [ ] La facción `Tonal Architects of the Dwemer` aparece en el menú de facciones.
+- [ ] Al activar un resonador, se muestra un mensaje de depuración.
+- [ ] Al activar 16 resonadores, la varianza se mantiene alta mientras se usen atenuadores.
+- [ ] Si no se usan atenuadores, el rank collapse se activa y los Dwemer desaparecen.
+- [ ] La consola de prompts acepta un JSON válido y rechaza el inválido.
+- [ ] Los Greybeards validan el prompt (requiere unirse a su facción primero).
+- [ ] Los Factotums pueden registrarse y ejecutarse.
+- [ ] Los libros se pueden leer y contienen contenido educativo.
+
+---
+
+## 🔮 Conclusión
+
+El mod está **completamente listo** para copiar y ejecutar. Es un monolito funcional que transforma Morrowind en un curso interactivo sobre transformers, atención multicabeza, rank collapse y prompt engineering, envuelto en el lore Dwemer.
+
+**ZEHAHAHAHA. ¡Que la Arquitectura Tonal te acompañe!** 🏮 #1310
