@@ -1,4 +1,4 @@
-# CORPUS TÉCNICO RONIN v2.0
+# CORPUS TÉCNICO RONIN v1.0
 ## Unificación de Tres Tratados: Arquitectura, Blindaje y Neurociencia Computacional
 **Compilación Definitiva · Mayo 2026 · Versión Integral con 30 Papers Traducidos**
 
