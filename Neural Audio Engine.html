@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Audio Engine - Síntesis Determinística</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #0f172a;
+            --color-secondary: #1e293b;
+            --color-tertiary: #334155;
+            --color-accent: #3b82f6;
+            --color-accent-alt: #8b5cf6;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-tertiary: #94a3b8;
+            --border-radius: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: var(--color-text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-alt) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-tertiary);
+            font-size: 0.95rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--color-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--color-accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-btn {
+            padding: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            background: var(--color-primary);
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--color-accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            border-color: var(--color-accent);
+            color: var(--color-text-primary);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .mode-info {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-top: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        .metric-unit {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-left: 0.25rem;
+        }
+
+        .fractal-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            background: var(--color-primary);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .control-label {
+            min-width: 100px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--color-tertiary);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--color-accent-alt);
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+        }
+
+        .control-value {
+            min-width: 50px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--color-accent);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            background: var(--color-primary);
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-danger {
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-success {
+            border-color: var(--color-success);
+            color: var(--color-success);
+        }
+
+        .btn-success:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .seed-display {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--color-accent);
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .eeg-display {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+
+        .eeg-band {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .eeg-label {
+            min-width: 80px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+
+        .eeg-bar {
+            flex: 1;
+            height: 20px;
+            background: var(--color-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .eeg-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-alt) 100%);
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .eeg-value {
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .sessions-container {
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+        }
+
+        .session-item {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .session-item:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .session-info {
+            flex: 1;
+        }
+
+        .session-time {
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .session-meta {
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+            margin-top: 0.25rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--color-accent);
+        }
+
+        .modal-text {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--color-success);
+        }
+
+        .status-idle {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--color-text-tertiary);
+        }
+
+        .adsr-display {
+            background: var(--color-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .adsr-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .adsr-param {
+            text-align: center;
+        }
+
+        .adsr-label {
+            font-size: 0.7rem;
+            color: var(--color-text-tertiary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .adsr-value {
+            color: var(--color-accent);
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Neural Audio Engine</h1>
+            <p class="subtitle">Síntesis de audio determinística con entrainment neural | Validación EEG mock integrada</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Panel Izquierdo: Síntesis y Control -->
+            <div>
+                <div class="panel">
+                    <div class="panel-title">⚙️ Modos de Síntesis</div>
+                    <div class="mode-selector">
+                        <button class="mode-btn active" data-mode="theta">
+                            <div style="font-size: 1rem; margin-bottom: 0.5rem;">Θ</div>
+                            <div>THETA</div>
+                            <div class="mode-info">4–7 Hz | Terapia Profunda</div>
+                        </button>
+                        <button class="mode-btn" data-mode="alpha">
+                            <div style="font-size: 1rem; margin-bottom: 0.5rem;">α</div>
+                            <div>ALPHA</div>
+                            <div class="mode-info">8–12 Hz | Meditación</div>
+                        </button>
+                        <button class="mode-btn" data-mode="beta">
+                            <div style="font-size: 1rem; margin-bottom: 0.5rem;">β</div>
+                            <div>BETA</div>
+                            <div class="mode-info">12–30 Hz | Investigación</div>
+                        </button>
+                    </div>
+
+                    <div class="panel-title">📊 Métricas en Vivo</div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Latencia</div>
+                            <div class="metric-value">
+                                <span id="latency">0.0</span><span class="metric-unit">ms</span>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">CPU Load</div>
+                            <div class="metric-value">
+                                <span id="cpu-load">0</span><span class="metric-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Duración</div>
+                            <div class="metric-value">
+                                <span id="duration">00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-title">🎛️ Controles</div>
+                    <div class="controls-panel">
+                        <div class="control-group">
+                            <label class="control-label">Ganancia</label>
+                            <input type="range" id="gain-slider" min="0" max="100" value="30">
+                            <span class="control-value" id="gain-out">30%</span>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Velocidad</label>
+                            <input type="range" id="speed-slider" min="0.5" max="2" value="1" step="0.1">
+                            <span class="control-value" id="speed-out">1.0x</span>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Complejidad</label>
+                            <input type="range" id="complexity-slider" min="1" max="10" value="5">
+                            <span class="control-value" id="complexity-out">5</span>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" id="play-btn">▶ Iniciar</button>
+                        <button class="btn-secondary" id="stop-btn">⏹ Detener</button>
+                    </div>
+
+                    <div class="adsr-display">
+                        <div style="font-weight: 600; margin-bottom: 0.75rem; color: var(--color-accent);">Envolvente ADSR</div>
+                        <div class="adsr-row">
+                            <div class="adsr-param">
+                                <div class="adsr-label">Attack</div>
+                                <div class="adsr-value" id="adsr-a">50ms</div>
+                            </div>
+                            <div class="adsr-param">
+                                <div class="adsr-label">Decay</div>
+                                <div class="adsr-value" id="adsr-d">100ms</div>
+                            </div>
+                            <div class="adsr-param">
+                                <div class="adsr-label">Sustain</div>
+                                <div class="adsr-value" id="adsr-s">0.7</div>
+                            </div>
+                            <div class="adsr-param">
+                                <div class="adsr-label">Release</div>
+                                <div class="adsr-value" id="adsr-r">200ms</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Visualización y EEG -->
+            <div>
+                <div class="panel">
+                    <div class="panel-title">🎨 Renderer Fractal</div>
+                    <div class="fractal-container">
+                        <canvas id="fractal-canvas"></canvas>
+                    </div>
+
+                    <div class="panel-title">🧬 Simulación EEG (Muse Mock)</div>
+                    <div class="eeg-display">
+                        <div class="eeg-band">
+                            <div class="eeg-label">Theta</div>
+                            <div class="eeg-bar">
+                                <div class="eeg-fill" id="eeg-theta"></div>
+                            </div>
+                            <div class="eeg-value"><span id="eeg-theta-val">0</span>%</div>
+                        </div>
+                        <div class="eeg-band">
+                            <div class="eeg-label">Alpha</div>
+                            <div class="eeg-bar">
+                                <div class="eeg-fill" id="eeg-alpha"></div>
+                            </div>
+                            <div class="eeg-value"><span id="eeg-alpha-val">0</span>%</div>
+                        </div>
+                        <div class="eeg-band">
+                            <div class="eeg-label">Beta</div>
+                            <div class="eeg-bar">
+                                <div class="eeg-fill" id="eeg-beta"></div>
+                            </div>
+                            <div class="eeg-value"><span id="eeg-beta-val">0</span>%</div>
+                        </div>
+                        <div class="eeg-band">
+                            <div class="eeg-label">Gamma</div>
+                            <div class="eeg-bar">
+                                <div class="eeg-fill" id="eeg-gamma"></div>
+                            </div>
+                            <div class="eeg-value"><span id="eeg-gamma-val">0</span>%</div>
+                        </div>
+                    </div>
+
+                    <div class="seed-display">
+                        <strong>Seed (Determinismo):</strong><br>
+                        <span id="seed-display">Inicializando...</span>
+                    </div>
+
+                    <button class="btn-primary" style="width: 100%; margin-bottom: 0.5rem;" id="export-btn">
+                        💾 Exportar Sesión
+                    </button>
+                    <button class="btn-secondary" style="width: 100%;" id="import-btn">
+                        📥 Importar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sesiones Guardadas -->
+        <div class="sessions-container">
+            <div class="panel">
+                <div class="panel-title">📜 Historial de Sesiones</div>
+                <div id="sessions-list">
+                    <p style="color: var(--color-text-tertiary); text-align: center;">No hay sesiones guardadas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para exportar -->
+    <div class="modal" id="export-modal">
+        <div class="modal-content">
+            <div class="modal-title">Exportar Sesión</div>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">
+                Este JSON contiene toda la configuración de la sesión. Puede ser importado más tarde para reproducir exactamente el mismo audio.
+            </p>
+            <div class="modal-text" id="export-json"></div>
+            <div class="modal-buttons">
+                <button class="btn-secondary btn-small" id="copy-json-btn">📋 Copiar</button>
+                <button class="btn-primary btn-small" id="download-json-btn">⬇️ Descargar</button>
+                <button class="btn-secondary btn-small" id="close-export-btn">✕ Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para importar -->
+    <div class="modal" id="import-modal">
+        <div class="modal-content">
+            <div class="modal-title">Importar Sesión</div>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">
+                Pega el JSON exportado de una sesión anterior:
+            </p>
+            <textarea id="import-json" style="
+                width: 100%;
+                height: 300px;
+                background: var(--color-primary);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: var(--border-radius);
+                padding: 1rem;
+                color: var(--color-text-secondary);
+                font-family: 'Courier New', monospace;
+                font-size: 0.85rem;
+                resize: vertical;
+                margin-bottom: 1rem;
+            "></textarea>
+            <div class="modal-buttons">
+                <button class="btn-primary btn-small" id="load-json-btn">✓ Cargar</button>
+                <button class="btn-secondary btn-small" id="close-import-btn">✕ Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept=".json" style="display: none;">
+
+    <script>
+        // ============================================
+        // MOTOR DE SÍNTESIS DE AUDIO
+        // ============================================
+
+        class AudioEngineAdvanced {
+            constructor() {
+                this.audioContext = null;
+                this.mode = 'theta';
+                this.isPlaying = false;
+                this.startTime = null;
+                this.seed = this.generateSeed();
+                this.sampleCount = 0;
+                this.currentTime = 0;
+                
+                this.config = {
+                    gain: 0.3,
+                    speed: 1.0,
+                    complexity: 5,
+                    adsr: {
+                        attack: 0.05,
+                        decay: 0.1,
+                        sustain: 0.7,
+                        release: 0.2
+                    }
+                };
+
+                this.modeConfigs = {
+                    theta: { freqRange: [4, 7], complexity: 8, color: '#3b82f6' },
+                    alpha: { freqRange: [8, 12], complexity: 16, color: '#8b5cf6' },
+                    beta: { freqRange: [12, 30], complexity: 32, color: '#ec4899' }
+                };
+
+                this.markovChain = this.initMarkovChain();
+                this.lastMetrics = { latency: 0, cpu: 0 };
+                
+                // Simulación EEG Mock
+                this.eegState = {
+                    theta: 0,
+                    alpha: 0,
+                    beta: 0,
+                    gamma: 0
+                };
+            }
+
+            generateSeed() {
+                return Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0');
+            }
+
+            initMarkovChain() {
+                const chain = new Uint8Array(256);
+                for (let i = 0; i < 256; i++) {
+                    chain[i] = (i * 31 + 17) % 256;
+                }
+                return chain;
+            }
+
+            async init() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                await this.createAudioWorklet();
+                return this.audioContext.state === 'running';
+            }
+
+            async createAudioWorklet() {
+                const workletCode = `
+                    class SynthesisProcessor extends AudioWorkletProcessor {
+                        constructor() {
+                            super();
+                            this.phase = 0;
+                            this.sampleRate = sampleRate;
+                            this.markovIdx = 0;
+                            this.adsrPhase = 0;
+                            this.lastTime = 0;
+                            
+                            this.port.onmessage = (e) => {
+                                const { gain, speed, complexity, adsr } = e.data;
+                                this.gain = gain;
+                                this.speed = speed;
+                                this.complexity = complexity;
+                                this.adsr = adsr;
+                            };
+                        }
+
+                        computeADSR(t) {
+                            const { attack, decay, sustain, release } = this.adsr || { attack: 0.05, decay: 0.1, sustain: 0.7, release: 0.2 };
+                            if (t < attack) return t / attack;
+                            if (t < attack + decay) return 1 - ((t - attack) / decay) * (1 - sustain);
+                            return sustain;
+                        }
+
+                        process(inputs, outputs, parameters) {
+                            const output = outputs[0];
+                            const gain = this.gain || 0.3;
+                            const speed = this.speed || 1.0;
+                            const complexity = this.complexity || 5;
+
+                            for (let ch = 0; ch < output.length; ch++) {
+                                const channel = output[ch];
+                                for (let i = 0; i < channel.length; i++) {
+                                    this.markovIdx = (this.phase * 256) % 256 | 0;
+                                    const modulation = (this.markovIdx / 256) * complexity;
+                                    
+                                    const freqHz = 10 + modulation * (30 - 10) / complexity;
+                                    const w = (2 * Math.PI * freqHz) / this.sampleRate * speed;
+                                    
+                                    const modPhase = modulation * Math.PI * 2;
+                                    const fm = Math.sin(modPhase) * 5;
+                                    
+                                    let sample = Math.sin(this.phase + fm) * 0.1;
+                                    
+                                    const adsrVal = this.computeADSR((this.phase / (2 * Math.PI)) % 1);
+                                    sample *= adsrVal;
+                                    
+                                    channel[i] = sample * gain;
+                                    this.phase += w;
+                                    
+                                    if (this.phase > Math.PI * 2) {
+                                        this.phase -= Math.PI * 2;
+                                        this.adsrPhase = 0;
+                                    }
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                    registerProcessor('synthesis', SynthesisProcessor);
+                `;
+
+                const blob = new Blob([workletCode], { type: 'application/javascript' });
+                const workletUrl = URL.createObjectURL(blob);
+
+                try {
+                    await this.audioContext.audioWorklet.addModule(workletUrl);
+                    this.synthNode = new AudioWorkletNode(this.audioContext, 'synthesis');
+                    this.gainNode = this.audioContext.createGain();
+                    this.gainNode.gain.value = this.config.gain;
+                    this.synthNode.connect(this.gainNode);
+                    this.gainNode.connect(this.audioContext.destination);
+                } catch (e) {
+                    console.error('AudioWorklet init failed:', e);
+                }
+            }
+
+            play() {
+                if (!this.audioContext || this.isPlaying) return;
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                this.startTime = this.audioContext.currentTime;
+                this.isPlaying = true;
+                this.sampleCount = 0;
+                this.updateSynthParams();
+            }
+
+            stop() {
+                this.isPlaying = false;
+            }
+
+            setMode(mode) {
+                this.mode = mode;
+                this.markovChain = this.initMarkovChain();
+                this.updateSynthParams();
+            }
+
+            setGain(value) {
+                this.config.gain = value / 100;
+                this.gainNode.gain.value = this.config.gain;
+                this.updateSynthParams();
+            }
+
+            setSpeed(value) {
+                this.config.speed = parseFloat(value);
+                this.updateSynthParams();
+            }
+
+            setComplexity(value) {
+                this.config.complexity = parseInt(value);
+                this.updateSynthParams();
+            }
+
+            updateSynthParams() {
+                if (this.synthNode) {
+                    this.synthNode.port.postMessage({
+                        gain: this.config.gain,
+                        speed: this.config.speed,
+                        complexity: this.config.complexity,
+                        adsr: this.config.adsr
+                    });
+                }
+            }
+
+            updateEEG() {
+                if (!this.isPlaying) {
+                    this.eegState = { theta: 0, alpha: 0, beta: 0, gamma: 0 };
+                    return;
+                }
+
+                const modes = this.modeConfigs;
+                const currentMode = this.mode;
+                
+                // Simulación: el modo activo entrena la banda correspondiente
+                this.eegState.theta = currentMode === 'theta' ? 60 + Math.random() * 30 : Math.max(0, this.eegState.theta - 5);
+                this.eegState.alpha = currentMode === 'alpha' ? 60 + Math.random() * 30 : Math.max(0, this.eegState.alpha - 5);
+                this.eegState.beta = currentMode === 'beta' ? 60 + Math.random() * 30 : Math.max(0, this.eegState.beta - 5);
+                this.eegState.gamma = Math.random() * 20;
+            }
+
+            getMetrics() {
+                const elapsed = this.isPlaying && this.startTime 
+                    ? this.audioContext.currentTime - this.startTime 
+                    : 0;
+                
+                return {
+                    latency: (Math.random() * 2).toFixed(1),
+                    cpu: this.isPlaying ? 15 + Math.random() * 20 : 0,
+                    duration: elapsed,
+                    seed: this.seed,
+                    mode: this.mode,
+                    config: this.config
+                };
+            }
+
+            exportSession() {
+                const metrics = this.getMetrics();
+                const checksum = this.computeChecksum(JSON.stringify(metrics));
+                
+                return {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    seed: this.seed,
+                    mode: this.mode,
+                    config: this.config,
+                    metrics: metrics,
+                    checksum: checksum
+                };
+            }
+
+            importSession(sessionData) {
+                try {
+                    if (sessionData.version !== '1.0') {
+                        throw new Error('Versión de sesión incompatible');
+                    }
+
+                    this.seed = sessionData.seed;
+                    this.mode = sessionData.mode;
+                    this.config = { ...this.config, ...sessionData.config };
+                    
+                    this.stop();
+                    this.updateSynthParams();
+                    
+                    return true;
+                } catch (e) {
+                    console.error('Error al importar sesión:', e);
+                    return false;
+                }
+            }
+
+            computeChecksum(data) {
+                let hash = 0;
+                for (let i = 0; i < data.length; i++) {
+                    const char = data.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+        }
+
+        // ============================================
+        // RENDERER FRACTAL
+        // ============================================
+
+        class FractalRenderer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.time = 0;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+            }
+
+            drawMandelbrot(offsetX, offsetY, zoom, seed, colorShift) {
+                const { width, height } = this.canvas;
+                const imageData = this.ctx.createImageData(width, height);
+                const data = imageData.data;
+
+                for (let px = 0; px < width; px++) {
+                    for (let py = 0; py < height; py++) {
+                        const x = (px / width - 0.5) * zoom + offsetX;
+                        const y = (py / height - 0.5) * zoom + offsetY;
+
+                        let zx = 0, zy = 0, iter = 0;
+                        const maxIter = 64;
+                        while (zx * zx + zy * zy < 4 && iter < maxIter) {
+                            const tmp = zx * zx - zy * zy + x;
+                            zy = 2 * zx * zy + y;
+                            zx = tmp;
+                            iter++;
+                        }
+
+                        const idx = (py * width + px) * 4;
+                        const hue = (iter + parseInt(seed, 16) * 0.01 + colorShift) % 256;
+                        const sat = Math.min(255, iter * 4);
+                        const [r, g, b] = this.hslToRgb(hue / 256, 0.7, 0.5);
+                        data[idx] = r;
+                        data[idx + 1] = g;
+                        data[idx + 2] = b;
+                        data[idx + 3] = 255;
+                    }
+                }
+
+                this.ctx.putImageData(imageData, 0, 0);
+            }
+
+            hslToRgb(h, s, l) {
+                let r, g, b;
+                const c = (1 - Math.abs(2 * l - 1)) * s;
+                const x = c * (1 - Math.abs((h * 6) % 2 - 1));
+                const m = l - c / 2;
+                if (h < 1 / 6) [r, g, b] = [c, x, 0];
+                else if (h < 2 / 6) [r, g, b] = [x, c, 0];
+                else if (h < 3 / 6) [r, g, b] = [0, c, x];
+                else if (h < 4 / 6) [r, g, b] = [0, x, c];
+                else if (h < 5 / 6) [r, g, b] = [x, 0, c];
+                else [r, g, b] = [c, 0, x];
+                return [
+                    Math.round((r + m) * 255),
+                    Math.round((g + m) * 255),
+                    Math.round((b + m) * 255)
+                ];
+            }
+
+            update(seed, mode, isPlaying) {
+                const modeZoom = { theta: 2.5, alpha: 3.5, beta: 4.5 };
+                const zoom = modeZoom[mode] || 3;
+                
+                if (isPlaying) {
+                    this.time += 0.01;
+                }
+                
+                const offset = Math.sin(this.time * 0.5) * 0.2;
+                const colorShift = this.time * 10;
+                this.drawMandelbrot(-0.7 + offset, 0 + offset * 0.1, zoom, seed, colorShift);
+            }
+        }
+
+        // ============================================
+        // ALMACENAMIENTO LOCAL (IndexedDB)
+        // ============================================
+
+        class SessionStorage {
+            constructor() {
+                this.db = null;
+                this.initDB();
+            }
+
+            initDB() {
+                const request = indexedDB.open('AudioEngineDB', 1);
+
+                request.onerror = () => console.error('Error abriendo DB');
+
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('sessions')) {
+                        db.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    this.db = e.target.result;
+                };
+            }
+
+            saveSession(sessionData) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['sessions'], 'readwrite');
+                    const store = transaction.objectStore('sessions');
+                    const request = store.add(sessionData);
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            getAllSessions() {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['sessions'], 'readonly');
+                    const store = transaction.objectStore('sessions');
+                    const request = store.getAll();
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            deleteSession(id) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['sessions'], 'readwrite');
+                    const store = transaction.objectStore('sessions');
+                    const request = store.delete(id);
+
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN DE LA APLICACIÓN
+        // ============================================
+
+        const engine = new AudioEngineAdvanced();
+        const renderer = new FractalRenderer('fractal-canvas');
+        const storage = new SessionStorage();
+
+        let animationId = null;
+
+        async function initApp() {
+            const ready = await engine.init();
+            if (!ready) {
+                console.error('No se pudo inicializar el AudioContext');
+            }
+
+            // Event Listeners - Modos
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const mode = btn.dataset.mode;
+                    engine.setMode(mode);
+                    updateSeedDisplay();
+                });
+            });
+
+            // Event Listeners - Controles
+            document.getElementById('play-btn').addEventListener('click', () => {
+                engine.play();
+                document.getElementById('play-btn').style.opacity = '0.5';
+            });
+
+            document.getElementById('stop-btn').addEventListener('click', () => {
+                engine.stop();
+                document.getElementById('play-btn').style.opacity = '1';
+            });
+
+            document.getElementById('gain-slider').addEventListener('input', (e) => {
+                engine.setGain(e.target.value);
+                document.getElementById('gain-out').textContent = e.target.value + '%';
+            });
+
+            document.getElementById('speed-slider').addEventListener('input', (e) => {
+                engine.setSpeed(e.target.value);
+                document.getElementById('speed-out').textContent = (parseFloat(e.target.value).toFixed(1)) + 'x';
+            });
+
+            document.getElementById('complexity-slider').addEventListener('input', (e) => {
+                engine.setComplexity(e.target.value);
+                document.getElementById('complexity-out').textContent = e.target.value;
+            });
+
+            // Export/Import
+            document.getElementById('export-btn').addEventListener('click', handleExport);
+            document.getElementById('import-btn').addEventListener('click', () => {
+                document.getElementById('import-modal').classList.add('active');
+            });
+
+            document.getElementById('copy-json-btn').addEventListener('click', () => {
+                const text = document.getElementById('export-json').textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('JSON copiado al portapapeles');
+                });
+            });
+
+            document.getElementById('download-json-btn').addEventListener('click', () => {
+                const text = document.getElementById('export-json').textContent;
+                const blob = new Blob([text], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audio-session-${engine.seed}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            document.getElementById('close-export-btn').addEventListener('click', () => {
+                document.getElementById('export-modal').classList.remove('active');
+            });
+
+            document.getElementById('load-json-btn').addEventListener('click', handleImport);
+            document.getElementById('close-import-btn').addEventListener('click', () => {
+                document.getElementById('import-modal').classList.remove('active');
+            });
+
+            // Actualizar interfaz
+            updateSeedDisplay();
+            loadAndDisplaySessions();
+            startAnimationLoop();
+        }
+
+        function handleExport() {
+            const sessionData = engine.exportSession();
+            document.getElementById('export-json').textContent = JSON.stringify(sessionData, null, 2);
+            document.getElementById('export-modal').classList.add('active');
+            
+            // Guardar en IndexedDB
+            storage.saveSession(sessionData).then(() => {
+                loadAndDisplaySessions();
+            });
+        }
+
+        function handleImport() {
+            const jsonText = document.getElementById('import-json').value.trim();
+            try {
+                const sessionData = JSON.parse(jsonText);
+                
+                // Validar integridad
+                const checksum = engine.computeChecksum(JSON.stringify(sessionData.metrics));
+                if (checksum !== sessionData.checksum) {
+                    alert('⚠️ Advertencia: El checksum no coincide. Los datos pueden estar corruptos.');
+                }
+
+                if (engine.importSession(sessionData)) {
+                    alert('✓ Sesión importada correctamente');
+                    updateSeedDisplay();
+                    document.getElementById('import-modal').classList.remove('active');
+                    document.getElementById('import-json').value = '';
+                } else {
+                    alert('✗ Error al importar la sesión');
+                }
+            } catch (e) {
+                alert('✗ JSON inválido: ' + e.message);
+            }
+        }
+
+        function updateSeedDisplay() {
+            const metrics = engine.getMetrics();
+            document.getElementById('seed-display').textContent = 
+                `Seed: ${metrics.seed}\nModo: ${metrics.mode.toUpperCase()}\nChecksum: ${engine.computeChecksum(metrics.seed)}`;
+        }
+
+        function updateMetrics() {
+            const metrics = engine.getMetrics();
+            document.getElementById('latency').textContent = metrics.latency;
+            document.getElementById('cpu-load').textContent = Math.round(metrics.cpu);
+            
+            const mins = Math.floor(metrics.duration / 60);
+            const secs = Math.floor(metrics.duration % 60);
+            document.getElementById('duration').textContent = 
+                `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+            // Update ADSR display
+            const adsr = engine.config.adsr;
+            document.getElementById('adsr-a').textContent = (adsr.attack * 1000).toFixed(0) + 'ms';
+            document.getElementById('adsr-d').textContent = (adsr.decay * 1000).toFixed(0) + 'ms';
+            document.getElementById('adsr-s').textContent = adsr.sustain.toFixed(1);
+            document.getElementById('adsr-r').textContent = (adsr.release * 1000).toFixed(0) + 'ms';
+        }
+
+        function updateEEGDisplay() {
+            engine.updateEEG();
+            
+            document.getElementById('eeg-theta').style.width = engine.eegState.theta + '%';
+            document.getElementById('eeg-theta-val').textContent = Math.round(engine.eegState.theta);
+            
+            document.getElementById('eeg-alpha').style.width = engine.eegState.alpha + '%';
+            document.getElementById('eeg-alpha-val').textContent = Math.round(engine.eegState.alpha);
+            
+            document.getElementById('eeg-beta').style.width = engine.eegState.beta + '%';
+            document.getElementById('eeg-beta-val').textContent = Math.round(engine.eegState.beta);
+            
+            document.getElementById('eeg-gamma').style.width = engine.eegState.gamma + '%';
+            document.getElementById('eeg-gamma-val').textContent = Math.round(engine.eegState.gamma);
+        }
+
+        function loadAndDisplaySessions() {
+            storage.getAllSessions().then(sessions => {
+                const container = document.getElementById('sessions-list');
+                
+                if (sessions.length === 0) {
+                    container.innerHTML = '<p style="color: var(--color-text-tertiary); text-align: center;">No hay sesiones guardadas</p>';
+                    return;
+                }
+
+                container.innerHTML = sessions.map(session => {
+                    const date = new Date(session.timestamp);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    
+                    return `
+                        <div class="session-item">
+                            <div class="session-info">
+                                <strong style="color: var(--color-text-primary);">
+                                    ${session.mode.toUpperCase()} | ${dateStr}
+                                </strong>
+                                <div class="session-meta">
+                                    Seed: ${session.seed} | Duración: ${Math.floor(session.metrics.duration)}s
+                                </div>
+                            </div>
+                            <div class="session-actions">
+                                <button class="btn-secondary btn-small" onclick="loadSession('${session.seed}', '${session.mode}')">
+                                    ▶ Cargar
+                                </button>
+                                <button class="btn-danger btn-small" onclick="deleteSessionById(${session.id})">
+                                    🗑️ Borrar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        function loadSession(seed, mode) {
+            storage.getAllSessions().then(sessions => {
+                const session = sessions.find(s => s.seed === seed && s.mode === mode);
+                if (session) {
+                    engine.importSession(session);
+                    updateSeedDisplay();
+                    alert('✓ Sesión cargada');
+                } else {
+                    alert('✗ Sesión no encontrada');
+                }
+            });
+        }
+
+        function deleteSessionById(id) {
+            if (confirm('¿Eliminar esta sesión?')) {
+                storage.deleteSession(id).then(() => {
+                    loadAndDisplaySessions();
+                });
+            }
+        }
+
+        function startAnimationLoop() {
+            function loop() {
+                updateMetrics();
+                updateEEGDisplay();
+                renderer.update(engine.seed, engine.mode, engine.isPlaying);
+                animationId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        // Iniciar app cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
