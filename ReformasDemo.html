@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a1a1a">
-<title>ObraExpress v1.2 - Calculadora + Márgenes</title>
+<title>ObraExpress v1.0 - Calculadora + Márgenes</title>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -356,7 +356,8 @@
 
 <script>
 // ============================================================
-// OBRAEXPRESS v1.2 - Calculadora de Materiales + Márgenes
+// OBRAEXPRESS v1.0 - Versión Final
+// Calculadora ampliada + Bugs corregidos
 // Precios mercado España 2026
 // ============================================================
 
@@ -388,23 +389,89 @@ const MATERIAL_MARKET_PRICES = {
   mueble_lavabo: { name: "Mueble lavabo+espejo+grifo", price: 350.00, unit: "conjunto" },
   mampara: { name: "Mampara cristal templado", price: 250.00, unit: "ud" },
   
+  // Fontanería
+  tubo_ppr_20mm: { name: "Tubo PPR 20mm", price: 2.80, unit: "ml" },
+  tubo_multicapa_16mm: { name: "Tubo multicapa 16mm", price: 3.50, unit: "ml" },
+  codo_ppr: { name: "Codo PPR 90°", price: 0.80, unit: "ud" },
+  tee_ppr: { name: "Tee PPR", price: 1.20, unit: "ud" },
+  llave_paso: { name: "Llave de paso 1/2\"", price: 8.50, unit: "ud" },
+  grifo_mezclador: { name: "Grifo mezclador lavabo", price: 45.00, unit: "ud" },
+  grifo_fregadero: { name: "Grifo fregadero", price: 65.00, unit: "ud" },
+  sifon: { name: "Sifón cromado", price: 12.00, unit: "ud" },
+  flexibles: { name: "Latiguillos flexibles (par)", price: 8.00, unit: "par" },
+  
+  // Electricidad
+  cable_2_5mm: { name: "Cable 2.5mm² (rollo 100m)", price: 45.00, unit: "rollo" },
+  cable_1_5mm: { name: "Cable 1.5mm² (rollo 100m)", price: 32.00, unit: "rollo" },
+  tubo_corrugado: { name: "Tubo corrugado 20mm", price: 0.60, unit: "ml" },
+  caja_registro: { name: "Caja de registro", price: 1.80, unit: "ud" },
+  enchufe: { name: "Mecanismo enchufe", price: 4.50, unit: "ud" },
+  interruptor: { name: "Mecanismo interruptor", price: 4.20, unit: "ud" },
+  conmutador: { name: "Mecanismo conmutador", price: 5.50, unit: "ud" },
+  punto_luz: { name: "Punto de luz completo", price: 28.00, unit: "ud" },
+  cuadro_electrico: { name: "Cuadro eléctrico 12 módulos", price: 85.00, unit: "ud" },
+  magnetotermico: { name: "Magnetotérmico 16A", price: 8.50, unit: "ud" },
+  diferencial: { name: "Diferencial 40A 30mA", price: 35.00, unit: "ud" },
+  
+  // Carpintería
+  puerta_interior: { name: "Puerta interior + marco", price: 180.00, unit: "ud" },
+  puerta_paso: { name: "Puerta paso (sin marco)", price: 95.00, unit: "ud" },
+  armario_empotrado: { name: "Armario empotrado interior", price: 280.00, unit: "ml" },
+  rodapie_madera: { name: "Rodapié madera 8cm", price: 8.50, unit: "ml" },
+  rodapie_mdf: { name: "Rodapié MDF lacado", price: 6.50, unit: "ml" },
+  bisagra: { name: "Bisagra cazoleta", price: 2.20, unit: "ud" },
+  tirador: { name: "Tirador puerta", price: 4.50, unit: "ud" },
+  cerradura: { name: "Cerradura empotrar", price: 18.00, unit: "ud" },
+  
   // Mano de obra
   mano_obra_desescombro: { name: "Desescombro/demolición", price: 18.00, unit: "m²" },
   mano_obra_alicatado: { name: "Alicatado/solado estándar", price: 32.00, unit: "m²" },
   mano_obra_gran_formato: { name: "Colocación gran formato", price: 52.00, unit: "m²" },
   mano_obra_alisado: { name: "Alisado paredes (quitar gotelé)", price: 15.00, unit: "m²" },
-  mano_obra_oficial: { name: "Mano de obra oficial 1ª", price: 27.00, unit: "hora" }
+  mano_obra_oficial: { name: "Mano de obra oficial 1ª", price: 27.00, unit: "hora" },
+  mano_obra_fontanero: { name: "Mano de obra fontanero", price: 32.00, unit: "hora" },
+  mano_obra_electricista: { name: "Mano de obra electricista", price: 30.00, unit: "hora" },
+  mano_obra_carpintero: { name: "Mano de obra carpintero", price: 28.00, unit: "hora" }
 };
 
 // ---------- RATIOS DE CONSUMO ----------
 const CONSUMPTION_RATIOS = {
-  mortero_cola_por_m2: 1/4.5, // 1 saco (25kg) cubre ~4.5 m²
-  azulejo_desperdicio: 1.10, // 10% de desperdicio
-  pintura_litros_por_m2: 0.20, // 1L por 5 m² (2 manos)
+  // Alicatado/Solado
+  mortero_cola_por_m2: 1/4.5,
+  azulejo_desperdicio: 1.10,
   horas_alicatado_por_m2: 0.6,
+  
+  // Pintura
+  pintura_litros_por_m2: 0.20,
+  horas_pintura_por_m2: 0.3,
+  
+  // Desescombro
   horas_desescombro_por_m2: 0.4,
+  sacos_escombro_por_m2: 1/2.5,
+  
+  // Alisado
   horas_alisado_por_m2: 0.5,
-  horas_pintura_por_m2: 0.3
+  
+  // Fontanería (por punto de agua)
+  metros_tubo_por_punto: 3.5,
+  codos_por_punto: 2,
+  llaves_por_punto: 1,
+  flexibles_por_punto: 1,
+  horas_fontanero_por_punto: 1.5,
+  
+  // Electricidad (por punto de luz)
+  metros_cable_por_punto: 8,
+  metros_tubo_por_punto_elec: 8,
+  cajas_por_punto: 1,
+  horas_electricista_por_punto: 1.2,
+  
+  // Carpintería
+  horas_carpintero_puerta: 2.5,
+  horas_carpintero_ml_armario: 3.0,
+  horas_carpintero_ml_rodapie: 0.4,
+  bisagras_por_puerta: 3,
+  tiradores_por_puerta: 1,
+  cerraduras_por_puerta: 1
 };
 
 // ---------- PLANTILLAS DE PRESUPUESTO ----------
@@ -437,8 +504,8 @@ const DEFAULT_TEMPLATES = [
       { name: 'Muebles cocina', unit: 'ml', price: 450, auto: false },
       { name: 'Fregadero + grifo', unit: 'conjunto', price: 220, auto: false },
       { name: 'Electrodomésticos', unit: 'pack', price: 1200, auto: false },
-      { name: 'Fontanería', unit: 'h', price: 27, auto: false },
-      { name: 'Electricidad', unit: 'h', price: 28, auto: false }
+      { name: 'Fontanería', unit: 'h', price: 32, auto: false },
+      { name: 'Electricidad', unit: 'h', price: 30, auto: false }
     ]
   },
   { 
@@ -476,6 +543,56 @@ const DEFAULT_TEMPLATES = [
     ]
   },
   { 
+    id: 'fontaneria', 
+    name: 'Fontanería', 
+    icon: '🔧',
+    description: 'Instalación o reforma de fontanería',
+    items: [
+      { name: 'Tubería PPR 20mm', unit: 'ml', price: 2.80, auto: false },
+      { name: 'Codos PPR 90°', unit: 'ud', price: 0.80, auto: false },
+      { name: 'Tees PPR', unit: 'ud', price: 1.20, auto: false },
+      { name: 'Llave de paso 1/2"', unit: 'ud', price: 8.50, auto: false },
+      { name: 'Grifo mezclador', unit: 'ud', price: 45.00, auto: false },
+      { name: 'Sifón cromado', unit: 'ud', price: 12.00, auto: false },
+      { name: 'Latiguillos flexibles (par)', unit: 'par', price: 8.00, auto: false },
+      { name: 'Mano de obra fontanero', unit: 'h', price: 32, auto: false }
+    ]
+  },
+  { 
+    id: 'electricidad', 
+    name: 'Electricidad', 
+    icon: '',
+    description: 'Instalación o reforma eléctrica',
+    items: [
+      { name: 'Cable 2.5mm² (por metro)', unit: 'ml', price: 0.45, auto: false },
+      { name: 'Cable 1.5mm² (por metro)', unit: 'ml', price: 0.32, auto: false },
+      { name: 'Tubo corrugado 20mm', unit: 'ml', price: 0.60, auto: false },
+      { name: 'Caja de registro', unit: 'ud', price: 1.80, auto: false },
+      { name: 'Mecanismo enchufe', unit: 'ud', price: 4.50, auto: false },
+      { name: 'Mecanismo interruptor', unit: 'ud', price: 4.20, auto: false },
+      { name: 'Mecanismo conmutador', unit: 'ud', price: 5.50, auto: false },
+      { name: 'Cuadro eléctrico 12 módulos', unit: 'ud', price: 85.00, auto: false },
+      { name: 'Magnetotérmico 16A', unit: 'ud', price: 8.50, auto: false },
+      { name: 'Diferencial 40A 30mA', unit: 'ud', price: 35.00, auto: false },
+      { name: 'Mano de obra electricista', unit: 'h', price: 30, auto: false }
+    ]
+  },
+  { 
+    id: 'carpinteria', 
+    name: 'Carpintería', 
+    icon: '🪵',
+    description: 'Puertas, armarios y rodapiés',
+    items: [
+      { name: 'Puerta interior + marco', unit: 'ud', price: 180, auto: false },
+      { name: 'Bisagras cazoleta', unit: 'ud', price: 2.20, auto: false },
+      { name: 'Tirador puerta', unit: 'ud', price: 4.50, auto: false },
+      { name: 'Cerradura empotrar', unit: 'ud', price: 18.00, auto: false },
+      { name: 'Armario empotrado', unit: 'ml', price: 280, auto: false },
+      { name: 'Rodapié madera 8cm', unit: 'ml', price: 8.50, auto: false },
+      { name: 'Mano de obra carpintero', unit: 'h', price: 28, auto: false }
+    ]
+  },
+  { 
     id: 'custom', 
     name: 'Personalizado', 
     icon: '️', 
@@ -499,7 +616,7 @@ let state = {
     email: '',
     iban: '',
     ivaRate: 21,
-    defaultMargin: 30 // Margen de beneficio por defecto (%)
+    defaultMargin: 30
   }
 };
 
@@ -537,127 +654,334 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ---------- CALCULADORA AUTOMÁTICA ----------
-function calculateMaterials(workType, squareMeters) {
+// ---------- CALCULADORA AUTOMÁTICA AMPLIADA ----------
+function calculateMaterials(workType, quantity, unitType = 'm2') {
   const results = [];
   let totalCost = 0;
   
   switch(workType) {
-    case 'alicatado':
-      const azulejoM2 = squareMeters * CONSUMPTION_RATIOS.azulejo_desperdicio;
+    case 'alicatado': {
+      const azulejoM2 = quantity * CONSUMPTION_RATIOS.azulejo_desperdicio;
       const azulejoCost = azulejoM2 * MATERIAL_MARKET_PRICES.gres_porcelanico.price;
       results.push({
         name: `Azulejo gres porcelánico (${azulejoM2.toFixed(1)} m² con 10% desperdicio)`,
-        qty: azulejoM2.toFixed(1),
-        unit: 'm²',
+        qty: azulejoM2.toFixed(1), unit: 'm²',
         price: MATERIAL_MARKET_PRICES.gres_porcelanico.price,
         total: azulejoCost
       });
       
-      const sacosCola = Math.ceil(squareMeters * CONSUMPTION_RATIOS.mortero_cola_por_m2);
+      const sacosCola = Math.ceil(quantity * CONSUMPTION_RATIOS.mortero_cola_por_m2);
       const colaCost = sacosCola * MATERIAL_MARKET_PRICES.mortero_cola_c2te.price;
       results.push({
         name: `Mortero cola C2TE (${sacosCola} sacos de 25kg)`,
-        qty: sacosCola,
-        unit: 'sacos',
+        qty: sacosCola, unit: 'sacos',
         price: MATERIAL_MARKET_PRICES.mortero_cola_c2te.price,
         total: colaCost
       });
       
-      const horasAlicatado = squareMeters * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
+      const horasAlicatado = quantity * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
       const laborCost = horasAlicatado * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
       results.push({
         name: `Mano de obra alicatado (${horasAlicatado.toFixed(1)} horas)`,
-        qty: horasAlicatado.toFixed(1),
-        unit: 'horas',
+        qty: horasAlicatado.toFixed(1), unit: 'horas',
         price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
         total: laborCost
       });
       
       totalCost = azulejoCost + colaCost + laborCost;
       break;
-      
-    case 'solado':
-      const sueloM2 = squareMeters * CONSUMPTION_RATIOS.azulejo_desperdicio;
+    }
+    
+    case 'solado': {
+      const sueloM2 = quantity * CONSUMPTION_RATIOS.azulejo_desperdicio;
       const sueloCost = sueloM2 * MATERIAL_MARKET_PRICES.suelo_laminado.price;
       results.push({
         name: `Suelo laminado AC4 (${sueloM2.toFixed(1)} m² con 10% desperdicio)`,
-        qty: sueloM2.toFixed(1),
-        unit: 'm²',
+        qty: sueloM2.toFixed(1), unit: 'm²',
         price: MATERIAL_MARKET_PRICES.suelo_laminado.price,
         total: sueloCost
       });
       
-      const sacosColaSolado = Math.ceil(squareMeters * CONSUMPTION_RATIOS.mortero_cola_por_m2);
+      const sacosColaSolado = Math.ceil(quantity * CONSUMPTION_RATIOS.mortero_cola_por_m2);
       const colaSoladoCost = sacosColaSolado * MATERIAL_MARKET_PRICES.mortero_cola_c2te.price;
       results.push({
         name: `Mortero cola C2TE (${sacosColaSolado} sacos de 25kg)`,
-        qty: sacosColaSolado,
-        unit: 'sacos',
+        qty: sacosColaSolado, unit: 'sacos',
         price: MATERIAL_MARKET_PRICES.mortero_cola_c2te.price,
         total: colaSoladoCost
       });
       
-      const horasSolado = squareMeters * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
+      const horasSolado = quantity * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
       const laborSoladoCost = horasSolado * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
       results.push({
         name: `Mano de obra solado (${horasSolado.toFixed(1)} horas)`,
-        qty: horasSolado.toFixed(1),
-        unit: 'horas',
+        qty: horasSolado.toFixed(1), unit: 'horas',
         price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
         total: laborSoladoCost
       });
       
       totalCost = sueloCost + colaSoladoCost + laborSoladoCost;
       break;
-      
-    case 'pintura':
-      const pinturaLitros = squareMeters * CONSUMPTION_RATIOS.pintura_litros_por_m2;
-      const pinturaCost = squareMeters * MATERIAL_MARKET_PRICES.pintura_plastica.price;
+    }
+    
+    case 'pintura': {
+      const pinturaLitros = quantity * CONSUMPTION_RATIOS.pintura_litros_por_m2;
+      const pinturaCost = quantity * MATERIAL_MARKET_PRICES.pintura_plastica.price;
       results.push({
         name: `Pintura plástica mate (${pinturaLitros.toFixed(1)} litros, 2 manos)`,
-        qty: pinturaLitros.toFixed(1),
-        unit: 'litros',
+        qty: pinturaLitros.toFixed(1), unit: 'litros',
         price: MATERIAL_MARKET_PRICES.pintura_plastica.price / CONSUMPTION_RATIOS.pintura_litros_por_m2,
         total: pinturaCost
       });
       
-      const horasPintura = squareMeters * CONSUMPTION_RATIOS.horas_pintura_por_m2;
+      const horasPintura = quantity * CONSUMPTION_RATIOS.horas_pintura_por_m2;
       const laborPinturaCost = horasPintura * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
       results.push({
         name: `Mano de obra pintura (${horasPintura.toFixed(1)} horas)`,
-        qty: horasPintura.toFixed(1),
-        unit: 'horas',
+        qty: horasPintura.toFixed(1), unit: 'horas',
         price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
         total: laborPinturaCost
       });
       
       totalCost = pinturaCost + laborPinturaCost;
       break;
-      
-    case 'desescombro':
-      const horasDesescombro = squareMeters * CONSUMPTION_RATIOS.horas_desescombro_por_m2;
+    }
+    
+    case 'desescombro': {
+      const horasDesescombro = quantity * CONSUMPTION_RATIOS.horas_desescombro_por_m2;
       const laborDesescombroCost = horasDesescombro * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
       results.push({
         name: `Mano de obra desescombro (${horasDesescombro.toFixed(1)} horas)`,
-        qty: horasDesescombro.toFixed(1),
-        unit: 'horas',
+        qty: horasDesescombro.toFixed(1), unit: 'horas',
         price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
         total: laborDesescombroCost
       });
       
-      const sacosEscombro = Math.ceil(squareMeters / 2.5);
+      const sacosEscombro = Math.ceil(quantity * CONSUMPTION_RATIOS.sacos_escombro_por_m2);
       const costeGestion = sacosEscombro * 3.50;
       results.push({
         name: `Gestión de escombros (${sacosEscombro} sacos)`,
-        qty: sacosEscombro,
-        unit: 'sacos',
+        qty: sacosEscombro, unit: 'sacos',
         price: 3.50,
         total: costeGestion
       });
       
       totalCost = laborDesescombroCost + costeGestion;
       break;
+    }
+    
+    case 'fontaneria': {
+      // quantity = número de puntos de agua
+      const puntos = quantity;
+      const metrosTubo = puntos * CONSUMPTION_RATIOS.metros_tubo_por_punto;
+      const costeTubo = metrosTubo * MATERIAL_MARKET_PRICES.tubo_ppr_20mm.price;
+      results.push({
+        name: `Tubería PPR 20mm (${metrosTubo.toFixed(1)} ml)`,
+        qty: metrosTubo.toFixed(1), unit: 'ml',
+        price: MATERIAL_MARKET_PRICES.tubo_ppr_20mm.price,
+        total: costeTubo
+      });
+      
+      const codos = Math.ceil(puntos * CONSUMPTION_RATIOS.codos_por_punto);
+      const costeCodos = codos * MATERIAL_MARKET_PRICES.codo_ppr.price;
+      results.push({
+        name: `Codos PPR 90° (${codos} ud)`,
+        qty: codos, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.codo_ppr.price,
+        total: costeCodos
+      });
+      
+      const llaves = Math.ceil(puntos * CONSUMPTION_RATIOS.llaves_por_punto);
+      const costeLlaves = llaves * MATERIAL_MARKET_PRICES.llave_paso.price;
+      results.push({
+        name: `Llaves de paso 1/2" (${llaves} ud)`,
+        qty: llaves, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.llave_paso.price,
+        total: costeLlaves
+      });
+      
+      const flexibles = Math.ceil(puntos * CONSUMPTION_RATIOS.flexibles_por_punto);
+      const costeFlexibles = flexibles * MATERIAL_MARKET_PRICES.flexibles.price;
+      results.push({
+        name: `Latiguillos flexibles (${flexibles} pares)`,
+        qty: flexibles, unit: 'pares',
+        price: MATERIAL_MARKET_PRICES.flexibles.price,
+        total: costeFlexibles
+      });
+      
+      const horasFontanero = puntos * CONSUMPTION_RATIOS.horas_fontanero_por_punto;
+      const costeLabor = horasFontanero * MATERIAL_MARKET_PRICES.mano_obra_fontanero.price;
+      results.push({
+        name: `Mano de obra fontanero (${horasFontanero.toFixed(1)} horas)`,
+        qty: horasFontanero.toFixed(1), unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_fontanero.price,
+        total: costeLabor
+      });
+      
+      totalCost = costeTubo + costeCodos + costeLlaves + costeFlexibles + costeLabor;
+      break;
+    }
+    
+    case 'electricidad': {
+      // quantity = número de puntos de luz
+      const puntos = quantity;
+      const metrosCable = puntos * CONSUMPTION_RATIOS.metros_cable_por_punto;
+      const costeCable = (metrosCable / 100) * MATERIAL_MARKET_PRICES.cable_2_5mm.price;
+      results.push({
+        name: `Cable 2.5mm² (${metrosCable.toFixed(0)} ml = ${Math.ceil(metrosCable/100)} rollos)`,
+        qty: Math.ceil(metrosCable/100), unit: 'rollos',
+        price: MATERIAL_MARKET_PRICES.cable_2_5mm.price,
+        total: costeCable
+      });
+      
+      const metrosTubo = puntos * CONSUMPTION_RATIOS.metros_tubo_por_punto_elec;
+      const costeTubo = metrosTubo * MATERIAL_MARKET_PRICES.tubo_corrugado.price;
+      results.push({
+        name: `Tubo corrugado 20mm (${metrosTubo.toFixed(1)} ml)`,
+        qty: metrosTubo.toFixed(1), unit: 'ml',
+        price: MATERIAL_MARKET_PRICES.tubo_corrugado.price,
+        total: costeTubo
+      });
+      
+      const cajas = Math.ceil(puntos * CONSUMPTION_RATIOS.cajas_por_punto);
+      const costeCajas = cajas * MATERIAL_MARKET_PRICES.caja_registro.price;
+      results.push({
+        name: `Cajas de registro (${cajas} ud)`,
+        qty: cajas, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.caja_registro.price,
+        total: costeCajas
+      });
+      
+      // 1 enchufe + 1 interruptor por punto (media)
+      const enchufes = Math.ceil(puntos * 0.7);
+      const costeEnchufes = enchufes * MATERIAL_MARKET_PRICES.enchufe.price;
+      results.push({
+        name: `Mecanismos enchufe (${enchufes} ud)`,
+        qty: enchufes, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.enchufe.price,
+        total: costeEnchufes
+      });
+      
+      const interruptores = Math.ceil(puntos * 0.5);
+      const costeInterruptores = interruptores * MATERIAL_MARKET_PRICES.interruptor.price;
+      results.push({
+        name: `Mecanismos interruptor (${interruptores} ud)`,
+        qty: interruptores, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.interruptor.price,
+        total: costeInterruptores
+      });
+      
+      const horasElectricista = puntos * CONSUMPTION_RATIOS.horas_electricista_por_punto;
+      const costeLabor = horasElectricista * MATERIAL_MARKET_PRICES.mano_obra_electricista.price;
+      results.push({
+        name: `Mano de obra electricista (${horasElectricista.toFixed(1)} horas)`,
+        qty: horasElectricista.toFixed(1), unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_electricista.price,
+        total: costeLabor
+      });
+      
+      totalCost = costeCable + costeTubo + costeCajas + costeEnchufes + costeInterruptores + costeLabor;
+      break;
+    }
+    
+    case 'carpinteria_puertas': {
+      // quantity = número de puertas
+      const puertas = quantity;
+      const costePuertas = puertas * MATERIAL_MARKET_PRICES.puerta_interior.price;
+      results.push({
+        name: `Puertas interior + marco (${puertas} ud)`,
+        qty: puertas, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.puerta_interior.price,
+        total: costePuertas
+      });
+      
+      const bisagras = puertas * CONSUMPTION_RATIOS.bisagras_por_puerta;
+      const costeBisagras = bisagras * MATERIAL_MARKET_PRICES.bisagra.price;
+      results.push({
+        name: `Bisagras cazoleta (${bisagras} ud)`,
+        qty: bisagras, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.bisagra.price,
+        total: costeBisagras
+      });
+      
+      const tiradores = puertas * CONSUMPTION_RATIOS.tiradores_por_puerta;
+      const costeTiradores = tiradores * MATERIAL_MARKET_PRICES.tirador.price;
+      results.push({
+        name: `Tiradores (${tiradores} ud)`,
+        qty: tiradores, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.tirador.price,
+        total: costeTiradores
+      });
+      
+      const cerraduras = puertas * CONSUMPTION_RATIOS.cerraduras_por_puerta;
+      const costeCerraduras = cerraduras * MATERIAL_MARKET_PRICES.cerradura.price;
+      results.push({
+        name: `Cerraduras empotrar (${cerraduras} ud)`,
+        qty: cerraduras, unit: 'ud',
+        price: MATERIAL_MARKET_PRICES.cerradura.price,
+        total: costeCerraduras
+      });
+      
+      const horasCarpintero = puertas * CONSUMPTION_RATIOS.horas_carpintero_puerta;
+      const costeLabor = horasCarpintero * MATERIAL_MARKET_PRICES.mano_obra_carpintero.price;
+      results.push({
+        name: `Mano de obra carpintero (${horasCarpintero.toFixed(1)} horas)`,
+        qty: horasCarpintero.toFixed(1), unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_carpintero.price,
+        total: costeLabor
+      });
+      
+      totalCost = costePuertas + costeBisagras + costeTiradores + costeCerraduras + costeLabor;
+      break;
+    }
+    
+    case 'carpinteria_armarios': {
+      // quantity = metros lineales de armario
+      const ml = quantity;
+      const costeArmario = ml * MATERIAL_MARKET_PRICES.armario_empotrado.price;
+      results.push({
+        name: `Armario empotrado interior (${ml} ml)`,
+        qty: ml, unit: 'ml',
+        price: MATERIAL_MARKET_PRICES.armario_empotrado.price,
+        total: costeArmario
+      });
+      
+      const horasCarpintero = ml * CONSUMPTION_RATIOS.horas_carpintero_ml_armario;
+      const costeLabor = horasCarpintero * MATERIAL_MARKET_PRICES.mano_obra_carpintero.price;
+      results.push({
+        name: `Mano de obra carpintero (${horasCarpintero.toFixed(1)} horas)`,
+        qty: horasCarpintero.toFixed(1), unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_carpintero.price,
+        total: costeLabor
+      });
+      
+      totalCost = costeArmario + costeLabor;
+      break;
+    }
+    
+    case 'carpinteria_rodapie': {
+      // quantity = metros lineales de rodapié
+      const ml = quantity;
+      const costeRodapie = ml * MATERIAL_MARKET_PRICES.rodapie_madera.price;
+      results.push({
+        name: `Rodapié madera 8cm (${ml} ml)`,
+        qty: ml, unit: 'ml',
+        price: MATERIAL_MARKET_PRICES.rodapie_madera.price,
+        total: costeRodapie
+      });
+      
+      const horasCarpintero = ml * CONSUMPTION_RATIOS.horas_carpintero_ml_rodapie;
+      const costeLabor = horasCarpintero * MATERIAL_MARKET_PRICES.mano_obra_carpintero.price;
+      results.push({
+        name: `Mano de obra carpintero (${horasCarpintero.toFixed(1)} horas)`,
+        qty: horasCarpintero.toFixed(1), unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_carpintero.price,
+        total: costeLabor
+      });
+      
+      totalCost = costeRodapie + costeLabor;
+      break;
+    }
   }
   
   return { items: results, total: totalCost };
@@ -726,7 +1050,7 @@ function renderDashboard() {
         <span>Calculadora de Materiales</span>
       </button>
       <button class="btn-big" onclick="navigate('budgetEdit', { id: 'new' })">
-        <span class="icon">📋</span>
+        <span class="icon"></span>
         <span>Nuevo Presupuesto</span>
       </button>
       <button class="btn-big secondary" onclick="navigate('invoiceEdit', { id: 'new' })">
@@ -758,7 +1082,7 @@ function renderCalculator() {
     </div>
     <div class="container">
       <div class="info-box">
-        💡 Introduce los m² y la app calculará automáticamente materiales, mano de obra y costes.
+        💡 Selecciona el tipo de trabajo, introduce la cantidad y la app calculará automáticamente materiales, mano de obra y costes.
       </div>
       
       <div class="calc-section">
@@ -766,13 +1090,18 @@ function renderCalculator() {
         
         <label>Tipo de trabajo</label>
         <select id="calc-type" onchange="updateCalculator()">
-          <option value="alicatado">Alicatado de paredes</option>
-          <option value="solado">Solado de suelo</option>
-          <option value="pintura">Pintura de paredes</option>
-          <option value="desescombro">Desescombro/demolición</option>
+          <option value="alicatado"> Alicatado de paredes</option>
+          <option value="solado"> Solado de suelo</option>
+          <option value="pintura">🎨 Pintura de paredes</option>
+          <option value="desescombro">🔨 Desescombro/demolición</option>
+          <option value="fontaneria">🔧 Fontanería (por puntos de agua)</option>
+          <option value="electricidad">⚡ Electricidad (por puntos de luz)</option>
+          <option value="carpinteria_puertas">🚪 Carpintería - Puertas (unidades)</option>
+          <option value="carpinteria_armarios">🗄️ Carpintería - Armarios (metros lineales)</option>
+          <option value="carpinteria_rodapie">📏 Carpintería - Rodapié (metros lineales)</option>
         </select>
         
-        <label>Metros cuadrados (m²)</label>
+        <label id="calc-quantity-label">Metros cuadrados (m²)</label>
         <input type="number" id="calc-m2" value="15" min="1" onchange="updateCalculator()" oninput="updateCalculator()">
         
         <label style="margin-top:20px">Margen de beneficio (%)</label>
@@ -792,12 +1121,26 @@ function renderCalculator() {
 
 function updateCalculator() {
   const workType = document.getElementById('calc-type').value;
-  const m2 = parseFloat(document.getElementById('calc-m2').value) || 0;
+  const quantity = parseFloat(document.getElementById('calc-m2').value) || 0;
   const margin = parseFloat(document.getElementById('calc-margin').value) || 0;
+  
+  // Actualizar label según tipo
+  const labelMap = {
+    'alicatado': 'Metros cuadrados (m²)',
+    'solado': 'Metros cuadrados (m²)',
+    'pintura': 'Metros cuadrados (m²)',
+    'desescombro': 'Metros cuadrados (m²)',
+    'fontaneria': 'Número de puntos de agua',
+    'electricidad': 'Número de puntos de luz',
+    'carpinteria_puertas': 'Número de puertas',
+    'carpinteria_armarios': 'Metros lineales de armario',
+    'carpinteria_rodapie': 'Metros lineales de rodapié'
+  };
+  document.getElementById('calc-quantity-label').textContent = labelMap[workType] || 'Cantidad';
   
   document.getElementById('margin-display').textContent = margin + '%';
   
-  const calc = calculateMaterials(workType, m2);
+  const calc = calculateMaterials(workType, quantity);
   const costTotal = calc.total;
   const saleTotal = costTotal * (1 + margin / 100);
   const profit = saleTotal - costTotal;
@@ -805,6 +1148,7 @@ function updateCalculator() {
   let html = `
     <div class="calc-result">
       <h3>📦 Materiales Necesarios</h3>
+      ${calc.items.length === 0 ? '<div style="color:var(--text-dim); text-align:center; padding:20px;">Introduce una cantidad válida</div>' : ''}
       ${calc.items.map(item => `
         <div class="calc-item">
           <div class="name">${item.name}</div>
@@ -816,7 +1160,7 @@ function updateCalculator() {
     
     <div class="dual-budget">
       <div class="budget-card cost">
-        <div class="label"> Coste Real</div>
+        <div class="label">💰 Coste Real</div>
         <div class="amount">${fmt(costTotal)}</div>
       </div>
       <div class="budget-card sale">
@@ -843,23 +1187,23 @@ function updateCalculator() {
 
 function addCalcToBudget() {
   const workType = document.getElementById('calc-type').value;
-  const m2 = parseFloat(document.getElementById('calc-m2').value) || 0;
+  const quantity = parseFloat(document.getElementById('calc-m2').value) || 0;
   const margin = parseFloat(document.getElementById('calc-margin').value) || 0;
   
-  if (m2 <= 0) {
-    alert('Introduce los metros cuadrados');
+  if (quantity <= 0) {
+    alert('Introduce una cantidad válida');
     return;
   }
   
-  const calc = calculateMaterials(workType, m2);
+  const calc = calculateMaterials(workType, quantity);
   const costTotal = calc.total;
   const saleTotal = costTotal * (1 + margin / 100);
   
-  // Guardar en estado temporal para usar en budgetEdit
   state.calculatedItems = calc.items;
   state.calculatedCost = costTotal;
   state.calculatedSale = saleTotal;
   state.calculatedMargin = margin;
+  state.calculatedWorkType = workType;
   
   navigate('budgetEdit', { id: 'new', fromCalculator: true });
 }
@@ -1104,7 +1448,7 @@ function renderInvoices() {
               <div class="title">Factura ${escapeHtml(inv.number || '')}</div>
               <div class="subtitle">${escapeHtml(client?.name || '—')} · ${inv.date} · ${fmt(inv.total)}</div>
             </div>
-            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteInvoice('${inv.id}')"></button>
+            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteInvoice('${inv.id}')">🗑</button>
           </div>
         `;
       }).join('')}
@@ -1228,11 +1572,11 @@ function renderSettings() {
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
       
       <button class="btn-big danger" onclick="resetAll()" style="margin-top:24px">
-        ⚠️ Borrar Todos los Datos
+        ️ Borrar Todos los Datos
       </button>
       
       <div style="text-align:center; color:var(--text-dim); margin-top:30px; font-size:0.85rem">
-        ObraExpress v1.2<br>
+        ObraExpress v1.0<br>
         Tus datos se guardan solo en este dispositivo.
       </div>
     </div>
@@ -1288,9 +1632,10 @@ function saveClient(id) {
   navigate('clients');
 }
 
+// ✅ BUG CORREGIDO: !== en lugar de ===
 function deleteClient(id) {
   if (!confirm('¿Eliminar este cliente?')) return;
-  state.clients = state.clients.filter(c => c.id === id);
+  state.clients = state.clients.filter(c => c.id !== id);
   saveState();
   render();
 }
@@ -1367,7 +1712,7 @@ function saveBudget(id) {
     clientId,
     date: document.getElementById('b_date').value,
     validity: parseInt(document.getElementById('b_validity').value) || 15,
-    items: items.map(i => ({...i, price: i.price * (1 + margin / 100)})), // Aplicar margen a cada línea
+    items: items.map(i => ({...i, price: i.price * (1 + margin / 100)})),
     margin: margin,
     costTotal: costTotal,
     saleTotal: saleTotal,
@@ -1385,9 +1730,10 @@ function saveBudget(id) {
   navigate('budgets');
 }
 
+// ✅ BUG CORREGIDO: !== en lugar de ===
 function deleteBudget(id) {
   if (!confirm('¿Eliminar este presupuesto?')) return;
-  state.budgets = state.budgets.filter(b => b.id === id);
+  state.budgets = state.budgets.filter(b => b.id !== id);
   saveState();
   render();
 }
@@ -1418,9 +1764,10 @@ function saveInvoice(id) {
   navigate('invoices');
 }
 
+// ✅ BUG CORREGIDO: !== en lugar de ===
 function deleteInvoice(id) {
   if (!confirm('¿Eliminar esta factura?')) return;
-  state.invoices = state.invoices.filter(i => i.id === id);
+  state.invoices = state.invoices.filter(i => i.id !== id);
   saveState();
   render();
 }
@@ -1436,6 +1783,16 @@ function convertToInvoice(budgetId) {
   if (!budget) return;
   if (!confirm('¿Crear factura desde este presupuesto?')) return;
   navigate('invoiceEdit', { id: 'new', fromBudget: budgetId });
+}
+
+function calculateTotal() {
+  const items = getLinesFromUI();
+  const discountEl = document.querySelector('#i_discount');
+  const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
+  const subtotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
+  const base = subtotal * (1 - discount / 100);
+  const iva = base * state.config.ivaRate / 100;
+  return base + iva;
 }
 
 function saveSettings() {
