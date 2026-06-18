@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a1a1a">
-<title>ObraExpress - Presupuestos y Facturas</title>
+<title>ObraExpress v1.2 - Calculadora + Márgenes</title>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -17,6 +17,8 @@
     --border: #333;
     --success: #4caf50;
     --danger: #f44336;
+    --info: #2196f3;
+    --warning: #ff9800;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -54,7 +56,6 @@
   }
   .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
   
-  /* HEADER */
   .header {
     background: var(--card);
     padding: 16px;
@@ -66,19 +67,9 @@
     justify-content: space-between;
     align-items: center;
   }
-  .header h1 {
-    font-size: 1.2rem;
-    color: var(--accent);
-    font-weight: 700;
-  }
-  .header .back-btn {
-    background: transparent;
-    color: var(--accent);
-    font-size: 1.5rem;
-    padding: 8px 12px;
-  }
+  .header h1 { font-size: 1.2rem; color: var(--accent); font-weight: 700; }
+  .header .back-btn { background: transparent; color: var(--accent); font-size: 1.5rem; padding: 8px 12px; }
   
-  /* BOTONES GRANDES */
   .btn-big {
     width: 100%;
     padding: 20px;
@@ -97,6 +88,7 @@
   .btn-big.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
   .btn-big.danger { background: var(--danger); color: #fff; }
   .btn-big.success { background: var(--success); color: #fff; }
+  .btn-big.info { background: var(--info); color: #fff; }
   .btn-big .icon { font-size: 1.5rem; }
   
   .btn {
@@ -108,9 +100,7 @@
     font-size: 1rem;
   }
   .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-  .btn.danger { background: var(--danger); color: #fff; }
   
-  /* CARDS */
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -123,7 +113,6 @@
   .card h3 { font-size: 1.1rem; margin-bottom: 4px; }
   .card .meta { color: var(--text-dim); font-size: 0.85rem; }
   
-  /* DASHBOARD */
   .stats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -140,7 +129,6 @@
   .stat .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
   .stat .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; }
   
-  /* LISTA */
   .list-item {
     display: flex;
     justify-content: space-between;
@@ -165,36 +153,6 @@
   .icon-btn:active { background: var(--card-hover); }
   .icon-btn.danger { color: var(--danger); }
   
-  /* MODAL */
-  .modal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .modal.hidden { display: none; }
-  .modal-content {
-    background: var(--bg);
-    width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    border-radius: 20px 20px 0 0;
-    padding: 20px;
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .modal-header h2 { font-size: 1.3rem; }
-  .close-btn { background: transparent; color: var(--text-dim); font-size: 1.5rem; padding: 8px; }
-  
-  /* LÍNEAS DE PRESUPUESTO */
   .line-item {
     background: var(--card);
     border: 1px solid var(--border);
@@ -216,7 +174,6 @@
     font-size: 1.1rem;
   }
   
-  /* TOTALS */
   .totals {
     background: var(--card);
     border: 1px solid var(--border);
@@ -239,31 +196,10 @@
     color: var(--accent);
   }
   
-  /* UTILS */
   .hidden { display: none !important; }
-  .empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-dim);
-  }
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
   .empty .icon { font-size: 3rem; margin-bottom: 12px; }
   
-  .fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #000;
-    font-size: 2rem;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(255,107,0,0.4);
-    z-index: 50;
-  }
-  
-  /* TABS */
   .tabs {
     display: flex;
     background: var(--card);
@@ -282,7 +218,6 @@
   }
   .tab.active { background: var(--accent); color: #000; }
   
-  /* TEMPLATE CARDS */
   .template-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -301,6 +236,115 @@
   .template-card .icon { font-size: 2rem; margin-bottom: 8px; }
   .template-card .name { font-weight: 600; font-size: 0.95rem; }
   
+  /* CALCULADORA */
+  .calc-section {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+  .calc-section h3 {
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+  }
+  .calc-input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .calc-result {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .calc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .calc-item:last-child { border-bottom: none; }
+  .calc-item .name { flex: 1; font-size: 0.9rem; }
+  .calc-item .qty { color: var(--accent); font-weight: 700; margin: 0 12px; }
+  .calc-item .price { color: var(--text-dim); font-size: 0.85rem; }
+  
+  .calc-total {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .margin-control {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+  }
+  .margin-control h4 {
+    color: var(--warning);
+    margin-bottom: 12px;
+    font-size: 1rem;
+  }
+  .margin-slider {
+    width: 100%;
+    margin: 12px 0;
+  }
+  .margin-display {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--warning);
+    margin: 12px 0;
+  }
+  
+  .dual-budget {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .budget-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .budget-card.cost { border-color: var(--info); }
+  .budget-card.sale { border-color: var(--success); }
+  .budget-card .label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .budget-card .amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .budget-card.cost .amount { color: var(--info); }
+  .budget-card.sale .amount { color: var(--success); }
+  
+  .info-box {
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid var(--info);
+    padding: 12px;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  
   @media (min-width: 768px) {
     .container { padding: 24px; }
   }
@@ -312,54 +356,132 @@
 
 <script>
 // ============================================================
-// OBRAEXPRESS v1.0 - MVP
-// App monolítica para presupuestos y facturas de reformas
+// OBRAEXPRESS v1.2 - Calculadora de Materiales + Márgenes
+// Precios mercado España 2026
 // ============================================================
 
 const STORE_KEY = 'obraexpress_data_v1';
 const CONFIG_KEY = 'obraexpress_config_v1';
 
-// ---------- DATOS INICIALES ----------
+// ---------- PRECIOS MERCADO ESPAÑA 2026 ----------
+const MATERIAL_MARKET_PRICES = {
+  // Materiales de agarre
+  cemento_gris: { name: "Cemento gris 25kg", price: 4.50, unit: "saco" },
+  cemento_blanco: { name: "Cemento blanco 25kg", price: 8.50, unit: "saco" },
+  mortero_m75: { name: "Mortero M7.5 25kg", price: 2.80, unit: "saco" },
+  arena_miga: { name: "Arena de miga 25kg", price: 0.60, unit: "saco" },
+  mortero_cola_c2te: { name: "Mortero cola porcelánico C2TE 25kg", price: 8.90, unit: "saco" },
+  yeso_plaste: { name: "Yeso/plaste alisar 15kg", price: 10.00, unit: "saco" },
+  ladrillo_hueco: { name: "Ladrillo hueco doble 7cm", price: 0.55, unit: "ud" },
+  pladur_placa: { name: "Placa pladur 1.2x2.5m", price: 11.00, unit: "ud" },
+  
+  // Revestimientos
+  azulejo_basico: { name: "Azulejo cerámico básico", price: 15.00, unit: "m²" },
+  gres_porcelanico: { name: "Gres porcelánico estándar", price: 25.00, unit: "m²" },
+  porcelanico_gran_formato: { name: "Porcelánico gran formato 60x120", price: 52.00, unit: "m²" },
+  suelo_laminado: { name: "Suelo laminado AC4/AC5", price: 21.00, unit: "m²" },
+  pintura_plastica: { name: "Pintura plástica mate blanca", price: 3.20, unit: "m²" },
+  
+  // Sanitarios
+  plato_ducha: { name: "Plato ducha resina 120x70", price: 200.00, unit: "ud" },
+  inodoro: { name: "Inodoro completo salida dual", price: 170.00, unit: "ud" },
+  mueble_lavabo: { name: "Mueble lavabo+espejo+grifo", price: 350.00, unit: "conjunto" },
+  mampara: { name: "Mampara cristal templado", price: 250.00, unit: "ud" },
+  
+  // Mano de obra
+  mano_obra_desescombro: { name: "Desescombro/demolición", price: 18.00, unit: "m²" },
+  mano_obra_alicatado: { name: "Alicatado/solado estándar", price: 32.00, unit: "m²" },
+  mano_obra_gran_formato: { name: "Colocación gran formato", price: 52.00, unit: "m²" },
+  mano_obra_alisado: { name: "Alisado paredes (quitar gotelé)", price: 15.00, unit: "m²" },
+  mano_obra_oficial: { name: "Mano de obra oficial 1ª", price: 27.00, unit: "hora" }
+};
+
+// ---------- RATIOS DE CONSUMO ----------
+const CONSUMPTION_RATIOS = {
+  mortero_cola_por_m2: 1/4.5, // 1 saco (25kg) cubre ~4.5 m²
+  azulejo_desperdicio: 1.10, // 10% de desperdicio
+  pintura_litros_por_m2: 0.20, // 1L por 5 m² (2 manos)
+  horas_alicatado_por_m2: 0.6,
+  horas_desescombro_por_m2: 0.4,
+  horas_alisado_por_m2: 0.5,
+  horas_pintura_por_m2: 0.3
+};
+
+// ---------- PLANTILLAS DE PRESUPUESTO ----------
 const DEFAULT_TEMPLATES = [
-  { id: 'bano', name: 'Reforma Baño', icon: '', items: [
-    { name: 'Alicatado paredes', unit: 'm²', price: 35 },
-    { name: 'Solado', unit: 'm²', price: 28 },
-    { name: 'Plato de ducha', unit: 'ud', price: 280 },
-    { name: 'Inodoro', unit: 'ud', price: 180 },
-    { name: 'Lavabo con mueble', unit: 'ud', price: 320 },
-    { name: 'Grifería', unit: 'conjunto', price: 150 },
-    { name: 'Mano de obra desmontaje', unit: 'h', price: 25 },
-    { name: 'Mano de obra montaje', unit: 'h', price: 25 }
-  ]},
-  { id: 'cocina', name: 'Reforma Cocina', icon: '🍳', items: [
-    { name: 'Alicatado', unit: 'm²', price: 35 },
-    { name: 'Solado', unit: 'm²', price: 28 },
-    { name: 'Encimera', unit: 'ml', price: 180 },
-    { name: 'Muebles cocina', unit: 'ml', price: 450 },
-    { name: 'Fregadero + grifo', unit: 'conjunto', price: 220 },
-    { name: 'Electrodomésticos', unit: 'pack', price: 1200 },
-    { name: 'Fontanería', unit: 'h', price: 25 },
-    { name: 'Electricidad', unit: 'h', price: 28 }
-  ]},
-  { id: 'pintura', name: 'Pintura', icon: '🎨', items: [
-    { name: 'Pintura paredes (lisa)', unit: 'm²', price: 8 },
-    { name: 'Pintura techos', unit: 'm²', price: 9 },
-    { name: 'Alisado paredes', unit: 'm²', price: 12 },
-    { name: 'Pintura puertas', unit: 'ud', price: 45 },
-    { name: 'Material (pintura, rodillos)', unit: 'm²', price: 3 }
-  ]},
-  { id: 'alicatado', name: 'Alicatado', icon: '🧱', items: [
-    { name: 'Alicatado paredes', unit: 'm²', price: 35 },
-    { name: 'Solado', unit: 'm²', price: 28 },
-    { name: 'Rodapié', unit: 'ml', price: 12 },
-    { name: 'Material (adhesivo, lechada)', unit: 'm²', price: 8 }
-  ]},
-  { id: 'tabiqueria', name: 'Tabiquería', icon: '🏗️', items: [
-    { name: 'Tabique ladrillo', unit: 'm²', price: 45 },
-    { name: 'Tabique pladur', unit: 'm²', price: 38 },
-    { name: 'Puerta interior + marco', unit: 'ud', price: 280 }
-  ]},
-  { id: 'custom', name: 'Personalizado', icon: '✏️', items: [] }
+  { 
+    id: 'bano', 
+    name: 'Reforma Baño', 
+    icon: '🚿',
+    description: 'Reforma completa de baño estándar (4-6 m²)',
+    items: [
+      { name: 'Desescombro y demolición', unit: 'm²', price: 18, auto: true, type: 'labor' },
+      { name: 'Alicatado paredes (material + mano obra)', unit: 'm²', price: 50, auto: true, type: 'combined' },
+      { name: 'Solado (material + mano obra)', unit: 'm²', price: 53, auto: true, type: 'combined' },
+      { name: 'Plato de ducha resina', unit: 'ud', price: 200, auto: false },
+      { name: 'Inodoro completo', unit: 'ud', price: 170, auto: false },
+      { name: 'Mueble lavabo + espejo + grifo', unit: 'conjunto', price: 350, auto: false },
+      { name: 'Mampara cristal templado', unit: 'ud', price: 250, auto: false }
+    ]
+  },
+  { 
+    id: 'cocina', 
+    name: 'Reforma Cocina', 
+    icon: '🍳',
+    description: 'Reforma completa de cocina estándar (8-12 m²)',
+    items: [
+      { name: 'Desescombro y demolición', unit: 'm²', price: 18, auto: true, type: 'labor' },
+      { name: 'Alicatado paredes', unit: 'm²', price: 50, auto: true, type: 'combined' },
+      { name: 'Solado', unit: 'm²', price: 53, auto: true, type: 'combined' },
+      { name: 'Encimera', unit: 'ml', price: 180, auto: false },
+      { name: 'Muebles cocina', unit: 'ml', price: 450, auto: false },
+      { name: 'Fregadero + grifo', unit: 'conjunto', price: 220, auto: false },
+      { name: 'Electrodomésticos', unit: 'pack', price: 1200, auto: false },
+      { name: 'Fontanería', unit: 'h', price: 27, auto: false },
+      { name: 'Electricidad', unit: 'h', price: 28, auto: false }
+    ]
+  },
+  { 
+    id: 'pintura', 
+    name: 'Pintura', 
+    icon: '🎨',
+    description: 'Pintura de paredes y techos',
+    items: [
+      { name: 'Alisado paredes (quitar gotelé)', unit: 'm²', price: 15, auto: true, type: 'labor' },
+      { name: 'Pintura paredes (2 manos, material incluido)', unit: 'm²', price: 11, auto: true, type: 'combined' },
+      { name: 'Pintura techos', unit: 'm²', price: 12, auto: true, type: 'combined' },
+      { name: 'Pintura puertas', unit: 'ud', price: 45, auto: false }
+    ]
+  },
+  { 
+    id: 'alicatado', 
+    name: 'Alicatado', 
+    icon: '🧱',
+    description: 'Alicatado de paredes y solado',
+    items: [
+      { name: 'Alicatado paredes (material + mano obra)', unit: 'm²', price: 50, auto: true, type: 'combined' },
+      { name: 'Solado (material + mano obra)', unit: 'm²', price: 53, auto: true, type: 'combined' },
+      { name: 'Rodapié', unit: 'ml', price: 12, auto: false }
+    ]
+  },
+  { 
+    id: 'tabiqueria', 
+    name: 'Tabiquería', 
+    icon: '🏗️',
+    description: 'Levantar tabiques y puertas',
+    items: [
+      { name: 'Tabique ladrillo (material + mano obra)', unit: 'm²', price: 65, auto: true, type: 'combined' },
+      { name: 'Tabique pladur (material + mano obra)', unit: 'm²', price: 55, auto: true, type: 'combined' },
+      { name: 'Puerta interior + marco', unit: 'ud', price: 280, auto: false }
+    ]
+  },
+  { 
+    id: 'custom', 
+    name: 'Personalizado', 
+    icon: '️', 
+    description: 'Crear presupuesto desde cero',
+    items: [] 
+  }
 ];
 
 // ---------- ESTADO ----------
@@ -376,7 +498,8 @@ let state = {
     phone: '',
     email: '',
     iban: '',
-    ivaRate: 21
+    ivaRate: 21,
+    defaultMargin: 30 // Margen de beneficio por defecto (%)
   }
 };
 
@@ -414,11 +537,138 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// ---------- CALCULADORA AUTOMÁTICA ----------
+function calculateMaterials(workType, squareMeters) {
+  const results = [];
+  let totalCost = 0;
+  
+  switch(workType) {
+    case 'alicatado':
+      const azulejoM2 = squareMeters * CONSUMPTION_RATIOS.azulejo_desperdicio;
+      const azulejoCost = azulejoM2 * MATERIAL_MARKET_PRICES.gres_porcelanico.price;
+      results.push({
+        name: `Azulejo gres porcelánico (${azulejoM2.toFixed(1)} m² con 10% desperdicio)`,
+        qty: azulejoM2.toFixed(1),
+        unit: 'm²',
+        price: MATERIAL_MARKET_PRICES.gres_porcelanico.price,
+        total: azulejoCost
+      });
+      
+      const sacosCola = Math.ceil(squareMeters * CONSUMPTION_RATIOS.mortero_cola_por_m2);
+      const colaCost = sacosCola * MATERIAL_MARKET_PRICES.mortero_cola_c2te.price;
+      results.push({
+        name: `Mortero cola C2TE (${sacosCola} sacos de 25kg)`,
+        qty: sacosCola,
+        unit: 'sacos',
+        price: MATERIAL_MARKET_PRICES.mortero_cola_c2te.price,
+        total: colaCost
+      });
+      
+      const horasAlicatado = squareMeters * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
+      const laborCost = horasAlicatado * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
+      results.push({
+        name: `Mano de obra alicatado (${horasAlicatado.toFixed(1)} horas)`,
+        qty: horasAlicatado.toFixed(1),
+        unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
+        total: laborCost
+      });
+      
+      totalCost = azulejoCost + colaCost + laborCost;
+      break;
+      
+    case 'solado':
+      const sueloM2 = squareMeters * CONSUMPTION_RATIOS.azulejo_desperdicio;
+      const sueloCost = sueloM2 * MATERIAL_MARKET_PRICES.suelo_laminado.price;
+      results.push({
+        name: `Suelo laminado AC4 (${sueloM2.toFixed(1)} m² con 10% desperdicio)`,
+        qty: sueloM2.toFixed(1),
+        unit: 'm²',
+        price: MATERIAL_MARKET_PRICES.suelo_laminado.price,
+        total: sueloCost
+      });
+      
+      const sacosColaSolado = Math.ceil(squareMeters * CONSUMPTION_RATIOS.mortero_cola_por_m2);
+      const colaSoladoCost = sacosColaSolado * MATERIAL_MARKET_PRICES.mortero_cola_c2te.price;
+      results.push({
+        name: `Mortero cola C2TE (${sacosColaSolado} sacos de 25kg)`,
+        qty: sacosColaSolado,
+        unit: 'sacos',
+        price: MATERIAL_MARKET_PRICES.mortero_cola_c2te.price,
+        total: colaSoladoCost
+      });
+      
+      const horasSolado = squareMeters * CONSUMPTION_RATIOS.horas_alicatado_por_m2;
+      const laborSoladoCost = horasSolado * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
+      results.push({
+        name: `Mano de obra solado (${horasSolado.toFixed(1)} horas)`,
+        qty: horasSolado.toFixed(1),
+        unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
+        total: laborSoladoCost
+      });
+      
+      totalCost = sueloCost + colaSoladoCost + laborSoladoCost;
+      break;
+      
+    case 'pintura':
+      const pinturaLitros = squareMeters * CONSUMPTION_RATIOS.pintura_litros_por_m2;
+      const pinturaCost = squareMeters * MATERIAL_MARKET_PRICES.pintura_plastica.price;
+      results.push({
+        name: `Pintura plástica mate (${pinturaLitros.toFixed(1)} litros, 2 manos)`,
+        qty: pinturaLitros.toFixed(1),
+        unit: 'litros',
+        price: MATERIAL_MARKET_PRICES.pintura_plastica.price / CONSUMPTION_RATIOS.pintura_litros_por_m2,
+        total: pinturaCost
+      });
+      
+      const horasPintura = squareMeters * CONSUMPTION_RATIOS.horas_pintura_por_m2;
+      const laborPinturaCost = horasPintura * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
+      results.push({
+        name: `Mano de obra pintura (${horasPintura.toFixed(1)} horas)`,
+        qty: horasPintura.toFixed(1),
+        unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
+        total: laborPinturaCost
+      });
+      
+      totalCost = pinturaCost + laborPinturaCost;
+      break;
+      
+    case 'desescombro':
+      const horasDesescombro = squareMeters * CONSUMPTION_RATIOS.horas_desescombro_por_m2;
+      const laborDesescombroCost = horasDesescombro * MATERIAL_MARKET_PRICES.mano_obra_oficial.price;
+      results.push({
+        name: `Mano de obra desescombro (${horasDesescombro.toFixed(1)} horas)`,
+        qty: horasDesescombro.toFixed(1),
+        unit: 'horas',
+        price: MATERIAL_MARKET_PRICES.mano_obra_oficial.price,
+        total: laborDesescombroCost
+      });
+      
+      const sacosEscombro = Math.ceil(squareMeters / 2.5);
+      const costeGestion = sacosEscombro * 3.50;
+      results.push({
+        name: `Gestión de escombros (${sacosEscombro} sacos)`,
+        qty: sacosEscombro,
+        unit: 'sacos',
+        price: 3.50,
+        total: costeGestion
+      });
+      
+      totalCost = laborDesescombroCost + costeGestion;
+      break;
+  }
+  
+  return { items: results, total: totalCost };
+}
+
 // ---------- ROUTER ----------
 function render() {
   const app = document.getElementById('app');
   const views = {
     dashboard: renderDashboard,
+    calculator: renderCalculator,
     clients: renderClients,
     clientEdit: renderClientEdit,
     budgets: renderBudgets,
@@ -471,6 +721,10 @@ function renderDashboard() {
         </div>
       </div>
 
+      <button class="btn-big info" onclick="navigate('calculator')">
+        <span class="icon">🧮</span>
+        <span>Calculadora de Materiales</span>
+      </button>
       <button class="btn-big" onclick="navigate('budgetEdit', { id: 'new' })">
         <span class="icon">📋</span>
         <span>Nuevo Presupuesto</span>
@@ -484,7 +738,7 @@ function renderDashboard() {
         <span>Clientes</span>
       </button>
       <button class="btn-big secondary" onclick="navigate('budgets')">
-        <span class="icon">📁</span>
+        <span class="icon"></span>
         <span>Ver Presupuestos</span>
       </button>
       <button class="btn-big secondary" onclick="navigate('invoices')">
@@ -493,6 +747,121 @@ function renderDashboard() {
       </button>
     </div>
   `;
+}
+
+function renderCalculator() {
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('dashboard')">←</button>
+      <h1>Calculadora de Materiales</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      <div class="info-box">
+        💡 Introduce los m² y la app calculará automáticamente materiales, mano de obra y costes.
+      </div>
+      
+      <div class="calc-section">
+        <h3> Calculadora Automática</h3>
+        
+        <label>Tipo de trabajo</label>
+        <select id="calc-type" onchange="updateCalculator()">
+          <option value="alicatado">Alicatado de paredes</option>
+          <option value="solado">Solado de suelo</option>
+          <option value="pintura">Pintura de paredes</option>
+          <option value="desescombro">Desescombro/demolición</option>
+        </select>
+        
+        <label>Metros cuadrados (m²)</label>
+        <input type="number" id="calc-m2" value="15" min="1" onchange="updateCalculator()" oninput="updateCalculator()">
+        
+        <label style="margin-top:20px">Margen de beneficio (%)</label>
+        <input type="range" id="calc-margin" class="margin-slider" min="0" max="100" value="${state.config.defaultMargin}" oninput="updateCalculator()">
+        <div class="margin-display" id="margin-display">${state.config.defaultMargin}%</div>
+        
+        <div id="calc-results"></div>
+      </div>
+      
+      <button class="btn-big success" onclick="addCalcToBudget()" style="margin-top:16px">
+        <span class="icon">➕</span>
+        <span>Añadir a Nuevo Presupuesto</span>
+      </button>
+    </div>
+  `;
+}
+
+function updateCalculator() {
+  const workType = document.getElementById('calc-type').value;
+  const m2 = parseFloat(document.getElementById('calc-m2').value) || 0;
+  const margin = parseFloat(document.getElementById('calc-margin').value) || 0;
+  
+  document.getElementById('margin-display').textContent = margin + '%';
+  
+  const calc = calculateMaterials(workType, m2);
+  const costTotal = calc.total;
+  const saleTotal = costTotal * (1 + margin / 100);
+  const profit = saleTotal - costTotal;
+  
+  let html = `
+    <div class="calc-result">
+      <h3>📦 Materiales Necesarios</h3>
+      ${calc.items.map(item => `
+        <div class="calc-item">
+          <div class="name">${item.name}</div>
+          <div class="qty">${item.qty} ${item.unit}</div>
+          <div class="price">${fmt(item.total)}</div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div class="dual-budget">
+      <div class="budget-card cost">
+        <div class="label"> Coste Real</div>
+        <div class="amount">${fmt(costTotal)}</div>
+      </div>
+      <div class="budget-card sale">
+        <div class="label">💵 Precio Venta</div>
+        <div class="amount">${fmt(saleTotal)}</div>
+      </div>
+    </div>
+    
+    <div class="margin-control">
+      <h4>📊 Análisis de Margen</h4>
+      <div class="calc-item">
+        <div class="name">Beneficio bruto</div>
+        <div class="qty">${fmt(profit)}</div>
+      </div>
+      <div class="calc-item">
+        <div class="name">Margen aplicado</div>
+        <div class="qty">${margin}%</div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('calc-results').innerHTML = html;
+}
+
+function addCalcToBudget() {
+  const workType = document.getElementById('calc-type').value;
+  const m2 = parseFloat(document.getElementById('calc-m2').value) || 0;
+  const margin = parseFloat(document.getElementById('calc-margin').value) || 0;
+  
+  if (m2 <= 0) {
+    alert('Introduce los metros cuadrados');
+    return;
+  }
+  
+  const calc = calculateMaterials(workType, m2);
+  const costTotal = calc.total;
+  const saleTotal = costTotal * (1 + margin / 100);
+  
+  // Guardar en estado temporal para usar en budgetEdit
+  state.calculatedItems = calc.items;
+  state.calculatedCost = costTotal;
+  state.calculatedSale = saleTotal;
+  state.calculatedMargin = margin;
+  
+  navigate('budgetEdit', { id: 'new', fromCalculator: true });
 }
 
 function renderClients() {
@@ -563,7 +932,7 @@ function renderBudgets() {
     <div class="container">
       ${sorted.length === 0 ? `
         <div class="empty">
-          <div class="icon">📋</div>
+          <div class="icon"></div>
           <div>Sin presupuestos aún</div>
         </div>
       ` : sorted.map(b => {
@@ -585,11 +954,13 @@ function renderBudgets() {
 function renderBudgetEdit() {
   const id = state.params?.id;
   const budget = id !== 'new' ? state.budgets.find(b => b.id === id) : null;
+  const fromCalculator = state.params?.fromCalculator;
   
-  if (!budget && id !== 'new') return `<div class="container"><div class="empty">Presupuesto no encontrado</div></div>`;
+  if (!budget && id !== 'new' && !fromCalculator) return `<div class="container"><div class="empty">Presupuesto no encontrado</div></div>`;
   
   const isNew = id === 'new';
-  const items = budget?.items || [];
+  const items = budget?.items || (fromCalculator ? state.calculatedItems || [] : []);
+  const margin = budget?.margin || (fromCalculator ? state.calculatedMargin || state.config.defaultMargin : state.config.defaultMargin);
   
   return `
     <div class="header">
@@ -599,7 +970,7 @@ function renderBudgetEdit() {
     </div>
     <div class="container">
       <label>Título del presupuesto *</label>
-      <input type="text" id="b_title" value="${escapeHtml(budget?.title || '')}" placeholder="Reforma baño calle Mayor">
+      <input type="text" id="b_title" value="${escapeHtml(budget?.title || (fromCalculator ? 'Presupuesto calculado' : ''))}" placeholder="Reforma baño calle Mayor">
       
       <label>Cliente *</label>
       <select id="b_client">
@@ -612,6 +983,12 @@ function renderBudgetEdit() {
       
       <label>Validez (días)</label>
       <input type="number" id="b_validity" value="${budget?.validity || 15}">
+      
+      <div class="margin-control">
+        <h4>💰 Margen de Beneficio</h4>
+        <input type="range" id="b_margin" class="margin-slider" min="0" max="100" value="${margin}" oninput="updateBudgetMargin()">
+        <div class="margin-display" id="margin-display">${margin}%</div>
+      </div>
       
       <label style="margin-top:20px">Líneas del presupuesto</label>
       <div id="lines-container">
@@ -633,12 +1010,20 @@ function renderBudgetEdit() {
         `).join('')}
       </div>
       
-      <div class="totals" id="totals-block">
-        ${renderTotals(items, budget?.discount || 0)}
+      <div class="dual-budget" id="dual-budget-display">
+        <div class="budget-card cost">
+          <div class="label">💰 Coste Real</div>
+          <div class="amount" id="cost-total">0,00€</div>
+        </div>
+        <div class="budget-card sale">
+          <div class="label">💵 Precio Cliente</div>
+          <div class="amount" id="sale-total">0,00€</div>
+        </div>
       </div>
       
-      <label>Descuento (%)</label>
-      <input type="number" id="b_discount" value="${budget?.discount || 0}" min="0" max="100" onchange="updateTotals()">
+      <div class="totals" id="totals-block">
+        ${renderTotals(items, 0)}
+      </div>
       
       <label>Notas / Condiciones</label>
       <textarea id="b_notes" rows="3" placeholder="No incluye IVA, materiales no especificados...">${escapeHtml(budget?.notes || '')}</textarea>
@@ -708,7 +1093,7 @@ function renderInvoices() {
     <div class="container">
       ${sorted.length === 0 ? `
         <div class="empty">
-          <div class="icon">🧾</div>
+          <div class="icon"></div>
           <div>Sin facturas aún</div>
         </div>
       ` : sorted.map(inv => {
@@ -719,7 +1104,7 @@ function renderInvoices() {
               <div class="title">Factura ${escapeHtml(inv.number || '')}</div>
               <div class="subtitle">${escapeHtml(client?.name || '—')} · ${inv.date} · ${fmt(inv.total)}</div>
             </div>
-            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteInvoice('${inv.id}')">🗑</button>
+            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteInvoice('${inv.id}')"></button>
           </div>
         `;
       }).join('')}
@@ -823,8 +1208,14 @@ function renderSettings() {
         <input type="number" id="s_iva" value="${c.ivaRate}" min="0" max="100">
       </div>
       
+      <div class="margin-control">
+        <h4>💰 Margen de Beneficio por Defecto</h4>
+        <input type="range" id="s_margin" class="margin-slider" min="0" max="100" value="${c.defaultMargin}" oninput="document.getElementById('s-margin-display').textContent = this.value + '%'">
+        <div class="margin-display" id="s-margin-display">${c.defaultMargin}%</div>
+      </div>
+      
       <button class="btn-big" onclick="saveSettings()" style="margin-top:16px">
-        💾 Guardar Configuración
+         Guardar Configuración
       </button>
       
       <button class="btn-big secondary" onclick="exportData()" style="margin-top:12px">
@@ -841,7 +1232,7 @@ function renderSettings() {
       </button>
       
       <div style="text-align:center; color:var(--text-dim); margin-top:30px; font-size:0.85rem">
-        ObraExpress v1.0<br>
+        ObraExpress v1.2<br>
         Tus datos se guardan solo en este dispositivo.
       </div>
     </div>
@@ -850,10 +1241,29 @@ function renderSettings() {
 
 // ---------- ACCIONES ----------
 function attachViewEvents() {
-  // Auto-guardado en inputs de líneas
   document.querySelectorAll('#lines-container input').forEach(inp => {
     inp.addEventListener('input', () => updateTotals());
   });
+  
+  if (state.view === 'calculator') {
+    updateCalculator();
+  }
+  
+  if (state.view === 'budgetEdit' && state.params?.fromCalculator) {
+    updateBudgetMargin();
+  }
+}
+
+function updateBudgetMargin() {
+  const margin = parseFloat(document.getElementById('b_margin').value) || 0;
+  document.getElementById('margin-display').textContent = margin + '%';
+  
+  const items = getLinesFromUI();
+  const costTotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
+  const saleTotal = costTotal * (1 + margin / 100);
+  
+  document.getElementById('cost-total').textContent = fmt(costTotal);
+  document.getElementById('sale-total').textContent = fmt(saleTotal);
 }
 
 function saveClient(id) {
@@ -880,7 +1290,7 @@ function saveClient(id) {
 
 function deleteClient(id) {
   if (!confirm('¿Eliminar este cliente?')) return;
-  state.clients = state.clients.filter(c => c.id !== id);
+  state.clients = state.clients.filter(c => c.id === id);
   saveState();
   render();
 }
@@ -894,7 +1304,6 @@ function addLine() {
 }
 
 function updateLine(idx, field, value) {
-  // Los datos se leen al guardar
   updateTotals();
 }
 
@@ -927,6 +1336,10 @@ function updateTotals() {
   const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
   const block = document.getElementById('totals-block');
   if (block) block.innerHTML = renderTotals(items, discount);
+  
+  if (state.view === 'budgetEdit') {
+    updateBudgetMargin();
+  }
 }
 
 function loadTemplate(id) {
@@ -944,15 +1357,22 @@ function saveBudget(id) {
   const clientId = document.getElementById('b_client').value;
   if (!title || !clientId) { alert('Título y cliente son obligatorios'); return; }
   
+  const margin = parseFloat(document.getElementById('b_margin').value) || 0;
+  const items = getLinesFromUI();
+  const costTotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
+  const saleTotal = costTotal * (1 + margin / 100);
+  
   const data = {
     title,
     clientId,
     date: document.getElementById('b_date').value,
     validity: parseInt(document.getElementById('b_validity').value) || 15,
-    items: getLinesFromUI(),
-    discount: parseFloat(document.getElementById('b_discount').value) || 0,
-    notes: document.getElementById('b_notes').value.trim(),
-    total: calculateTotal()
+    items: items.map(i => ({...i, price: i.price * (1 + margin / 100)})), // Aplicar margen a cada línea
+    margin: margin,
+    costTotal: costTotal,
+    saleTotal: saleTotal,
+    total: saleTotal * (1 + state.config.ivaRate / 100),
+    notes: document.getElementById('b_notes').value.trim()
   };
   
   if (id === 'new') {
@@ -967,19 +1387,9 @@ function saveBudget(id) {
 
 function deleteBudget(id) {
   if (!confirm('¿Eliminar este presupuesto?')) return;
-  state.budgets = state.budgets.filter(b => b.id !== id);
+  state.budgets = state.budgets.filter(b => b.id === id);
   saveState();
   render();
-}
-
-function calculateTotal() {
-  const items = getLinesFromUI();
-  const discountEl = document.querySelector('#b_discount, #i_discount');
-  const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
-  const subtotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
-  const base = subtotal * (1 - discount / 100);
-  const iva = base * state.config.ivaRate / 100;
-  return base + iva;
 }
 
 function saveInvoice(id) {
@@ -1010,7 +1420,7 @@ function saveInvoice(id) {
 
 function deleteInvoice(id) {
   if (!confirm('¿Eliminar esta factura?')) return;
-  state.invoices = state.invoices.filter(i => i.id !== id);
+  state.invoices = state.invoices.filter(i => i.id === id);
   saveState();
   render();
 }
@@ -1036,7 +1446,8 @@ function saveSettings() {
     phone: document.getElementById('s_phone').value.trim(),
     email: document.getElementById('s_email').value.trim(),
     iban: document.getElementById('s_iban').value.trim(),
-    ivaRate: parseFloat(document.getElementById('s_iva').value) || 21
+    ivaRate: parseFloat(document.getElementById('s_iva').value) || 21,
+    defaultMargin: parseFloat(document.getElementById('s_margin').value) || 30
   };
   saveState();
   alert('Configuración guardada');
@@ -1080,7 +1491,7 @@ function resetAll() {
   location.reload();
 }
 
-// ---------- PDF GENERATOR (simple, sin librerías externas) ----------
+// ---------- PDF GENERATOR ----------
 function buildHTMLDoc(type, doc) {
   const client = state.clients.find(c => c.id === doc.clientId);
   const c = state.config;
@@ -1100,10 +1511,8 @@ function buildHTMLDoc(type, doc) {
   `).join('');
   
   const subtotal = doc.items.reduce((s, i) => s + (i.qty||0)*(i.price||0), 0);
-  const discountAmount = subtotal * (doc.discount||0) / 100;
-  const base = subtotal - discountAmount;
-  const iva = base * c.ivaRate / 100;
-  const total = base + iva;
+  const iva = subtotal * c.ivaRate / 100;
+  const total = subtotal + iva;
   
   return `
     <!DOCTYPE html>
@@ -1176,9 +1585,7 @@ function buildHTMLDoc(type, doc) {
       </table>
       
       <div class="totals">
-        <div class="row"><span>Subtotal</span><span>${subtotal.toFixed(2)}€</span></div>
-        ${doc.discount > 0 ? `<div class="row"><span>Descuento (${doc.discount}%)</span><span>-${discountAmount.toFixed(2)}€</span></div>` : ''}
-        <div class="row"><span>Base imponible</span><span>${base.toFixed(2)}€</span></div>
+        <div class="row"><span>Base imponible</span><span>${subtotal.toFixed(2)}€</span></div>
         <div class="row"><span>IVA (${c.ivaRate}%)</span><span>${iva.toFixed(2)}€</span></div>
         <div class="row grand"><span>TOTAL</span><span>${total.toFixed(2)}€</span></div>
       </div>
@@ -1238,7 +1645,7 @@ function shareInvoiceWhatsApp(id) {
 loadState();
 render();
 
-// Service Worker básico para offline (inline)
+// Service Worker básico para offline
 if ('serviceWorker' in navigator) {
   const swCode = `
     self.addEventListener('install', e => self.skipWaiting());
