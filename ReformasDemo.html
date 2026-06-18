@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a1a">
+<title>ObraExpress - Presupuestos y Facturas</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --card: #1a1a1a;
+    --card-hover: #222;
+    --accent: #ff6b00;
+    --accent-hover: #ff8533;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --border: #333;
+    --success: #4caf50;
+    --danger: #f44336;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; }
+  input, textarea, select {
+    font-family: inherit;
+    font-size: 16px;
+    background: #000;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 14px;
+    border-radius: 8px;
+    width: 100%;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+  .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+  
+  /* HEADER */
+  .header {
+    background: var(--card);
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 {
+    font-size: 1.2rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .header .back-btn {
+    background: transparent;
+    color: var(--accent);
+    font-size: 1.5rem;
+    padding: 8px 12px;
+  }
+  
+  /* BOTONES GRANDES */
+  .btn-big {
+    width: 100%;
+    padding: 20px;
+    background: var(--accent);
+    color: #000;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.1s;
+  }
+  .btn-big:active { transform: scale(0.98); }
+  .btn-big.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-big.danger { background: var(--danger); color: #fff; }
+  .btn-big.success { background: var(--success); color: #fff; }
+  .btn-big .icon { font-size: 1.5rem; }
+  
+  .btn {
+    padding: 14px 20px;
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); color: #fff; }
+  
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card.clickable { cursor: pointer; transition: background 0.15s; }
+  .card.clickable:active { background: var(--card-hover); }
+  .card h3 { font-size: 1.1rem; margin-bottom: 4px; }
+  .card .meta { color: var(--text-dim); font-size: 0.85rem; }
+  
+  /* DASHBOARD */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .stat .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; }
+  
+  /* LISTA */
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .list-item .info { flex: 1; }
+  .list-item .title { font-weight: 600; }
+  .list-item .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-top: 2px; }
+  .list-item .actions { display: flex; gap: 8px; }
+  .icon-btn {
+    background: transparent;
+    color: var(--text-dim);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+  }
+  .icon-btn:active { background: var(--card-hover); }
+  .icon-btn.danger { color: var(--danger); }
+  
+  /* MODAL */
+  .modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal.hidden { display: none; }
+  .modal-content {
+    background: var(--bg);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .modal-header h2 { font-size: 1.3rem; }
+  .close-btn { background: transparent; color: var(--text-dim); font-size: 1.5rem; padding: 8px; }
+  
+  /* LÍNEAS DE PRESUPUESTO */
+  .line-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .line-item .row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .line-item input { padding: 10px; font-size: 14px; }
+  .line-item .total {
+    text-align: right;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+  
+  /* TOTALS */
+  .totals {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .totals .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 1rem;
+  }
+  .totals .row.grand {
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding-top: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  /* UTILS */
+  .hidden { display: none !important; }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+  }
+  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+  
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    font-size: 2rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(255,107,0,0.4);
+    z-index: 50;
+  }
+  
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .tab.active { background: var(--accent); color: #000; }
+  
+  /* TEMPLATE CARDS */
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .template-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .template-card:active { border-color: var(--accent); }
+  .template-card .icon { font-size: 2rem; margin-bottom: 8px; }
+  .template-card .name { font-weight: 600; font-size: 0.95rem; }
+  
+  @media (min-width: 768px) {
+    .container { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ============================================================
+// OBRAEXPRESS v1.0 - MVP
+// App monolítica para presupuestos y facturas de reformas
+// ============================================================
+
+const STORE_KEY = 'obraexpress_data_v1';
+const CONFIG_KEY = 'obraexpress_config_v1';
+
+// ---------- DATOS INICIALES ----------
+const DEFAULT_TEMPLATES = [
+  { id: 'bano', name: 'Reforma Baño', icon: '', items: [
+    { name: 'Alicatado paredes', unit: 'm²', price: 35 },
+    { name: 'Solado', unit: 'm²', price: 28 },
+    { name: 'Plato de ducha', unit: 'ud', price: 280 },
+    { name: 'Inodoro', unit: 'ud', price: 180 },
+    { name: 'Lavabo con mueble', unit: 'ud', price: 320 },
+    { name: 'Grifería', unit: 'conjunto', price: 150 },
+    { name: 'Mano de obra desmontaje', unit: 'h', price: 25 },
+    { name: 'Mano de obra montaje', unit: 'h', price: 25 }
+  ]},
+  { id: 'cocina', name: 'Reforma Cocina', icon: '🍳', items: [
+    { name: 'Alicatado', unit: 'm²', price: 35 },
+    { name: 'Solado', unit: 'm²', price: 28 },
+    { name: 'Encimera', unit: 'ml', price: 180 },
+    { name: 'Muebles cocina', unit: 'ml', price: 450 },
+    { name: 'Fregadero + grifo', unit: 'conjunto', price: 220 },
+    { name: 'Electrodomésticos', unit: 'pack', price: 1200 },
+    { name: 'Fontanería', unit: 'h', price: 25 },
+    { name: 'Electricidad', unit: 'h', price: 28 }
+  ]},
+  { id: 'pintura', name: 'Pintura', icon: '🎨', items: [
+    { name: 'Pintura paredes (lisa)', unit: 'm²', price: 8 },
+    { name: 'Pintura techos', unit: 'm²', price: 9 },
+    { name: 'Alisado paredes', unit: 'm²', price: 12 },
+    { name: 'Pintura puertas', unit: 'ud', price: 45 },
+    { name: 'Material (pintura, rodillos)', unit: 'm²', price: 3 }
+  ]},
+  { id: 'alicatado', name: 'Alicatado', icon: '🧱', items: [
+    { name: 'Alicatado paredes', unit: 'm²', price: 35 },
+    { name: 'Solado', unit: 'm²', price: 28 },
+    { name: 'Rodapié', unit: 'ml', price: 12 },
+    { name: 'Material (adhesivo, lechada)', unit: 'm²', price: 8 }
+  ]},
+  { id: 'tabiqueria', name: 'Tabiquería', icon: '🏗️', items: [
+    { name: 'Tabique ladrillo', unit: 'm²', price: 45 },
+    { name: 'Tabique pladur', unit: 'm²', price: 38 },
+    { name: 'Puerta interior + marco', unit: 'ud', price: 280 }
+  ]},
+  { id: 'custom', name: 'Personalizado', icon: '✏️', items: [] }
+];
+
+// ---------- ESTADO ----------
+let state = {
+  view: 'dashboard',
+  clients: [],
+  budgets: [],
+  invoices: [],
+  templates: DEFAULT_TEMPLATES,
+  config: {
+    businessName: 'Mi Empresa de Reformas',
+    nif: '',
+    address: '',
+    phone: '',
+    email: '',
+    iban: '',
+    ivaRate: 21
+  }
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+    }
+    const config = localStorage.getItem(CONFIG_KEY);
+    if (config) state.config = { ...state.config, ...JSON.parse(config) };
+  } catch(e) { console.error('Error cargando datos:', e); }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      clients: state.clients,
+      budgets: state.budgets,
+      invoices: state.invoices,
+      templates: state.templates
+    }));
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(state.config));
+  } catch(e) { console.error('Error guardando:', e); }
+}
+
+// ---------- UTILS ----------
+const uid = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
+const today = () => new Date().toISOString().split('T')[0];
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- ROUTER ----------
+function render() {
+  const app = document.getElementById('app');
+  const views = {
+    dashboard: renderDashboard,
+    clients: renderClients,
+    clientEdit: renderClientEdit,
+    budgets: renderBudgets,
+    budgetEdit: renderBudgetEdit,
+    invoices: renderInvoices,
+    invoiceEdit: renderInvoiceEdit,
+    settings: renderSettings
+  };
+  const fn = views[state.view] || renderDashboard;
+  app.innerHTML = fn();
+  attachViewEvents();
+}
+
+function navigate(view, params = {}) {
+  state.view = view;
+  state.params = params;
+  render();
+  window.scrollTo(0, 0);
+}
+
+// ---------- VISTAS ----------
+function renderDashboard() {
+  const totalBudgets = state.budgets.length;
+  const totalInvoices = state.invoices.length;
+  const pendingBudgets = state.budgets.filter(b => b.status !== 'aceptado' && b.status !== 'rechazado').length;
+  const totalRevenue = state.invoices.reduce((s, i) => s + (i.total || 0), 0);
+
+  return `
+    <div class="header">
+      <h1>🏗️ ObraExpress</h1>
+      <button class="icon-btn" onclick="navigate('settings')">⚙️</button>
+    </div>
+    <div class="container">
+      <div class="stats">
+        <div class="stat">
+          <div class="num">${totalBudgets}</div>
+          <div class="label">Presupuestos</div>
+        </div>
+        <div class="stat">
+          <div class="num">${pendingBudgets}</div>
+          <div class="label">Pendientes</div>
+        </div>
+        <div class="stat">
+          <div class="num">${totalInvoices}</div>
+          <div class="label">Facturas</div>
+        </div>
+        <div class="stat">
+          <div class="num">${fmt(totalRevenue)}</div>
+          <div class="label">Facturado</div>
+        </div>
+      </div>
+
+      <button class="btn-big" onclick="navigate('budgetEdit', { id: 'new' })">
+        <span class="icon">📋</span>
+        <span>Nuevo Presupuesto</span>
+      </button>
+      <button class="btn-big secondary" onclick="navigate('invoiceEdit', { id: 'new' })">
+        <span class="icon"></span>
+        <span>Nueva Factura</span>
+      </button>
+      <button class="btn-big secondary" onclick="navigate('clients')">
+        <span class="icon">👥</span>
+        <span>Clientes</span>
+      </button>
+      <button class="btn-big secondary" onclick="navigate('budgets')">
+        <span class="icon">📁</span>
+        <span>Ver Presupuestos</span>
+      </button>
+      <button class="btn-big secondary" onclick="navigate('invoices')">
+        <span class="icon">📄</span>
+        <span>Ver Facturas</span>
+      </button>
+    </div>
+  `;
+}
+
+function renderClients() {
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('dashboard')">←</button>
+      <h1>Clientes</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      ${state.clients.length === 0 ? `
+        <div class="empty">
+          <div class="icon">👥</div>
+          <div>Aún no tienes clientes</div>
+        </div>
+      ` : state.clients.map(c => `
+        <div class="list-item" onclick="navigate('clientEdit', { id: '${c.id}' })">
+          <div class="info">
+            <div class="title">${escapeHtml(c.name)}</div>
+            <div class="subtitle">${escapeHtml(c.phone || '')} ${c.email ? '· ' + escapeHtml(c.email) : ''}</div>
+          </div>
+          <button class="icon-btn danger" onclick="event.stopPropagation(); deleteClient('${c.id}')">🗑</button>
+        </div>
+      `).join('')}
+      <button class="btn-big" onclick="navigate('clientEdit', { id: 'new' })" style="margin-top:16px">
+        <span class="icon">➕</span>
+        <span>Añadir Cliente</span>
+      </button>
+    </div>
+  `;
+}
+
+function renderClientEdit() {
+  const id = state.params?.id;
+  const client = id !== 'new' ? state.clients.find(c => c.id === id) : null;
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('clients')">←</button>
+      <h1>${client ? 'Editar' : 'Nuevo'} Cliente</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      <label>Nombre / Empresa *</label>
+      <input type="text" id="c_name" value="${escapeHtml(client?.name || '')}" placeholder="Juan Pérez o Empresa SL">
+      <label>NIF / CIF</label>
+      <input type="text" id="c_nif" value="${escapeHtml(client?.nif || '')}" placeholder="12345678A">
+      <label>Dirección</label>
+      <input type="text" id="c_address" value="${escapeHtml(client?.address || '')}" placeholder="Calle, número, ciudad">
+      <label>Teléfono</label>
+      <input type="tel" id="c_phone" value="${escapeHtml(client?.phone || '')}" placeholder="600 000 000">
+      <label>Email</label>
+      <input type="email" id="c_email" value="${escapeHtml(client?.email || '')}" placeholder="email@ejemplo.com">
+      <button class="btn-big" onclick="saveClient('${id || 'new'}')" style="margin-top:20px">
+        💾 Guardar Cliente
+      </button>
+    </div>
+  `;
+}
+
+function renderBudgets() {
+  const sorted = [...state.budgets].sort((a,b) => b.date.localeCompare(a.date));
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('dashboard')">←</button>
+      <h1>Presupuestos</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      ${sorted.length === 0 ? `
+        <div class="empty">
+          <div class="icon">📋</div>
+          <div>Sin presupuestos aún</div>
+        </div>
+      ` : sorted.map(b => {
+        const client = state.clients.find(c => c.id === b.clientId);
+        return `
+          <div class="list-item" onclick="navigate('budgetEdit', { id: '${b.id}' })">
+            <div class="info">
+              <div class="title">${escapeHtml(b.title || 'Sin título')}</div>
+              <div class="subtitle">${escapeHtml(client?.name || 'Cliente eliminado')} · ${b.date} · ${fmt(b.total)}</div>
+            </div>
+            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteBudget('${b.id}')">🗑</button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderBudgetEdit() {
+  const id = state.params?.id;
+  const budget = id !== 'new' ? state.budgets.find(b => b.id === id) : null;
+  
+  if (!budget && id !== 'new') return `<div class="container"><div class="empty">Presupuesto no encontrado</div></div>`;
+  
+  const isNew = id === 'new';
+  const items = budget?.items || [];
+  
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('budgets')">←</button>
+      <h1>${isNew ? 'Nuevo' : 'Editar'} Presupuesto</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      <label>Título del presupuesto *</label>
+      <input type="text" id="b_title" value="${escapeHtml(budget?.title || '')}" placeholder="Reforma baño calle Mayor">
+      
+      <label>Cliente *</label>
+      <select id="b_client">
+        <option value="">-- Seleccionar cliente --</option>
+        ${state.clients.map(c => `<option value="${c.id}" ${budget?.clientId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+      </select>
+      
+      <label>Fecha</label>
+      <input type="date" id="b_date" value="${budget?.date || today()}">
+      
+      <label>Validez (días)</label>
+      <input type="number" id="b_validity" value="${budget?.validity || 15}">
+      
+      <label style="margin-top:20px">Líneas del presupuesto</label>
+      <div id="lines-container">
+        ${items.map((item, i) => renderLineItem(item, i)).join('')}
+      </div>
+      
+      <button class="btn-big secondary" onclick="addLine()" style="margin-top:8px">
+        <span class="icon">➕</span>
+        <span>Añadir Línea</span>
+      </button>
+      
+      <label style="margin-top:20px">O cargar desde plantilla:</label>
+      <div class="template-grid">
+        ${state.templates.map(t => `
+          <div class="template-card" onclick="loadTemplate('${t.id}')">
+            <div class="icon">${t.icon}</div>
+            <div class="name">${t.name}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="totals" id="totals-block">
+        ${renderTotals(items, budget?.discount || 0)}
+      </div>
+      
+      <label>Descuento (%)</label>
+      <input type="number" id="b_discount" value="${budget?.discount || 0}" min="0" max="100" onchange="updateTotals()">
+      
+      <label>Notas / Condiciones</label>
+      <textarea id="b_notes" rows="3" placeholder="No incluye IVA, materiales no especificados...">${escapeHtml(budget?.notes || '')}</textarea>
+      
+      <button class="btn-big" onclick="saveBudget('${id || 'new'}')" style="margin-top:20px">
+        💾 Guardar Presupuesto
+      </button>
+      
+      ${!isNew ? `
+        <button class="btn-big success" onclick="generateBudgetPDF('${id}')">
+          📄 Generar PDF
+        </button>
+        <button class="btn-big secondary" onclick="shareBudgetWhatsApp('${id}')">
+          💬 Enviar por WhatsApp
+        </button>
+        <button class="btn-big secondary" onclick="convertToInvoice('${id}')">
+          🧾 Convertir en Factura
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderLineItem(item, index) {
+  return `
+    <div class="line-item" data-index="${index}">
+      <div class="row">
+        <input type="text" placeholder="Concepto" value="${escapeHtml(item.name || '')}" onchange="updateLine(${index}, 'name', this.value)">
+        <input type="text" placeholder="Ud" value="${escapeHtml(item.unit || 'ud')}" onchange="updateLine(${index}, 'unit', this.value)">
+        <input type="number" placeholder="Precio" value="${item.price || ''}" onchange="updateLine(${index}, 'price', parseFloat(this.value)||0)">
+      </div>
+      <div class="row">
+        <input type="number" placeholder="Cantidad" value="${item.qty || ''}" onchange="updateLine(${index}, 'qty', parseFloat(this.value)||0)">
+        <div class="total" style="grid-column: span 2; display:flex; align-items:center; justify-content:flex-end">
+          ${fmt((item.qty || 0) * (item.price || 0))}
+        </div>
+      </div>
+      <button class="icon-btn danger" onclick="removeLine(${index})" style="width:100%">🗑 Eliminar línea</button>
+    </div>
+  `;
+}
+
+function renderTotals(items, discount = 0) {
+  const subtotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
+  const discountAmount = subtotal * (discount || 0) / 100;
+  const base = subtotal - discountAmount;
+  const iva = base * state.config.ivaRate / 100;
+  const total = base + iva;
+  
+  return `
+    <div class="row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+    ${discount > 0 ? `<div class="row"><span>Descuento (${discount}%)</span><span>-${fmt(discountAmount)}</span></div>` : ''}
+    <div class="row"><span>Base imponible</span><span>${fmt(base)}</span></div>
+    <div class="row"><span>IVA (${state.config.ivaRate}%)</span><span>${fmt(iva)}</span></div>
+    <div class="row grand"><span>TOTAL</span><span>${fmt(total)}</span></div>
+  `;
+}
+
+function renderInvoices() {
+  const sorted = [...state.invoices].sort((a,b) => b.date.localeCompare(a.date));
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('dashboard')">←</button>
+      <h1>Facturas</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      ${sorted.length === 0 ? `
+        <div class="empty">
+          <div class="icon">🧾</div>
+          <div>Sin facturas aún</div>
+        </div>
+      ` : sorted.map(inv => {
+        const client = state.clients.find(c => c.id === inv.clientId);
+        return `
+          <div class="list-item" onclick="navigate('invoiceEdit', { id: '${inv.id}' })">
+            <div class="info">
+              <div class="title">Factura ${escapeHtml(inv.number || '')}</div>
+              <div class="subtitle">${escapeHtml(client?.name || '—')} · ${inv.date} · ${fmt(inv.total)}</div>
+            </div>
+            <button class="icon-btn danger" onclick="event.stopPropagation(); deleteInvoice('${inv.id}')">🗑</button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderInvoiceEdit() {
+  const id = state.params?.id;
+  const inv = id !== 'new' ? state.invoices.find(i => i.id === id) : null;
+  const fromBudget = state.params?.fromBudget;
+  const budget = fromBudget ? state.budgets.find(b => b.id === fromBudget) : null;
+  
+  if (!inv && id !== 'new') return `<div class="container"><div class="empty">Factura no encontrada</div></div>`;
+  
+  const isNew = id === 'new';
+  const items = inv?.items || budget?.items || [];
+  
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('invoices')">←</button>
+      <h1>${isNew ? 'Nueva' : 'Editar'} Factura</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      <label>Nº Factura *</label>
+      <input type="text" id="i_number" value="${escapeHtml(inv?.number || generateInvoiceNumber())}" placeholder="2026-001">
+      
+      <label>Cliente *</label>
+      <select id="i_client">
+        <option value="">-- Seleccionar cliente --</option>
+        ${state.clients.map(c => `<option value="${c.id}" ${inv?.clientId === c.id || budget?.clientId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+      </select>
+      
+      <label>Fecha</label>
+      <input type="date" id="i_date" value="${inv?.date || today()}">
+      
+      <label>Fecha de vencimiento</label>
+      <input type="date" id="i_due" value="${inv?.dueDate || ''}">
+      
+      <label style="margin-top:20px">Conceptos</label>
+      <div id="lines-container">
+        ${items.map((item, i) => renderLineItem(item, i))}
+      </div>
+      
+      <button class="btn-big secondary" onclick="addLine()" style="margin-top:8px">
+        <span class="icon">➕</span>
+        <span>Añadir Línea</span>
+      </button>
+      
+      <div class="totals" id="totals-block">
+        ${renderTotals(items, inv?.discount || 0)}
+      </div>
+      
+      <label>Descuento (%)</label>
+      <input type="number" id="i_discount" value="${inv?.discount || 0}" min="0" max="100" onchange="updateTotals()">
+      
+      <label>Notas</label>
+      <textarea id="i_notes" rows="2" placeholder="Forma de pago, etc.">${escapeHtml(inv?.notes || '')}</textarea>
+      
+      <button class="btn-big" onclick="saveInvoice('${id || 'new'}')" style="margin-top:20px">
+        💾 Guardar Factura
+      </button>
+      
+      ${!isNew ? `
+        <button class="btn-big success" onclick="generateInvoicePDF('${id}')">
+          📄 Generar PDF
+        </button>
+        <button class="btn-big secondary" onclick="shareInvoiceWhatsApp('${id}')">
+          💬 Enviar por WhatsApp
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderSettings() {
+  const c = state.config;
+  return `
+    <div class="header">
+      <button class="back-btn" onclick="navigate('dashboard')">←</button>
+      <h1>Configuración</h1>
+      <div style="width:40px"></div>
+    </div>
+    <div class="container">
+      <div class="card">
+        <h3>Datos de tu empresa</h3>
+        <label>Nombre / Razón social</label>
+        <input type="text" id="s_name" value="${escapeHtml(c.businessName)}">
+        <label>NIF / CIF</label>
+        <input type="text" id="s_nif" value="${escapeHtml(c.nif)}">
+        <label>Dirección</label>
+        <input type="text" id="s_address" value="${escapeHtml(c.address)}">
+        <label>Teléfono</label>
+        <input type="tel" id="s_phone" value="${escapeHtml(c.phone)}">
+        <label>Email</label>
+        <input type="email" id="s_email" value="${escapeHtml(c.email)}">
+        <label>IBAN</label>
+        <input type="text" id="s_iban" value="${escapeHtml(c.iban)}">
+        <label>IVA (%)</label>
+        <input type="number" id="s_iva" value="${c.ivaRate}" min="0" max="100">
+      </div>
+      
+      <button class="btn-big" onclick="saveSettings()" style="margin-top:16px">
+        💾 Guardar Configuración
+      </button>
+      
+      <button class="btn-big secondary" onclick="exportData()" style="margin-top:12px">
+        📤 Exportar Datos (Backup)
+      </button>
+      
+      <button class="btn-big secondary" onclick="document.getElementById('import-file').click()" style="margin-top:12px">
+         Importar Datos
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      
+      <button class="btn-big danger" onclick="resetAll()" style="margin-top:24px">
+        ⚠️ Borrar Todos los Datos
+      </button>
+      
+      <div style="text-align:center; color:var(--text-dim); margin-top:30px; font-size:0.85rem">
+        ObraExpress v1.0<br>
+        Tus datos se guardan solo en este dispositivo.
+      </div>
+    </div>
+  `;
+}
+
+// ---------- ACCIONES ----------
+function attachViewEvents() {
+  // Auto-guardado en inputs de líneas
+  document.querySelectorAll('#lines-container input').forEach(inp => {
+    inp.addEventListener('input', () => updateTotals());
+  });
+}
+
+function saveClient(id) {
+  const name = document.getElementById('c_name').value.trim();
+  if (!name) { alert('El nombre es obligatorio'); return; }
+  
+  const data = {
+    name,
+    nif: document.getElementById('c_nif').value.trim(),
+    address: document.getElementById('c_address').value.trim(),
+    phone: document.getElementById('c_phone').value.trim(),
+    email: document.getElementById('c_email').value.trim()
+  };
+  
+  if (id === 'new') {
+    state.clients.push({ id: uid(), ...data });
+  } else {
+    const idx = state.clients.findIndex(c => c.id === id);
+    if (idx >= 0) state.clients[idx] = { ...state.clients[idx], ...data };
+  }
+  saveState();
+  navigate('clients');
+}
+
+function deleteClient(id) {
+  if (!confirm('¿Eliminar este cliente?')) return;
+  state.clients = state.clients.filter(c => c.id !== id);
+  saveState();
+  render();
+}
+
+function addLine() {
+  const container = document.getElementById('lines-container');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.innerHTML = renderLineItem({ name: '', unit: 'ud', price: 0, qty: 0 }, idx);
+  container.appendChild(div.firstElementChild);
+}
+
+function updateLine(idx, field, value) {
+  // Los datos se leen al guardar
+  updateTotals();
+}
+
+function removeLine(idx) {
+  const container = document.getElementById('lines-container');
+  const lines = container.querySelectorAll('.line-item');
+  if (lines[idx]) lines[idx].remove();
+  updateTotals();
+}
+
+function getLinesFromUI() {
+  const container = document.getElementById('lines-container');
+  const lines = container.querySelectorAll('.line-item');
+  const items = [];
+  lines.forEach(line => {
+    const inputs = line.querySelectorAll('input');
+    items.push({
+      name: inputs[0].value,
+      unit: inputs[1].value,
+      price: parseFloat(inputs[2].value) || 0,
+      qty: parseFloat(inputs[3].value) || 0
+    });
+  });
+  return items.filter(i => i.name.trim());
+}
+
+function updateTotals() {
+  const items = getLinesFromUI();
+  const discountEl = document.querySelector('#b_discount, #i_discount');
+  const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
+  const block = document.getElementById('totals-block');
+  if (block) block.innerHTML = renderTotals(items, discount);
+}
+
+function loadTemplate(id) {
+  const tpl = state.templates.find(t => t.id === id);
+  if (!tpl) return;
+  if (!confirm(`¿Cargar plantilla "${tpl.name}"? Se reemplazarán las líneas actuales.`)) return;
+  
+  const container = document.getElementById('lines-container');
+  container.innerHTML = tpl.items.map((item, i) => renderLineItem({ ...item, qty: 1 }, i)).join('');
+  updateTotals();
+}
+
+function saveBudget(id) {
+  const title = document.getElementById('b_title').value.trim();
+  const clientId = document.getElementById('b_client').value;
+  if (!title || !clientId) { alert('Título y cliente son obligatorios'); return; }
+  
+  const data = {
+    title,
+    clientId,
+    date: document.getElementById('b_date').value,
+    validity: parseInt(document.getElementById('b_validity').value) || 15,
+    items: getLinesFromUI(),
+    discount: parseFloat(document.getElementById('b_discount').value) || 0,
+    notes: document.getElementById('b_notes').value.trim(),
+    total: calculateTotal()
+  };
+  
+  if (id === 'new') {
+    state.budgets.push({ id: uid(), ...data });
+  } else {
+    const idx = state.budgets.findIndex(b => b.id === id);
+    if (idx >= 0) state.budgets[idx] = { ...state.budgets[idx], ...data };
+  }
+  saveState();
+  navigate('budgets');
+}
+
+function deleteBudget(id) {
+  if (!confirm('¿Eliminar este presupuesto?')) return;
+  state.budgets = state.budgets.filter(b => b.id !== id);
+  saveState();
+  render();
+}
+
+function calculateTotal() {
+  const items = getLinesFromUI();
+  const discountEl = document.querySelector('#b_discount, #i_discount');
+  const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
+  const subtotal = items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
+  const base = subtotal * (1 - discount / 100);
+  const iva = base * state.config.ivaRate / 100;
+  return base + iva;
+}
+
+function saveInvoice(id) {
+  const number = document.getElementById('i_number').value.trim();
+  const clientId = document.getElementById('i_client').value;
+  if (!number || !clientId) { alert('Nº factura y cliente son obligatorios'); return; }
+  
+  const data = {
+    number,
+    clientId,
+    date: document.getElementById('i_date').value,
+    dueDate: document.getElementById('i_due').value,
+    items: getLinesFromUI(),
+    discount: parseFloat(document.getElementById('i_discount').value) || 0,
+    notes: document.getElementById('i_notes').value.trim(),
+    total: calculateTotal()
+  };
+  
+  if (id === 'new') {
+    state.invoices.push({ id: uid(), ...data });
+  } else {
+    const idx = state.invoices.findIndex(i => i.id === id);
+    if (idx >= 0) state.invoices[idx] = { ...state.invoices[idx], ...data };
+  }
+  saveState();
+  navigate('invoices');
+}
+
+function deleteInvoice(id) {
+  if (!confirm('¿Eliminar esta factura?')) return;
+  state.invoices = state.invoices.filter(i => i.id !== id);
+  saveState();
+  render();
+}
+
+function generateInvoiceNumber() {
+  const year = new Date().getFullYear();
+  const count = state.invoices.filter(i => i.number?.startsWith(year)).length + 1;
+  return `${year}-${String(count).padStart(3, '0')}`;
+}
+
+function convertToInvoice(budgetId) {
+  const budget = state.budgets.find(b => b.id === budgetId);
+  if (!budget) return;
+  if (!confirm('¿Crear factura desde este presupuesto?')) return;
+  navigate('invoiceEdit', { id: 'new', fromBudget: budgetId });
+}
+
+function saveSettings() {
+  state.config = {
+    businessName: document.getElementById('s_name').value.trim(),
+    nif: document.getElementById('s_nif').value.trim(),
+    address: document.getElementById('s_address').value.trim(),
+    phone: document.getElementById('s_phone').value.trim(),
+    email: document.getElementById('s_email').value.trim(),
+    iban: document.getElementById('s_iban').value.trim(),
+    ivaRate: parseFloat(document.getElementById('s_iva').value) || 21
+  };
+  saveState();
+  alert('Configuración guardada');
+}
+
+function exportData() {
+  const data = JSON.stringify({ state, config: state.config }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `obraexpress_backup_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.state) {
+        state = { ...state, ...data.state };
+        if (data.config) state.config = { ...state.config, ...data.config };
+        saveState();
+        render();
+        alert('Datos importados correctamente');
+      }
+    } catch(err) { alert('Error al importar: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll() {
+  if (!confirm('¿BORRAR TODOS LOS DATOS? Esta acción no se puede deshacer.')) return;
+  if (!confirm('¿Seguro? Se perderán clientes, presupuestos y facturas.')) return;
+  localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(CONFIG_KEY);
+  location.reload();
+}
+
+// ---------- PDF GENERATOR (simple, sin librerías externas) ----------
+function buildHTMLDoc(type, doc) {
+  const client = state.clients.find(c => c.id === doc.clientId);
+  const c = state.config;
+  const isBudget = type === 'budget';
+  const title = isBudget ? 'PRESUPUESTO' : 'FACTURA';
+  const number = isBudget ? `PRES-${doc.id.substr(-6).toUpperCase()}` : doc.number;
+  
+  let itemsHtml = doc.items.map((item, i) => `
+    <tr>
+      <td style="padding:8px; border-bottom:1px solid #ddd">${i+1}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd">${escapeHtml(item.name)}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd; text-align:center">${escapeHtml(item.unit)}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd; text-align:right">${(item.qty||0).toFixed(2)}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd; text-align:right">${(item.price||0).toFixed(2)}€</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd; text-align:right">${((item.qty||0)*(item.price||0)).toFixed(2)}€</td>
+    </tr>
+  `).join('');
+  
+  const subtotal = doc.items.reduce((s, i) => s + (i.qty||0)*(i.price||0), 0);
+  const discountAmount = subtotal * (doc.discount||0) / 100;
+  const base = subtotal - discountAmount;
+  const iva = base * c.ivaRate / 100;
+  const total = base + iva;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${title} ${number}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #222; max-width: 800px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; border-bottom: 3px solid #ff6b00; padding-bottom: 20px; margin-bottom: 30px; }
+        .company h1 { color: #ff6b00; margin: 0 0 8px 0; font-size: 24px; }
+        .company p { margin: 2px 0; font-size: 13px; color: #555; }
+        .doc-info { text-align: right; }
+        .doc-info h2 { color: #ff6b00; margin: 0 0 8px 0; font-size: 28px; }
+        .doc-info p { margin: 2px 0; font-size: 13px; }
+        .client-box { background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
+        .client-box h3 { margin: 0 0 8px 0; font-size: 13px; color: #888; text-transform: uppercase; }
+        .client-box p { margin: 2px 0; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #ff6b00; color: #000; padding: 10px 8px; text-align: left; font-size: 13px; }
+        .totals { margin-left: auto; width: 300px; }
+        .totals .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+        .totals .row.grand { border-top: 2px solid #ff6b00; margin-top: 8px; padding-top: 10px; font-size: 18px; font-weight: bold; color: #ff6b00; }
+        .notes { margin-top: 30px; padding: 15px; background: #f9f9f9; border-left: 3px solid #ff6b00; font-size: 13px; }
+        .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #ddd; padding-top: 15px; }
+        @media print { body { padding: 20px; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="company">
+          <h1>${escapeHtml(c.businessName)}</h1>
+          ${c.nif ? `<p>NIF: ${escapeHtml(c.nif)}</p>` : ''}
+          ${c.address ? `<p>${escapeHtml(c.address)}</p>` : ''}
+          ${c.phone ? `<p>Tel: ${escapeHtml(c.phone)}</p>` : ''}
+          ${c.email ? `<p>${escapeHtml(c.email)}</p>` : ''}
+        </div>
+        <div class="doc-info">
+          <h2>${title}</h2>
+          <p><strong>Nº:</strong> ${number}</p>
+          <p><strong>Fecha:</strong> ${doc.date}</p>
+          ${isBudget && doc.validity ? `<p><strong>Validez:</strong> ${doc.validity} días</p>` : ''}
+          ${!isBudget && doc.dueDate ? `<p><strong>Vencimiento:</strong> ${doc.dueDate}</p>` : ''}
+        </div>
+      </div>
+      
+      ${client ? `
+        <div class="client-box">
+          <h3>Cliente</h3>
+          <p><strong>${escapeHtml(client.name)}</strong></p>
+          ${client.nif ? `<p>NIF: ${escapeHtml(client.nif)}</p>` : ''}
+          ${client.address ? `<p>${escapeHtml(client.address)}</p>` : ''}
+          ${client.phone ? `<p>Tel: ${escapeHtml(client.phone)}</p>` : ''}
+          ${client.email ? `<p>${escapeHtml(client.email)}</p>` : ''}
+        </div>
+      ` : ''}
+      
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Concepto</th>
+            <th style="width:60px">Ud</th>
+            <th style="width:70px">Cant</th>
+            <th style="width:90px">Precio</th>
+            <th style="width:100px">Total</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      
+      <div class="totals">
+        <div class="row"><span>Subtotal</span><span>${subtotal.toFixed(2)}€</span></div>
+        ${doc.discount > 0 ? `<div class="row"><span>Descuento (${doc.discount}%)</span><span>-${discountAmount.toFixed(2)}€</span></div>` : ''}
+        <div class="row"><span>Base imponible</span><span>${base.toFixed(2)}€</span></div>
+        <div class="row"><span>IVA (${c.ivaRate}%)</span><span>${iva.toFixed(2)}€</span></div>
+        <div class="row grand"><span>TOTAL</span><span>${total.toFixed(2)}€</span></div>
+      </div>
+      
+      ${doc.notes ? `<div class="notes"><strong>Notas:</strong><br>${escapeHtml(doc.notes).replace(/\n/g,'<br>')}</div>` : ''}
+      
+      ${!isBudget && c.iban ? `<div style="margin-top:20px; font-size:13px"><strong>IBAN:</strong> ${escapeHtml(c.iban)}</div>` : ''}
+      
+      <div class="footer">
+        ${escapeHtml(c.businessName)} · ${escapeHtml(c.nif || '')}<br>
+        Documento generado con ObraExpress
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function openPDF(type, doc) {
+  const html = buildHTMLDoc(type, doc);
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 300);
+}
+
+function generateBudgetPDF(id) {
+  const doc = state.budgets.find(b => b.id === id);
+  if (doc) openPDF('budget', doc);
+}
+
+function generateInvoicePDF(id) {
+  const doc = state.invoices.find(i => i.id === id);
+  if (doc) openPDF('invoice', doc);
+}
+
+function shareBudgetWhatsApp(id) {
+  const doc = state.budgets.find(b => b.id === id);
+  const client = state.clients.find(c => c.id === doc.clientId);
+  if (!doc || !client) return;
+  
+  const text = `Hola ${client.name}, te envío el presupuesto "${doc.title}" por ${fmt(doc.total)}. ¿Lo revisamos?`;
+  const url = `https://wa.me/${(client.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+function shareInvoiceWhatsApp(id) {
+  const doc = state.invoices.find(i => i.id === id);
+  const client = state.clients.find(c => c.id === doc.clientId);
+  if (!doc || !client) return;
+  
+  const text = `Hola ${client.name}, te envío la factura ${doc.number} por ${fmt(doc.total)}. Gracias!`;
+  const url = `https://wa.me/${(client.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+// ---------- INIT ----------
+loadState();
+render();
+
+// Service Worker básico para offline (inline)
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.open('obraexpress-v1').then(cache =>
+          cache.match(e.request).then(r => r || fetch(e.request).then(resp => {
+            cache.put(e.request, resp.clone());
+            return resp;
+          }).catch(() => cache.match('/')))
+        )
+      );
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
+</body>
+</html>
