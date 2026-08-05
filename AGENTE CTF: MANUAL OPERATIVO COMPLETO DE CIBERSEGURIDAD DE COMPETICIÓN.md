@@ -5435,26 +5435,6 @@ c.save()
 
 ## ═══════════════════════════════════════════════════════════════
 
-### NOTA FINAL DEL ANEXO
-
-Este compendio es un **documento vivo**. Cada CTF participado debe generar al menos un nuevo caso documentado en este formato. La acumulación de patrones resueltos es lo que transforma conocimiento teórico en intuición operativa.
-
-**Formato de contribución al anexo:**
-```
-CASO [CATEGORÍA]-[NÚMERO]: [Título Descriptivo]
-Fuente: [CTF/Plataforma/Año]
-Problema: [Descripción concisa del escenario]
-Diagnóstico: [Pasos lógicos de identificación]
-Solución Ejecutable: [Código/Comandos funcionales]
-Lección: [Principio extraíble y generalizable]
-```
-
-**Protocolo RONIN #1310 — Anexo Operativo v1.0**
-*"Los casos resueltos son las cicatrices del aprendizaje. Colecciona todas."*
-
----
-*FIN DEL ANEXO OPERATIVO*
-
 
 # 🏴 ANEXO OPERATIVO II: COMPENDIO TÁCTICO AVANZADO DE CASOS CTF
 **Extensión Expandida del Manual Agente CTF v3.0 | Protocolo RONIN #1310**
