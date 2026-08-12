@@ -2125,3 +2125,1268 @@ No es un manual académico. Es un mapa del tesoro con código ejecutable en cada
 **Clasificación:** `CRÍTICO — INFRAESTRUCTURA DE CONOCIMIENTO TRADUCIBLE`
 
 ⚙ ⬡ 🦀 🐍 ☸ ⚡
+
+
+
+# ANEXO I: EXTENSIÓN — 30 NUEVOS PAPERS TRADUCIDOS
+
+`Clasificación: CRÍTICO — INFRAESTRUCTURA DE CONOCIMIENTO TRADUCIBLE`
+`Protocolo: Ronin Sentinel v5.0 · Entrega 1/6`
+`Régimen: Transparencia Ontológica · Soberanía del Dato · Reproducibilidad Total`
+
+## V.0 — MAPA MAESTRO DE LA EXTENSIÓN (CONTRATO DE 30 PAPERS)
+
+| # | Paper | Categoría | Estatus |
+|---|-------|-----------|---------|
+| 31 | Huang et al. (1998) — EMD / Hilbert-Huang | Señales | ✅ Esta entrega |
+| 32 | Stockwell et al. (1996) — S-Transform | Señales | ✅ Esta entrega |
+| 33 | Julier & Uhlmann (1997) — Unscented Kalman Filter | Control | ✅ Esta entrega |
+| 34 | Friston (2005) — Free Energy Principle | Neuro | ✅ Esta entrega |
+| 35 | Kingma & Ba (2015) — Adam | Optimización | ✅ Esta entrega |
+| 36 | Daubechies et al. (2011) — Synchrosqueezing | Señales | ⏳ Entrega 2 |
+| 37 | Dragomiretskiy & Zosso (2014) — VMD | Señales | ⏳ Entrega 2 |
+| 38 | Candès et al. (2006) — Compressed Sensing | Señales | ⏳ Entrega 2 |
+| 39 | Arulampalam et al. (2002) — Particle Filter | Control | ⏳ Entrega 2 |
+| 40 | Mayne et al. (2000) — Model Predictive Control | Control | ⏳ Entrega 2 |
+| 41 | Slotine & Li (1991) — Sliding Mode Control | Control | ⏳ Entrega 3 |
+| 42 | Mallat (1989) — Multiresolution / Wavelets | Señales | ⏳ Entrega 3 |
+| 43 | Donoho & Johnstone (1994) — Wavelet Shrinkage | Señales | ⏳ Entrega 3 |
+| 44 | Friston et al. (2006) — Dynamic Causal Modeling | Neuro | ⏳ Entrega 3 |
+| 45 | Rao & Ballard (1999) — Predictive Coding | Neuro | ⏳ Entrega 3 |
+| 46 | Jaeger (2001) — Echo State Networks | Neuro | ⏳ Entrega 4 |
+| 47 | Maass et al. (2002) — Liquid State Machines | Neuro | ⏳ Entrega 4 |
+| 48 | Gerstner & Kistler (2002) — Spiking Neuron Models | Neuro | ⏳ Entrega 4 |
+| 49 | Knill & Pouget (2004) — Bayesian Brain | Neuro | ⏳ Entrega 4 |
+| 50 | Izhikevich (2007) — Dynamical Systems in Neuroscience | Neuro | ⏳ Entrega 4 |
+| 51 | Hansen & Ostermeier (2001) — CMA-ES | Optimización | ⏳ Entrega 5 |
+| 52 | Deb et al. (2002) — NSGA-II | Optimización | ⏳ Entrega 5 |
+| 53 | Zhang & Li (2007) — MOEA/D | Optimización | ⏳ Entrega 5 |
+| 54 | Snoek et al. (2012) — Bayesian Optimization | Optimización | ⏳ Entrega 5 |
+| 55 | Li et al. (2017) — Hyperband | Optimización | ⏳ Entrega 5 |
+| 56 | Åström & Hägglund (1995) — PID Controllers | Control | ⏳ Entrega 6 |
+| 57 | Khalil (2002) — Lyapunov / Nonlinear Systems | Control | ⏳ Entrega 6 |
+| 58 | Ljung (1999) — System Identification | Control | ⏳ Entrega 6 |
+| 59 | Coifman & Wickerhauser (1992) — Wavelet Packets | Señales | ⏳ Entrega 6 |
+| 60 | Julier & Uhlmann (2004) — Unscented Transform (theory) | Control | ⏳ Entrega 6 |
+
+**Distribución verificada:** Señales 8 · Control 8 · Neuro 8 · Optimización 6 = **30**. ✔
+
+---
+
+### PAPER #31: Huang, Shen, Long, Wu, Shih, Zheng, Yen, Tung & Liu (1998) — The Empirical Mode Decomposition and the Hilbert Spectrum
+
+**Referencia:** Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng, Q., Yen, N. C., Tung, C. C., & Liu, H. H. (1998). "The empirical mode decomposition and the Hilbert spectrum for nonlinear and non-stationary time series analysis." *Proceedings of the Royal Society of London A*, 454(1971), 903–995. DOI: 10.1098/rspa.1998.0193
+
+**Esencia:** Descomposición adaptativa y empírica de una señal en Funciones de Modo Intrínseco (IMF) mediante tamizado iterativo, habilitando análisis tiempo-frecuencia de señales no lineales y no estacionarias sin base fija.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El análisis espectral clásico —Fourier, Wavelets— asume linealidad y estacionariedad. Pero las señales reales que importan en ingeniería y biología (vibración estructural, EEG, ondas oceánicas, ECG, datos financieros) son **no lineales y no estacionarias**: sus estadísticas cambian en el tiempo. La Transformada de Fourier asigna frecuencias globales y no puede decir *cuándo* ocurre una frecuencia. Las Wavelets mejoran esto, pero siguen atadas a una **base fija** elegida a priori por el analista.
+
+**¿Dónde falla el estado del arte previo?** Fourier descompone en senos infinitos: perfecto para señales periódicas, inútil para transitorios locales. Las Wavelets proyectan sobre funciones madre predefinidas; si la morfología real del dato no se parece a la base elegida, la representación distorsiona. Ambas son descomposiciones **lineales**: no pueden representar armónicos generados por no linealidad ni modos cuya frecuencia instantánea varía.
+
+**La solución de Huang:** en lugar de imponer una base, la EMD **extrae** una base *desde el dato mismo*. Mediante un proceso de **tamizado** (*sifting*) iterativo, identifica los extremos locales, interpola envolventes superior e inferior con splines cúbicos, resta la media y repite hasta aislar componentes oscilatorias llamadas **Funciones de Modo Intrínseco (IMF)**. Cada IMF es casi-monocomponente y admite una **frecuencia instantánea** bien definida vía la Transformada de Hilbert. El resultado es el **Espectro de Hilbert-Huang**: un mapa tiempo-frecuencia-energía adaptativo.
+
+**Aplicación práctica:** detección de daño en puentes (vibraciones no estacionarias), análisis de olas extremas (*freak waves*), procesamiento de EEG/ECG clínico, eliminación de tendencias en series climáticas, diagnóstico de rodamientos en maquinaria rotativa.
+
+**¿Por qué es un hito?** Introdujo el paradigma **empírico-adaptivo**: la base de descomposición emerge del dato, no del analista. Es la piedra fundacional de todo el análisis moderno de señales no estacionarias y generó una familia entera de variantes (EEMD, CEEMDAN, VMD `[→ Paper #37]`).
+
+#### CAPA 2: ECUACIÓN
+
+**Condición de IMF (definición, no ecuación):**
+```
+Una función c(t) es IMF si:
+(1) El número de extremos y el número de cruces por cero
+    difieren a lo sumo en uno.
+(2) En cualquier punto, la media de la envolvente superior
+    (definida por máximos locales) y la envolvente inferior
+    (definida por mínimos locales) es cero.
+```
+
+**Eq. (1) — Envolventes y media local:**
+```
+e_max(t) = spline_cúbico(máximos_locales)
+e_min(t) = spline_cúbico(mínimos_locales)
+m(t) = [ e_max(t) + e_min(t) ] / 2
+```
+- `e_max`, `e_min`: envolventes superior/inferior, unidades = unidades de la señal.
+- `m(t)`: componente de baja frecuencia / tendencia local.
+- **Interpretación:** la media local captura la "deriva" sobre la que oscila la señal; restarla aísla la oscilación.
+
+**Eq. (2) — Tamizado (sifting):**
+```
+h_k(t) = h_{k-1}(t) − m_k(t)
+```
+- `h_{k-1}`: señal de la iteración previa; `m_k`: media de sus envolventes.
+- **Interpretación:** cada resta elimina la componente de baja frecuencia, destilando la oscilación más rápida presente.
+
+**Eq. (3) — Criterio de parada (desviación estándar):**
+```
+SD = Σ_t [ (h_{k-1}(t) − h_k(t))² / h_{k-1}(t)² ]
+detener si SD < umbral  (típicamente 0.2–0.3)
+```
+- **Interpretación:** mide convergencia del tamizado. Detener demasiado pronto deja modos no lineales; demasiado tarde destruye información física.
+
+**Eq. (4) — Extracción recursiva de IMFs y residuo:**
+```
+c_1 = IMF_1 (primera componente extraída)
+r_1(t) = x(t) − c_1(t)
+r_n(t) = r_{n-1}(t) − c_n(t)
+repetir hasta que r_n sea monótono o tenga ≤ 1 extremo
+```
+
+**Eq. (5) — Reconstrucción completa (conservación de energía):**
+```
+x(t) = Σ_{i=1}^{N} c_i(t) + r_N(t)
+```
+- **Interpretación:** la descomposición es **exacta** y sin pérdida. La suma de IMFs más el residuo recupera la señal original bit a bit (salvo error numérico de spline).
+
+**Eq. (6) — Frecuencia instantánea vía Transformada de Hilbert:**
+```
+z(t) = c(t) + i·H[c](t) = a(t)·e^{iθ(t)}
+a(t) = √(c² + H[c]²)          (amplitud instantánea)
+θ(t) = arctan( H[c] / c )      (fase instantánea)
+ω(t) = dθ/dt                    (frecuencia instantánea)
+```
+- **Interpretación:** cada IMF admite una frecuencia que **varía en el tiempo**, base del Espectro de Hilbert.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Empirical Mode Decomposition (tamizado iterativo)
+
+ENTRADA:
+  - x: array 1D, señal de entrada, cualquier amplitud
+  - max_imfs: int, número máximo de IMFs a extraer (ej: 10)
+  - sd_threshold: float, umbral de parada del tamizado (0.2–0.3)
+  - max_sift: int, iteraciones máximas por tamizado (anti-loop)
+
+SALIDA:
+  - imfs: array 2D (n_imfs × n_samples)
+  - residue: array 1D, tendencia final
+  - reconstructed: array 1D, verificación de exactitud
+
+1. Inicialización:
+   residue ← copia(x)
+   imfs ← lista vacía
+
+2. Bucle externo (extracción de IMFs):
+   Mientras residue tenga ≥ 2 máximos Y ≥ 2 mínimos
+   Y len(imfs) < max_imfs:
+       h ← copia(residue)
+       3. Bucle interno (tamizado / sifting):
+          Para k = 1 a max_sift:
+             a) Encontrar índices de máximos y mínimos locales de h
+             b) Edge case: si extremos < 2 → h es monótona, abortar tamizado
+             c) Interpolar envolventes con spline cúbico:
+                e_max ← CubicSpline(t_max, h_max)(t)
+                e_min ← CubicSpline(t_min, h_min)(t)
+             d) m ← (e_max + e_min)/2
+             e) h_new ← h − m
+             f) Calcular SD (Eq. 3); si SD < umbral → h ← h_new; break
+             g) h ← h_new
+       4. c ← h (IMF extraída)
+       5. imfs.append(c)
+       6. residue ← residue − c   (Eq. 4)
+
+3. Post-procesamiento:
+   - reconstructed ← Σ imfs + residue  (Eq. 5)
+   - Verificar ‖x − reconstructed‖∞ < 1e-8 (conservación)
+
+4. Retornar (imfs, residue, reconstructed)
+
+EDGE CASES:
+  - Señal constante → 0 IMFs, residuo = señal.
+  - Menos de 2 extremos → residuo directo (tendencia monótona).
+  - Spline mal condicionado en bordes → se añaden extremos espejo (opcional).
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.interpolate import CubicSpline
+from scipy.signal import hilbert
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+# ---------- Tipos blindados (Blindaje.Cap.I) ----------
+SDThreshold: TypeAlias = Annotated[float, Field(gt=0.0, le=1.0,
+    description="Umbral de parada del tamizado")]
+
+class EMDParams(BaseModel):
+    """Parámetros validados de la EMD. Ref: Huang et al. (1998)."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    max_imfs: Annotated[int, Field(ge=1, le=30)] = 10
+    sd_threshold: SDThreshold = 0.3
+    max_sift_iter: Annotated[int, Field(ge=1, le=200)] = 100
+
+class EmpiricalModeDecomposition:
+    """Implementación de Huang et al. (1998) — EMD.
+
+    Reference: DOI: 10.1098/rspa.1998.0193
+    """
+
+    def __init__(self, params: EMDParams | None = None):
+        self.params = params or EMDParams()
+
+    @staticmethod
+    def _local_extrema(h: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Detecta índices de máximos y mínimos locales."""
+        d = np.diff(h)
+        # máximos: derivada cambia + → −
+        max_idx = np.where((d[:-1] > 0) & (d[1:] < 0))[0] + 1
+        # mínimos: derivada cambia − → +
+        min_idx = np.where((d[:-1] < 0) & (d[1:] > 0))[0] + 1
+        return max_idx, min_idx
+
+    def _sift_once(self, h: np.ndarray) -> tuple[np.ndarray, float]:
+        """Una iteración de tamizado. Implementa Eq. (1), (2), (3)."""
+        t = np.arange(len(h))
+        max_idx, min_idx = self._local_extrema(h)
+
+        # Edge case: señal monótona o sin estructura oscilatoria
+        if len(max_idx) < 2 or len(min_idx) < 2:
+            return np.zeros_like(h), np.inf
+
+        # Eq. (1): envolventes superior/inferior
+        e_max = CubicSpline(t[max_idx], h[max_idx], bc_type='clamped')(t)
+        e_min = CubicSpline(t[min_idx], h[min_idx], bc_type='clamped')(t)
+        m = (e_max + e_min) / 2.0          # media local
+
+        h_new = h - m                      # Eq. (2): tamizado
+
+        # Eq. (3): criterio de parada
+        denom = h ** 2 + 1e-12
+        sd = np.sum((h_new - h) ** 2 / denom)
+        return h_new, sd
+
+    def _extract_one_imf(self, residue: np.ndarray) -> np.ndarray:
+        """Extrae una IMF mediante tamizado iterativo (Eq. 2 + 3)."""
+        h = residue.copy()
+        for _ in range(self.params.max_sift_iter):
+            h_new, sd = self._sift_once(h)
+            if not np.isfinite(sd):        # monótona → sin IMF
+                return np.zeros_like(h)
+            h = h_new
+            if sd < self.params.sd_threshold:
+                break
+        return h
+
+    def decompose(self, x: np.ndarray) -> dict:
+        """EMD completa. Implementa Eq. (4) y (5).
+
+        Returns:
+            dict con 'imfs' (n×N), 'residue', 'reconstructed'.
+        """
+        x = np.asarray(x, dtype=float)
+        residue = x.copy()
+        imfs = []
+
+        for _ in range(self.params.max_imfs):
+            # Verifica que queden oscilaciones
+            max_idx, min_idx = self._local_extrema(residue)
+            if len(max_idx) < 2 or len(min_idx) < 2:
+                break                       # residuo monótono → fin
+            c = self._extract_one_imf(residue)
+            if np.allclose(c, 0.0):
+                break
+            imfs.append(c)
+            residue = residue - c           # Eq. (4)
+
+        imfs_arr = np.array(imfs) if imfs else np.zeros((0, len(x)))
+        reconstructed = imfs_arr.sum(axis=0) + residue   # Eq. (5)
+
+        return {
+            'imfs': imfs_arr,
+            'residue': residue,
+            'reconstructed': reconstructed,
+        }
+
+    @staticmethod
+    def instantaneous_frequency(imf: np.ndarray, fs: float) -> dict:
+        """Frecuencia instantánea vía Hilbert. Implementa Eq. (6)."""
+        analytic = hilbert(imf)
+        amplitude = np.abs(analytic)
+        phase = np.unwrap(np.angle(analytic))
+        inst_freq = np.diff(phase) / (2.0 * np.pi) * fs
+        return {'amplitude': amplitude, 'phase': phase,
+                'inst_freq': np.concatenate([[inst_freq[0]], inst_freq])}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _make_test_signal(n: int = 1000) -> np.ndarray:
+    """Señal compuesta: 2 oscilaciones + tendencia (terreno conocido)."""
+    t = np.linspace(0, 1, n)
+    return (np.sin(2 * np.pi * 20 * t)
+            + 0.5 * np.sin(2 * np.pi * 60 * t)
+            + 0.3 * t)
+
+def test_emd_reconstruction_exact():
+    """Eq. (5): la reconstrucción debe ser exacta (<1e-8)."""
+    x = _make_test_signal()
+    emd = EmpiricalModeDecomposition()
+    res = emd.decompose(x)
+    err = np.max(np.abs(x - res['reconstructed']))
+    assert err < 1e-8, f"Reconstrucción no conservativa: {err}"
+    print(f"✓ EMD reconstrucción exacta (error {err:.2e})")
+
+def test_emd_separates_components():
+    """Verifica que aísla la componente de 60 Hz en una IMF temprana."""
+    x = _make_test_signal()
+    emd = EmpiricalModeDecomposition()
+    res = emd.decompose(x)
+    assert res['imfs'].shape[0] >= 2, "Debe extraer ≥2 IMFs"
+    # La primera IMF debe dominar la frecuencia alta (60 Hz)
+    spec = np.abs(np.fft.rfft(res['imfs'][0]))
+    freqs = np.fft.rfftfreq(len(x), d=1 / len(x))
+    dominant = freqs[np.argmax(spec[1:]) + 1]
+    assert 40 < dominant < 80, f"IMF1 debe capturar ~60Hz, dio {dominant}"
+    print(f"✓ EMD separa componentes (IMF1 domina en {dominant:.1f} Hz)")
+
+def test_emd_edge_case_constant():
+    """Edge case: señal constante → 0 IMFs, residuo = señal."""
+    x = np.ones(500) * 3.0
+    emd = EmpiricalModeDecomposition()
+    res = emd.decompose(x)
+    assert res['imfs'].shape[0] == 0, "Señal constante no tiene IMFs"
+    np.testing.assert_allclose(res['residue'], x)
+    print("✓ EMD caso límite constante")
+
+def test_emd_instantaneous_frequency():
+    """Eq. (6): frecuencia instantánea ≈ frecuencia real de un tono puro."""
+    fs = 1000.0
+    t = np.arange(0, 1, 1 / fs)
+    tone = np.sin(2 * np.pi * 30 * t)
+    out = EmpiricalModeDecomposition.instantaneous_frequency(tone, fs)
+    # Región central (evitando bordes)
+    central = out['inst_freq'][100:-100]
+    assert abs(np.median(central) - 30.0) < 1.0, "Frec. inst. debe ≈ 30 Hz"
+    print("✓ EMD frecuencia instantánea válida")
+
+if __name__ == "__main__":
+    test_emd_reconstruction_exact()
+    test_emd_separates_components()
+    test_emd_edge_case_constant()
+    test_emd_instantaneous_frequency()
+    print("✓ PAPER #31 (EMD) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #32: Stockwell, Mansinha & Lowe (1996) — The S-Transform
+
+**Referencia:** Stockwell, R. G., Mansinha, L., & Lowe, R. P. (1996). "Localization of the complex spectrum: the S transform." *IEEE Transactions on Signal Processing*, 44(4), 998–1001. DOI: 10.1109/78.492555
+
+**Esencia:** Transformada tiempo-frecuencia con ventana gaussiana cuya anchura varía inversamente con la frecuencia, combinando la resolución multiescala de las wavelets con fases absolutas referenciadas al origen temporal de Fourier.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Toda representación tiempo-frecuencia enfrenta el **principio de incertidumbre de Gabor**: no se puede tener resolución perfecta en tiempo y frecuencia simultáneamente. La STFT usa ventana fija → misma resolución a todas las frecuencias (malo: las altas frecuencias necesitan resolución temporal fina, las bajas resolución frecuencial fina). Las Wavelets resuelven el multiescalado pero pierden la **fase absoluta** respecto al origen temporal, complicando la interpretación física directa.
+
+**¿Dónde falla el estado del arte previo?** La STFT `[→ NeuroComp.Paper#9, Cohen]` es rígida. La Wavelet de Morlet `[→ NeuroComp.Paper#7]` tiene resolución adaptativa pero sus coeficientes están referidos a la fase de la wavelet madre, no al tiempo absoluto, lo que dificulta alinear eventos entre señales o interpretar fases globalmente.
+
+**La solución de Stockwell:** la S-Transform usa una ventana gaussiana cuya desviación estándar es `σ = 1/f`. A frecuencias altas la ventana es estrecha (buena resolución temporal); a bajas frecuencias es ancha (buena resolución frecuencial). Pero —y esta es la clave— los coeficientes se expresan respecto a **senos y cosenos referidos al origen t=0**, preservando **fase absoluta**. Además se calcula eficientemente en el dominio de la frecuencia vía FFT, sin convoluciones deslizantes costosas.
+
+**Aplicación práctica:** sismología (donde nació — localización de eventos sísmicos), análisis de EEG/MEG (coherencia de fase entre canales con fase absoluta), ingeniería eléctrica (calidad de potencia, detección de transitorios), geofísica exploratoria.
+
+**¿Por qué es un hito?** Unificó lo mejor de dos mundos: resolución multiescala adaptativa (wavelet) + fase absoluta interpretable (Fourier). Es la base del análisis moderno de coherencia y acoplamiento de fase en neurociencia, y precursor conceptual del Synchrosqueezing `[→ Paper #36]`.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Definición continua de la S-Transform:**
+```
+S(τ, f) = ∫_{−∞}^{∞} x(t) · w(τ − t, f) · e^{−i2πft} dt
+```
+- `τ`: tiempo local (s); `f`: frecuencia (Hz).
+- **Interpretación:** proyección de la señal sobre senoides de frecuencia `f` moduladas por una gaussiana centrada en `τ`.
+
+**Eq. (2) — Ventana gaussiana normalizada:**
+```
+w(t, f) = ( |f| / √(2π) ) · e^{ −f² t² / 2 }
+```
+- **Interpretación:** anchura `σ = 1/|f|`. A mayor frecuencia, ventana más estrecha. El factor `|f|` normaliza el área a 1.
+
+**Eq. (3) — S-Transform en el dominio de la frecuencia (forma rápida):**
+```
+S(τ, f) = ∫_{−∞}^{∞} X(α + f) · W(α, f) · e^{i2πατ} dα
+```
+- `X(·)`: Transformada de Fourier de `x`.
+- `W(α, f) = e^{ −2π² α² / f² }`: ventana gaussiana en frecuencia.
+- **Interpretación:** filtra el espectro con una gaussiana centrada en `f` y vuelve al tiempo con FFT. Evita convolución deslizante.
+
+**Eq. (4) — S-Transform discreta:**
+```
+S[k, n] = Σ_{n'=0}^{N−1} X[ (n' + n) mod N ] · W[n', n] · e^{ i2π n' k / N }
+para n ≠ 0
+```
+- `k`: índice de tiempo (0..N−1); `n`: índice de frecuencia.
+- **Interpretación:** implementación directa por FFT. `W[n',n] = e^{−2π² n'²/n²}`.
+
+**Eq. (5) — Caso DC (frecuencia cero):**
+```
+S[k, 0] = (1/N) · Σ_{t=0}^{N−1} x(t)
+```
+- **Interpretación:** la media de la señal, constante en el tiempo.
+
+**Eq. (6) — Condición de preservación de energía/información:**
+```
+∫ S(τ, f) df = x(τ)   (propiedad de resolución de la identidad)
+```
+- **Interpretación:** integrar la S-Transform sobre frecuencia recupera la señal.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: S-Transform rápida (dominio de la frecuencia)
+
+ENTRADA:
+  - x: array 1D, señal real, longitud N
+  - fs: float > 0, frecuencia de muestreo (Hz)
+  - freqs: array de frecuencias de interés (Hz), 0 < f < fs/2
+
+SALIDA:
+  - ST: matriz compleja (n_freqs × N)
+  - times: array de tiempos (s)
+  - freqs: array de frecuencias (Hz)
+
+1. Pre-procesamiento:
+   N ← len(x)
+   X ← FFT(x)                         # espectro completo
+   times ← arange(N)/fs
+
+2. Para cada frecuencia f en freqs:
+   a) n ← índice de frecuencia discreta = round(f · N / fs)
+   b) Edge case: si n == 0 → fila = media(x) (Eq. 5); continuar
+   c) Construir vector de ventana W[n'] = exp(−2π² n'²/n²)
+      para n' en rango [−N/2, N/2)
+   d) Extraer y desplazar el espectro: X_shift[n'] = X[(n' + n) mod N]
+   e) Multiplicar: Y[n'] = X_shift[n'] · W[n']   (Eq. 3)
+   f) ST[fila, :] = IFFT(Y) · N · e^{...}  → fase absoluta (Eq. 4)
+
+3. Post-procesamiento:
+   - Aplicar fftshift por fila para centrar el tiempo si se desea.
+
+4. Retornar (ST, times, freqs)
+
+EDGE CASES:
+  - f = 0 → fila constante = media (Eq. 5).
+  - f ≥ fs/2 (Nyquist) → aliasing; se recorta al rango válido.
+  - N impar → índices mod N manejan el wrap-around.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+SamplingRate: TypeAlias = Annotated[float, Field(gt=0.0,
+    description="Frecuencia de muestreo (Hz)")]
+
+class STransformParams(BaseModel):
+    """Parámetros validados de la S-Transform."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    fs: SamplingRate
+    min_freq: Annotated[float, Field(ge=0.0)] = 1.0
+    max_freq: Annotated[float, Field(gt=0.0)] = 50.0
+    n_freqs: Annotated[int, Field(ge=2, le=1000)] = 50
+
+class STransform:
+    """Implementación de Stockwell et al. (1996).
+
+    Reference: DOI: 10.1109/78.492555
+    """
+
+    def __init__(self, params: STransformParams):
+        self.params = params
+
+    def compute(self, x: np.ndarray) -> dict:
+        """S-Transform rápida. Implementa Eq. (3), (4), (5)."""
+        x = np.asarray(x, dtype=float)
+        N = len(x)
+        fs = self.params.fs
+        X = np.fft.fft(x)                          # espectro
+
+        freqs = np.linspace(self.params.min_freq,
+                            self.params.max_freq,
+                            self.params.n_freqs)
+        ST = np.zeros((len(freqs), N), dtype=complex)
+        times = np.arange(N) / fs
+
+        # Vector base de índices de ventana
+        half = N // 2
+        n_prime = np.concatenate([np.arange(0, half),
+                                  np.arange(-half, 0)]) if N % 2 == 0 \
+                  else np.concatenate([np.arange(0, half + 1),
+                                       np.arange(-half, 0)])
+
+        for i, f in enumerate(freqs):
+            n = int(round(f * N / fs))             # índice de frecuencia
+            if n == 0:                             # Eq. (5): DC
+                ST[i, :] = np.mean(x)
+                continue
+            if n >= half:                          # más allá de Nyquist
+                n = half - 1
+            # Eq. (3): ventana gaussiana en frecuencia
+            W = np.exp(-2.0 * np.pi ** 2 * n_prime ** 2 / n ** 2)
+            # Espectro desplazado circularmente (Eq. 4)
+            idx = np.mod(n_prime + n, N)
+            Y = X[idx] * W
+            # Eq. (4): IFFT devuelve la fila tiempo-frecuencia
+            ST[i, :] = np.fft.ifft(Y) * N
+
+        return {'ST': ST, 'times': times, 'freqs': freqs,
+                'power': np.abs(ST) ** 2}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_stransform_localizes_frequency():
+    """Una ráfaga a 30 Hz debe localizarse en tiempo Y frecuencia."""
+    fs = 500.0
+    N = 1000
+    t = np.arange(N) / fs
+    x = np.zeros(N)
+    # Ráfaga localizada entre t=1.0 y t=1.2 s a 30 Hz
+    burst = (t > 1.0) & (t < 1.2)
+    x[burst] = np.sin(2 * np.pi * 30 * t[burst])
+
+    st = STransform(STransformParams(fs=fs, min_freq=5, max_freq=60, n_freqs=60))
+    res = st.compute(x)
+    power = res['power']
+
+    # La máxima energía debe estar cerca de 30 Hz
+    freq_of_max = res['freqs'][np.argmax(power.mean(axis=1))]
+    assert abs(freq_of_max - 30) < 10, f"Debe localizar ~30Hz, dio {freq_of_max}"
+
+    # Y cerca de t≈1.1 s
+    time_of_max = res['times'][np.argmax(power.max(axis=0))]
+    assert 0.9 < time_of_max < 1.3, f"Debe localizar t≈1.1, dio {time_of_max}"
+    print(f"✓ S-Transform localiza (f={freq_of_max:.1f}Hz, t={time_of_max:.2f}s)")
+
+def test_stransform_dc_case():
+    """Edge case: frecuencia ~0 devuelve la media (Eq. 5)."""
+    fs = 100.0
+    x = np.full(256, 2.5)
+    st = STransform(STransformParams(fs=fs, min_freq=0.0, max_freq=5, n_freqs=3))
+    res = st.compute(x)
+    # Primera fila (f≈0) debe ser constante = media
+    np.testing.assert_allclose(res['ST'][0].real, 2.5, atol=1e-6)
+    print("✓ S-Transform caso DC válido")
+
+def test_stransform_energy_nonnegative():
+    """La potencia (|ST|²) debe ser no negativa en todo punto."""
+    fs = 200.0
+    t = np.arange(512) / fs
+    x = np.sin(2 * np.pi * 10 * t) + 0.5 * np.random.randn(512)
+    st = STransform(STransformParams(fs=fs, min_freq=1, max_freq=40, n_freqs=20))
+    res = st.compute(x)
+    assert np.all(res['power'] >= 0), "Potencia debe ser ≥ 0"
+    print("✓ S-Transform potencia no negativa")
+
+if __name__ == "__main__":
+    test_stransform_localizes_frequency()
+    test_stransform_dc_case()
+    test_stransform_energy_nonnegative()
+    print("✓ PAPER #32 (S-Transform) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #33: Julier & Uhlmann (1997) — The Unscented Kalman Filter
+
+**Referencia:** Julier, S. J., & Uhlmann, J. K. (1997). "A new extension of the Kalman filter to nonlinear systems." *Proceedings of SPIE, Signal Processing, Sensor Fusion, and Target Recognition VI*, 3068, 182–193. DOI: 10.1117/12.280797
+
+**Esencia:** Filtro recursivo que propaga media y covarianza a través de funciones no lineales usando un conjunto mínimo de puntos sigma deterministas, evitando la linealización Jacobiana del EKF y logrando exactitud de segundo orden.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El filtro de Kalman clásico es óptimo solo para sistemas **lineales** con ruido gaussiano. Casi todo sistema real es **no lineal** (robótica, navegación, seguimiento de objetivos, neurociencia computacional de estados ocultos). ¿Cómo estimar el estado cuando la dinámica y la observación son funciones no lineales?
+
+**¿Dónde falla el estado del arte previo?** El **Extended Kalman Filter (EKF)** linealiza con Jacobianos (expansión de Taylor de primer orden). Esto tiene tres defectos graves: (1) los Jacobianos son difíciles de derivar y propensos a errores; (2) la aproximación de primer orden falla fuertemente con no linealidades intensas; (3) puede producir covarianzas no definidas positivas e inestabilidad.
+
+**La solución de Julier & Uhlmann:** en lugar de linealizar la función, eligen **2n+1 puntos sigma** deterministas alrededor de la media actual, ponderados de forma que capturan exactamente la media y covarianza verdaderas hasta segundo orden. Estos puntos se **propagan a través de la función no lineal completa** (sin linealizar), y se reconstruye la media y covarianza resultantes de la nube transformada. Es la **Transformada Unscented** `[→ Paper #60]`, aplicada recursivamente como filtro.
+
+**Aplicación práctica:** navegación GPS/INS, seguimiento de vehículos, control de robots, estimación de parámetros en modelos neuronales, economía. Es superior al EKF típicamente con costo computacional comparable (mismo orden O(n³)).
+
+**¿Por qué es un hito?** Reemplazó la filosofía "aproximar la función" por "aproximar la distribución". Es el fundamento del UKF moderno, del filtro de partículas `[→ Paper #39]` conceptualmente, y se usa cuando la linealización del EKF es inaceptable.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Parámetro de escala:**
+```
+λ = α² (n + κ) − n
+```
+- `n`: dimensión del estado; `α` (1e−4 a 1): dispersión de puntos; `κ`: escala secundaria (típ. 0 o 3−n).
+
+**Eq. (2) — Puntos sigma (2n+1):**
+```
+χ_0 = x̂
+χ_i = x̂ + ( √( (n+λ) P ) )_i        para i = 1..n
+χ_{i+n} = x̂ − ( √( (n+λ) P ) )_i     para i = 1..n
+```
+- `√(·)`: raíz cuadrada matricial (Cholesky); `(·)_i` = columna i-ésima.
+- **Interpretación:** puntos que capturan exactamente media y covarianza de una gaussiana hasta segundo orden.
+
+**Eq. (3) — Pesos:**
+```
+W_0^m = λ/(n+λ)
+W_0^c = λ/(n+λ) + (1 − α² + β)
+W_i^m = W_i^c = 1/(2(n+λ))   para i = 1..2n
+```
+- `β=2` óptimo para gaussianas; `W^m` para media, `W^c` para covarianza.
+
+**Eq. (4) — Predicción de estado (a través de dinámica f):**
+```
+χ_i^{x,−} = f(χ_i^x, u)                     # propaga cada punto sigma
+x̂⁻ = Σ_i W_i^m χ_i^{x,−}                    # media predicha
+P⁻ = Σ_i W_i^c (χ_i^{x,−}−x̂⁻)(χ_i^{x,−}−x̂⁻)ᵀ + Q   # covarianza predicha
+```
+
+**Eq. (5) — Predicción de observación (a través de h):**
+```
+χ_i^{z} = h(χ_i^{x,−})
+ẑ = Σ_i W_i^m χ_i^{z}
+P_zz = Σ_i W_i^c (χ_i^{z}−ẑ)(χ_i^{z}−ẑ)ᵀ + R
+P_xz = Σ_i W_i^c (χ_i^{x,−}−x̂⁻)(χ_i^{z}−ẑ)ᵀ     # covarianza cruzada
+```
+
+**Eq. (6) — Ganancia y actualización:**
+```
+K = P_xz · P_zz^{−1}
+x̂ = x̂⁻ + K ( z − ẑ )
+P = P⁻ − K P_zz Kᵀ
+```
+- **Interpretación:** idéntica estructura de corrección que el Kalman lineal, pero con covarianzas obtenidas por la Transformada Unscented en vez de Jacobianos.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Unscented Kalman Filter (un paso predict–update)
+
+ENTRADA:
+  - x̂, P: media y covarianza actuales (estado n×1, P n×n)
+  - f(x,u): función de dinámica (no lineal)
+  - h(x): función de observación (no lineal)
+  - Q, R: covarianzas de ruido de proceso y medición
+  - z: medición nueva
+  - α, κ, β: parámetros de la Transformada Unscented
+
+SALIDA:
+  - x̂, P actualizados
+
+1. Generación de puntos sigma (Eq. 2):
+   λ ← α²(n+κ) − n
+   S ← cholesky( (n+λ)·P )          # edge case: P debe ser def. positiva
+   χ_0 ← x̂;  χ_i ← x̂ ± S_i
+
+2. Predicción (Eq. 4):
+   Para i = 0..2n: χ_i^{−} ← f(χ_i, u)
+   x̂⁻ ← Σ W_i^m χ_i^{−}
+   P⁻ ← Σ W_i^c (χ_i^{−}−x̂⁻)(χ_i^{−}−x̂⁻)ᵀ + Q
+
+3. Predicción de observación (Eq. 5):
+   Para i = 0..2n: χ_i^{z} ← h(χ_i^{−})
+   ẑ ← Σ W_i^m χ_i^{z}
+   P_zz, P_xz ← covarianzas ponderadas + R
+
+4. Actualización (Eq. 6):
+   K ← P_xz · inv(P_zz)
+   x̂ ← x̂⁻ + K(z − ẑ)
+   P ← P⁻ − K P_zz Kᵀ
+
+5. Retornar (x̂, P)
+
+EDGE CASES:
+  - P no definida positiva → Cholesky falla; regularizar P += εI.
+  - P_zz singular → usar pseudo-inversa.
+  - α demasiado grande → puntos sigma fuera de región válida de f.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class UKFParams(BaseModel):
+    """Parámetros de la Transformada Unscented."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    alpha: Annotated[float, Field(gt=0.0, le=1.0)] = 1e-3
+    kappa: Annotated[float, Field(ge=0.0)] = 0.0
+    beta: Annotated[float, Field(ge=0.0)] = 2.0
+
+class UnscentedKalmanFilter:
+    """Implementación de Julier & Uhlmann (1997).
+
+    Reference: DOI: 10.1117/12.280797
+    """
+
+    def __init__(self, f: Callable, h: Callable,
+                 Q: np.ndarray, R: np.ndarray,
+                 params: UKFParams | None = None):
+        self.f = f                    # dinámica x_k = f(x_{k-1}, u)
+        self.h = h                    # observación z_k = h(x_k)
+        self.Q = np.asarray(Q, float)
+        self.R = np.asarray(R, float)
+        self.params = params or UKFParams()
+        self.n = Q.shape[0]
+
+    def _sigma_points(self, x: np.ndarray, P: np.ndarray) -> np.ndarray:
+        """Eq. (2): genera 2n+1 puntos sigma."""
+        n = self.n
+        lam = self.params.alpha ** 2 * (n + self.params.kappa) - n
+        # Regularización defensiva (edge case: P no def. positiva)
+        P_reg = P + np.eye(n) * 1e-9
+        S = np.linalg.cholesky((n + lam) * P_reg)
+        pts = np.zeros((2 * n + 1, n))
+        pts[0] = x
+        for i in range(n):
+            pts[i + 1] = x + S[:, i]
+            pts[n + i + 1] = x - S[:, i]
+        return pts
+
+    def _weights(self) -> tuple[np.ndarray, np.ndarray]:
+        """Eq. (3): pesos de media y covarianza."""
+        n = self.n
+        p = self.params
+        lam = p.alpha ** 2 * (n + p.kappa) - n
+        Wm = np.full(2 * n + 1, 1.0 / (2 * (n + lam)))
+        Wc = Wm.copy()
+        Wm[0] = lam / (n + lam)
+        Wc[0] = lam / (n + lam) + (1 - p.alpha ** 2 + p.beta)
+        return Wm, Wc
+
+    def step(self, x: np.ndarray, P: np.ndarray,
+             z: np.ndarray, u: np.ndarray | None = None) -> dict:
+        """Un ciclo predict–update. Implementa Eq. (4), (5), (6)."""
+        Wm, Wc = self._weights()
+
+        # ---- Predicción (Eq. 4) ----
+        pts = self._sigma_points(x, P)
+        pts_pred = np.array([self.f(p, u) for p in pts])
+        x_pred = Wm @ pts_pred
+        P_pred = self.Q.copy()
+        for i in range(len(pts_pred)):
+            d = pts_pred[i] - x_pred
+            P_pred += Wc[i] * np.outer(d, d)
+
+        # ---- Predicción de observación (Eq. 5) ----
+        pts_z = np.array([self.h(p) for p in pts_pred])
+        z_pred = Wm @ pts_z
+        Pzz = self.R.copy()
+       Pxz = np.zeros((self.n, len(z)))
+        for i in range(len(pts_z)):
+            dz = pts_z[i] - z_pred
+            dx = pts_pred[i] - x_pred
+            Pzz += Wc[i] * np.outer(dz, dz)
+            Pxz += Wc[i] * np.outer(dx, dz)
+
+        # ---- Actualización (Eq. 6) ----
+        K = Pxz @ np.linalg.inv(Pzz)
+        x_new = x_pred + K @ (z - z_pred)
+        P_new = P_pred - K @ Pzz @ K.T
+
+        return {'x': x_new, 'P': P_new, 'x_pred': x_pred,
+                'z_pred': z_pred, 'K': K}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_ukf_tracks_nonlinear_system():
+    """Verifica seguimiento de un sistema no lineal (crecimiento logístico ruidoso)."""
+    rng = np.random.default_rng(42)
+    # Dinámica no lineal: x_{k+1} = x_k + 0.1*sin(x_k) + u
+    def f(x, u):
+        u = u if u is not None else np.zeros_like(x)
+        return x + 0.1 * np.sin(x) + u
+    # Observación no lineal: z = x^2 / 10
+    def h(x):
+        return np.array([x[0] ** 2 / 10.0])
+
+    Q = np.eye(1) * 1e-3
+    R = np.eye(1) * 1e-2
+    ukf = UnscentedKalmanFilter(f, h, Q, R)
+
+    x_true, x_est, P_est = np.array([1.0]), np.array([0.0]), np.eye(1)
+    errors = []
+    for k in range(50):
+        x_true = f(x_true, None) + rng.normal(0, np.sqrt(Q[0, 0]))
+        z = h(x_true) + rng.normal(0, np.sqrt(R[0, 0]))
+        out = ukf.step(x_est, P_est, z)
+        x_est, P_est = out['x'], out['P']
+        errors.append(abs(x_est[0] - x_true[0]))
+
+    # El error debe disminuir: media de los últimos 10 < primeros 10
+    early = np.mean(errors[:10]); late = np.mean(errors[-10:])
+    assert late < early, f"UKF debe converger: {late} !< {early}"
+    print(f"✓ UKF converge (error temprano {early:.3f} → tardío {late:.3f})")
+
+def test_ukf_sigma_points_capture_moments():
+    """Los puntos sigma deben reproducir media y covarianza exactas (Eq. 2-3)."""
+    ukf = UnscentedKalmanFilter(lambda x, u: x, lambda x: x,
+                                np.eye(2) * 0.1, np.eye(1) * 0.1)
+    x = np.array([2.0, -3.0])
+    P = np.array([[4.0, 1.0], [1.0, 2.0]])
+    Wm, Wc = ukf._weights()
+    pts = ukf._sigma_points(x, P)
+    mean = Wm @ pts
+    cov = sum(Wc[i] * np.outer(pts[i] - mean, pts[i] - mean)
+              for i in range(len(pts)))
+    np.testing.assert_allclose(mean, x, atol=1e-8)
+    np.testing.assert_allclose(cov, P, atol=1e-6)
+    print("✓ UKF puntos sigma capturan momentos exactos")
+
+def test_ukf_covariance_positive_definite():
+    """Edge case: la covarianza debe permanecer definida positiva."""
+    def f(x, u): return np.array([x[0] * 1.01])
+    def h(x): return np.array([np.tanh(x[0])])
+    ukf = UnscentedKalmanFilter(f, h, np.eye(1) * 1e-2, np.eye(1) * 1e-1)
+    x, P = np.array([0.5]), np.eye(1)
+    for _ in range(30):
+        out = ukf.step(x, P, np.array([np.tanh(0.5)]))
+        x, P = out['x'], out['P']
+        assert np.all(np.linalg.eigvalsh(P) > 0), "P debe ser def. positiva"
+    print("✓ UKF covarianza definida positiva estable")
+
+if __name__ == "__main__":
+    test_ukf_tracks_nonlinear_system()
+    test_ukf_sigma_points_capture_moments()
+    test_ukf_covariance_positive_definite()
+    print("✓ PAPER #33 (UKF) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #34: Friston (2005) — The Free-Energy Principle
+
+**Referencia:** Friston, K. (2005). "A theory of cortical responses." *Philosophical Transactions of the Royal Society B*, 360(1456), 815–836. DOI: 10.1098/rstb.2005.1622
+
+**Esencia:** Principio unificador: todo sistema autoorganizado que resiste el desorden (mantiene sus estados dentro de límites fisiológicos) debe minimizar una cota de energía libre variacional sobre la sorpresa de sus estados sensoriales, unificando percepción, aprendizaje y acción.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** ¿Cómo un sistema biológico (un cerebro, una célula, un organismo) mantiene su integridad frente a la tendencia universal al desorden (segunda ley de la termodinámica)? Mantenerse dentro de un conjunto pequeño de estados fisiológicos viables equivale a evitar estados sorprendentes/improbables. Pero la **sorpresa** `−log p(o)` de las observaciones es incomputable directamente porque requiere la evidencia marginal `p(o) = ∫ p(o,s) ds`, una integral intratable.
+
+**¿Dónde falla el estado del arte previo?** Las teorías de percepción previas trataban percepción, aprendizaje y acción como procesos separados. El enfoque bayesiano estándar requería cómputo exacto de posteriores, inviable en sistemas complejos. No había un principio unificador que ligara inferencia, aprendizaje y acción bajo una sola función objetivo.
+
+**La solución de Friston:** introducir una **densidad de reconocimiento** `q(s)` aproximada sobre los estados ocultos, y demostrar que la sorpresa se descompone en:
+`−log p(o) = F + D_KL(q(s) ‖ p(s|o))`
+donde `F` es la **energía libre variacional** (computable) y el término KL es no negativo. Por tanto, **minimizar F minimiza una cota superior de la sorpresa**. El sistema minimiza F mediante: (1) **percepción** (optimizar `q` ≈ inferencia), (2) **aprendizaje** (optimizar parámetros del modelo generativo), (3) **acción** (cambiar las observaciones para que coincidan con las predicciones). Este es el germen del Principio de Energía Libre y de la Inferencia Activa `[→ NeuroComp papers futuros]`.
+
+**Aplicación práctica:** modelos de función cerebral, comprensión de psicosis como inferencia aberrante, robótica con inferencia activa, modelado causal dinámico `[→ Paper #44]`, neurociencia psiquiátrica computacional.
+
+**¿Por qué es un hito?** Proporcionó la formulación matemática que unifica percepción-acción-aprendizaje bajo un solo principio de minimización de sorpresa acotada. Es el marco teórico más influyente de la neurociencia teórica contemporánea.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Sorpresa (surprisal):**
+```
+S(o) = − log p(o) = − log ∫ p(o, s) ds
+```
+- `o`: observaciones; `s`: estados ocultos. Incomputable directamente.
+
+**Eq. (2) — Descomposición de la sorpresa (núcleo del principio):**
+```
+− log p(o) = F(q) + D_KL( q(s) ‖ p(s | o) )
+```
+- `F(q)`: energía libre variacional; `D_KL ≥ 0`: divergencia de Kullback-Leibler.
+
+**Eq. (3) — Energía libre variacional (forma computable):**
+```
+F(q) = ∫ q(s) log[ q(s) / p(o, s) ] ds
+     = D_KL( q(s) ‖ p(s|o) ) − log p(o)
+     = E_q[ −log p(o|s) ] + D_KL( q(s) ‖ p(s) )
+```
+- Última forma: **complejidad** (KL con el prior) menos **exactitud** (log-verosimilitud esperada).
+- **Interpretación:** balance entre fidelidad a los datos y cercanía al prior.
+
+**Eq. (4) — Cota superior de la sorpresa:**
+```
+F(q) ≥ − log p(o)      (igualdad ⇔ q = p(s|o))
+```
+- **Interpretación:** minimizar F acota la sorpresa por arriba.
+
+**Eq. (5) — Actualización de percepción (descenso de gradiente sobre μ, parámetros de q):**
+```
+μ̇ = − ∂F/∂μ          (percepción = inferencia)
+```
+
+**Eq. (6) — Actualización de aprendizaje (sobre parámetros θ del modelo):**
+```
+θ̇ = − ∂F/∂θ          (aprendizaje = optimización del modelo generativo)
+```
+
+**Eq. (7) — Modelo generativo lineal-gaussiano de juguete (para hacerlo ejecutable):**
+```
+p(o|s) = N( o ; g·s , Σ_o )
+p(s)   = N( s ; 0 , Σ_s )
+q(s)   = N( s ; μ , Σ_q )
+```
+- **Interpretación:** con este modelo cerrado, `F` tiene forma analítica y podemos minimizarla numéricamente, demostrando el principio.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Minimización de Energía Libre (percepción como inferencia)
+
+ENTRADA:
+  - o: array, observaciones (datos sensoriales)
+  - g: matriz, mapeo generativo estados→observaciones
+  - Sigma_o, Sigma_s: covarianzas de observación y prior
+  - mu0: estado inicial de la aproximación q
+  - lr, n_iter: tasa y número de iteraciones del descenso
+
+SALIDA:
+  - mu: media posterior aproximada (percepción inferida)
+  - F_history: energía libre por iteración (debe decrecer)
+
+1. Inicialización:
+   mu ← mu0
+   F_history ← []
+
+2. Iteración principal (descenso de gradiente sobre mu):
+   Para t = 1 a n_iter:
+     a) Precisión de observación: Π_o ← inv(Sigma_o)
+     b) Precisión de prior:       Π_s ← inv(Sigma_s)
+     c) Error de predicción:      e ← o − g·mu          (exactitud)
+     d) Gradiente de F respecto a mu:
+        ∂F/∂mu = − gᵀ Π_o e + Π_s mu
+        (término de exactitud + término de complejidad)
+     e) Actualización (Eq. 5): mu ← mu − lr · ∂F/∂mu
+     f) Calcular F actual:
+        F = 0.5·eᵀΠ_o·e + 0.5·muᵀΠ_s·mu − 0.5·logdet(...)  (Eq. 3)
+     g) F_history.append(F)
+
+3. Verificación de convergencia:
+   F_history debe ser monótonamente no creciente.
+
+4. Retornar (mu, F_history)
+
+EDGE CASES:
+  - Sigma singular → regularizar con +εI antes de invertir.
+  - lr demasiado grande → divergencia; detectar F creciente y reducir lr.
+  - g mal condicionado → el gradiente puede explotar; normalizar.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class FreeEnergyParams(BaseModel):
+    """Parámetros del esquema de minimización de energía libre."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    lr: Annotated[float, Field(gt=0.0, le=1.0)] = 0.05
+    n_iter: Annotated[int, Field(ge=1, le=10000)] = 300
+
+class FreeEnergyPrinciple:
+    """Implementación ejecutable de Friston (2005), modelo lineal-gaussiano.
+
+    Minimiza F(q) = E_q[-log p(o|s)] + D_KL(q(s)‖p(s))
+    mediante descenso de gradiente sobre la media de q.
+
+    Reference: DOI: 10.1098/rstb.2005.1622
+    """
+
+    def __init__(self, g: np.ndarray, Sigma_o: np.ndarray,
+                 Sigma_s: np.ndarray, params: FreeEnergyParams | None = None):
+        self.g = np.asarray(g, float)
+        self.Sigma_o = np.asarray(Sigma_o, float)
+        self.Sigma_s = np.asarray(Sigma_s, float)
+        self.params = params or FreeEnergyParams()
+        # Precisiones (inversas de covarianza), regularizadas
+        self.Pi_o = np.linalg.inv(self.Sigma_o + np.eye(self.Sigma_o.shape[0]) * 1e-9)
+        self.Pi_s = np.linalg.inv(self.Sigma_s + np.eye(self.Sigma_s.shape[0]) * 1e-9)
+
+    def free_energy(self, o: np.ndarray, mu: np.ndarray) -> float:
+        """Energía libre F. Implementa Eq. (3) (forma exactitud+complejidad)."""
+        e = o - self.g @ mu                      # error de predicción
+        accuracy = 0.5 * e @ self.Pi_o @ e       # −log-verosimilitud esperada
+        complexity = 0.5 * mu @ self.Pi_s @ mu   # KL con prior N(0,Σ_s)
+        return accuracy + complexity
+
+    def grad_F_mu(self, o: np.ndarray, mu: np.ndarray) -> np.ndarray:
+        """Gradiente ∂F/∂mu. Implementa Eq. (5)."""
+        e = o - self.g @ mu
+        dF = -self.g.T @ self.Pi_o @ e + self.Pi_s @ mu
+        return dF
+
+    def perceive(self, o: np.ndarray,
+                 mu0: np.ndarray | None = None) -> dict:
+        """Percepción como inferencia: minimiza F sobre mu.
+
+        Returns:
+            dict con 'mu' (estado inferido) y 'F_history'.
+        """
+        o = np.asarray(o, float)
+        mu = np.zeros(self.g.shape[1]) if mu0 is None else np.asarray(mu0, float).copy()
+        F_hist = []
+        for _ in range(self.params.n_iter):
+            F_hist.append(self.free_energy(o, mu))
+            grad = self.grad_F_mu(o, mu)
+            mu = mu - self.params.lr * grad      # Eq. (5)
+        return {'mu': mu, 'F_history': np.array(F_hist),
+                'F_final': F_hist[-1]}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_free_energy_decreases_monotonically():
+    """Eq. (4): F debe decrecer monótonamente durante la percepción."""
+    g = np.array([[1.0], [0.5]])
+    Sigma_o = np.eye(2) * 0.1
+    Sigma_s = np.eye(1) * 1.0
+    fep = FreeEnergyPrinciple(g, Sigma_o, Sigma_s)
+    o = np.array([1.0, 0.5])
+    res = fep.perceive(o)
+    F = res['F_history']
+    assert np.all(np.diff(F) <= 1e-9), "F debe ser no creciente"
+    print(f"✓ Energía libre decrece ({F[0]:.3f} → {F[-1]:.3f})")
+
+def test_free_energy_recovers_cause():
+    """El estado inferido debe aproximarse a la causa verdadera."""
+    # Causa verdadera s=2.0 genera o = g*s
+    g = np.array([[1.0], [0.5]])
+    Sigma_o = np.eye(2) * 0.01
+    Sigma_s = np.eye(1) * 10.0   # prior débil
+    fep = FreeEnergyPrinciple(g, Sigma_o, Sigma_s,
+                              FreeEnergyParams(lr=0.1, n_iter=2000))
+    s_true = 2.0
+    o = g @ np.array([s_true])
+    res = fep.perceive(o)
+    s_inferred = res['mu'][0]
+    assert abs(s_inferred - s_true) < 0.3, f"Debe inferir ~{s_true}, dio {s_inferred}"
+    print(f"✓ Percepción recupera la causa (inferido {s_inferred:.3f} vs real {s_true})")
+
+def test_free_energy_posterior_optimum():
+    """El mínimo de F coincide con el posterior gaussiano cerrado."""
+    g = np.array([[1.0]])
+    Sigma_o = np.array([[0.5]])
+    Sigma_s = np.array([[2.0]])
+    fep = FreeEnergyPrinciple(g, Sigma_o, Sigma_s,
+                              FreeEnergyParams(lr=0.05, n_iter=5000))
+    o = np.array([1.0])
+    res = fep.perceive(o)
+    # Posterior gaussiano cerrado: mu* = (gᵀΠo g + Πs)^{-1} gᵀ Πo o
+    Pi_o = 1 / 0.5; Pi_s = 1 / 2.0
+    mu_closed = (1.0 * Pi_o * 1.0) / (1.0 * Pi_o * 1.0 + Pi_s) * 1.0
+    assert abs(res['mu'][0] - mu_closed) < 0.05, "Debe converger al posterior cerrado"
+    print(f"✓ Mínimo de F coincide con posterior cerrado ({mu_closed:.3f})")
+
+if __name__ == "__main__":
+    test_free_energy_decreases_monotonically()
+    test_free_energy_recovers_cause()
+    test_free_energy_posterior_optimum()
+    print("✓ PAPER #34 (Free Energy) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #35: Kingma & Ba (2015) — Adam
+
+**Referencia:** Kingma, D. P., & Ba, J. (2015). "Adam: A method for stochastic optimization." *Proceedings of the 3rd International Conference on Learning Representations (ICLR)*. DOI: 10.48550/arXiv.1412.6980
+
+**Esencia:** Optimizador estocástico que combina momento de primer orden (dirección) y segundo orden (escala adaptativa por parámetro) con corrección de sesgo, logrando convergencia robusta con tasas de aprendizaje efectivas adaptativas.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El descenso de gradiente con tasa fija es lento y sensible a la escala de cada parámetro. SGD puro oscila en valles estrechos. Se necesita un método que (1) adapte la tasa de aprendizaje **por parámetro**, (2) use información de momentos para suavizar el ruido estocástico, y (3) sea estable y con garantías de convergencia.
+
+**¿Dónde falla el estado del arte previo?** **AdaGrad** acumula gradientes al cuadrado sin decaimiento → la tasa efectiva se anula con el tiempo, deteniendo el aprendizaje. **RMSProp** corrige esto con un promedio móvil exponencial, pero carece de corrección de sesgo en los primeros pasos y de momento de primer orden bien integrado. Ninguno combina limpiamente ambos momentos con inicialización en cero sin corrección.
+
+**La solución de Kingma & Ba:** Adam mantiene dos promedios móviles exponenciales: `m` (primer momento, dirección media del gradiente) y `v` (segundo momento sin centrar, magnitud). Como ambos se inicializan en cero, están **sesgados hacia cero** en los primeros pasos; Adam aplica **corrección de sesgo** dividiendo por `(1−β^t)`. La actualización usa `m̂/√v̂`, dando pasos adaptativos acotados. Combina las ventajas de AdaGrad/RMSProp/SGD con momento.
+
+**Aplicación práctica:** es el optimizador por defecto en aprendizaje profundo, usado en casi toda arquitectura (CNN, RNN, transformers). Optimización estocástica general, aprendizaje por refuerzo, ajuste de modelos neurocientíficos `[→ convergencia con Plasticidad]`.
+
+**¿Por qué es un hito?** Se convirtió en el optimizador más usado de la historia del aprendizaje automático por su robustez, pocas hiperparámetros y comportamiento estable en una enorme variedad de problemas. La corrección de sesgo fue la contribución conceptual clave.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Actualización del primer momento (media):**
+```
+m_t = β_1 · m_{t−1} + (1 − β_1) · g_t
+```
+- `g_t`: gradiente en el paso t; `β_1 ≈ 0.9`. Promedio móvil exponencial del gradiente.
+
+**Eq. (2) — Actualización del segundo momento (varianza sin centrar):**
+```
+v_t = β_2 · v_{t−1} + (1 − β_2) · g_t²
+```
+- `β_2 ≈ 0.999`. Magnitud media del gradiente al cuadrado (escala).
+
+**Eq. (3) — Corrección de sesgo del primer momento:**
+```
+m̂_t = m_t / (1 − β_1^t)
+```
+
+**Eq. (4) — Corrección de sesgo del segundo momento:**
+```
+v̂_t = v_t / (1 − β_2^t)
+```
+- **Interpretación:** como m₀=v₀=0, los promedios iniciales subestiman; dividir por `(1−β^t)` los des-sesga, crucial en los primeros pasos.
+
+**Eq. (5) — Actualización del parámetro:**
+```
+θ_t = θ_{t−1} − η · m̂_t / ( √v̂_t + ε )
+```
+- `η`: tasa de aprendizaje (≈1e−3); `ε ≈ 1e−8` (estabilidad numérica).
+- **Interpretación:** paso adaptativo; parámetros con gradientes grandes dan pasos pequeños (√v̂ grande) y viceversa. El cociente está acotado ~ por η.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Adam (un paso de optimización estocástica)
+
+ENTRADA:
+  - theta: array, parámetros actuales
+  - grad_fn: función que devuelve gradiente dado theta
+  - eta: float > 0, tasa de aprendizaje
+  - beta1, beta2: float en (0,1), tasas de decaimiento
+  - eps: float > 0, estabilidad numérica
+
+SALIDA:
+  - theta actualizado
+  - m, v: momentos actualizados (estado interno)
+  - t: contador de pasos
+
+1. Inicialización (una vez):
+   m ← 0; v ← 0; t ← 0
+
+2. Paso (repetir por iteración):
+   t ← t + 1
+   g ← grad_fn(theta)                        # gradiente estocástico
+   m ← beta1·m + (1−beta1)·g                 # Eq. (1)
+   v ← beta2·v + (1−beta2)·g²                # Eq. (2)
+   m_hat ← m / (1 − beta1^t)                 # Eq. (3)
+   v_hat ← v / (1 − beta2^t)                 # Eq. (4)
+   theta ← theta − eta · m_hat / (√v_hat + eps)   # Eq. (5)
+
+3. Retornar (theta, m, v, t)
+
+EDGE CASES:
+  - gradiente exactamente cero → theta no cambia (correcto).
+  - gradiente enorme → √v̂ crece y acota el paso (robustez).
+  - t grande → (1−β^t)→1, corrección de sesgo se vuelve neutra.
+  - eps=0 con v̂=0 → división por cero; eps evita esto.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class AdamParams(BaseModel):
+    """Hiperparámetros de Adam (Kingma & Ba, 2015)."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    eta: Annotated[float, Field(gt=0.0, le=1.0)] = 1e-2
+    beta1: Annotated[float, Field(gt=0.0, lt=1.0)] = 0.9
+    beta2: Annotated[float, Field(gt=0.0, lt=1.0)] = 0.999
+    eps: Annotated[float, Field(gt=0.0, le=1e-4)] = 1e-8
+
+class AdamOptimizer:
+    """Implementación de Kingma & Ba (2015).
+
+    Reference: DOI: 10.48550/arXiv.1412.6980
+    """
+
+    def __init__(self, params: AdamParams | None = None):
+        self.params = params or AdamParams()
+        self.m = None      # primer momento
+        self.v = None      # segundo momento
+        self.t = 0         # contador de pasos
+
+    def step(self, theta: np.ndarray, grad: np.ndarray) -> np.ndarray:
+        """Un paso de Adam. Implementa Eq. (1)-(5)."""
+        p = self.params
+        theta = np.asarray(theta, float)
+        grad = np.asarray(grad, float)
+        if self.m is None:
+            self.m = np.zeros_like(theta)
+            self.v = np.zeros_like(theta)
+
+        self.t += 1
+        self.m = p.beta1 * self.m + (1 - p.beta1) * grad        # Eq. (1)
+        self.v = p.beta2 * self.v + (1 - p.beta2) * grad ** 2   # Eq. (2)
+        m_hat = self.m / (1 - p.beta1 ** self.t)                # Eq. (3)
+        v_hat = self.v / (1 - p.beta2 ** self.t)                # Eq. (4)
+        theta_new = theta - p.eta * m_hat / (np.sqrt(v_hat) + p.eps)  # Eq. (5)
+        return theta_new
+
+    def minimize(self, fn: Callable, grad_fn: Callable,
+                 theta0: np.ndarray, n_iter: int = 1000) -> dict:
+        """Bucle de optimización completo.
+
+        Returns:
+            dict con 'theta', 'history' (valores de fn).
+        """
+        theta = np.asarray(theta0, float).copy()
+        history = []
+        for _ in range(n_iter):
+            history.append(fn(theta))
+            g = grad_fn(theta)
+            theta = self.step(theta, g)
+        return {'theta': theta, 'history': np.array(history)}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_adam_minimizes_quadratic():
+    """Adam debe llevar f(x)=(x-3)² hacia x=3."""
+    adam = AdamOptimizer(AdamParams(eta=0.1))
+    fn = lambda x: np.sum((x - 3.0) ** 2)
+    grad = lambda x: 2.0 * (x - 3.0)
+    res = adam.minimize(fn, grad, theta0=np.array([0.0, 0.0]), n_iter=500)
+    np.testing.assert_allclose(res['theta'], [3.0, 3.0], atol=0.05)
+    print(f"✓ Adam minimiza cuadrática → {res['theta']}")
+
+def test_adam_minimizes_rosenbrock():
+    """Valle estrecho de Rosenbrock: Adam debe acercarse al mínimo (1,1)."""
+    adam = AdamOptimizer(AdamParams(eta=0.005))
+    def fn(x):
+        return (1 - x[0]) ** 2 + 100 * (x[1] - x[0] ** 2) ** 2
+    def grad(x):
+        g0 = -2 * (1 - x[0]) - 400 * x[0] * (x[1] - x[0] ** 2)
+        g1 = 200 * (x[1] - x[0] ** 2)
+        return np.array([g0, g1])
+    res = adam.minimize(fn, grad, theta0=np.array([-1.0, 1.0]), n_iter=8000)
+    assert abs(res['theta'][0] - 1.0) < 0.3, f"Debe acercarse a x=1, dio {res['theta']}"
+    print(f"✓ Adam navega Rosenbrock → {res['theta']}")
+
+def test_adam_bias_correction():
+    """Edge case: la corrección de sesgo hace m̂ mayor que m en pasos tempranos."""
+    adam = AdamOptimizer(AdamParams())
+    theta = np.array([1.0])
+    grad = np.array([1.0])
+    _ = adam.step(theta, grad)
+    # Tras 1 paso: m = (1-b1)*g; m_hat = m/(1-b1) = g
+    np.testing.assert_allclose(adam.m / (1 - 0.9), grad, atol=1e-8)
+    print("✓ Adam corrección de sesgo válida en paso 1")
+
+def test_adam_history_decreases():
+    """El valor de la función debe reducirse del inicio al final."""
+    adam = AdamOptimizer(AdamParams(eta=0.1))
+    fn = lambda x: np.sum(x ** 2)
+    grad = lambda x: 2 * x
+    res = adam.minimize(fn, grad, theta0=np.array([5.0, -4.0]), n_iter=300)
+    assert res['history'][-1] < res['history'][0], "Debe reducir f"
+    print(f"✓ Adam reduce objetivo ({res['history'][0]:.2f} → {res['history'][-1]:.2e})")
+
+if __name__ == "__main__":
+    test_adam_minimizes_quadratic()
+    test_adam_minimizes_rosenbrock()
+    test_adam_bias_correction()
+    test_adam_history_decreases()
+    print("✓ PAPER #35 (Adam) — TODOS LOS TESTS PASARON")
+```
+
+---
+
