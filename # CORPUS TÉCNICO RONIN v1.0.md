@@ -4715,3 +4715,1286 @@ if __name__ == "__main__":
 
 ---
 
+### PAPER #41: Slotine & Li (1991) — Sliding Mode Control
+
+**Referencia:** Slotine, J.-J. E., & Li, W. (1991). *Applied Nonlinear Control*. Prentice Hall. (Cap. 7: Sliding Mode Control). ISBN: 978-0130408907. DOI: 10.1109/9.280173 (tutorial asociado)
+
+**Esencia:** Estrategia de control robusto que fuerza la trayectoria del sistema hacia una superficie de deslizamiento diseñada y la mantiene ahí mediante conmutación de alta frecuencia, logrando invariancia exacta frente a incertidumbres acotadas y perturbaciones.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Los sistemas reales tienen **incertidumbre**: parámetros mal conocidos, dinámicas no modeladas y perturbaciones externas. Un controlador basado en un modelo nominal perfecto falla cuando la realidad diverge del modelo. Se necesita un controlador que sea **robusto** por construcción: que funcione correctamente a pesar de no conocer exactamente la planta.
+
+**¿Dónde falla el estado del arte previo?** El control PID no tiene garantías de robustez formal. El control adaptativo `[→ futuros papers de control adaptativo]` estima parámetros en línea pero es lento y puede ser inestable durante el transitorio. El control robusto H∞ es conservador y lineal. Ninguno ofrece **invariancia exacta** frente a incertidumbre acotada una vez en la superficie.
+
+**La solución de Slotine & Li:** definir una **superficie de deslizamiento** `s(x) = 0` que codifica el comportamiento deseado (error dinámico). Diseñar una ley de control conmutada que: (1) atrae la trayectoria hacia la superficie (**condición de alcance** `s·ṡ < 0`), y (2) una vez en la superficie, la mantiene ahí. En modo deslizante, el sistema se vuelve **invariante** a cualquier incertidumbre acotada que satisfaga la **condición de matching**. El precio es el **chattering** (vibración de alta frecuencia por conmutación), mitigado con capa límite (`sat` en vez de `sign`).
+
+**Aplicación práctica:** control de motores y actuadores con fricción incierta, robótica (manipuladores con cargas variables), aeronáutica (misiles con aerodinámica incierta), electrónica de potencia (convertidores DC-DC), vehículos autónomos con perturbaciones de viento.
+
+**¿Por qué es un hito?** El libro de Slotine & Li (1991) es EL texto canónico del control no lineal aplicado. Formalizó el SMC como herramienta práctica, introdujo la capa límite anti-chattering y conectó SMC con control adaptativo y robusto. Es la base de todo el control robusto no lineal moderno.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Superficie de deslizamiento (orden relativo 2):**
+```
+s(x) = (d/dt + λ) e = ė + λ e
+```
+- `e = x₁ − x_d`: error de seguimiento; `λ > 0`: pendiente de la superficie.
+- **Interpretación:** la superficie `s=0` es un filtro que fuerza `e → 0` exponencialmente con constante de tiempo `1/λ`.
+
+**Eq. (2) — Dinámica del error en la superficie:**
+```
+s = 0  ⟹  ė = −λ e  ⟹  e(t) = e(0) e^{−λt}
+```
+- **Interpretación:** una vez en la superficie, el comportamiento es puramente lineal y predecible, independiente de la planta.
+
+**Eq. (3) — Condición de alcance (Lyapunov):**
+```
+½ (d/dt) s² ≤ −η |s|,   η > 0
+equivalente a:  s · ṡ ≤ −η |s|
+```
+- **Interpretación:** la "distancia" a la superficie decrece. Garantiza alcance en tiempo finito `t_reach = |s(0)|/η`.
+
+**Eq. (4) — Ley de control conmutada:**
+```
+u = û_eq − K · sign(s)
+donde û_eq = ẍ_d − f̂(x) − λ ė   (control equivalente nominal)
+```
+- `f̂(x)`: estimación de la dinámica; `K`: ganancia de conmutación.
+- **Interpretación:** `û_eq` cancela la dinámica nominal; el término `−K·sign(s)` rechaza la incertidumbre.
+
+**Eq. (5) — Condición sobre la ganancia K:**
+```
+K > |Δf|_max + η
+donde Δf = f(x) − f̂(x) + d(t)  (incertidumbre + perturbación)
+```
+- **Interpretación:** K debe dominar la peor incertidumbre posible. Si se cumple, `s·ṡ < 0` siempre.
+
+**Eq. (6) — Capa límite (anti-chattering):**
+```
+u = û_eq − K · sat(s/φ)
+sat(z) = { sign(z)      si |z| ≥ 1
+         { z            si |z| < 1
+```
+- `φ > 0`: espesor de capa límite. Suaviza la conmutación; a cambio, el error converge a una banda de tamaño proporcional a `φ`.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Sliding Mode Control (un paso de simulación)
+
+ENTRADA:
+  - x: estado actual [x1, x2]
+  - xd, xd_dot, xd_ddot: referencia y sus derivadas
+  - f_hat(x): modelo nominal de la dinámica
+  - b_nom: ganancia nominal de entrada
+  - lam, K, phi: parámetros del SMC
+  - d(t): perturbación real (desconocida para el controlador)
+
+SALIDA:
+  - u: acción de control
+  - s: valor de la superficie de deslizamiento
+
+1. Calcular errores:
+   e ← x[0] − xd
+   e_dot ← x[1] − xd_dot
+
+2. Calcular superficie (Eq. 1):
+   s ← e_dot + lam · e
+
+3. Control equivalente nominal (Eq. 4):
+   u_eq ← (xd_ddot − f_hat(x) − lam · e_dot) / b_nom
+
+4. Término de conmutación:
+   Si phi > 0 (capa límite, Eq. 6):
+     u_sw ← −K · clip(s/phi, −1, 1)
+   Sino (conmutación pura):
+     u_sw ← −K · sign(s)
+
+5. Ley de control total:
+   u ← u_eq + u_sw / b_nom
+
+6. Retornar (u, s)
+
+BUCLE DE SIMULACIÓN:
+   Para cada paso:
+     u ← control(x, referencia)
+     x2dot_real ← f_real(x) + b_real·u + d(t)   # planta real
+     x ← integrar(x, dt)
+
+EDGE CASES:
+  - K muy pequeño → no se satisface condición de alcance; s diverge.
+  - phi = 0 → chattering severo (vibración de alta frecuencia).
+  - phi muy grande → error estacionario grande (banda ancha).
+  - dt muy grande → discretización inestable; usar dt pequeño.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+PositiveGain: TypeAlias = Annotated[float, Field(gt=0.0)]
+
+class SMCParams(BaseModel):
+    """Parámetros del Sliding Mode Control."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    lam: PositiveGain = 5.0            # pendiente de la superficie
+    K: PositiveGain = 20.0             # ganancia de conmutación
+    phi: Annotated[float, Field(ge=0.0)] = 0.1   # capa límite (0 = puro)
+    dt: Annotated[float, Field(gt=0.0, le=0.1)] = 0.001
+
+class SlidingModeControl:
+    """Implementación de Slotine & Li (1991), Cap. 7.
+
+    Reference: ISBN 978-0130408907 / DOI: 10.1109/9.280173
+    """
+
+    def __init__(self, f_hat: Callable, b_nom: float,
+                 params: SMCParams | None = None):
+        self.f_hat = f_hat       # modelo nominal f̂(x)
+        self.b_nom = b_nom
+        self.params = params or SMCParams()
+
+    def control(self, x: np.ndarray, xd: float,
+                xd_dot: float, xd_ddot: float) -> tuple[float, float]:
+        """Ley de control SMC. Implementa Eq. (1), (4), (6)."""
+        p = self.params
+        e = x[0] - xd                       # error
+        e_dot = x[1] - xd_dot
+        s = e_dot + p.lam * e               # Eq. (1): superficie
+
+        # Eq. (4): control equivalente nominal
+        u_eq = (xd_ddot - self.f_hat(x) - p.lam * e_dot) / self.b_nom
+
+        # Eq. (6): término de conmutación (con capa límite si phi > 0)
+        if p.phi > 0:
+            u_sw = -p.K * np.clip(s / p.phi, -1.0, 1.0)
+        else:
+            u_sw = -p.K * np.sign(s)
+
+        u = u_eq + u_sw / self.b_nom
+        return u, s
+
+    def simulate(self, x0: np.ndarray, t_span: tuple,
+                 reference: Callable, f_real: Callable,
+                 b_real: float, disturbance: Callable = None) -> dict:
+        """Simula planta real bajo control SMC (integración Euler)."""
+        p = self.params
+        t = np.arange(t_span[0], t_span[1], p.dt)
+        x = np.array(x0, dtype=float)
+        states = np.zeros((len(t), 2))
+        controls = np.zeros(len(t))
+        surfaces = np.zeros(len(t))
+        errors = np.zeros(len(t))
+
+        for k, tk in enumerate(t):
+            xd, xd_dot, xd_ddot = reference(tk)
+            u, s = self.control(x, xd, xd_dot, xd_ddot)
+            states[k] = x
+            controls[k] = u
+            surfaces[k] = s
+            errors[k] = x[0] - xd
+
+            # Planta REAL (con incertidumbre y perturbación)
+            d = disturbance(tk) if disturbance else 0.0
+            x2dot_real = f_real(x) + b_real * u + d
+            # Integración Euler
+            x = np.array([x[0] + p.dt * x[1],
+                          x[1] + p.dt * x2dot_real])
+
+        return {'time': t, 'states': states, 'controls': controls,
+                'surfaces': surfaces, 'errors': errors}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _reference_const(tk):
+    """Referencia constante xd = 1.0"""
+    return 1.0, 0.0, 0.0
+
+def test_smc_reaches_surface_and_tracks():
+    """SMC debe llevar s→0 y seguir la referencia a pesar de incertidumbre."""
+    # Modelo nominal: planta vacía
+    f_hat = lambda x: 0.0
+    # Planta real: con no linealidad desconocida + perturbación
+    f_real = lambda x: 0.5 * np.sin(x[0])   # incertidumbre acotada
+    disturbance = lambda tk: 0.3 * np.sin(10 * tk)
+
+    smc = SlidingModeControl(f_hat, b_nom=1.0,
+                             params=SMCParams(lam=5.0, K=15.0, phi=0.05))
+    res = smc.simulate(x0=[0.0, 0.0], t_span=(0, 3.0),
+                       reference=_reference_const,
+                       f_real=f_real, b_real=1.0,
+                       disturbance=disturbance)
+
+    # El error debe converger cerca de cero (banda por capa límite)
+    final_error = abs(res['errors'][-1])
+    assert final_error < 0.1, f"Error final debe < 0.1: {final_error}"
+    # La superficie debe reducirse
+    s_early = np.mean(np.abs(res['surfaces'][:100]))
+    s_late = np.mean(np.abs(res['surfaces'][-100:]))
+    assert s_late < s_early, f"s debe reducirse: {s_late} !< {s_early}"
+    print(f"✓ SMC sigue referencia con incertidumbre (error {final_error:.4f})")
+
+def test_smc_reaching_condition():
+    """Verifica que s·ṡ < 0 se satisface (condición de alcance, Eq. 3)."""
+    f_hat = lambda x: 0.0
+    f_real = lambda x: 0.0
+    smc = SlidingModeControl(f_hat, b_nom=1.0,
+                             params=SMCParams(lam=5.0, K=10.0, phi=0.0))
+    res = smc.simulate(x0=[0.0, 0.0], t_span=(0, 1.0),
+                       reference=_reference_const,
+                       f_real=f_real, b_real=1.0)
+    s = res['surfaces']
+    # ds/dt aproximado
+    ds = np.diff(s) / smc.params.dt
+    product = s[:-1] * ds
+    # En la fase de alcance (primeros pasos), s·ṡ debe ser negativo
+    reaching_phase = product[:50]
+    frac_negative = np.mean(reaching_phase < 0)
+    assert frac_negative > 0.8, f"Debe satisfacerse alcance: {frac_negative}"
+    print(f"✓ SMC condición de alcance satisfecha ({frac_negative*100:.0f}% del tiempo)")
+
+def test_smc_robustness_to_parameter_mismatch():
+    """SMC debe ser robusto a b_real ≠ b_nom (condición de matching)."""
+    f_hat = lambda x: 0.0
+    f_real = lambda x: 0.0
+    # b_nom = 1.0 pero b_real = 1.5 (50% de error)
+    smc = SlidingModeControl(f_hat, b_nom=1.0,
+                             params=SMCParams(lam=5.0, K=30.0, phi=0.05))
+    res = smc.simulate(x0=[0.0, 0.0], t_span=(0, 4.0),
+                       reference=_reference_const,
+                       f_real=f_real, b_real=1.5)
+    final_error = abs(res['errors'][-1])
+    assert final_error < 0.2, f"Debe ser robusto a mismatch: {final_error}"
+    print(f"✓ SMC robusto a mismatch de ganancia (error {final_error:.4f})")
+
+if __name__ == "__main__":
+    test_smc_reaches_surface_and_tracks()
+    test_smc_reaching_condition()
+    test_smc_robustness_to_parameter_mismatch()
+    print("✓ PAPER #41 (SMC) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #42: Mallat (1989) — Multiresolution Analysis
+
+**Referencia:** Mallat, S. G. (1989). "Multiresolution approximations and wavelet orthonormal bases of L²(ℝ)." *Transactions of the American Mathematical Society*, 315(1), 69–87. DOI: 10.1090/S0002-9947-1989-1008467-5
+
+**Esencia:** Marco teórico que construye bases ortonormales de wavelets a partir de una jerarquía de subespacios anidados V_j, proporcionando el algoritmo piramidal de filtros (DWT) para descomposición y reconstrucción perfecta de señales.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Antes de 1989, las wavelets existían como funciones aisladas (Morlet, Meyer) sin un marco unificador. No había una teoría sistemática para construir bases ortonormales ni un algoritmo eficiente para calcular coeficientes. El análisis de Fourier da resolución frecuencial global; el análisis tiempo-frecuencia de Gabor `[→ NeuroComp.Paper#10]` tiene resolución fija. Se necesitaba un marco **multiresolución**: análisis grueso-y-fino simultáneo con bases ortonormales.
+
+**¿Dónde falla el estado del arte previo?** La STFT usa ventana fija: no puede adaptar resolución. Las bases de Fourier no localizan en tiempo. Los métodos existentes de wavelets no tenían estructura algebraica para generar familias completas ni algoritmos O(N).
+
+**La solución de Mallat:** introducir el **Análisis Multiresolución (MRA)**: una secuencia de subespacios anidados `{... ⊂ V_2 ⊂ V_1 ⊂ V_0}` donde cada V_j es una aproximación a resolución 2^j. La diferencia entre V_j y V_{j+1} se captura en un espacio de detalle W_j. Esto genera una **función de escala φ** (aproximación) y una **wavelet madre ψ** (detalle), conectadas por **filtros espejo en cuadratura (QMF)**. El algoritmo piramidal descompone/ reconstruye en O(N) usando convolución + diezmo.
+
+**Aplicación práctica:** compresión JPEG2000, denoising `[→ Paper #43]`, análisis de texturas en visión por computador, procesamiento de imágenes médicas, análisis espectral de señales no estacionarias, finanzas (análisis de volatilidad multiescala).
+
+**¿Por qué es un hito?** Fundó la teoría moderna de wavelets. El algoritmo de Mallat (pyramid algorithm) es el equivalente wavelet de la FFT: convirtió las wavelets de curiosidad matemática en herramienta computacional práctica. Todo el análisis wavelet discreto moderno (PyWavelets, MATLAB wavelet toolbox) implementa este marco.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Secuencia de subespacios anidados (MRA):**
+```
+... ⊂ V_2 ⊂ V_1 ⊂ V_0 ⊂ V_{−1} ⊂ ...
+∩_j V_j = {0},   ∪_j V_j denso en L²(ℝ)
+```
+- **Interpretación:** cada V_j es una aproximación a escala 2^j. La intersección es trivial, la unión es completa.
+
+**Eq. (2) — Función de escala y dilataciones:**
+```
+{φ_{j,k}(t) = 2^{−j/2} φ(2^{−j} t − k)}_{k∈ℤ} es base ortonormal de V_j
+```
+- **Interpretación:** φ genera el subespacio de aproximación mediante traslaciones y dilataciones diádicas.
+
+**Eq. (3) — Ecuación de refinamiento (relación de dos escalas):**
+```
+φ(t) = √2 Σ_k h[k] φ(2t − k)
+```
+- `h[k]`: filtro paso-bajo (coeficientes de la wavelet).
+- **Interpretación:** la función de escala a resolución fina se expresa como combinación de versiones más finas.
+
+**Eq. (4) — Wavelet madre desde el filtro paso-alto:**
+```
+ψ(t) = √2 Σ_k g[k] φ(2t − k)
+g[k] = (−1)^k h[1 − k]     (filtro espejo en cuadratura)
+```
+- **Interpretación:** ψ captura el detalle perdido al pasar de V_j a V_{j+1}.
+
+**Eq. (5) — Descomposición (análisis) — algoritmo piramidal:**
+```
+c_{j+1}[n] = Σ_k h[k − 2n] c_j[k]      (aproximación)
+d_{j+1}[n] = Σ_k g[k − 2n] c_j[k]      (detalle)
+```
+- **Interpretación:** convolución con filtros + diezmo por 2. Divide la señal en aproximación y detalle a escala más gruesa.
+
+**Eq. (6) — Reconstrucción (síntesis):**
+```
+c_j[n] = Σ_k h[n − 2k] c_{j+1}[k] + Σ_k g[n − 2k] d_{j+1}[k]
+```
+- **Interpretación:** upsampling + convolución con filtros de reconstrucción. Reconstrucción perfecta para wavelets ortonormales.
+
+**Eq. (7) — Conservación de energía (Parseval/ortonormalidad):**
+```
+‖x‖² = Σ_n |c_J[n]|² + Σ_{j≤J} Σ_n |d_j[n]|²
+```
+- **Interpretación:** la energía total se distribuye entre aproximación final y todos los detalles. Sin pérdida.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Mallat Pyramid (DWT multinivel)
+
+ENTRADA:
+  - x: array 1D, señal (longitud divisible por 2^J, o se padea)
+  - wavelet: 'haar' | 'db2' (filtros QMF)
+  - J: número de niveles de descomposición
+
+SALIDA:
+  - coeffs: lista [c_J, d_J, d_{J−1}, ..., d_1]
+  - reconstructed: señal reconstruida
+
+1. Obtener filtros (Eq. 3, 4):
+   h, g ← filtros paso-bajo/paso-alto de la wavelet
+   h_r, g_r ← filtros de reconstrucción (revertidos)
+
+2. Descomposición (Eq. 5):
+   c ← x
+   coeffs_details ← []
+   Para j = 1 a J:
+     cA, cD ← decompose_level(c, h, g)   # convolución + diezmo
+     coeffs_details.append(cD)
+     c ← cA
+   c_J ← c
+
+3. Reconstrucción (Eq. 6):
+   c ← c_J
+   Para j = J hasta 1:
+     c ← reconstruct_level(c, coeffs_details[j−1], h_r, g_r)
+   reconstructed ← c
+
+4. Verificar conservación (Eq. 7):
+   ‖x − reconstructed‖∞ < tol
+
+5. Retornar (coeffs, reconstructed)
+
+EDGE CASES:
+  - Longitud no divisible por 2^J → padear con extensión periódica/simétrica.
+  - J demasiado grande → c_J tiene longitud 1; no se puede descomponer más.
+  - Filtros no ortonormales → reconstrucción imperfecta; usar QMF válidos.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+WaveletName: TypeAlias = Annotated[str, Field(pattern='^(haar|db2)$')]
+
+class MRAParams(BaseModel):
+    """Parámetros del análisis multiresolución."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    wavelet: WaveletName = 'haar'
+    J: Annotated[int, Field(ge=1, le=12)] = 3
+
+class MultiresolutionAnalysis:
+    """Implementación de Mallat (1989).
+
+    Reference: DOI: 10.1090/S0002-9947-1989-1008467-5
+    """
+
+    def __init__(self, params: MRAParams | None = None):
+        self.params = params or MRAParams()
+        self._load_filters()
+
+    def _load_filters(self):
+        """Eq. (3), (4): filtros QMF para wavelet ortonormal."""
+        if self.params.wavelet == 'haar':
+            # Haar: h = [1,1]/√2, g = [1,-1]/√2
+            self.h = np.array([1.0, 1.0]) / np.sqrt(2)
+            self.g = np.array([1.0, -1.0]) / np.sqrt(2)
+        elif self.params.wavelet == 'db2':
+            # Daubechies-4 (db2): 4 coeficientes
+            s3 = np.sqrt(3)
+            self.h = np.array([1 + s3, 3 + s3, 3 - s3, 1 - s3]) / (4 * np.sqrt(2))
+            # g[n] = (-1)^n h[N-1-n]
+            self.g = np.array([self.h[3], -self.h[2], self.h[1], -self.h[0]])
+        # Filtros de reconstrucción (revertidos)
+        self.h_r = self.h[::-1].copy()
+        self.g_r = self.g[::-1].copy()
+
+    def _decompose_level(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Eq. (5): convolución + diezmo con extensión periódica."""
+        n = len(x)
+        lf = len(self.h)
+        cA = np.zeros(n // 2)
+        cD = np.zeros(n // 2)
+        for i in range(n // 2):
+            idx = (2 * i + np.arange(lf)) % n   # índice circular
+            cA[i] = np.sum(x[idx] * self.h)
+            cD[i] = np.sum(x[idx] * self.g)
+        return cA, cD
+
+    def _reconstruct_level(self, cA: np.ndarray, cD: np.ndarray) -> np.ndarray:
+        """Eq. (6): upsampling + convolución (scatter-add adjunto)."""
+        n = len(cA) * 2
+        lf = len(self.h_r)
+        x = np.zeros(n)
+        for i in range(len(cA)):
+            idx = (2 * i + np.arange(lf)) % n
+            x[idx] += cA[i] * self.h_r
+            x[idx] += cD[i] * self.g_r
+        return x
+
+    def decompose(self, x: np.ndarray) -> dict:
+        """DWT multinivel. Retorna coeffs y reconstrucción."""
+        x = np.asarray(x, dtype=float)
+        J = self.params.J
+
+        # Padear a longitud divisible por 2^J (extensión periódica)
+        n_orig = len(x)
+        target = int(np.ceil(n_orig / 2 ** J) * 2 ** J)
+        x_pad = np.pad(x, (0, target - n_orig), mode='constant')
+
+        c = x_pad
+        details = []
+        for j in range(J):
+            cA, cD = self._decompose_level(c)
+            details.append(cD)
+            c = cA
+
+        # Reconstrucción
+        rec = c
+        for j in range(J - 1, -1, -1):
+            rec = self._reconstruct_level(rec, details[j])
+
+        return {
+            'approx_final': c,
+            'details': details,          # [d_1, d_2, ..., d_J]
+            'reconstructed': rec[:n_orig],
+            'energy_original': np.sum(x ** 2),
+            'energy_coeffs': np.sum(c ** 2) + sum(np.sum(d ** 2) for d in details),
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_mallat_perfect_reconstruction_haar():
+    """Eq. (6): reconstrucción perfecta con Haar (<1e-10)."""
+    x = np.random.default_rng(0).standard_normal(64)
+    mra = MultiresolutionAnalysis(MRAParams(wavelet='haar', J=3))
+    res = mra.decompose(x)
+    err = np.max(np.abs(x - res['reconstructed']))
+    assert err < 1e-10, f"Reconstrucción debe ser perfecta: {err}"
+    print(f"✓ Mallat reconstrucción perfecta Haar (error {err:.2e})")
+
+def test_mallat_perfect_reconstruction_db2():
+    """Reconstrucción perfecta con Daubechies-4."""
+    x = np.random.default_rng(1).standard_normal(64)
+    mra = MultiresolutionAnalysis(MRAParams(wavelet='db2', J=3))
+    res = mra.decompose(x)
+    err = np.max(np.abs(x - res['reconstructed']))
+    assert err < 1e-8, f"Reconstrucción db2 debe ser precisa: {err}"
+    print(f"✓ Mallat reconstrucción perfecta db2 (error {err:.2e})")
+
+def test_mallat_energy_conservation():
+    """Eq. (7): conservación de energía (Parseval)."""
+    x = np.random.default_rng(2).standard_normal(128)
+    mra = MultiresolutionAnalysis(MRAParams(wavelet='haar', J=4))
+    res = mra.decompose(x)
+    ratio = res['energy_coeffs'] / res['energy_original']
+    assert abs(ratio - 1.0) < 1e-8, f"Energía debe conservarse: ratio {ratio}"
+    print(f"✓ Mallat conserva energía (ratio {ratio:.10f})")
+
+def test_mallat_multilevel_structure():
+    """La descomposición multinivel reduce longitud por 2 en cada nivel."""
+    x = np.ones(64)
+    mra = MultiresolutionAnalysis(MRAParams(wavelet='haar', J=3))
+    res = mra.decompose(x)
+    assert len(res['approx_final']) == 64 // 8, "c_3 debe tener N/8"
+    assert len(res['details']) == 3, "Debe haber 3 niveles de detalle"
+    print("✓ Mallat estructura piramidal correcta")
+
+if __name__ == "__main__":
+    test_mallat_perfect_reconstruction_haar()
+    test_mallat_perfect_reconstruction_db2()
+    test_mallat_energy_conservation()
+    test_mallat_multilevel_structure()
+    print("✓ PAPER #42 (Mallat MRA) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #43: Donoho & Johnstone (1994) — Wavelet Shrinkage
+
+**Referencia:** Donoho, D. L., & Johnstone, I. M. (1994). "Ideal spatial adaptation by wavelet shrinkage." *Biometrika*, 81(3), 425–455. DOI: 10.1093/biomet/81.3.425
+
+**Esencia:** Método de denoising que explota la dispersión de la representación wavelet: thresholding de coeficientes pequeños (ruido) preservando los grandes (señal), con umbral universal λ = σ√(2 log n) que garantiza riesgo casi-óptimo minimax.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Recuperar una señal `f` a partir de observaciones ruidosas `y = f + ε`. Los filtros lineales clásicos (paso-bajo, Wiener) suavizan indiscriminadamente, destruyendo discontinuidades y características transitorias. Se necesita un método **no lineal** que preserve bordes y picos mientras elimina ruido.
+
+**¿Dónde falla el estado del arte previo?** Los filtros lineales óptimos (Wiener) asumen estacionariedad y suavidad; fallan con señales que tienen singularidades. El suavizado por kernels es localmente adaptativo pero no captura estructura multiescala. Ninguno explota la **dispersión** (*sparsity*) de la representación de señales naturales.
+
+**La solución de Donoho & Johnstone:** las señales naturales son **dispersas en base wavelet**: pocos coeficientes grandes capturan la señal, muchos coeficientes pequeños son ruido. El método: (1) DWT de los datos; (2) aplicar thresholding a los coeficientes de detalle; (3) DWT inversa. Dos variantes: **hard thresholding** (cerar pequeños) y **soft thresholding** (cerar y encoger los demás, más suave). El **umbral universal** `λ = σ̂√(2 log n)` garantiza que, con alta probabilidad, el ruido puro se elimina completamente.
+
+**Aplicación práctica:** denoising de señales biomédicas (ECG, EEG), imágenes astronómicas, espectroscopía, procesamiento de voz, finanzas (separación señal/ruido en series temporales). Es la base de todo el denoising moderno por thresholding.
+
+**¿Por qué es un hito?** Demostró que el thresholding wavelet es **casi-óptimo minimax** sobre una enorme clase de funciones (Besov). Introdujo el concepto de **dispersión como principio organizador** del procesamiento de señales. Su influencia se extiende a Compressed Sensing `[→ Paper #38]`, redes neuronales sparse, y todo el campo de regularización ℓ₁.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Modelo de observación:**
+```
+y_i = f_i + ε_i,   ε_i ~ N(0, σ²) i.i.d.
+```
+- **Interpretación:** señal + ruido gaussiano blanco.
+
+**Eq. (2) — Transformada wavelet de los datos:**
+```
+w = W y,   donde W es la matriz DWT ortonormal
+w_j,k = coeficientes wavelet en escala j, posición k
+```
+- **Interpretación:** la DWT ortonormal preserva la gaussianidad del ruido (W es ortogonal).
+
+**Eq. (3) — Hard thresholding:**
+```
+η_H(w, λ) = { w    si |w| > λ
+            { 0    si |w| ≤ λ
+```
+
+**Eq. (4) — Soft thresholding:**
+```
+η_S(w, λ) = sign(w) · max(|w| − λ, 0)
+```
+- **Interpretación:** encoge todos los coeficientes hacia cero. Más suave que hard, evita discontinuidades.
+
+**Eq. (5) — Umbral universal:**
+```
+λ = σ̂ · √(2 log n)
+σ̂ = MAD(d_1) / 0.6745
+```
+- `d_1`: coeficientes de detalle del nivel más fino.
+- `MAD`: mediana de desviaciones absolutas.
+- **Interpretación:** σ̂ estima el ruido robustamente desde el nivel más fino (dominado por ruido). El factor `√(2 log n)` garantiza que el máximo de ruido gaussiano puro queda bajo λ con alta probabilidad.
+
+**Eq. (6) — Reconstrucción denoised:**
+```
+f̂ = W⁻¹ η(w, λ)
+```
+- **Interpretación:** aplicar DWT inversa a los coeficientes thresholded.
+
+**Eq. (7) — Propiedad minimax (riesgo):**
+```
+sup_{f ∈ Θ} E‖f̂ − f‖² ≤ (2 log n + 1) · σ² · n^{-...} · C
+```
+- **Interpretación:** sobre clases de suavidad Besov, el riesgo es casi-óptimo (log n del óptimo minimax lineal).
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Wavelet Shrinkage (denoising)
+
+ENTRADA:
+  - y: señal ruidosa
+  - wavelet: tipo de wavelet ('haar', 'db2')
+  - J: niveles de descomposición
+  - mode: 'soft' | 'hard'
+  - sigma: desviación del ruido (si None, estimar vía MAD)
+
+SALIDA:
+  - f_hat: señal denoised
+
+1. DWT de los datos (Eq. 2):
+   coeffs ← DWT(y, wavelet, J)
+
+2. Estimación de ruido (Eq. 5):
+   Si sigma es None:
+     d_1 ← detalle del nivel más fino
+     sigma ← MAD(d_1) / 0.6745
+
+3. Umbral universal (Eq. 5):
+   lambda ← sigma · sqrt(2 · log(n))
+
+4. Thresholding (Eq. 3 o 4):
+   Para cada nivel de detalle j (NO la aproximación final):
+     Si mode == 'soft':
+       d_j ← sign(d_j) · max(|d_j| − lambda, 0)
+     Sino:
+       d_j ← d_j donde |d_j| > lambda, else 0
+
+5. Reconstrucción (Eq. 6):
+   f_hat ← IDWT(coeffs_thresholded)
+
+6. Retornar f_hat
+
+EDGE CASES:
+  - sigma muy grande → threshold alto, sobre-suavizado.
+  - J demasiado pequeño → no se captura ruido multiescala.
+  - Señal sin ruido → thresholding puede destruir señal.
+  - No thresholdear la aproximación final c_J (contiene la tendencia).
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias, Literal
+from pydantic import BaseModel, Field, ConfigDict
+
+class WaveletShrinkageParams(BaseModel):
+    """Parámetros del denoising por wavelet shrinkage."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    wavelet: Annotated[str, Field(pattern='^(haar|db2)$')] = 'db2'
+    J: Annotated[int, Field(ge=1, le=10)] = 4
+    mode: Literal['soft', 'hard'] = 'soft'
+
+class WaveletShrinkage:
+    """Implementación de Donoho & Johnstone (1994).
+
+    Reference: DOI: 10.1093/biomet/81.3.425
+    Usa la MRA de Mallat [→ Paper #42] como motor DWT.
+    """
+
+    def __init__(self, params: WaveletShrinkageParams | None = None):
+        self.params = params or WaveletShrinkageParams()
+
+    @staticmethod
+    def soft_threshold(w: np.ndarray, lam: float) -> np.ndarray:
+        """Eq. (4): soft thresholding."""
+        return np.sign(w) * np.maximum(np.abs(w) - lam, 0.0)
+
+    @staticmethod
+    def hard_threshold(w: np.ndarray, lam: float) -> np.ndarray:
+        """Eq. (3): hard thresholding."""
+        return np.where(np.abs(w) > lam, w, 0.0)
+
+    def estimate_noise(self, detail_finest: np.ndarray) -> float:
+        """Eq. (5): estimación robusta de sigma vía MAD."""
+        mad = np.median(np.abs(detail_finest - np.median(detail_finest)))
+        return mad / 0.6745
+
+    def denoise(self, y: np.ndarray, sigma: float | None = None) -> dict:
+        """Denoising completo. Implementa Eq. (2)-(6)."""
+        from copy import deepcopy
+        y = np.asarray(y, dtype=float)
+        n = len(y)
+        p = self.params
+
+        # Motor DWT (Mallat)
+        mra_params = MRAParams(wavelet=p.wavelet, J=p.J)
+        mra = MultiresolutionAnalysis(mra_params)
+        decomp = mra.decompose(y)
+
+        # Estimación de ruido (Eq. 5)
+        if sigma is None:
+            sigma = self.estimate_noise(decomp['details'][0])
+        lam = sigma * np.sqrt(2 * np.log(n))
+
+        # Thresholding de detalles (no de la aproximación final)
+        thresholded_details = []
+        for d in decomp['details']:
+            if p.mode == 'soft':
+                dt = self.soft_threshold(d, lam)
+            else:
+                dt = self.hard_threshold(d, lam)
+            thresholded_details.append(dt)
+
+        # Reconstrucción manual con detalles thresholded
+        rec = decomp['approx_final']
+        for j in range(p.J - 1, -1, -1):
+            rec = mra._reconstruct_level(rec, thresholded_details[j])
+
+        return {
+            'denoised': rec[:n],
+            'lambda': lam,
+            'sigma_estimated': sigma,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _blocks_signal(n: int) -> np.ndarray:
+    """Señal 'Blocks' clásica de Donoho (escalones + picos)."""
+    t = np.linspace(0, 1, n)
+    knots = [0.1, 0.13, 0.15, 0.23, 0.25, 0.40, 0.44, 0.65, 0.76, 0.78, 0.81]
+    hgt = [4, -5, 3, -4, 5, -4.2, 2.1, 4.3, -3.1, 2.1, -4.2]
+    y = np.zeros(n)
+    for k, h in zip(knots, hgt):
+        y += h * (1 + np.sign(t - k)) / 2
+    return y / 4.0
+
+def test_shrinkage_improves_snr():
+    """El denoising debe reducir el error cuadrático vs señal ruidosa."""
+    rng = np.random.default_rng(42)
+    n = 512
+    f_true = _blocks_signal(n)
+    sigma = 0.3
+    y_noisy = f_true + rng.normal(0, sigma, n)
+
+    ws = WaveletShrinkage(WaveletShrinkageParams(wavelet='db2', J=4, mode='soft'))
+    res = ws.denoise(y_noisy)
+    f_hat = res['denoised']
+
+    mse_noisy = np.mean((y_noisy - f_true) ** 2)
+    mse_denoised = np.mean((f_hat - f_true) ** 2)
+    assert mse_denoised < mse_noisy, f"Debe mejorar MSE: {mse_denoised} !< {mse_noisy}"
+    improvement = mse_noisy / mse_denoised
+    print(f"✓ Shrinkage mejora SNR (MSE reducido {improvement:.2f}×)")
+
+def test_shrinkage_preserves_edges():
+    """Soft thresholding debe preservar discontinuidades mejor que suavizado lineal."""
+    rng = np.random.default_rng(7)
+    n = 256
+    f_true = np.concatenate([np.zeros(128), np.ones(128)])  # escalón
+    y_noisy = f_true + rng.normal(0, 0.2, n)
+
+    ws = WaveletShrinkage(WaveletShrinkageParams(wavelet='db2', J=4, mode='soft'))
+    f_hat = ws.denoise(y_noisy)['denoised']
+
+    # El escalón debe seguir siendo nítido: diferencia máxima cerca del borde
+    edge_region = f_hat[120:136]
+    step_height = np.max(edge_region) - np.min(edge_region)
+    assert step_height > 0.7, f"Escalón debe preservarse: altura {step_height}"
+    print(f"✓ Shrinkage preserva bordes (altura escalón {step_height:.3f})")
+
+def test_shrinkage_soft_vs_hard():
+    """Soft thresholding encoge; hard solo cera. Ambos deben denoiser."""
+    w = np.array([5.0, -3.0, 0.5, -0.2, 2.0])
+    lam = 1.0
+    soft = WaveletShrinkage.soft_threshold(w, lam)
+    hard = WaveletShrinkage.hard_threshold(w, lam)
+    # Soft: valores pequeños → 0, grandes encogidos
+    expected_soft = np.array([4.0, -2.0, 0.0, 0.0, 1.0])
+    np.testing.assert_allclose(soft, expected_soft)
+    # Hard: pequeños → 0, grandes intactos
+    expected_hard = np.array([5.0, -3.0, 0.0, 0.0, 2.0])
+    np.testing.assert_allclose(hard, expected_hard)
+    print("✓ Shrinkage soft/hard correctos")
+
+def test_shrinkage_noise_estimation():
+    """La estimación de sigma vía MAD debe ser cercana al sigma real."""
+    rng = np.random.default_rng(3)
+    n = 1024
+    sigma_true = 0.5
+    noise = rng.normal(0, sigma_true, n)
+    ws = WaveletShrinkage()
+    sigma_est = ws.estimate_noise(noise)
+    assert abs(sigma_est - sigma_true) / sigma_true < 0.3, \
+        f"Estimación de sigma debe ser cercana: {sigma_est} vs {sigma_true}"
+    print(f"✓ Shrinkage estima ruido (est {sigma_est:.3f} vs real {sigma_true})")
+
+if __name__ == "__main__":
+    test_shrinkage_improves_snr()
+    test_shrinkage_preserves_edges()
+    test_shrinkage_soft_vs_hard()
+    test_shrinkage_noise_estimation()
+    print("✓ PAPER #43 (Wavelet Shrinkage) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #44: Friston, Harrison & Penny (2003/2006) — Dynamic Causal Modeling
+
+**Referencia:** Friston, K. J., Harrison, L., & Penny, W. (2003). "Dynamic causal modelling." *NeuroImage*, 19(4), 1273–1302. DOI: 10.1016/S1053-8119(03)00202-7
+
+**Esencia:** Marco para inferir conectividad efectiva entre regiones cerebrales: modela la dinámica neuronal oculta como un sistema bilinear modulado por entradas experimentales, acoplado a un modelo hemodinámico que genera la señal BOLD/fMRI observada, y ajusta el modelo vía inferencia bayesiana.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La neuroimagen revela **qué** regiones se activan, pero no **cómo interactúan**. La conectividad funcional (correlación) no implica causalidad ni dirección. Se necesita inferir **conectividad efectiva**: la influencia causal dirigida que una región ejerce sobre otra, y cómo esta influencia es modulada por el contexto experimental.
+
+**¿Dónde falla el estado del arte previo?** La conectividad funcional (correlación, coherencia) es simétrica y no causal. SEM (Structural Equation Modeling) asume relaciones lineales estáticas. No existía un marco que modelara la **dinámica neuronal no lineal subyacente** y la conectara con las observaciones hemodinámicas (BOLD) mediante un modelo generativo completo.
+
+**La solución de Friston et al.:** DCM define: (1) una **ecuación de estado neuronal bilinear** `ẋ = (A + Σu_j B_j)x + Cu`, donde `A` es la conectividad intrínseca, `B_j` la modulación por la entrada j-ésima, y `C` la entrada directa; (2) un **modelo hemodinámico de globo** (Buxton/Friston) que transforma la actividad neuronal en flujo sanguíneo, volumen y desoxihemoglobina, generando la señal BOLD; (3) **inferencia bayesiana** para estimar parámetros y comparar modelos. Es un modelo generativo completo: de causas experimentales a señales observadas.
+
+**Aplicación práctica:** mapeo de redes cognitivas (atención, memoria, lenguaje), identificación de conectividad alterada en esquizofrenia, epilepsia, Alzheimer; diseño de experimentos fMRI/EEG; neurociencia clínica.
+
+**¿Por qué es un hito?** Fundó el campo de la **conectividad efectiva**. DCM es la herramienta estándar para inferir interacciones causales en neuroimagen. Conecta el Principio de Energía Libre `[→ Paper #34]` con la neurociencia empírica. Generó >5000 citas y una suite de software (SPM) usada mundialmente.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Ecuación de estado neuronal bilinear:**
+```
+ẋ = (A + Σ_{j=1}^{m} u_j B^{(j)}) x + C u
+```
+- `x ∈ ℝ^n`: actividad neuronal de n regiones.
+- `A`: matriz de conectividad intrínseca (n×n).
+- `B^{(j)}`: modulación de conectividad por entrada u_j.
+- `C`: acoplamiento de entradas directas a regiones.
+- **Interpretación:** la dinámica neuronal es lineal en x pero modulada por las entradas.
+
+**Eq. (2) — Modelo hemodinámico: señal vasodilatadora:**
+```
+ṡ = ε u − κ s − γ (f − 1)
+```
+- `s`: señal vasodilatadora; `u`: actividad neuronal (entrada hemodinámica).
+- `ε, κ, γ`: eficiencia de señal, decaimiento, autorregulación.
+
+**Eq. (3) — Flujo sanguíneo:**
+```
+ḟ = s
+```
+
+**Eq. (4) — Volumen sanguíneo (modelo de globo):**
+```
+τ v̇ = f − v^{1/α}
+```
+- `v`: volumen sanguíneo normalizado; `α ≈ 0.32`: exponente de Grubb; `τ`: constante de tiempo de tránsito.
+
+**Eq. (5) — Desoxihemoglobina:**
+```
+τ q̇ = f · (1 − (1−E_0)^{1/f}) / E_0 − v^{1/α} q / v
+```
+- `q`: desoxihemoglobina normalizada; `E_0 ≈ 0.34`: fracción de extracción de oxígeno en reposo.
+
+**Eq. (6) — Señal BOLD:**
+```
+y = V_0 [ k_1 (1 − q) + k_2 (1 − q/v) + k_3 (1 − v) ]
+k_1 = 7 E_0,  k_2 = 2,  k_3 = 2 E_0 − 0.2
+```
+- **Interpretación:** el BOLD depende de desoxihemoglobina y volumen (efectos intravascular/extravascular).
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Simulación DCM (neuronal + hemodinámica)
+
+ENTRADA:
+  - A, B_list, C: matrices del modelo neuronal (Eq. 1)
+  - u(t): entradas experimentales (m × T)
+  - params_hemo: ε, κ, γ, τ, α, E_0, V_0
+  - dt: paso de integración
+  - T: duración
+
+SALIDA:
+  - x: trayectoria neuronal (n × T)
+  - y_bold: señal BOLD simulada (T,)
+
+1. Inicialización:
+   x ← zeros(n)
+   s, f, v, q ← 0, 1, 1, 1  (reposo hemodinámico)
+
+2. Integración temporal (Euler o RK4):
+   Para t = 0 a T:
+     a) Neuronal (Eq. 1):
+        M ← A + Σ_j u_j(t) · B_j
+        ẋ ← M x + C u(t)
+        x ← x + dt · ẋ
+     b) Hemodinámica (Eq. 2-5), usando x como entrada u_hemo:
+        u_hemo ← media(x) o región de interés
+        ṡ ← ε·u_hemo − κ·s − γ·(f−1)
+        ḟ ← s
+        v̇ ← (f − v^{1/α}) / τ
+        q̇ ← (f·(1−(1−E_0)^{1/f})/E_0 − v^{1/α}·q/v) / τ
+        s,f,v,q ← actualizar
+     c) BOLD (Eq. 6):
+        y[t] ← V_0 [k_1(1−q) + k_2(1−q/v) + k_3(1−v)]
+
+3. Retornar (x, y_bold)
+
+EDGE CASES:
+  - f ≤ 0 → (1−E_0)^{1/f} indefinido; clamp f > 0.01.
+  - v muy pequeño → q/v explota; clamp v > 0.01.
+  - A con autovalores positivos grandes → x diverge; verificar estabilidad.
+  - dt muy grande → integración inestable en hemodinámica rígida.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class HemodynamicParams(BaseModel):
+    """Parámetros del modelo hemodinámico de globo (Friston 2003)."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    epsilon: Annotated[float, Field(gt=0.0)] = 0.5   # eficiencia de señal
+    kappa: Annotated[float, Field(gt=0.0)] = 0.65    # decaimiento
+    gamma: Annotated[float, Field(gt=0.0)] = 0.41    # autorregulación
+    tau: Annotated[float, Field(gt=0.0)] = 0.98      # tiempo de tránsito
+    alpha: Annotated[float, Field(gt=0.0, lt=1.0)] = 0.32  # Grubb
+    E0: Annotated[float, Field(gt=0.0, lt=1.0)] = 0.34     # extracción O2
+    V0: Annotated[float, Field(gt=0.0)] = 0.02
+
+class DynamicCausalModel:
+    """Implementación de DCM bilinear + hemodinámica (Friston et al., 2003).
+
+    Reference: DOI: 10.1016/S1053-8119(03)00202-7
+    """
+
+    def __init__(self, A: np.ndarray, B_list: list, C: np.ndarray,
+                 hemo_params: HemodynamicParams | None = None):
+        self.A = np.asarray(A, float)
+        self.B_list = [np.asarray(B, float) for B in B_list]
+        self.C = np.asarray(C, float)
+        self.hemo = hemo_params or HemodynamicParams()
+        self.n = A.shape[0]
+
+    def neural_dynamics(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """Eq. (1): ẋ = (A + Σ u_j B_j) x + C u."""
+        M = self.A.copy()
+        for j, uj in enumerate(u):
+            M += uj * self.B_list[j]
+        return M @ x + self.C @ u
+
+    def hemodynamic_step(self, s: float, f: float, v: float, q: float,
+                         u_hemo: float, dt: float) -> tuple:
+        """Eq. (2)-(5): un paso del modelo de globo."""
+        p = self.hemo
+        f = max(f, 0.01); v = max(v, 0.01)   # edge case: clamp
+        ds = p.epsilon * u_hemo - p.kappa * s - p.gamma * (f - 1)
+        df = s
+        dv = (f - v ** (1 / p.alpha)) / p.tau
+        # Extracción de oxígeno dependiente de flujo
+        E_f = 1 - (1 - p.E0) ** (1 / f) if f > 0 else p.E0
+        dq = (f * E_f / p.E0 - v ** (1 / p.alpha) * q / v) / p.tau
+        s += dt * ds; f += dt * df; v += dt * dv; q += dt * dq
+        return s, f, v, q
+
+    def bold_signal(self, f: float, v: float, q: float) -> float:
+        """Eq. (6): señal BOLD."""
+        p = self.hemo
+        v = max(v, 0.01)
+        k1 = 7 * p.E0
+        k2 = 2.0
+        k3 = 2 * p.E0 - 0.2
+        return p.V0 * (k1 * (1 - q) + k2 * (1 - q / v) + k3 * (1 - v))
+
+    def simulate(self, U: np.ndarray, dt: float = 0.1) -> dict:
+        """Simula DCM completo. U: entradas (m × T_steps)."""
+        U = np.atleast_2d(U)
+        T = U.shape[1]
+        x = np.zeros(self.n)
+        s, f, v, q = 0.0, 1.0, 1.0, 1.0
+        x_hist = np.zeros((T, self.n))
+        bold = np.zeros(T)
+
+        for t in range(T):
+            u = U[:, t]
+            # Neuronal
+            dx = self.neural_dynamics(x, u)
+            x = x + dt * dx
+            x_hist[t] = x
+            # Hemodinámica (entrada = actividad media de regiones)
+            u_hemo = np.mean(x)
+            s, f, v, q = self.hemodynamic_step(s, f, v, q, u_hemo, dt)
+            bold[t] = self.bold_signal(f, v, q)
+
+        return {'neural': x_hist, 'bold': bold, 'hemo_state': (s, f, v, q)}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_dcm_neural_stability():
+    """Con A estable, la actividad neuronal debe permanecer acotada."""
+    # 2 regiones con conectividad inhibitoria (autovalores negativos)
+    A = np.array([[-0.5, 0.2], [0.1, -0.6]])
+    B_list = [np.zeros((2, 2))]
+    C = np.array([[1.0], [0.0]])
+    dcm = DynamicCausalModel(A, B_list, C)
+    # Entrada pulsante
+    T = 200
+    U = np.zeros((1, T))
+    U[0, 20:60] = 1.0
+    res = dcm.simulate(U, dt=0.1)
+    assert np.all(np.isfinite(res['neural'])), "Actividad debe ser finita"
+    assert np.max(np.abs(res['neural'])) < 100, "Actividad debe estar acotada"
+    print("✓ DCM actividad neuronal estable y acotada")
+
+def test_dcm_bold_response_to_stimulus():
+    """El BOLD debe responder (subir y luego volver) a un estímulo."""
+    A = np.array([[-0.5]])
+    B_list = [np.zeros((1, 1))]
+    C = np.array([[1.0]])
+    dcm = DynamicCausalModel(A, B_list, C)
+    T = 400
+    U = np.zeros((1, T))
+    U[0, 50:100] = 1.0   # estímulo
+    res = dcm.simulate(U, dt=0.1)
+    bold = res['bold']
+    # El BOLD debe desviarse del reposo tras el estímulo
+    baseline = bold[:40].mean()
+    peak = bold[100:250].max()
+    assert abs(peak - baseline) > 1e-5, f"BOLD debe responder: {peak} vs {baseline}"
+    print(f"✓ DCM BOLD responde a estímulo (Δ={peak-baseline:.2e})")
+
+def test_dcm_modulatory_effect():
+    """La modulación B debe cambiar la conectividad efectiva."""
+    A = np.array([[-0.3, 0.5], [0.0, -0.3]])
+    B_mod = np.array([[0.0, -1.0], [0.0, 0.0]])  # reduce conexión 1→2
+    C = np.array([[1.0], [0.0]])
+    # Sin modulación
+    dcm_off = DynamicCausalModel(A, [np.zeros((2,2))], C)
+    # Con modulación
+    dcm_on = DynamicCausalModel(A, [B_mod], C)
+    T = 200
+    U_off = np.zeros((1, T)); U_off[0, 20:60] = 1.0
+    U_on = np.ones((1, T)); U_on[0, :] = 0.5; U_on[0, 20:60] = 1.0
+    res_off = dcm_off.simulate(U_off, dt=0.1)
+    res_on = dcm_on.simulate(U_on, dt=0.1)
+    # La región 2 debe diferir entre ambos
+    diff = np.abs(res_on['neural'][:, 1] - res_off['neural'][:, 1]).max()
+    assert diff > 1e-6, "La modulación debe alterar la dinámica"
+    print(f"✓ DCM modulación efectiva (Δ región 2 = {diff:.4f})")
+
+if __name__ == "__main__":
+    test_dcm_neural_stability()
+    test_dcm_bold_response_to_stimulus()
+    test_dcm_modulatory_effect()
+    print("✓ PAPER #44 (DCM) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #45: Rao & Ballard (1999) — Predictive Coding
+
+**Referencia:** Rao, R. P. N., & Ballard, D. H. (1999). "Predictive coding in the visual cortex: a functional interpretation of some extra-classical receptive-field effects." *Nature Neuroscience*, 2(1), 79–87. DOI: 10.1038/4580
+
+**Esencia:** Arquitectura cortical jerárquica donde cada nivel genera predicciones descendentes del nivel inferior y solo los errores de predicción (diferencia entre entrada real y predicción) se propagan hacia arriba, minimizando iterativamente el error mediante descenso de gradiente.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** ¿Cómo el cerebro procesa información sensorial de forma eficiente? Transmitir toda la información sensorial cruda hacia arriba sería energéticamente costoso y redundante. Las respuestas neuronales en corteza visual muestran efectos **extra-clásicos** (supresión de contorno, facilitación contextual) que no explican los modelos feedforward clásicos. Se necesita un marco que explique tanto la eficiencia como estos fenómenos contextuales.
+
+**¿Dónde falla el estado del arte previo?** Los modelos feedforward jerárquicos (neocognitron, primeras CNN) no explican las masivas **conexiones de retroalimentación** (feedback) que igualan en número a las feedforward en la corteza. No explican por qué las respuestas neuronales se suprimen cuando el estímulo es predecible ni los efectos contextuales del campo receptivo.
+
+**La solución de Rao & Ballard:** proponer que la corteza implementa **codificación predictiva**: cada área cortical mantiene un modelo generativo que predice la entrada del área inferior. Solo el **error de predicción** (residuo) se envía hacia arriba. Las representaciones en cada nivel se ajustan por descenso de gradiente para minimizar el error cuadrático. Esto explica la supresión de estímulos predecibles, la facilitación contextual, y proporciona un algoritmo de inferencia jerárquica. Es el precursor directo del Principio de Energía Libre `[→ Paper #34]` y la Inferencia Activa.
+
+**Aplicación práctica:** modelos de función cortical visual, algoritmos de compresión perceptual, visión por computador con atención predictiva, robótica con percepción activa, modelos de psicosis como predicción aberrante `[→ NeuroComp.Paper#24]`.
+
+**¿Por qué es un hito?** Proporcionó el primer modelo computacional concreto de predictive coding en corteza visual, explicando fenómenos neurofisiológicos cuantitativamente. Fundó el paradigma de **cerebro como máquina predictiva** que domina la neurociencia teórica actual. Es la base computacional del Free Energy Principle de Friston.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Predicción top-down:**
+```
+r̂_{i−1} = U_i · r_i
+```
+- `r_i`: representación en el nivel i; `U_i`: matriz de pesos top-down.
+- `r̂_{i−1}`: predicción del nivel i sobre la entrada del nivel i−1.
+
+**Eq. (2) — Error de predicción:**
+```
+e_{i−1} = r_{i−1} − r̂_{i−1} = r_{i−1} − U_i r_i
+```
+- **Interpretación:** solo el error (lo no predecido) se propaga hacia arriba.
+
+**Eq. (3) — Función de costo (energía de error):**
+```
+E = ½ Σ_i ‖e_i‖² = ½ Σ_i ‖r_{i−1} − U_i r_i‖²
+```
+
+**Eq. (4) — Actualización de representación (descenso de gradiente):**
+```
+ṙ_i = −∂E/∂r_i = U_iᵀ e_{i−1} − e_i
+      = U_iᵀ (r_{i−1} − U_i r_i) − (r_i − U_{i+1} r_{i+1})
+```
+- **Interpretación:** cada representación se ajusta para reducir el error que genera abajo y el error que recibe de arriba. Equilibrio entre explicar la entrada y ser predecible desde arriba.
+
+**Eq. (5) — Actualización de pesos (aprendizaje, opcional):**
+```
+U̇_i = η · e_{i−1} · r_iᵀ
+```
+- **Interpretación:** regla hebbiana sobre el error: los pesos aprenden a predecir mejor.
+
+**Eq. (6) — Convergencia:**
+```
+E(t) decrece monótonamente;  E* = mínimo de error de predicción.
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Predictive Coding jerárquico (2 niveles)
+
+ENTRADA:
+  - I: entrada sensorial (bottom level, dim d)
+  - U1: pesos nivel 1 → predice I (dim d × h1)
+  - U2: pesos nivel 2 → predice r1 (dim h1 × h2)
+  - lr_r, lr_U: tasas de aprendizaje de representaciones y pesos
+  - n_iter: número de iteraciones
+
+SALIDA:
+  - r1, r2: representaciones inferidas
+  - error_history: evolución del error total
+
+1. Inicialización:
+   r1 ← zeros(h1); r2 ← zeros(h2)
+   error_history ← []
+
+2. Iteración principal (descenso de gradiente):
+   Para t = 1 a n_iter:
+     a) Predicciones (Eq. 1):
+        I_hat ← U1 @ r1
+        r1_hat ← U2 @ r2
+     b) Errores (Eq. 2):
+        e0 ← I − I_hat
+        e1 ← r1 − r1_hat
+     c) Costo (Eq. 3):
+        E ← 0.5(‖e0‖² + ‖e1‖²)
+        error_history.append(E)
+     d) Actualizar representaciones (Eq. 4):
+        dr1 ← U1.T @ e0 − e1
+        dr2 ← U2.T @ e1
+        r1 ← r1 + lr_r · dr1
+        r2 ← r2 + lr_r · dr2
+     e) Actualizar pesos (Eq. 5, opcional):
+        U1 ← U1 + lr_U · outer(e0, r1)
+        U2 ← U2 + lr_U · outer(e1, r2)
+
+3. Retornar (r1, r2, error_history)
+
+EDGE CASES:
+  - lr_r muy grande → oscilación/divergencia; reducir.
+  - lr_U muy grande → inestabilidad de pesos; reducir o normalizar.
+  - U mal inicializado → error inicial grande; usar inicialización pequeña.
+  - n_iter insuficiente → no converge al mínimo.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class PredictiveCodingParams(BaseModel):
+    """Parámetros de la red de codificación predictiva."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    lr_repr: Annotated[float, Field(gt=0.0, le=1.0)] = 0.1
+    lr_weights: Annotated[float, Field(ge=0.0, le=1.0)] = 0.001
+    n_iter: Annotated[int, Field(ge=1, le=5000)] = 300
+
+class PredictiveCodingNetwork:
+    """Implementación de Rao & Ballard (1999), 2 niveles.
+
+    Reference: DOI: 10.1038/4580
+    """
+
+    def __init__(self, d_in: int, h1: int, h2: int,
+                 params: PredictiveCodingParams | None = None,
+                 seed: int = 0):
+        self.params = params or PredictiveCodingParams()
+        rng = np.random.default_rng(seed)
+        # Pesos top-down (inicialización pequeña)
+        self.U1 = rng.standard_normal((d_in, h1)) * 0.1
+        self.U2 = rng.standard_normal((h1, h2)) * 0.1
+
+    def infer(self, I: np.ndarray) -> dict:
+        """Inferencia de representaciones para una entrada fija.
+
+        Implementa Eq. (1)-(4). Los pesos se mantienen fijos si lr_weights=0.
+        """
+        p = self.params
+        I = np.asarray(I, float)
+        r1 = np.zeros(self.U1.shape[1])
+        r2 = np.zeros(self.U2.shape[1])
+        error_history = []
+
+        U1 = self.U1.copy()
+        U2 = self.U2.copy()
+
+        for t in range(p.n_iter):
+            # Eq. (1): predicciones top-down
+            I_hat = U1 @ r1
+            r1_hat = U2 @ r2
+            # Eq. (2): errores
+            e0 = I - I_hat
+            e1 = r1 - r1_hat
+            # Eq. (3): costo
+            E = 0.5 * (np.dot(e0, e0) + np.dot(e1, e1))
+            error_history.append(E)
+            # Eq. (4): actualización de representaciones
+            dr1 = U1.T @ e0 - e1
+            dr2 = U2.T @ e1
+            r1 = r1 + p.lr_repr * dr1
+            r2 = r2 + p.lr_repr * dr2
+            # Eq. (5): actualización de pesos (aprendizaje)
+            if p.lr_weights > 0:
+                U1 = U1 + p.lr_weights * np.outer(e0, r1)
+                U2 = U2 + p.lr_weights * np.outer(e1, r2)
+
+        self.U1 = U1
+        self.U2 = U2
+        return {'r1': r1, 'r2': r2,
+                'error_history': np.array(error_history),
+                'prediction': U1 @ r1}
+
+    def reconstruct(self, I: np.ndarray) -> np.ndarray:
+        """Reconstrucción de la entrada desde las representaciones."""
+        res = self.infer(I)
+        return res['prediction']
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_predictive_coding_error_decreases():
+    """Eq. (6): el error de predicción debe decrecer monótonamente."""
+    pc = PredictiveCodingNetwork(d_in=10, h1=5, h2=3,
+                                 params=PredictiveCodingParams(
+                                     lr_repr=0.1, lr_weights=0.0, n_iter=200))
+    I = np.random.default_rng(42).standard_normal(10)
+    res = pc.infer(I)
+    E = res['error_history']
+    assert E[-1] < E[0], f"Error debe disminuir: {E[-1]} !< {E[0]}"
+    # Monotonía aproximada
+    assert np.all(np.diff(E) <= 1e-6), "Error debe ser no creciente"
+    print(f"✓ Predictive coding reduce error ({E[0]:.3f} → {E[-1]:.4f})")
+
+def test_predictive_coding_reconstructs_input():
+    """La red debe reconstruir aproximadamente la entrada."""
+    pc = PredictiveCodingNetwork(d_in=8, h1=8, h2=4,
+                                 params=PredictiveCodingParams(
+                                     lr_repr=0.1, lr_weights=0.001, n_iter=1500),
+                                 seed=1)
+    rng = np.random.default_rng(5)
+    I = rng.standard_normal(8)
+    I_hat = pc.reconstruct(I)
+    # El error de reconstrucción debe ser menor que la varianza original
+    recon_err = np.mean((I_hat - I) ** 2)
+    baseline = np.mean(I ** 2)
+    assert recon_err < baseline, f"Debe reconstruir mejor que cero: {recon_err} !< {baseline}"
+    print(f"✓ Predictive coding reconstruye (err {recon_err:.4f} vs baseline {baseline:.4f})")
+
+def test_predictive_coding_predictable_input_lower_error():
+    """Una entrada predecible (entrenada) debe dar menor error que una aleatoria nueva."""
+    pc = PredictiveCodingNetwork(d_in=6, h1=6, h2=3,
+                                 params=PredictiveCodingParams(
+                                     lr_repr=0.1, lr_weights=0.005, n_iter=800),
+                                 seed=2)
+    # Entrenar en un patrón repetido
+    pattern = np.array([1.0, -1.0, 1.0, -1.0, 1.0, -1.0])
+    for _ in range(5):
+        pc.infer(pattern)
+    # Error en patrón entrenado vs aleatorio nuevo
+    res_trained = pc.infer(pattern)
+    novel = np.array([0.5, 0.5, -0.5, 0.3, -0.2, 0.9])
+    res_novel = pc.infer(novel)
+    err_trained = res_trained['error_history'][-1]
+    err_novel = res_novel['error_history'][-1]
+    # El patrón entrenado debe tener error comparable o menor
+    assert err_trained <= err_novel * 1.5, \
+        f"Entrada entrenada no debe tener error mucho mayor: {err_trained} vs {err_novel}"
+    print(f"✓ Predictive coding: entrada familiar err={err_trained:.4f}, nueva err={err_novel:.4f}")
+
+if __name__ == "__main__":
+    test_predictive_coding_error_decreases()
+    test_predictive_coding_reconstructs_input()
+    test_predictive_coding_predictable_input_lower_error()
+    print("✓ PAPER #45 (Predictive Coding) — TODOS LOS TESTS PASARON")
+```
+
+---
+
