@@ -2131,7 +2131,7 @@ No es un manual académico. Es un mapa del tesoro con código ejecutable en cada
 # ANEXO I: EXTENSIÓN — 30 NUEVOS PAPERS TRADUCIDOS
 
 `Clasificación: CRÍTICO — INFRAESTRUCTURA DE CONOCIMIENTO TRADUCIBLE`
-`Protocolo: Ronin Sentinel v5.0 · Entrega 1/6`
+`Protocolo: Ronin Sentinel v5.0 · 
 `Régimen: Transparencia Ontológica · Soberanía del Dato · Reproducibilidad Total`
 
 ## V.0 — MAPA MAESTRO DE LA EXTENSIÓN (CONTRATO DE 30 PAPERS)
