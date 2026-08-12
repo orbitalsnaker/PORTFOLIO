@@ -5998,3 +5998,1196 @@ if __name__ == "__main__":
 
 ---
 
+### PAPER #46: Jaeger (2001) — Echo State Networks
+
+**Referencia:** Jaeger, H. (2001). “The ‘echo state’ approach to analysing and training recurrent neural networks — with an erratum note.” *GMD-Forschungszentrum Informationstechnik*, Technical Report 148. DOI: (reporte técnico canónico; versión Scholarpedia posterior: 10.4249/scholarpedia.2330)
+
+**Esencia:** Red recurrente cuyo núcleo dinámico aleatorio —el *reservoir*— proyecta la historia temporal a un espacio de alta dimensión, mientras solo se entrena una capa de salida lineal, siempre que la matriz recurrente satisfaga la propiedad de eco (contracción de estado).
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Las redes recurrentes son naturalmente adecuadas para señales temporales, pero entrenarlas con Backpropagation Through Time `[→ NeuroComp.Paper#17]` es costoso, inestable y propenso al vanishing/exploding gradient `[→ NeuroComp.Paper#18]`. Se necesita un método que capture memoria dinámica sin pagar el precio de optimizar toda la red recurrente.
+
+**¿Dónde falla el estado del arte previo?** Las RNN clásicas exigen derivadas a través del tiempo, son sensibles a inicialización y pueden perder dependencia temporal larga. LSTM mitiga gradientes vanishing pero conserva entrenamiento pesado. En 2001 no existía un marco simple que convirtiera una red recurrente aleatoria en un sistema de aprendizaje rápido y estable.
+
+**La solución de Jaeger:** congelar una matriz recurrente aleatoria `W` y usarla como **reservorio dinámico**. La entrada excita el reservorio; el estado interno `x(t)` produce una representación expandida de la historia. Solo se entrena `W_out`, lineal, típicamente por regresión ridge. La condición clave es la **Echo State Property**: la dinámica del reservorio debe “olvidar” condiciones iniciales; en la práctica se controla escalando el radio espectral de `W`. Si el reservorio es contractivo, el estado depende asintóticamente de la historia de entradas, no de inicializaciones arbitrarias.
+
+**Aplicación práctica:** predicción de series temporales, control adaptativo, modelado de sistemas no lineales, procesamiento de señales, robótica, y en neurociencia como modelo de cómputo cortical recurrente con plasticidad solo en readout `[→ NeuroComp.Paper#47]`.
+
+**¿Por qué es un hito?** Convirtió el entrenamiento de RNN en un problema de regresión lineal sobre estados dinámicos. Fundó la familia de *reservoir computing*, conectando ingeniería, teoría de sistemas y modelos corticales. Es un puente directo hacia Liquid State Machines `[→ Paper #47]`.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Actualización del estado del reservorio:**
+```
+x(t+1) = (1 − α) x(t) + α · tanh( W_in u(t+1) + W x(t) + W_fb y(t) )
+```
+- `u(t)`: entrada; `x(t)`: estado del reservorio; `y(t)`: salida previa.
+- `α`: leaky integration; si `α=1`, actualización instantánea.
+- **Interpretación:** el reservorio mezcla entrada, estado previo y retroalimentación mediante una no linealidad fija.
+
+**Eq. (2) — Propiedad de eco (condición práctica):**
+```
+ρ(W) < 1
+```
+- `ρ(W)`: radio espectral de la matriz recurrente.
+- **Interpretación:** sin entrada, las perturbaciones internas se contraen. Con entrada, el estado se convierte en un “eco” de la historia.
+
+**Eq. (3) — Expansión de características:**
+```
+z(t) = [1, u(t), x(t)]
+```
+- **Interpretación:** la salida se calcula desde una representación expandida que incluye bias, entrada y estado dinámico.
+
+**Eq. (4) — Salida lineal:**
+```
+y(t+1) = W_out z(t)
+```
+- **Interpretación:** solo esta capa se entrena. La red recurrente se vuelve un preprocesador dinámico.
+
+**Eq. (5) — Entrenamiento ridge:**
+```
+W_outᵀ = argmin_W ||F W − Y||² + λ ||W||²
+solución cerrada:
+W = (FᵀF + λI)⁻¹ FᵀY
+```
+- `F`: matriz de características apiladas; `Y`: objetivos.
+- **Interpretación:** regresión regularizada sobre estados del reservorio.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Echo State Network (entrenamiento por ridge sobre reservorio)
+
+ENTRADA:
+  - sequence: serie temporal 1D
+  - n_reservoir: número de neuronas del reservorio
+  - spectral_radius: radio espectral objetivo de W
+  - connectivity: fracción de conexiones no nulas
+  - ridge: regularización
+
+SALIDA:
+  - coef: pesos de lectura W_out
+  - x_train_end: estado final tras la secuencia de entrenamiento
+
+1. Inicialización:
+   W_in ← aleatoria fija
+   W ← aleatoria escasa
+   Escalar W para que ρ(W) = spectral_radius   (Eq. 2)
+   W_fb ← cero o retroalimentación fija
+
+2. Recolección de estados:
+   x ← 0
+   Para t = 0..T-2:
+     x ← actualizar(x, u[t])                   (Eq. 1)
+     z ← [1, u[t], x]                          (Eq. 3)
+     F.append(z); Y.append(sequence[t+1])
+
+3. Entrenamiento de salida:
+   coef ← solve(FᵀF + λI, FᵀY)                 (Eq. 5)
+
+4. Calentamiento final:
+   x ← actualizar(x, u[T-1])
+   x_train_end ← x
+
+5. Retornar coef, x_train_end
+
+EDGE CASES:
+  - ρ(W) ≥ 1 → estados pueden explotar u oscilar; reducir radio.
+  - ridge = 0 → singularidad posible si FᵀF mal condicionado.
+  - secuencia demasiado corta → el reservorio no explora espacio de estados.
+  - tanh saturado → pérdida de resolución; reducir escala de entrada.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class ESNParams(BaseModel):
+    """Parámetros validados para Echo State Network."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    n_reservoir: Annotated[int, Field(ge=10, le=2000)] = 150
+    spectral_radius: Annotated[float, Field(gt=0.0, lt=1.5)] = 0.9
+    connectivity: Annotated[float, Field(gt=0.0, le=1.0)] = 0.1
+    input_scaling: Annotated[float, Field(gt=0.0)] = 1.0
+    leaky: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
+    ridge: Annotated[float, Field(ge=0.0)] = 1e-3
+    seed: int = 42
+
+class EchoStateNetwork:
+    """Implementación de Jaeger (2001).
+
+    Reference: GMD Report 148; Scholarpedia DOI: 10.4249/scholarpedia.2330
+    """
+
+    def __init__(self, input_dim: int = 1, output_dim: int = 1,
+                 params: ESNParams | None = None):
+        self.params = params or ESNParams()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        p = self.params
+        rng = np.random.default_rng(p.seed)
+
+        self.Win = rng.normal(0.0, 1.0, (p.n_reservoir, input_dim)) * p.input_scaling
+        W = rng.normal(0.0, 1.0, (p.n_reservoir, p.n_reservoir))
+        mask = rng.random((p.n_reservoir, p.n_reservoir)) < p.connectivity
+        W *= mask
+
+        eig = np.linalg.eigvals(W)
+        sr = np.max(np.abs(eig)) if len(eig) > 0 else 0.0
+        if sr > 0:
+            W = W * (p.spectral_radius / sr)
+        else:
+            W = np.eye(p.n_reservoir) * 0.1 * p.spectral_radius
+
+        self.W = W
+        self.Wfb = np.zeros((p.n_reservoir, output_dim))
+        self.coef = None
+        self.x_train_end = np.zeros(p.n_reservoir)
+
+    def _step(self, x: np.ndarray, u: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Implementa Eq. (1)."""
+        p = self.params
+        pre = self.Win @ u + self.W @ x + self.Wfb @ y
+        return (1.0 - p.leaky) * x + p.leaky * np.tanh(pre)
+
+    @staticmethod
+    def _feature(u: np.ndarray, x: np.ndarray) -> np.ndarray:
+        """Implementa Eq. (3): z = [1, u, x]."""
+        return np.concatenate((np.ones(1), u, x))
+
+    def free_run(self, x0: np.ndarray, n_steps: int) -> np.ndarray:
+        """Evoluciona sin entrada para verificar contracción."""
+        x = np.asarray(x0, dtype=float).copy()
+        u = np.zeros(self.input_dim)
+        y = np.zeros(self.output_dim)
+        for _ in range(int(n_steps)):
+            x = self._step(x, u, y)
+        return x
+
+    def train(self, sequence: np.ndarray) -> "EchoStateNetwork":
+        """Entrena W_out por ridge. Implementa Eq. (4)-(5)."""
+        seq = np.asarray(sequence, dtype=float).reshape(-1)
+        if len(seq) < 3:
+            raise ValueError("Secuencia demasiado corta.")
+
+        p = self.params
+        x = np.zeros(p.n_reservoir)
+        feats = []
+        targets = []
+
+        for t in range(len(seq) - 1):
+            u = np.array([seq[t]])
+            y = np.array([seq[t]])
+            x = self._step(x, u, y)
+            feats.append(self._feature(u, x))
+            targets.append(seq[t + 1])
+
+        # Calienta el estado con el último dato para continuación limpia.
+        x = self._step(x, np.array([seq[-1]]), np.array([seq[-1]]))
+        self.x_train_end = x
+
+        F = np.array(feats)
+        Y = np.array(targets)
+        A = F.T @ F + p.ridge * np.eye(F.shape[1])
+        b = F.T @ Y
+        self.coef = np.linalg.solve(A, b)
+        return self
+
+    def predict_continuation(self, sequence_test: np.ndarray,
+                             x0: np.ndarray | None = None,
+                             last_value: float = 0.0) -> np.ndarray:
+        """Predice siguiente paso alimentando la secuencia de test."""
+        if self.coef is None:
+            raise RuntimeError("Debe llamarse train() antes de predecir.")
+
+        x = self.x_train_end if x0 is None else np.asarray(x0, dtype=float)
+        y = np.array([last_value], dtype=float)
+        preds = []
+
+        for val in np.asarray(sequence_test, dtype=float).reshape(-1):
+            u = np.array([val])
+            x = self._step(x, u, y)
+            z = self._feature(u, x)
+            preds.append(float(z @ self.coef))
+            y = np.array([val])
+
+        return np.array(preds)
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_esn_spectral_radius():
+    """Eq. (2): el radio espectral debe quedar fijado al valor objetivo."""
+    p = ESNParams(n_reservoir=80, spectral_radius=0.8, seed=1)
+    esn = EchoStateNetwork(1, 1, p)
+    sr = np.max(np.abs(np.linalg.eigvals(esn.W)))
+    np.testing.assert_allclose(sr, p.spectral_radius, rtol=1e-6)
+    print("✓ ESN radio espectral correcto")
+
+def test_esn_echo_state_contraction():
+    """La propiedad de eco implica contracción de estados iniciales."""
+    p = ESNParams(n_reservoir=40, spectral_radius=0.5, seed=2)
+    esn = EchoStateNetwork(1, 1, p)
+    x1 = np.ones(40) * 0.8
+    x2 = -np.ones(40) * 0.8
+    d0 = np.linalg.norm(x1 - x2)
+    x1f = esn.free_run(x1, 100)
+    x2f = esn.free_run(x2, 100)
+    df = np.linalg.norm(x1f - x2f)
+    assert df < d0, f"Debe contraer: {df} !< {d0}"
+    print(f"✓ ESN contrae estados ({d0:.2f} → {df:.3f})")
+
+def test_esn_predicts_sine():
+    """Debe predecir una sinusoide mejor que la varianza de referencia."""
+    t = np.arange(600)
+    seq = np.sin(0.2 * t)
+    train, test = seq[:400], seq[400:]
+
+    p = ESNParams(n_reservoir=150, spectral_radius=0.9, seed=42, ridge=1e-3)
+    esn = EchoStateNetwork(1, 1, p).train(train)
+
+    preds = esn.predict_continuation(test[:-1], last_value=train[-1])
+    targets = test[1:]
+    mse = np.mean((preds - targets) ** 2)
+    baseline = np.var(targets)
+    assert mse < baseline, f"MSE debe superar baseline: {mse} !< {baseline}"
+    print(f"✓ ESN predice seno (MSE {mse:.4f}, baseline {baseline:.4f})")
+
+if __name__ == "__main__":
+    test_esn_spectral_radius()
+    test_esn_echo_state_contraction()
+    test_esn_predicts_sine()
+    print("✓ PAPER #46 (ESN) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #47: Maass, Natschläger & Markram (2002) — Liquid State Machines
+
+**Referencia:** Maass, W., Natschläger, T., & Markram, H. (2002). “Real-time computing without stable states: A new framework for neural computation based on perturbations.” *Neural Computation*, 14(11), 2531–2560. DOI: 10.1162/089976602760407955
+
+**Esencia:** Un “líquido” recurrente de neuronas spiking proyecta entradas temporales en trayectorias de alta dimensión; un readout simple lee dichas trayectorias, siempre que el sistema satisfaga separation property y fading memory.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Computar en tiempo real con señales continuas exige transformar perturbaciones transitorias en representaciones legibles sin depender de estados estables atractores clásicos. Las redes recurrentes entrenadas completamente son difíciles; los modelos de memoria estable son limitados para entradas continuas.
+
+**¿Dónde falla el estado del arte previo?** Las redes recurrentes convencionales buscan estados estables o entrenamiento completo. Las redes feedforward no tienen memoria interna. En neurociencia cortical, las conexiones recurrentes son masivas y dinámicas, pero no había un marco formal que convirtiera esa dinámica aparentemente caótica en cómputo útil.
+
+**La solución de Maass et al.:** introducir **Liquid State Machine (LSM)**: un líquido recurrente de neuronas spiking con conectividad aleatoria transforma una entrada temporal en una trayectoria de estados de alta dimensión. Si dos entradas distintas separan las trayectorias (**separation property**) y el líquido olvida gradualmente perturbaciones antiguas (**fading memory**), un readout estático puede clasificar o aproximar funciones temporales. A diferencia de Hopfield `[→ NeuroComp.Paper#23]`, no se requiere convergencia a atractor; la computación ocurre en la dinámica transitoria.
+
+**Aplicación práctica:** reconocimiento de voz primitivo, clasificación de patrones temporales, modelos de microcircuitos corticales, robótica reactiva, detección de eventos en señales temporales, y base conceptual de reservoir computing spiking `[→ Paper #46]`.
+
+**¿Por qué es un hito?** Formalizó el cómputo basado en perturbaciones y memoria transitoria. Conectó teoría de sistemas dinámicos, neurociencia cortical y aprendizaje automático. LSM es el puente directo entre ESN y modelos biológicos de cortical computation.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Neurona LIF del líquido:**
+```
+τ_m dV_i/dt = −(V_i − V_rest) + I_i^syn(t) + I_i^ext(t)
+si V_i ≥ θ: spike, V_i ← V_reset, refractaria Δ
+```
+- **Interpretación:** cada neurona integra corrientes sinápticas y externas; emite spikes discretos.
+
+**Eq. (2) — Corriente sináptica recurrente:**
+```
+I_i^syn(t+dt) = e^{−dt/τ_s} I_i^syn(t) + Σ_j W_ij s_j(t)
+```
+- `s_j(t)`: spike binario de la neurona j.
+- **Interpretación:** los spikes presinápticos inyectan corriente; la corriente decae exponencialmente.
+
+**Eq. (3) — Entrada externa:**
+```
+I_i^ext(t) = G_i · u(t)
+```
+- `G_i`: proyección de entrada; `u(t)`: vector de entrada.
+- **Interpretación:** la perturba el líquido de forma dependiente del patrón.
+
+**Eq. (4) — Estado líquido observable:**
+```
+x(t) = spikes(t)  o  binned_spikes(t)
+```
+- **Interpretación:** el readout observa la actividad del líquido.
+
+**Eq. (5) — Separation property:**
+```
+D(u, v) = ||x_u(t) − x_v(t)|| > δ
+```
+- **Interpretación:** entradas distintas deben producir estados suficientemente distintos.
+
+**Eq. (6) — Readout lineal:**
+```
+y = W_readout [1, x]
+```
+- **Interpretación:** una capa simple lee la representación líquida.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Liquid State Machine spiking
+
+ENTRADA:
+  - pattern: vector de entrada
+  - T: número de pasos temporales
+  - n_neurons: neuronas del líquido
+  - p_connect: probabilidad de conexión recurrente
+  - τ_m, τ_s, dt: constantes de membrana/sinapsis/paso
+
+SALIDA:
+  - counts: conteo de spikes por neurona
+  - readout: pesos entrenados para clasificación
+
+1. Inicialización:
+   V ← V_rest
+   I_syn ← 0
+   W ← matriz recurrente aleatoria
+   G ← proyección de entrada aleatoria
+
+2. Evolución temporal:
+   Para t = 1..T:
+     I_syn ← decaimiento(I_syn) + W · spikes_prev        (Eq. 2)
+     I_ext ← G · pattern                                   (Eq. 3)
+     V ← integrar LIF                                      (Eq. 1)
+     spikes ← umbral(V)
+     counts ← counts + spikes                              (Eq. 4)
+
+3. Readout:
+   X ← [1, counts]                                         (Eq. 6)
+   W_readout ← ridge(X, labels)
+
+4. Retornar counts, W_readout
+
+EDGE CASES:
+  - Entrada demasiado débil → líquido silencioso; separación nula.
+  - Entrada demasiado fuerte → saturación; pérdida de separación.
+  - W recurrente muy grande → actividad epiléptica/inestable.
+  - T muy corto → estado líquido pobre.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class LSMParams(BaseModel):
+    """Parámetros validados para Liquid State Machine."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    n_neurons: Annotated[int, Field(ge=10, le=2000)] = 80
+    p_connect: Annotated[float, Field(ge=0.0, le=1.0)] = 0.1
+    tau_m: Annotated[float, Field(gt=0.0)] = 20.0
+    tau_syn: Annotated[float, Field(gt=0.0)] = 5.0
+    dt: Annotated[float, Field(gt=0.0)] = 1.0
+    v_rest: float = -65.0
+    v_reset: float = -70.0
+    v_thresh: float = -50.0
+    refractory_ms: Annotated[float, Field(ge=0.0)] = 2.0
+    weight_scale: Annotated[float, Field(gt=0.0)] = 4.0
+    input_gain: Annotated[float, Field(gt=0.0)] = 20.0
+    seed: int = 7
+
+class LiquidStateMachine:
+    """Implementación de Maass et al. (2002).
+
+    Reference: DOI: 10.1162/089976602760407955
+    """
+
+    def __init__(self, input_dim: int, params: LSMParams | None = None):
+        self.params = params or LSMParams()
+        p = self.params
+        self.input_dim = input_dim
+        self.rng = np.random.default_rng(p.seed)
+
+        self.input_weights = self.rng.uniform(
+            0.0, 1.0, (p.n_neurons, input_dim)
+        ) * p.input_gain
+
+        mask = self.rng.random((p.n_neurons, p.n_neurons)) < p.p_connect
+        W = self.rng.normal(0.0, 1.0, (p.n_neurons, p.n_neurons)) * mask
+        denom = np.sqrt(max(1.0, p.n_neurons * p.p_connect))
+        self.W = W * p.weight_scale / denom
+
+        self.readout = None
+        self.reset()
+
+    def reset(self):
+        p = self.params
+        self.v = np.full(p.n_neurons, p.v_rest)
+        self.refrac = np.zeros(p.n_neurons)
+        self.I_syn = np.zeros(p.n_neurons)
+
+    def step(self, spikes_prev: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """Un paso del líquido. Implementa Eq. (1)-(3)."""
+        p = self.params
+        u = np.asarray(u, dtype=float)
+
+        self.I_syn = (
+            self.I_syn * np.exp(-p.dt / p.tau_syn)
+            + self.W @ spikes_prev
+        )
+        I_ext = self.input_weights @ u
+
+        active = self.refrac <= 0.0
+        dv = ((p.v_rest - self.v) + self.I_syn + I_ext) * (p.dt / p.tau_m)
+        self.v = np.where(active, self.v + dv, self.v)
+        self.refrac = np.maximum(0.0, self.refrac - p.dt)
+
+        spikes = np.zeros(p.n_neurons)
+        spiked = active & (self.v >= p.v_thresh)
+        spikes[spiked] = 1.0
+
+        self.v = np.where(spiked, p.v_reset, self.v)
+        self.refrac = np.where(spiked, p.refractory_ms, self.refrac)
+        return spikes
+
+    def run_pattern(self, pattern: np.ndarray, T: int) -> np.ndarray:
+        """Ejecuta el líquido ante un patrón y retorna conteo de spikes."""
+        self.reset()
+        prev = np.zeros(self.params.n_neurons)
+        counts = np.zeros(self.params.n_neurons)
+        for _ in range(int(T)):
+            sp = self.step(prev, pattern)
+            counts += sp
+            prev = sp
+        return counts
+
+    def _add_bias(self, X: np.ndarray) -> np.ndarray:
+        return np.hstack([np.ones((len(X), 1)), X])
+
+    def train_readout(self, patterns: list[np.ndarray], labels: np.ndarray,
+                      T: int = 250, repeats: int = 8,
+                      noise_std: float = 0.02) -> "LiquidStateMachine":
+        """Entrena readout lineal. Implementa Eq. (6)."""
+        X, y = [], []
+        for _ in range(repeats):
+            for pat, label in zip(patterns, labels):
+                noisy = np.asarray(pat, dtype=float) + self.rng.normal(
+                    0.0, noise_std, len(pat)
+                )
+                counts = self.run_pattern(noisy, T)
+                X.append(counts)
+                y.append(label)
+
+        X = np.array(X)
+        y = np.array(y)
+        Xb = self._add_bias(X)
+        A = Xb.T @ Xb + 1e-3 * np.eye(Xb.shape[1])
+        b = Xb.T @ y
+        self.readout = np.linalg.solve(A, b)
+        return self
+
+    def classify(self, counts: np.ndarray) -> np.ndarray:
+        if self.readout is None:
+            raise RuntimeError("Debe entrenarse readout primero.")
+        counts = np.asarray(counts, dtype=float)
+        if counts.ndim == 1:
+            counts = counts.reshape(1, -1)
+        Xb = self._add_bias(counts)
+        return np.sign(Xb @ self.readout)
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_lsm_separation_property():
+    """Eq. (5): patrones distintos deben producir estados líquidos distintos."""
+    p = LSMParams(seed=3, n_neurons=80, p_connect=0.1)
+    lsm = LiquidStateMachine(input_dim=2, params=p)
+    c1 = lsm.run_pattern(np.array([1.0, 0.0]), T=250)
+    c2 = lsm.run_pattern(np.array([0.0, 1.0]), T=250)
+    assert c1.sum() + c2.sum() > 0, "El líquido debe responder."
+    distance = np.linalg.norm(c1 - c2) / 250.0
+    assert distance > 1e-3, f"Separación insuficiente: {distance}"
+    print(f"✓ LSM separa patrones (distancia {distance:.4f})")
+
+def test_lsm_readout_classification():
+    """El readout debe clasificar dos patrones con alta precisión."""
+    p = LSMParams(seed=5, n_neurons=100, p_connect=0.1)
+    lsm = LiquidStateMachine(input_dim=2, params=p)
+    patterns = [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
+    labels = np.array([-1.0, 1.0])
+
+    lsm.train_readout(patterns, labels, T=300, repeats=8, noise_std=0.02)
+
+    correct = 0
+    total = 0
+    for pat, label in zip(patterns, labels):
+        for _ in range(5):
+            counts = lsm.run_pattern(pat, T=300)
+            pred = lsm.classify(counts)[0]
+            correct += int(np.sign(pred) == np.sign(label))
+            total += 1
+    accuracy = correct / total
+    assert accuracy >= 0.9, f"Accuracy baja: {accuracy}"
+    print(f"✓ LSM clasifica patrones (accuracy {accuracy:.2f})")
+
+def test_lsm_firing_rate_bounded():
+    """El líquido no debe saturarse ni quedar completamente silencioso."""
+    p = LSMParams(seed=9, n_neurons=60)
+    lsm = LiquidStateMachine(input_dim=2, params=p)
+    counts = lsm.run_pattern(np.array([1.0, 0.0]), T=300)
+    mean_rate = counts.mean() / 300.0
+    assert counts.sum() > 0, "Sin spikes no hay líquido."
+    assert mean_rate < 0.5, f"Tasa demasiado alta: {mean_rate}"
+    print(f"✓ LSM actividad acotada (rate media {mean_rate:.4f})")
+
+if __name__ == "__main__":
+    test_lsm_separation_property()
+    test_lsm_readout_classification()
+    test_lsm_firing_rate_bounded()
+    print("✓ PAPER #47 (LSM) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #48: Gerstner & Kistler (2002) — Spiking Neuron Models
+
+**Referencia:** Gerstner, W., & Kistler, W. M. (2002). *Spiking Neuron Models: Single Neurons, Populations, Plasticity*. Cambridge University Press. DOI: 10.1017/CBO9780511815706
+
+**Esencia:** Marco unificado de modelos de neuronas spiking —LIF, SRM, kernels postsinápticos y dinámica de umbral— que traduce la biología de membrana en eventos discretos y kernels temporales computables.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Los modelos de neuronas reales deben equilibrar fidelidad biofísica y tratabilidad computacional. Hodgkin-Huxley `[→ NeuroComp.Paper#1]` es detallado pero costoso; los modelos abstractos de spikes deben capturar integración, umbral, reset y refractariedad sin simular cada canal iónico.
+
+**¿Dónde falla el estado del arte previo?** Los modelos puramente binarios ignoran dinámica de membrana. Los modelos biofísicos completos son difíciles de usar en redes grandes. No existía una presentación unificada que conectara LIF, SRM, kernels PSP y plasticidad en un formalismo matemático claro.
+
+**La solución de Gerstner & Kistler:** formalizar neuronas spiking como sistemas dinámicos híbridos: evolución continua de voltaje entre spikes, emisión discreta cuando se cruza umbral, reset y período refractario. El libro introduce el **Spike Response Model (SRM)**, donde el voltaje se expresa como suma de kernels causales provocados por spikes presinápticos y postsinápticos. Esto permite modelar PSPs, refractariedad y respuestas temporales con convoluciones.
+
+**Aplicación práctica:** simulación de redes corticales, modelos de STDP `[→ NeuroComp.Paper#15]`, codificación temporal, computación neuromórfica, análisis de PSTH, decodificación de población, y diseño de neuronas artificiales realistas.
+
+**¿Por qué es un hito?** Es el texto canónico de modelos spiking. Proporciona el puente entre biofísica, teoría de sistemas dinámicos `[→ Paper #50]` y aprendizaje. Es la base formal de LSM `[→ Paper #47]` y de muchas implementaciones neuromórficas.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Leaky Integrate-and-Fire:**
+```
+τ_m dV/dt = −(V − V_rest) + R I(t)
+```
+- **Interpretación:** la membrana integra corriente con fuga exponencial hacia reposo.
+
+**Eq. (2) — Emisión y reset:**
+```
+si V ≥ θ:
+    spike
+    V ← V_reset
+    refractaria durante Δ
+```
+- **Interpretación:** evento discreto seguido de reinicio y silencio forzado.
+
+**Eq. (3) — Kernel PSP (forma alpha):**
+```
+ε(s) = (s/τ_s) exp(1 − s/τ_s),  s > 0
+ε(s) = 0, s ≤ 0
+```
+- **Interpretación:** respuesta postsináptica causal con crecimiento y decaimiento.
+
+**Eq. (4) — Spike Response Model simplificado:**
+```
+V(t) = V_rest + Σ_j w_j ε(t − t_j^pre) + η(t − t̂)
+```
+- `t_j^pre`: spikes presinápticos; `t̂`: último spike postsináptico.
+- `η`: kernel refractario.
+- **Interpretación:** el voltaje es memoria convolutiva de spikes pasados.
+
+**Eq. (5) — Kernel refractario exponencial:**
+```
+η(s) = −A_ref exp(−s/τ_ref), s > 0
+```
+- **Interpretación:** tras un spike, la neurona se hiperpolariza temporalmente.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Simulación LIF + kernels SRM
+
+ENTRADA:
+  - current: corriente I(t)
+  - τ_m, R, V_rest, θ, V_reset, Δ, dt
+
+SALIDA:
+  - V_trace: voltaje
+  - spike_times: tiempos de spike
+
+1. Inicialización:
+   V ← V0 o V_rest
+   refractory ← 0
+
+2. Integración temporal:
+   Para t = 0..T:
+     Si refractory > 0:
+        refractory ← refractory − dt
+        no actualizar V
+     Sino:
+        dV ← [−(V − V_rest) + R I(t)] dt / τ_m     (Eq. 1)
+        V ← V + dV
+        Si V ≥ θ:
+           spike; V ← V_reset; refractory ← Δ      (Eq. 2)
+
+3. Kernels:
+   ε(s) ← (s/τ_s) exp(1 − s/τ_s) para s>0          (Eq. 3)
+   η(s) ← −A_ref exp(−s/τ_ref)                     (Eq. 5)
+
+4. Retornar V_trace, spike_times
+
+EDGE CASES:
+  - I negativa fuerte → V puede bajar demasiado; clamp opcional.
+  - dt grande → errores de umbral; reducir dt.
+  - refractaria = 0 → spikes artificiales en ráfaga.
+  - τ_s muy pequeño → kernel casi impulsivo; puede requerir dt fino.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class LIFParams(BaseModel):
+    """Parámetros LIF/SRM básicos."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    tau_m: Annotated[float, Field(gt=0.0)] = 20.0
+    R: Annotated[float, Field(gt=0.0)] = 1.0
+    v_rest: float = -65.0
+    v_thresh: float = -50.0
+    v_reset: float = -70.0
+    refractory_ms: Annotated[float, Field(ge=0.0)] = 2.0
+    dt: Annotated[float, Field(gt=0.0)] = 0.1
+
+class SpikingNeuronModel:
+    """Implementación de modelos spiking de Gerstner & Kistler (2002).
+
+    Reference: DOI: 10.1017/CBO9780511815706
+    """
+
+    def __init__(self, params: LIFParams | None = None):
+        self.params = params or LIFParams()
+
+    def step(self, V: float, refractory: float,
+             I: float) -> tuple[float, float, bool]:
+        """Un paso LIF. Implementa Eq. (1)-(2)."""
+        p = self.params
+        if refractory > 0.0:
+            return V, max(0.0, refractory - p.dt), False
+
+        dV = (-(V - p.v_rest) + p.R * I) * (p.dt / p.tau_m)
+        V_new = V + dV
+
+        if V_new >= p.v_thresh:
+            return p.v_reset, p.refractory_ms, True
+        return V_new, 0.0, False
+
+    def simulate(self, current: np.ndarray,
+                 V0: float | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """Simula corriente arbitraria y retorna voltaje y spikes."""
+        p = self.params
+        V = p.v_rest if V0 is None else float(V0)
+        refractory = 0.0
+        V_trace = []
+        spike_times = []
+
+        for k, I in enumerate(np.asarray(current, dtype=float)):
+            V, refractory, spiked = self.step(V, refractory, float(I))
+            V_trace.append(V)
+            if spiked:
+                spike_times.append(k * p.dt)
+
+        return np.array(V_trace), np.array(spike_times)
+
+    @staticmethod
+    def psp_kernel(t: np.ndarray, tau_s: float) -> np.ndarray:
+        """Kernel PSP alpha. Implementa Eq. (3)."""
+        t = np.asarray(t, dtype=float)
+        out = np.zeros_like(t)
+        mask = t > 0.0
+        out[mask] = (t[mask] / tau_s) * np.exp(1.0 - t[mask] / tau_s)
+        return out
+
+    @staticmethod
+    def refractory_kernel(t: np.ndarray, A_ref: float,
+                          tau_ref: float) -> np.ndarray:
+        """Kernel refractario. Implementa Eq. (5)."""
+        t = np.asarray(t, dtype=float)
+        out = np.zeros_like(t)
+        mask = t > 0.0
+        out[mask] = -A_ref * np.exp(-t[mask] / tau_ref)
+        return out
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_lif_subthreshold_decay():
+    """Sin corriente, el voltaje debe volver al reposo."""
+    p = LIFParams(dt=0.1)
+    snm = SpikingNeuronModel(p)
+    current = np.zeros(1000)
+    V, spikes = snm.simulate(current, V0=-55.0)
+    assert len(spikes) == 0, "No debe disparar sin corriente."
+    assert abs(V[-1] - p.v_rest) < abs(-55.0 - p.v_rest), "Debe decaer a reposo."
+    print("✓ LIF decae a reposo")
+
+def test_lif_suprathreshold_spikes():
+    """Corriente suficiente debe producir spikes."""
+    p = LIFParams(dt=0.1)
+    snm = SpikingNeuronModel(p)
+    current = np.full(2000, 30.0)
+    V, spikes = snm.simulate(current)
+    assert len(spikes) > 5, f"Debe disparar: {len(spikes)} spikes"
+    print(f"✓ LIF dispara con corriente ({len(spikes)} spikes)")
+
+def test_lif_refractory_enforced():
+    """El período refractario debe imponer ISI mínimo."""
+    p = LIFParams(dt=0.1, refractory_ms=2.0)
+    snm = SpikingNeuronModel(p)
+    current = np.full(5000, 100.0)
+    _, spikes = snm.simulate(current)
+    assert len(spikes) > 2
+    isi = np.diff(spikes)
+    assert np.min(isi) >= p.refractory_ms - p.dt - 1e-9, "ISI viola refractaria."
+    print("✓ LIF respeta refractariedad")
+
+def test_psp_kernel_shape():
+    """El kernel alpha debe ser causal y tener pico en τ_s."""
+    tau = 5.0
+    vals = SpikingNeuronModel.psp_kernel(np.array([0.0, tau, 2*tau]), tau)
+    assert vals[0] == 0.0
+    np.testing.assert_allclose(vals[1], 1.0, rtol=1e-12)
+    assert vals[2] < 1.0
+    print("✓ Kernel PSP correcto")
+
+if __name__ == "__main__":
+    test_lif_subthreshold_decay()
+    test_lif_suprathreshold_spikes()
+    test_lif_refractory_enforced()
+    test_psp_kernel_shape()
+    print("✓ PAPER #48 (Spiking Neuron Models) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #49: Knill & Pouget (2004) — The Bayesian Brain
+
+**Referencia:** Knill, D. C., & Pouget, A. (2004). “The Bayesian brain: the role of uncertainty in neural coding and computation.” *Trends in Neurosciences*, 27(12), 712–719. DOI: 10.1016/j.tins.2004.10.003
+
+**Esencia:** El cerebro representa y combina incertidumbre de forma probabilística: percepción, inferencia y acción pueden describirse como computaciones bayesianas sobre distribuciones, no como estimaciones puntuales.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La percepción opera con señales ambiguas y ruidosas. Una misma imagen retinal puede provenir de múltiples causas. El sistema nervioso debe inferir causas externas combinando evidencia sensorial y conocimiento previo, además de representar qué tan confiable es cada fuente.
+
+**¿Dónde falla el estado del arte previo?** Los modelos clásicos de codificación neuronal a menudo representan valores puntuales (por ejemplo, una dirección preferida) sin un mecanismo explícito para incertidumbre. Las teorías de detección de señales no explican integración multisensorial óptima ni combinación dinámica de pistas.
+
+**La solución de Knill & Pouget:** proponer que las poblaciones neuronales implementan **código probabilístico**. La inferencia sigue Bayes: posterior ∝ verosimilitud × prior. En integración de pistas gaussianas, la precisión —inversa de varianza— se suma, produciendo estimaciones más precisas y ponderadas por confiabilidad. En poblaciones neuronales, la verosimilitud puede construirse desde tuning curves y respuestas estocásticas (por ejemplo Poisson), permitiendo decodificación MAP. Este marco conecta percepción, incertidumbre y dinámica neuronal.
+
+**Aplicación práctica:** percepción visual y multisensorial, decodificación neural, interfaces cerebro-máquina, modelos de ilusión perceptual, robótica bayesiana, y base conceptual para Free Energy/Active Inference `[→ Paper #34]`.
+
+**¿Por qué es un hito?** Consolidó la hipótesis del cerebro bayesiano como programa de investigación computacional. Proporcionó un puente entre psicofísica, neurofisiología y teoría de estimación. Es una referencia central para modelos de incertidumbre en neurociencia cognitiva.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Regla de Bayes:**
+```
+p(s | r) = p(r | s) p(s) / p(r)
+```
+- `s`: estímulo; `r`: respuesta neural.
+- **Interpretación:** la percepción combina evidencia sensorial y prior.
+
+**Eq. (2) — Fusión gaussiana de pistas:**
+```
+1/σ_post² = 1/σ_prior² + Σ_i 1/σ_i²
+μ_post = σ_post² ( μ_prior/σ_prior² + Σ_i r_i/σ_i² )
+```
+- **Interpretación:** las precisiones se suman; cada pista pesa según su confiabilidad.
+
+**Eq. (3) — Verosimilitud poblacional Poisson:**
+```
+p(r | s) = Π_i Poisson(k_i; f_i(s))
+log p(r | s) = Σ_i [ k_i log f_i(s) − f_i(s) − log(k_i!) ]
+```
+- `k_i`: spikes de neurona i; `f_i(s)`: tuning curve.
+- **Interpretación:** la población codifica una distribución sobre estímulos.
+
+**Eq. (4) — Decodificación MAP:**
+```
+ŝ = argmax_s [ log p(r | s) + log p(s) ]
+```
+- **Interpretación:** el estímulo más probable dadas respuesta y prior.
+
+**Eq. (5) — Tuning gaussiana:**
+```
+f_i(s) = r_max exp( −(s − p_i)² / (2σ_t²) )
+```
+- `p_i`: estímulo preferido.
+- **Interpretación:** cada neurona responde máximamente cerca de su preferencia.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Inferencia bayesiana poblacional
+
+ENTRADA:
+  - cues: observaciones gaussianas
+  - variances: incertidumbres de cada pista
+  - prior_mean, prior_var: conocimiento previo
+  - spikes: conteos poblacionales
+  - prefs, widths, max_rate: tuning curves
+  - grid: valores posibles del estímulo
+
+SALIDA:
+  - posterior_mean, posterior_var para fusión gaussiana
+  - s_map para decodificación poblacional
+
+1. Fusión gaussiana (Eq. 2):
+   precision ← 1/prior_var + Σ 1/var_i
+   mean ← (prior_mean/prior_var + Σ cue_i/var_i) / precision
+   var ← 1/precision
+
+2. Decodificación poblacional:
+   Para cada s en grid:
+     rates ← r_max exp(−(s − prefs)²/(2 widths²))      (Eq. 5)
+     log_lik ← Σ [k_i log rates_i − rates_i]           (Eq. 3)
+     log_prior ← −0.5(s − prior_mean)²/prior_var
+     log_post ← log_lik + log_prior                    (Eq. 4)
+
+3. MAP:
+   ŝ ← grid[argmax log_post]
+
+4. Retornar posterior/MAP
+
+EDGE CASES:
+  - Varianza muy pequeña → precisión enorme; usar límites numéricos.
+  - Rates casi cero → log(0); añadir epsilon.
+  - Prior muy fuerte → MAP dominado por prior.
+  - Población pequeña → decodificación inestable.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class BayesianBrainParams(BaseModel):
+    """Parámetros de decodificación bayesiana."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    grid_min: float = -3.0
+    grid_max: float = 3.0
+    n_grid: Annotated[int, Field(ge=11, le=2001)] = 121
+    prior_mean: float = 0.0
+    prior_var: Annotated[float, Field(gt=0.0)] = 10.0
+
+class BayesianBrain:
+    """Implementación ejecutable de Knill & Pouget (2004).
+
+    Reference: DOI: 10.1016/j.tins.2004.10.003
+    """
+
+    def __init__(self, params: BayesianBrainParams | None = None):
+        self.params = params or BayesianBrainParams()
+        self.grid = np.linspace(
+            self.params.grid_min,
+            self.params.grid_max,
+            self.params.n_grid
+        )
+
+    @staticmethod
+    def gaussian_fusion(cues: np.ndarray, variances: np.ndarray,
+                        prior_mean: float, prior_var: float) -> tuple[float, float]:
+        """Implementa Eq. (2)."""
+        cues = np.asarray(cues, dtype=float)
+        variances = np.asarray(variances, dtype=float)
+        if np.any(variances <= 0):
+            raise ValueError("Variances deben ser positivas.")
+
+        precision = 1.0 / prior_var + np.sum(1.0 / variances)
+        mean = (prior_mean / prior_var + np.sum(cues / variances)) / precision
+        variance = 1.0 / precision
+        return float(mean), float(variance)
+
+    def _tuning_rates_grid(self, prefs: np.ndarray, widths: np.ndarray,
+                           max_rate: float) -> np.ndarray:
+        """Implementa Eq. (5) sobre el grid."""
+        prefs = np.asarray(prefs, dtype=float)
+        widths = np.broadcast_to(np.asarray(widths, dtype=float), prefs.shape)
+        return max_rate * np.exp(
+            -0.5 * ((self.grid[:, None] - prefs[None, :]) / widths[None, :]) ** 2
+        )
+
+    def log_posterior(self, spikes: np.ndarray, prefs: np.ndarray,
+                      widths: np.ndarray, max_rate: float,
+                      prior_mean: float, prior_var: float) -> np.ndarray:
+        """Implementa Eq. (3)-(4)."""
+        spikes = np.asarray(spikes, dtype=float)
+        rates = self._tuning_rates_grid(prefs, widths, max_rate)
+        log_rates = np.log(rates + 1e-12)
+        log_lik = np.sum(spikes[None, :] * log_rates - rates, axis=1)
+        log_prior = -0.5 * (self.grid - prior_mean) ** 2 / prior_var
+        return log_prior + log_lik
+
+    def decode_map(self, spikes: np.ndarray, prefs: np.ndarray,
+                   widths: np.ndarray, max_rate: float,
+                   prior_mean: float, prior_var: float) -> float:
+        """Implementa Eq. (4): MAP."""
+        logp = self.log_posterior(spikes, prefs, widths, max_rate,
+                                  prior_mean, prior_var)
+        return float(self.grid[np.argmax(logp)])
+
+    @staticmethod
+    def sample_spikes(true_stim: float, prefs: np.ndarray,
+                      widths: np.ndarray, max_rate: float,
+                      rng: np.random.Generator) -> np.ndarray:
+        """Muestrea spikes Poisson desde tuning curves."""
+        prefs = np.asarray(prefs, dtype=float)
+        widths = np.broadcast_to(np.asarray(widths, dtype=float), prefs.shape)
+        rates = max_rate * np.exp(-0.5 * ((true_stim - prefs) / widths) ** 2)
+        return rng.poisson(rates)
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_bayesian_fusion_reduces_variance():
+    """Eq. (2): la posterior debe ser más precisa que cada pista."""
+    mean, var = BayesianBrain.gaussian_fusion(
+        cues=np.array([1.0, 1.4]),
+        variances=np.array([0.1, 1.0]),
+        prior_mean=0.0,
+        prior_var=10.0
+    )
+    assert var < 0.1, f"Varianza posterior debe ser menor: {var}"
+    print(f"✓ Fusión bayesiana reduce varianza (post var {var:.4f})")
+
+def test_bayesian_cue_weighting():
+    """La pista más confiable debe dominar la estimación."""
+    mean, _ = BayesianBrain.gaussian_fusion(
+        cues=np.array([1.0, 1.4]),
+        variances=np.array([0.1, 1.0]),
+        prior_mean=0.0,
+        prior_var=10.0
+    )
+    assert abs(mean - 1.0) < abs(mean - 1.4), "Debe pesar más la pista confiable."
+    print(f"✓ Ponderación por confiabilidad (mean {mean:.3f})")
+
+def test_bayesian_population_decoding():
+    """Una población Poisson debe decodificar cerca del estímulo verdadero."""
+    params = BayesianBrainParams(grid_min=-3.0, grid_max=3.0, n_grid=121,
+                                 prior_mean=0.0, prior_var=100.0)
+    bb = BayesianBrain(params)
+    rng = np.random.default_rng(11)
+
+    n_neurons = 100
+    prefs = np.linspace(-3.0, 3.0, n_neurons)
+    widths = np.ones(n_neurons) * 1.0
+    max_rate = 80.0
+    true_stim = 0.5
+
+    spikes = bb.sample_spikes(true_stim, prefs, widths, max_rate, rng)
+    s_hat = bb.decode_map(spikes, prefs, widths, max_rate,
+                          params.prior_mean, params.prior_var)
+    assert abs(s_hat - true_stim) < 0.7, f"MAP lejos: {s_hat}"
+    print(f"✓ Decodificación poblacional (true {true_stim}, MAP {s_hat:.3f})")
+
+if __name__ == "__main__":
+    test_bayesian_fusion_reduces_variance()
+    test_bayesian_cue_weighting()
+    test_bayesian_population_decoding()
+    print("✓ PAPER #49 (Bayesian Brain) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #50: Izhikevich (2007) — Dynamical Systems in Neuroscience
+
+**Referencia:** Izhikevich, E. M. (2007). *Dynamical Systems in Neuroscience: The Geometry of Excitability and Bursting*. MIT Press. DOI: 10.7551/mitpress/2518.001.0001
+
+**Esencia:** La excitabilidad neuronal se entiende geométricamente mediante bifurcaciones de sistemas dinámicos: el tipo de respuesta —integrador vs resonador, spike de frecuencia arbitraria vs salto abrupto— depende de la estructura del espacio de fases.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Los modelos neuronales generan spikes, oscilaciones, bursting y transiciones entre regímenes, pero sin un marco geométrico es difícil entender por qué pequeños cambios de corriente producen comportamientos cualitativamente distintos. Se necesita una teoría que conecte ecuaciones diferenciales, bifurcaciones y fenotipos de excitabilidad.
+
+**¿Dónde falla el estado del arte previo?** Los modelos neuronales se presentan frecuentemente como recetas numéricas. Hodgkin-Huxley `[→ NeuroComp.Paper#1]` y modelos reducidos `[→ NeuroComp.Paper#2]` muestran dinámica, pero no explican sistemáticamente la geometría de excitabilidad. Faltaba una taxonomía dinámica clara: saddle-node, Hopf, SNIC, integradores clase I, resonadores clase II.
+
+**La solución de Izhikevich:** usar sistemas dinámicos y bifurcaciones como lenguaje central. Un modelo canónico es la **neurona theta**, derivada del quadratic integrate-and-fire, que captura una bifurcación saddle-node on an invariant circle (SNIC). Para parámetro `η > 0` dispara; para `η < 0` queda en reposo; cerca del umbral la frecuencia escala como `√η`. Esto explica excitabilidad tipo I: frecuencia arbitrariamente baja cerca del umbral. El libro formaliza cómo atractores, nullclinas y bifurcaciones explican patrones neuronales.
+
+**Aplicación práctica:** clasificación de tipos neuronales, diseño de modelos de spiking `[→ Paper #48]`, análisis de transición reposo-spiking, interpretación de curvas f-I, redes oscilatorias, neuromodulación, y modelado de bursting.
+
+**¿Por qué es un hito?** Convirtió la geometría de sistemas dinámicos en herramienta estándar de neurociencia computacional. Es la referencia canónica para entender excitabilidad, resonancia y bursting. Conecta directamente con Kuramoto `[→ NeuroComp.Paper#21]`, Lyapunov `[→ NeuroComp.Paper#30]` y modelos spiking `[→ Paper #48]`.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Neurona theta canónica:**
+```
+dθ/dt = 1 − cos θ + (1 + cos θ) η
+```
+- `θ ∈ [0, 2π)`: variable angular; `η`: corriente/parámetro de excitabilidad.
+- **Interpretación:** modelo normal-form para SNIC.
+
+**Eq. (2) — Bifurcación SNIC:**
+```
+η < 0: punto fijo estable (reposo)
+η = 0: bifurcación
+η > 0: ciclo límite / spiking
+```
+
+**Eq. (3) — Frecuencia cerca del umbral:**
+```
+f(η) = √η / π,  η > 0
+```
+- **Interpretación:** frecuencia arbitrariamente baja al acercarse al umbral; firma de clase I.
+
+**Eq. (4) — Transformación a voltaje QIF:**
+```
+V = tan(θ/2)
+```
+- **Interpretación:** θ = π corresponde a V → ∞; el spike se interpreta como paso por infinito en la variable voltaje.
+
+**Eq. (5) — Condición de spike:**
+```
+θ cruza π módulo 2π ⇒ spike
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Simulación de neurona theta y análisis de bifurcación
+
+ENTRADA:
+  - eta: parámetro de excitabilidad
+  - T: duración
+  - dt: paso
+  - theta0: condición inicial
+
+SALIDA:
+  - theta_final: estado final
+  - spike_count: número de spikes
+
+1. Integración RK4:
+   Para cada paso:
+     k1 ← f(θ, η)
+     k2 ← f(θ + dt k1/2, η)
+     k3 ← f(θ + dt k2/2, η)
+     k4 ← f(θ + dt k3, η)
+     θ ← θ + dt/6 (k1 + 2k2 + 2k3 + k4)
+
+2. Conteo de spikes:
+   Si θ ≥ π:
+     count ← floor((θ − π)/(2π)) + 1
+   Sino count ← 0
+
+3. Frecuencia teórica:
+   f ← √η / π si η > 0 else 0
+
+4. Retornar theta_final, spike_count
+
+EDGE CASES:
+  - η < 0 puede converger a punto fijo; no contar spikes.
+  - dt demasiado grande pierde precisión cerca del umbral.
+  - η = 0 es crítico; la dinámica se vuelve lenta.
+  - θ no debe envolverse si se usa conteo por unwrapped phase.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class ThetaNeuronParams(BaseModel):
+    """Parámetros de la neurona theta."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    eta: float = 0.1
+    dt: Annotated[float, Field(gt=0.0, le=0.1)] = 0.01
+    T: Annotated[float, Field(gt=0.0)] = 100.0
+    theta0: float = 0.0
+
+class ThetaNeuron:
+    """Implementación del modelo canónico de Izhikevich (2007).
+
+    Reference: DOI: 10.7551/mitpress/2518.001.0001
+    """
+
+    def __init__(self, params: ThetaNeuronParams | None = None):
+        self.params = params or ThetaNeuronParams()
+
+    @staticmethod
+    def f(theta: float, eta: float) -> float:
+        """Implementa Eq. (1)."""
+        return 1.0 - np.cos(theta) + (1.0 + np.cos(theta)) * eta
+
+    def simulate(self, eta: float | None = None, T: float | None = None,
+                 dt: float | None = None, theta0: float | None = None) -> tuple[float, int]:
+        """Integra RK4 y cuenta spikes. Implementa Eq. (4)-(5)."""
+        p = self.params
+        eta = p.eta if eta is None else eta
+        T = p.T if T is None else T
+        dt = p.dt if dt is None else dt
+        theta = p.theta0 if theta0 is None else theta0
+
+        n_steps = int(round(T / dt))
+        for _ in range(n_steps):
+            k1 = self.f(theta, eta)
+            k2 = self.f(theta + 0.5 * dt * k1, eta)
+            k3 = self.f(theta + 0.5 * dt * k2, eta)
+            k4 = self.f(theta + dt * k3, eta)
+            theta += (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+
+        spike_count = 0
+        if theta >= np.pi:
+            spike_count = int(np.floor((theta - np.pi) / (2.0 * np.pi)) + 1)
+        return theta, spike_count
+
+    @staticmethod
+    def theoretical_frequency(eta: float) -> float:
+        """Implementa Eq. (3)."""
+        return np.sqrt(eta) / np.pi if eta > 0.0 else 0.0
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_theta_resting_no_spike():
+    """η < 0 debe permanecer en reposo (sin spikes)."""
+    tn = ThetaNeuron(ThetaNeuronParams(eta=-0.1, T=100.0, dt=0.01))
+    _, spikes = tn.simulate()
+    assert spikes == 0, "η<0 no debe disparar."
+    print("✓ Theta neuron reposo para η<0")
+
+def test_theta_spiking_frequency():
+    """η > 0 debe disparar con frecuencia ≈ √η/π."""
+    eta = 0.25
+    T = 500.0
+    tn = ThetaNeuron(ThetaNeuronParams(eta=eta, T=T, dt=0.01))
+    _, spikes = tn.simulate()
+    empirical = spikes / T
+    theory = tn.theoretical_frequency(eta)
+    rel_error = abs(empirical - theory) / theory
+    assert rel_error < 0.1, f"Frecuencia: {empirical} vs {theory}"
+    print(f"✓ Theta neuron frecuencia (emp {empirical:.4f}, teórica {theory:.4f})")
+
+def test_theta_sqrt_scaling():
+    """La frecuencia debe escalar como √η cerca del umbral."""
+    T = 1000.0
+    tn = ThetaNeuron(ThetaNeuronParams(T=T, dt=0.01))
+    _, s1 = tn.simulate(eta=0.04, T=T)
+    _, s2 = tn.simulate(eta=0.16, T=T)
+    f1 = s1 / T
+    f2 = s2 / T
+    ratio = f2 / max(f1, 1e-12)
+    assert abs(ratio - 2.0) < 0.2, f"Escalado sqrt falló: {ratio}"
+    print(f"✓ Escalado √η verificado (ratio {ratio:.3f})")
+
+if __name__ == "__main__":
+    test_theta_resting_no_spike()
+    test_theta_spiking_frequency()
+    test_theta_sqrt_scaling()
+    print("✓ PAPER #50 (Dynamical Systems in Neuroscience) — TODOS LOS TESTS PASARON")
+```
+
+---
+
