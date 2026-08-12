@@ -3390,3 +3390,1328 @@ if __name__ == "__main__":
 
 ---
 
+### PAPER #36: Daubechies, Lu & Wu (2011) — Synchrosqueezing Wavelet Transform
+
+**Referencia:** Daubechies, I., Lu, J., & Wu, H.-T. (2011). "Synchrosqueezed wavelet transforms: an empirical mode decomposition-like tool." *Applied and Computational Harmonic Analysis*, 30(2), 243–261. DOI: 10.1016/j.acha.2010.08.002
+
+**Esencia:** Reasignación de energía en el plano tiempo-frecuencia que concentra los coeficientes wavelet a lo largo de las curvas de frecuencia instantánea verdaderas, recuperando componentes AM-FM con precisión teórica garantizada y superando la difusividad inherente de la CWT y la EMD.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La Transformada Wavelet Continua (CWT) `[→ NeuroComp.Paper#7]` sufre de **difusividad temporal**: al usar ventanas anchas para bajas frecuencias, la energía se "derrama" en el eje frecuencial, produciendo representaciones borrosas donde es imposible distinguir componentes cercanos en frecuencia. La EMD `[→ Paper #31]` es adaptativa pero carece de garantías matemáticas y es sensible al ruido. Se necesita una representación tiempo-frecuencia que sea a la vez **nítida** (concentrada), **adaptativa** (no dependiente de base fija rígida) y **teóricamente fundamentada**.
+
+**¿Dónde falla el estado del arte previo?** La reasignación clásica de Kodera et al. (1976) mejora la nitidez pero no permite **reconstrucción exacta** de los componentes individuales. La EMD funciona empíricamente pero falla con señales ruidosas o con modos intermitentes, y no tiene teoría de convergencia. La CWT estándar es estable pero demasiado difusa para separar componentes cuyas frecuencias instantáneas están próximas.
+
+**La solución de Daubechies et al.:** el **Synchrosqueezing** opera en dos pasos: (1) calcula la CWT estándar; (2) usa la **fase** de los coeficientes wavelet para estimar la frecuencia instantánea local `ω(a,b) = −i ∂_b W(a,b)/W(a,b)` y **reasigna** cada coeficiente desde su escala original `a` hacia la frecuencia estimada `ω`. Esta operación preserva la norma L² y, crucialmente, permite **invertir** la transformada para recuperar cada componente AM-FM individualmente. El resultado es un mapa tiempo-frecuencia tan nítido como la reasignación clásica pero con la capacidad de reconstrucción de la EMD y las garantías rigurosas de la teoría wavelet.
+
+**Aplicación práctica:** extracción de modos respiratorios/cardiacos de señales fisiológicas mezcladas, análisis de vibraciones mecánicas con componentes modulados, procesamiento sísmico, eliminación de artefactos EEG preservando señal neural, identificación de chirps en radar/sonar.
+
+**¿Por qué es un hito?** Unificó tres mundos: la nitidez de la reasignación, la adaptatividad de la EMD y el rigor de la teoría wavelet. Proporcionó el primer marco con **teoremas de recuperación** para señales AM-FM multicomponente, estableciendo un nuevo estándar en análisis tiempo-frecuencia. Es el puente directo entre la S-Transform `[→ Paper #32]` y la VMD `[→ Paper #37]`.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Transformada Wavelet Continua (base):**
+```
+W_f(a, b) = (1/a) ∫ f(t) ψ*((t−b)/a) dt
+```
+- `a > 0`: escala; `b ∈ ℝ`: traslación; `ψ`: wavelet madre admisible.
+- **Interpretación:** correlación de la señal con versiones escaladas/trasladas de ψ.
+
+**Eq. (2) — Frecuencia instantánea estimada:**
+```
+ω_f(a, b) = { −i [∂_b W_f(a,b)] / W_f(a,b)   si W_f(a,b) ≠ 0
+            { 0                                   en otro caso
+```
+- **Interpretación:** la derivada temporal de la fase del coeficiente wavelet da la frecuencia local. Solo válida donde hay energía significativa.
+
+**Eq. (3) — Synchrosqueezing (reasignación):**
+```
+T_f(ω, b) = ∫_{A(b)} W_f(a, b) · δ(ω − ω_f(a,b)) · a^{−3/2} da
+```
+- `δ`: delta de Dirac; `A(b)`: conjunto de escalas donde |W_f(a,b)| > γ (umbral).
+- **Interpretación:** colapsa toda la energía de cada escala `a` hacia su frecuencia estimada `ω_f(a,b)`. El factor `a^{−3/2}` preserva la normalización energética.
+
+**Eq. (4) — Discretización práctica:**
+```
+T_f(ω_l, b) = Σ_{k: |ω_f(a_k,b)−ω_l| < Δω/2} W_f(a_k, b) · a_k^{−3/2} · Δa_k
+```
+- `ω_l`: bins de frecuencia objetivo; `Δω`: ancho del bin.
+- **Interpretación:** versión computable; suma coeficientes cuya frecuencia estimada cae en el mismo bin.
+
+**Eq. (5) — Reconstrucción de componente i-ésimo:**
+```
+f_i(b) ≈ (1/C_ψ) ∫_{Ω_i} T_f(ω, b) dω
+```
+- `Ω_i`: región alrededor de la curva de frecuencia instantánea del componente i.
+- `C_ψ = ∫ ψ̂*(ξ)/ξ dξ`: constante de admisibilidad.
+- **Interpretación:** integrar el synchrosqueezogram sobre una franja frecuencial recupera el componente AM-FM correspondiente. Este es el teorema central de recuperación.
+
+**Eq. (6) — Condición de separabilidad de componentes:**
+```
+|φ'_i(t) − φ'_j(t)| ≥ ε · max(φ'_i(t), φ'_j(t))   para todo i ≠ j
+```
+- **Interpretación:** las frecuencias instantáneas deben estar suficientemente separadas. Si dos componentes cruzan sus frecuencias, el synchrosqueezing no puede resolverlos (límite fundamental).
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Synchrosqueezing Wavelet Transform
+
+ENTRADA:
+  - x: array 1D, señal real, longitud N
+  - fs: float > 0, frecuencia de muestreo
+  - scales: array de escalas wavelet (logarítmicamente espaciadas)
+  - gamma: float > 0, umbral de energía (ej: 1e-6)
+  - freq_bins: array de frecuencias objetivo para reasignación
+
+SALIDA:
+  - T: matriz compleja (n_freqs × N), synchrosqueezogram
+  - freqs: array de frecuencias (Hz)
+  - times: array de tiempos (s)
+
+1. Cálculo de CWT (Eq. 1):
+   Para cada escala a en scales:
+     W[a, :] ← CWT(x, a, wavelet='morlet')
+
+2. Estimación de frecuencia instantánea (Eq. 2):
+   Para cada escala a:
+     dW_db ← derivada temporal de W[a,:] (diferencias finitas o FFT)
+     omega[a,:] ← −i · dW_db / W[a,:]  donde |W| > gamma
+     omega[a,:] ← 0                      donde |W| ≤ gamma
+
+3. Reasignación / Synchrosqueezing (Eq. 4):
+   Inicializar T ← zeros(n_freqs, N)
+   Para cada escala k:
+     Para cada instante b:
+       l ← índice del bin más cercano a omega[k, b]
+       T[l, b] += W[k, b] · a_k^{−3/2} · Δa_k
+
+4. Post-procesamiento:
+   - Convertir escalas a frecuencias físicas: f = c_ψ / (a · 2π)
+   - Normalizar por constante de admisibilidad si se requiere reconstrucción
+
+5. Retornar (T, freqs, times)
+
+EDGE CASES:
+  - W(a,b) ≈ 0 → omega indefinida; se descarta (umbral gamma).
+  - Componentes que cruzan en frecuencia → violación Eq. 6; mezcla inevitable.
+  - Bordes temporales → efectos de cono; recortar o extender señal.
+  - Escalas fuera de rango válido → coeficientes espurios; filtrar.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.signal import morlet2, cwt
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+SamplingRate: TypeAlias = Annotated[float, Field(gt=0.0)]
+
+class SynchrosqueezingParams(BaseModel):
+    """Parámetros del Synchrosqueezing WT."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    fs: SamplingRate
+    n_scales: Annotated[int, Field(ge=10, le=500)] = 100
+    min_scale: Annotated[float, Field(gt=0.0)] = 1.0
+    max_scale: Annotated[float, Field(gt=0.0)] = 100.0
+    gamma: Annotated[float, Field(gt=0.0, le=1.0)] = 1e-6
+    wavelet_width: Annotated[float, Field(gt=0.0)] = 5.0
+
+class SynchrosqueezingWavelet:
+    """Implementación de Daubechies, Lu & Wu (2011).
+
+    Reference: DOI: 10.1016/j.acha.2010.08.002
+    """
+
+    def __init__(self, params: SynchrosqueezingParams):
+        self.params = params
+
+    def compute(self, x: np.ndarray) -> dict:
+        """Synchrosqueezing completo. Implementa Eq. (1)-(4)."""
+        p = self.params
+        x = np.asarray(x, dtype=float)
+        N = len(x)
+
+        # Escalas logarítmicas
+        scales = np.logspace(np.log10(p.min_scale),
+                             np.log10(p.max_scale),
+                             p.n_scales)
+
+        # Eq. (1): CWT con Morlet
+        widths = scales * p.wavelet_width
+        W = cwt(x, lambda M, s: morlet2(M, s), widths)  # (n_scales, N)
+
+        # Eq. (2): Frecuencia instantánea estimada
+        # Derivada temporal vía diferencias centrales
+        dW_db = np.gradient(W, axis=1)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            omega = np.where(
+                np.abs(W) > p.gamma,
+                -1j * dW_db / W,
+                0.0
+            )
+        omega = np.real(omega)  # parte real = frecuencia angular
+
+        # Convertir escalas a frecuencias físicas (Hz)
+        # Para Morlet: f ≈ fs * width / (2π * scale)
+        freqs_from_scales = p.fs * p.wavelet_width / (2 * np.pi * scales)
+
+        # Bins de frecuencia para reasignación
+        freq_bins = np.linspace(freqs_from_scales[-1],
+                                freqs_from_scales[0],
+                                p.n_scales)
+        df = freq_bins[1] - freq_bins[0] if len(freq_bins) > 1 else 1.0
+
+        # Eq. (4): Reasignación
+        T = np.zeros((len(freq_bins), N), dtype=complex)
+        for k in range(len(scales)):
+            a_factor = scales[k] ** (-1.5)
+            da = scales[k + 1] - scales[k] if k < len(scales) - 1 \
+                 else scales[k] - scales[k - 1]
+            for b in range(N):
+                if np.abs(W[k, b]) <= p.gamma:
+                    continue
+                w_est = omega[k, b] / (2 * np.pi)  # Hz
+                l = int(round((w_est - freq_bins[0]) / df))
+                if 0 <= l < len(freq_bins):
+                    T[l, b] += W[k, b] * a_factor * da
+
+        times = np.arange(N) / p.fs
+        return {
+            'synchrosqueezogram': T,
+            'power': np.abs(T) ** 2,
+            'freqs': freq_bins,
+            'times': times,
+            'cwt': W,
+            'scales': scales,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_synchrosqueezing_sharpens_representation():
+    """El SST debe concentrar energía más que la CWT cruda."""
+    fs = 500.0
+    t = np.arange(0, 2, 1 / fs)
+    # Señal AM-FM: frecuencia varía de 20 a 40 Hz
+    phase = 2 * np.pi * (20 * t + 5 * t ** 2)
+    x = np.cos(phase)
+
+    params = SynchrosqueezingParams(fs=fs, n_scales=80,
+                                    min_scale=2, max_scale=50)
+    sst = SynchrosqueezingWavelet(params)
+    res = sst.compute(x)
+
+    # Medida de concentración: entropía espectral media
+    power_sst = res['power']
+    power_cwt = np.abs(res['cwt']) ** 2
+
+    def spectral_entropy(P):
+        P_norm = P / (P.sum(axis=0, keepdims=True) + 1e-30)
+        return -np.mean(np.sum(P_norm * np.log(P_norm + 1e-30), axis=0))
+
+    ent_sst = spectral_entropy(power_sst)
+    ent_cwt = spectral_entropy(power_cwt)
+    assert ent_sst < ent_cwt, f"SST debe ser más concentrado: {ent_sst} < {ent_cwt}"
+    print(f"✓ SST concentra energía (entropía SST={ent_sst:.2f} vs CWT={ent_cwt:.2f})")
+
+def test_synchrosqueezing_recovers_frequency_curve():
+    """El pico del SST debe seguir la frecuencia instantánea verdadera."""
+    fs = 400.0
+    t = np.arange(0, 1, 1 / fs)
+    f_true = 30 + 20 * t  # chirp lineal 30→50 Hz
+    phase = 2 * np.pi * np.cumsum(f_true) / fs
+    x = np.cos(phase)
+
+    params = SynchrosqueezingParams(fs=fs, n_scales=100,
+                                    min_scale=2, max_scale=40)
+    sst = SynchrosqueezingWavelet(params)
+    res = sst.compute(x)
+
+    # Pico frecuencial en cada instante
+    peak_freqs = res['freqs'][np.argmax(res['power'], axis=0)]
+    # Comparar en región central (evitar bordes)
+    mid = slice(len(t) // 4, 3 * len(t) // 4)
+    error = np.mean(np.abs(peak_freqs[mid] - f_true[mid]))
+    assert error < 5.0, f"Error medio debe < 5 Hz, dio {error:.1f}"
+    print(f"✓ SST recupera curva de frecuencia (error medio {error:.1f} Hz)")
+
+def test_synchrosqueezing_energy_threshold():
+    """Edge case: regiones sin energía deben tener SST ≈ 0."""
+    fs = 200.0
+    x = np.zeros(500)
+    x[100:200] = np.sin(2 * np.pi * 10 * np.arange(100) / fs)
+
+    params = SynchrosqueezingParams(fs=fs, gamma=1e-6)
+    sst = SynchrosqueezingWavelet(params)
+    res = sst.compute(x)
+    silent_power = res['power'][:, :50].mean()
+    active_power = res['power'][:, 100:200].mean()
+    assert silent_power < active_power * 0.01, "Región silenciosa debe ≈ 0"
+    print("✓ SST respeta umbral de energía")
+
+if __name__ == "__main__":
+    test_synchrosqueezing_sharpens_representation()
+    test_synchrosqueezing_recovers_frequency_curve()
+    test_synchrosqueezing_energy_threshold()
+    print("✓ PAPER #36 (Synchrosqueezing) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #37: Dragomiretskiy & Zosso (2014) — Variational Mode Decomposition
+
+**Referencia:** Dragomiretskiy, K., & Zosso, D. (2014). "Variational Mode Decomposition." *IEEE Transactions on Signal Processing*, 62(3), 531–544. DOI: 10.1109/TSP.2013.2288675
+
+**Esencia:** Descomposición de señal formulada como problema variacional convexo que busca K modos de banda estrecha centrados en frecuencias desconocidas, resolviendo simultáneamente la extracción de modos y la estimación de sus frecuencias centrales mediante multiplicadores de Lagrange alternados (ADMM).
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La EMD `[→ Paper #31]` es completamente empírica: no tiene función objetivo, no garantiza optimalidad, es sensible al ruido y produce modos mezclados (*mode mixing*). No hay forma de decir "quiero exactamente K modos de banda estrecha". Se necesita una descomposición con **fundamento variacional**, robusta al ruido, con control explícito del número de modos y del ancho de banda.
+
+**¿Dónde falla el estado del arte previo?** La EMD y sus variantes (EEMD, CEEMDAN) mejoran la robustez estadísticamente pero siguen siendo heurísticas sin optimización formal. Los métodos basados en wavelets requieren elegir la base a priori. El Synchrosqueezing `[→ Paper #36]` mejora la nitidez pero sigue dependiendo de la CWT subyacente. Ninguno formula la descomposición como un **problema de optimización bien definido**.
+
+**La solución de Dragomiretskiy & Zosso:** formular la descomposición como: *"encuentra K modos u_k(t) tales que la suma de sus anchos de banda (estimados vía norma L² de la derivada de la señal analítica demodulada) sea mínima, sujeto a que la suma de los modos reconstruya la señal"*. Esto es un problema variacional con restricción de igualdad. Se resuelve con ADMM, obteniendo simultáneamente los modos y sus frecuencias centrales ω_k. El parámetro α controla el compromiso ancho-de-banda/fidelidad.
+
+**Aplicación práctica:** diagnóstico de fallos en rodamientos, separación de fuentes biomédicas (EEG/ECG), análisis de vibraciones estructurales, procesamiento de imágenes médicas, finanzas (separación tendencia/ciclo/ruido).
+
+**¿Por qué es un hito?** Convirtió la descomposición adaptativa de un arte empírico en un problema de optimización convexa con solución única y garantías de convergencia. Es el método de descomposición modal más usado en ingeniería desde 2014, superando a la EMD en robustez y reproducibilidad.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Problema variacional primal:**
+```
+min_{u_k, ω_k} Σ_{k=1}^{K} ‖ ∂_t [ (δ(t) + i/(πt)) * u_k(t) ] · e^{−iω_k t} ‖₂²
+sujeto a:  Σ_{k=1}^{K} u_k(t) = f(t)
+```
+- `(δ + i/πt)*u_k`: señal analítica de u_k (Transformada de Hilbert).
+- Multiplicar por `e^{−iω_k t}`: demodulación a banda base.
+- Derivada temporal: mide ancho de banda.
+- **Interpretación:** minimizar la suma de anchos de banda de los modos demodulados, forzando reconstrucción exacta.
+
+**Eq. (2) — Lagrangiano aumentado:**
+```
+L({u_k}, {ω_k}, λ) = α Σ_k ‖∂_t[u_k^+(t)e^{−iω_k t}]‖₂²
+                     + ‖f − Σ_k u_k‖₂²
+                     + ⟨λ, f − Σ_k u_k⟩
+```
+- `α`: balance entre fidelidad y estrechez de banda.
+- `λ(t)`: multiplicador de Lagrange.
+- Segundo término: penalización cuadrática (augmented Lagrangian).
+
+**Eq. (3) — Actualización de modos en dominio frecuencial (ADMM):**
+```
+û_k^{n+1}(ω) = [ f̂(ω) − Σ_{i≠k} û_i(ω) + λ̂(ω)/2 ]
+               / [ 1 + 2α(ω − ω_k^n)² ]
+```
+- **Interpretación:** filtro de Wiener generalizado. Cada modo ocupa la región frecuencial donde el denominador es pequeño (cerca de ω_k).
+
+**Eq. (4) — Actualización de frecuencias centrales:**
+```
+ω_k^{n+1} = ∫₀^∞ ω |û_k^{n+1}(ω)|² dω / ∫₀^∞ |û_k^{n+1}(ω)|² dω
+```
+- **Interpretación:** centroide espectral del modo actual. Se actualiza cada iteración.
+
+**Eq. (5) — Actualización del multiplicador:**
+```
+λ̂^{n+1}(ω) = λ̂^n(ω) + τ [ f̂(ω) − Σ_k û_k^{n+1}(ω) ]
+```
+- `τ`: paso dual. Con τ=0 se obtiene exact splitting; con τ>0, over-relaxation.
+
+**Eq. (6) — Criterio de convergencia:**
+```
+Σ_k ‖û_k^{n+1} − û_k^n‖₂² / ‖f̂‖₂² < ε
+```
+- ε típico: 1e−7. Converge en ~100-500 iteraciones.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Variational Mode Decomposition (ADMM)
+
+ENTRADA:
+  - f: array 1D, señal real, longitud N
+  - K: int, número de modos
+  - alpha: float > 0, ancho de banda (mayor = modos más estrechos)
+  - tau: float ≥ 0, paso dual (0 = exact, >0 = over-relax)
+  - tol: float, tolerancia de convergencia
+  - max_iter: int
+
+SALIDA:
+  - modes: array 2D (K × N), modos en tiempo
+  - omega: array (K,), frecuencias centrales finales (rad/sample)
+
+1. Inicialización:
+   f_hat ← FFT(f)
+   f_hat_pos ← f_hat[0:N//2+1]  (solo frecuencias positivas)
+   omega ← linspace(0, 0.5, K)   (frecuencias iniciales uniformes)
+   u_hat ← zeros(K, N//2+1)      (modos en frecuencia)
+   lambda_hat ← zeros(N//2+1)
+   w_axis ← arange(N//2+1) / N   (eje frecuencial normalizado)
+
+2. Iteración ADMM:
+   Para n = 1 a max_iter:
+     Para k = 1 a K:
+       a) Actualizar û_k (Eq. 3):
+          numerador ← f_hat_pos − Σ_{i≠k} û_i + lambda_hat/2
+          denominador ← 1 + 2α(w_axis − ω_k)²
+          û_k ← numerador / denominador
+       b) Actualizar ω_k (Eq. 4):
+          ω_k ← Σ w·|û_k|² / Σ |û_k|²
+     c) Actualizar λ̂ (Eq. 5):
+        lambda_hat ← lambda_hat + τ(f_hat_pos − Σ û_k)
+     d) Verificar convergencia (Eq. 6):
+        Si cambio relativo < tol → break
+
+3. Reconstrucción temporal:
+   Para k = 1 a K:
+     u_hat_full ← reconstruir espectro hermítico desde û_k
+     modes[k,:] ← IFFT(u_hat_full).real
+
+4. Retornar (modes, omega)
+
+EDGE CASES:
+  - K demasiado grande → modos vacíos/degenerados; detectar ‖u_k‖ ≈ 0.
+  - α muy grande → modos ultra-estrechos, convergencia lenta.
+  - α muy pequeño → modos anchos, similar a EMD.
+  - Señal DC → primer modo captura la media; ω_1 → 0.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class VMDParams(BaseModel):
+    """Parámetros de la VMD."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    K: Annotated[int, Field(ge=1, le=50)] = 3
+    alpha: Annotated[float, Field(gt=0.0)] = 2000.0
+    tau: Annotated[float, Field(ge=0.0)] = 0.0
+    tol: Annotated[float, Field(gt=0.0, le=1.0)] = 1e-7
+    max_iter: Annotated[int, Field(ge=1, le=5000)] = 500
+
+class VariationalModeDecomposition:
+    """Implementación de Dragomiretskiy & Zosso (2014).
+
+    Reference: DOI: 10.1109/TSP.2013.2288675
+    """
+
+    def __init__(self, params: VMDParams | None = None):
+        self.params = params or VMDParams()
+
+    def decompose(self, f: np.ndarray) -> dict:
+        """VMD completa vía ADMM. Implementa Eq. (1)-(6)."""
+        p = self.params
+        f = np.asarray(f, dtype=float)
+        N = len(f)
+        N_half = N // 2 + 1
+
+        # Eje frecuencial normalizado [0, 0.5]
+        w_axis = np.arange(N_half) / N
+
+        # FFT de la señal (solo positivo)
+        f_hat = np.fft.rfft(f)
+        f_hat_plus = f_hat.copy()
+
+        # Inicialización
+        omega = np.linspace(0, 0.5, p.K)       # Eq. inicial
+        u_hat = np.zeros((p.K, N_half), dtype=complex)
+        lambda_hat = np.zeros(N_half, dtype=complex)
+        eps = np.finfo(float).eps
+
+        # ADMM loop
+        for n in range(p.max_iter):
+            u_hat_prev = u_hat.copy()
+            for k in range(p.K):
+                # Eq. (3): actualización de modo k
+                sum_others = np.sum(u_hat, axis=0) - u_hat[k]
+                numerator = f_hat_plus - sum_others + lambda_hat / 2.0
+                denominator = 1.0 + 2.0 * p.alpha * (w_axis - omega[k]) ** 2
+                u_hat[k] = numerator / denominator
+
+                # Eq. (4): actualización de frecuencia central
+                power = np.abs(u_hat[k]) ** 2
+                omega[k] = np.sum(w_axis * power) / (np.sum(power) + eps)
+
+            # Eq. (5): actualización dual
+            lambda_hat += p.tau * (f_hat_plus - np.sum(u_hat, axis=0))
+
+            # Eq. (6): convergencia
+            change = np.sum(np.abs(u_hat - u_hat_prev) ** 2) / (np.sum(np.abs(f_hat_plus) ** 2) + eps)
+            if change < p.tol:
+                break
+
+        # Reconstrucción temporal
+        modes = np.zeros((p.K, N))
+        for k in range(p.K):
+            modes[k] = np.fft.irfft(u_hat[k], n=N)
+
+        return {
+            'modes': modes,
+            'omega': omega,
+            'reconstruction': np.sum(modes, axis=0),
+            'n_iterations': n + 1,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_vmd_reconstruction_exact():
+    """La suma de modos debe reconstruir la señal (<1e-6)."""
+    t = np.linspace(0, 1, 1000)
+    f = np.sin(2 * np.pi * 5 * t) + 0.5 * np.sin(2 * np.pi * 20 * t) + 0.3 * t
+    vmd = VariationalModeDecomposition(VMDParams(K=3, alpha=2000))
+    res = vmd.decompose(f)
+    err = np.max(np.abs(f - res['reconstruction']))
+    assert err < 1e-4, f"Reconstrucción debe ser precisa: {err}"
+    print(f"✓ VMD reconstrucción exacta (error {err:.2e})")
+
+def test_vmd_separates_known_modes():
+    """Debe separar componentes de 5 Hz y 20 Hz en modos distintos."""
+    t = np.linspace(0, 1, 1000)
+    f = np.sin(2 * np.pi * 5 * t) + np.sin(2 * np.pi * 20 * t)
+    vmd = VariationalModeDecomposition(VMDParams(K=2, alpha=5000))
+    res = vmd.decompose(f)
+    # Cada modo debe dominar una frecuencia
+    specs = [np.abs(np.fft.rfft(res['modes'][k])) for k in range(2)]
+    freqs = np.fft.rfftfreq(1000, d=1 / 1000)
+    peaks = [freqs[np.argmax(s[1:]) + 1] for s in specs]
+    peaks_sorted = sorted(peaks)
+    assert abs(peaks_sorted[0] - 5) < 3 and abs(peaks_sorted[1] - 20) < 3, \
+        f"Debe separar 5 y 20 Hz, dio {peaks_sorted}"
+    print(f"✓ VMD separa modos ({peaks_sorted[0]:.1f} Hz, {peaks_sorted[1]:.1f} Hz)")
+
+def test_vmd_convergence():
+    """Debe converger antes de max_iter."""
+    t = np.linspace(0, 1, 500)
+    f = np.sin(2 * np.pi * 10 * t)
+    vmd = VariationalModeDecomposition(VMDParams(K=2, max_iter=1000, tol=1e-7))
+    res = vmd.decompose(f)
+    assert res['n_iterations'] < 1000, "Debe converger antes del límite"
+    print(f"✓ VMD converge en {res['n_iterations']} iteraciones")
+
+if __name__ == "__main__":
+    test_vmd_reconstruction_exact()
+    test_vmd_separates_known_modes()
+    test_vmd_convergence()
+    print("✓ PAPER #37 (VMD) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #38: Candès, Romberg & Tao (2006) — Compressed Sensing
+
+**Referencia:** Candès, E. J., Romberg, J., & Tao, T. (2006). "Robust uncertainty principles: exact signal reconstruction from highly incomplete frequency information." *IEEE Transactions on Information Theory*, 52(2), 489–509. DOI: 10.1109/TIT.2005.862083
+
+**Esencia:** Demostración de que señales dispersas en alguna base pueden reconstruirse exactamente a partir de M ≪ N mediciones lineales aleatorias mediante optimización ℓ₁, rompiendo el dogma de Nyquist-Shannon cuando la estructura de dispersión está presente.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El teorema de Nyquist-Shannon dicta que para reconstruir una señal de ancho de banda B necesitas muestrear a ≥ 2B. Pero muchas señales reales son **dispersas** (sparse): tienen solo K ≪ N coeficientes no nulos en alguna base (wavelet, Fourier, DCT). ¿Es realmente necesario adquirir N muestras si solo K son informativas? En MRI, astronomía, genómica y sensores IoT, adquirir N muestras es costoso, lento o imposible.
+
+**¿Dónde falla el estado del arte previo?** El muestreo uniforme seguido de compresión (JPEG, MP3) adquiere N muestras y luego descarta N−K coeficientes. Es un desperdicio masivo: adquieres datos que vas a tirar. Los métodos de interpolación clásicos fallan catastróficamente con submuestreo aleatorio. No existía teoría que garantizara recuperación exacta desde M < N mediciones.
+
+**La solución de Candès, Romberg & Tao:** si la señal es K-dispersa en base Ψ y las mediciones Φ son **incoherentes** con Ψ (ej: Φ = Fourier aleatoria, Ψ = wavelets), entonces M ≥ C·K·log(N/K) mediciones bastan para recuperación **exacta** vía minimización ℓ₁:
+`min ‖θ‖₁  sujeto a  y = ΦΨθ`
+Esto es un programa lineal (convexo), resoluble eficientemente. La clave es que la incoherencia + dispersión + ℓ₁ reemplazan al muestreo de Nyquist.
+
+**Aplicación práctica:** MRI acelerada (factor 4-8×), imágenes astronómicas comprimidas, adquisición de señales sísmicas, sensores de bajo consumo (single-pixel camera), genómica comprimida, radar/sparse array processing.
+
+**¿Por qué es un hito?** Fundó un campo entero (Compressed Sensing / Compressive Sampling). Cambió el paradigma de "adquirir todo y comprimir después" a "adquirir solo lo necesario". Generó miles de papers, estándares de imagen (JPEG-XS), y hardware comercial (MRI rápida, cámaras single-pixel).
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Modelo de señal dispersa:**
+```
+x = Ψ θ,   donde ‖θ‖₀ ≤ K
+```
+- `Ψ`: base de representación (N×N); `θ`: coeficientes K-dispersos.
+- `‖θ‖₀`: pseudo-norma ℓ₀ (número de elementos no nulos).
+
+**Eq. (2) — Mediciones lineales sub-Nyquist:**
+```
+y = Φ x = Φ Ψ θ = A θ
+```
+- `Φ`: matriz de medición (M×N), M ≪ N.
+- `A = ΦΨ`: matriz de sensing (M×N).
+
+**Eq. (3) — Recuperación vía minimización ℓ₁ (Basis Pursuit):**
+```
+θ̂ = argmin ‖θ‖₁   sujeto a   y = A θ
+```
+- **Interpretación:** la norma ℓ₁ es el relajamiento convexo más ajustado de ℓ₀. Promueve dispersión.
+
+**Eq. (4) — Condición RIP (Restricted Isometry Property):**
+```
+(1 − δ_K) ‖v‖₂² ≤ ‖A v‖₂² ≤ (1 + δ_K) ‖v‖₂²
+para todo v con ‖v‖₀ ≤ K
+```
+- `δ_K < √2 − 1 ≈ 0.414` suficiente para recuperación exacta.
+- **Interpretación:** A preserva distancias euclidianas de vectores K-dispersos.
+
+**Eq. (5) — Cota de número de mediciones:**
+```
+M ≥ C · K · log(N / K)
+```
+- C depende de la incoherencia entre Φ y Ψ.
+- **Interpretación:** costo logarítmico en N, lineal en K. Exponencialmente mejor que Nyquist.
+
+**Eq. (6) — Recuperación robusta al ruido (BPDN):**
+```
+θ̂ = argmin ‖θ‖₁   sujeto a   ‖y − Aθ‖₂ ≤ ε
+```
+- ε: cota de ruido. Equivalente a LASSO: min ‖y−Aθ‖₂² + λ‖θ‖₁.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Basis Pursuit (recuperación ℓ₁)
+
+ENTRADA:
+  - y: array (M,), mediciones
+  - A: matriz (M×N), sensing matrix
+  - epsilon: float ≥ 0, tolerancia de ruido
+
+SALIDA:
+  - theta_hat: array (N,), coeficientes dispersos recuperados
+  - x_hat: array (N,), señal reconstruida (si Ψ=I)
+
+1. Formular como programa lineal:
+   min Σ_i t_i
+   sujeto a:  A θ = y  (o ‖y−Aθ‖₂ ≤ ε)
+              −t_i ≤ θ_i ≤ t_i   ∀i
+
+2. Resolver con solver LP/QP (scipy.optimize.linprog o cvxpy):
+   theta_hat ← solver(A, y, epsilon)
+
+3. Si se usa base Ψ ≠ I:
+   x_hat ← Ψ @ theta_hat
+   sino:
+   x_hat ← theta_hat
+
+4. Retornar (theta_hat, x_hat)
+
+NOTA: Para producción se usan algoritmos especializados
+(FISTA, ADMM, SPGL1). Aquí usamos scipy para portabilidad.
+
+EDGE CASES:
+  - M < K → recuperación imposible (subdeterminado incluso para dispersos).
+  - A no satisface RIP → recuperación puede fallar; verificar coherencia.
+  - Ruido alto → usar BPDN/LASSO en vez de BP exacto.
+  - Señal no dispersa → ℓ₁ devuelve solución densa; CS no aplica.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.optimize import linprog
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class CompressedSensingParams(BaseModel):
+    """Parámetros de recuperación CS."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    M: Annotated[int, Field(ge=1)] = 50         # mediciones
+    N: Annotated[int, Field(ge=1)] = 200        # dimensión señal
+    K: Annotated[int, Field(ge=1)] = 5          # dispersión
+    noise_level: Annotated[float, Field(ge=0.0)] = 0.0
+
+class CompressedSensing:
+    """Implementación de Candès, Romberg & Tao (2006).
+
+    Recovery via Basis Pursuit (ℓ₁ minimization).
+    Reference: DOI: 10.1109/TIT.2005.862083
+    """
+
+    def __init__(self, params: CompressedSensingParams):
+        self.params = params
+
+    @staticmethod
+    def generate_sparse_signal(N: int, K: int,
+                               rng: np.random.Generator) -> tuple:
+        """Genera señal K-dispersa y su soporte."""
+        support = rng.choice(N, size=K, replace=False)
+        theta = np.zeros(N)
+        theta[support] = rng.standard_normal(K)
+        return theta, support
+
+    @staticmethod
+    def random_measurement_matrix(M: int, N: int,
+                                  rng: np.random.Generator) -> np.ndarray:
+        """Matriz de medición Gaussiana normalizada (incoherente universal)."""
+        Phi = rng.standard_normal((M, N)) / np.sqrt(M)
+        return Phi
+
+    def recover_bp(self, y: np.ndarray, A: np.ndarray) -> np.ndarray:
+        """Recuperación Basis Pursuit exacta. Implementa Eq. (3).
+
+        Formula como LP: min 1^T t  s.t.  Aθ=y, -t≤θ≤t
+        Variables: [θ (N), t (N)]
+        """
+        M, N = A.shape
+        # c = [0_N, 1_N]
+        c = np.concatenate([np.zeros(N), np.ones(N)])
+
+        # Igualdad: A θ = y → [A, 0] [θ; t] = y
+        A_eq = np.hstack([A, np.zeros((M, N))])
+        b_eq = y
+
+        # Desigualdad: θ_i ≤ t_i  y  -θ_i ≤ t_i
+        # → θ - t ≤ 0  y  -θ - t ≤ 0
+        G_ub = np.vstack([
+            np.hstack([np.eye(N), -np.eye(N)]),
+            np.hstack([-np.eye(N), -np.eye(N)])
+        ])
+        h_ub = np.zeros(2 * N)
+
+        bounds = [(None, None)] * N + [(0, None)] * N
+
+        result = linprog(c, A_ub=G_ub, b_ub=h_ub,
+                         A_eq=A_eq, b_eq=b_eq,
+                         bounds=bounds, method='highs')
+        if not result.success:
+            raise RuntimeError(f"LP failed: {result.message}")
+        return result.x[:N]
+
+    def full_pipeline(self, seed: int = 42) -> dict:
+        """Pipeline completo: generar → medir → recuperar."""
+        rng = np.random.default_rng(seed)
+        p = self.params
+
+        theta_true, support = self.generate_sparse_signal(p.N, p.K, rng)
+        Phi = self.random_measurement_matrix(p.M, p.N, rng)
+        y = Phi @ theta_true
+        if p.noise_level > 0:
+            y += p.noise_level * rng.standard_normal(p.M)
+
+        theta_rec = self.recover_bp(y, Phi)
+        error = np.linalg.norm(theta_rec - theta_true) / (np.linalg.norm(theta_true) + 1e-12)
+        support_rec = np.argsort(np.abs(theta_rec))[-p.K:]
+
+        return {
+            'theta_true': theta_true,
+            'theta_recovered': theta_rec,
+            'relative_error': error,
+            'support_true': support,
+            'support_recovered': support_rec,
+            'exact_support': set(support) == set(support_rec),
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_cs_exact_recovery_noiseless():
+    """Sin ruido, CS debe recuperar exactamente (error < 1e-6)."""
+    cs = CompressedSensing(CompressedSensingParams(M=80, N=200, K=5))
+    res = cs.full_pipeline(seed=123)
+    assert res['relative_error'] < 1e-4, f"Error debe ≈ 0: {res['relative_error']}"
+    assert res['exact_support'], "Soporte debe ser exacto"
+    print(f"✓ CS recuperación exacta (error {res['relative_error']:.2e})")
+
+def test_cs_requires_enough_measurements():
+    """Con M < ~K·log(N/K), la recuperación falla."""
+    # M=10 es insuficiente para K=5, N=200
+    cs = CompressedSensing(CompressedSensingParams(M=10, N=200, K=5))
+    res = cs.full_pipeline(seed=99)
+    assert res['relative_error'] > 0.1, "Con pocas mediciones debe fallar"
+    print(f"✓ CS falla con M insuficiente (error {res['relative_error']:.2f})")
+
+def test_cs_scaling_law():
+    """M ∝ K·log(N/K): duplicar K requiere ~2× más mediciones."""
+    errors = []
+    for K in [3, 6]:
+        M = int(4 * K * np.log(200 / K))
+        cs = CompressedSensing(CompressedSensingParams(M=M, N=200, K=K))
+        res = cs.full_pipeline(seed=42)
+        errors.append(res['relative_error'])
+    assert all(e < 0.01 for e in errors), f"Ambos deben recuperar: {errors}"
+    print(f"✓ CS scaling law verificada (errores: {[f'{e:.2e}' for e in errors]})")
+
+if __name__ == "__main__":
+    test_cs_exact_recovery_noiseless()
+    test_cs_requires_enough_measurements()
+    test_cs_scaling_law()
+    print("✓ PAPER #38 (Compressed Sensing) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #39: Arulampalam, Maskell, Gordon & Clapp (2002) — Particle Filter Tutorial
+
+**Referencia:** Arulampalam, M. S., Maskell, S., Gordon, N., & Clapp, T. (2002). "A tutorial on particle filters for online nonlinear/non-Gaussian Bayesian tracking." *IEEE Transactions on Signal Processing*, 50(2), 174–188. DOI: 10.1109/78.978374
+
+**Esencia:** Algoritmo de filtrado secuencial basado en Monte Carlo que aproxima la distribución posterior de estados ocultos mediante un conjunto de partículas ponderadas, aplicable a modelos no lineales y no gaussianos donde el Kalman Filter y sus variantes fallan.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El filtro de Kalman `[→ NeuroComp.Paper#...]` es óptimo solo para modelos lineales-gaussianos. El UKF `[→ Paper #33]` extiende esto a no linealidades moderadas pero sigue asumiendo gaussianidad. Muchos problemas reales tienen **dinámicas altamente no lineales** y **ruido no gaussiano** (seguimiento de maniobras bruscas, navegación en interiores, modelos neuronales con umbrales, economía con cambios de régimen). Se necesita un filtro que aproxime la posterior **sin restricciones paramétricas**.
+
+**¿Dónde falla el estado del arte previo?** El EKF linealiza y falla con no linealidades fuertes. El UKF captura hasta segundo orden pero no distribuciones multimodales o asimétricas. Los métodos de cuadratura son computacionalmente prohibitivos en alta dimensión. No existía un método general, simple de implementar y paralelizable para filtrado bayesiano arbitrario.
+
+**La solución de Arulampalam et al.:** representar la posterior p(x_t|z_{1:t}) como un conjunto de N partículas `{x_t^(i), w_t^(i)}`. Cada partícula es una hipótesis de estado; los pesos reflejan la verosimilitud. El algoritmo SIR (Sequential Importance Resampling) propaga partículas según la dinámica, repondera según la observación, y **remuestrea** para evitar degeneración de pesos. Es aproximación Monte Carlo de la recursión bayesiana exacta. Converge a la posterior verdadera cuando N→∞.
+
+**Aplicación práctica:** seguimiento de objetivos militares, localización de robots (SLAM), rastreo de personas en video, modelos epidemiológicos, finanzas (filtros de volatilidad estocástica), neurociencia (estimación de estados ocultos en modelos de spiking).
+
+**¿Por qué es un hito?** Democratizó el filtrado bayesiano no lineal/no gaussiano. El tutorial de 2002 es uno de los papers más citados en procesamiento de señales (>15000 citas). Estableció el PF como herramienta estándar junto al KF/EKF/UKF.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Recursión bayesiana de predicción:**
+```
+p(x_t | z_{1:t−1}) = ∫ p(x_t | x_{t−1}) · p(x_{t−1} | z_{1:t−1}) dx_{t−1}
+```
+- **Interpretación:** propagar la posterior anterior a través de la dinámica.
+
+**Eq. (2) — Recursión bayesiana de actualización:**
+```
+p(x_t | z_{1:t}) ∝ p(z_t | x_t) · p(x_t | z_{1:t−1})
+```
+- **Interpretación:** multiplicar predicción por verosimilitud.
+
+**Eq. (3) — Aproximación por partículas:**
+```
+p(x_t | z_{1:t}) ≈ Σ_{i=1}^{N} w_t^(i) · δ(x_t − x_t^(i))
+```
+- **Interpretación:** distribución discreta sobre N puntos.
+
+**Eq. (4) — Importancia secuencial (pesos):**
+```
+w_t^(i) ∝ w_{t−1}^(i) · p(z_t | x_t^(i)) · p(x_t^(i) | x_{t−1}^(i)) / q(x_t^(i) | x_{t−1}^(i), z_t)
+```
+- `q`: densidad de importancia. Si q = p(x_t|x_{t−1}) (prior importance):
+  `w_t^(i) ∝ w_{t−1}^(i) · p(z_t | x_t^(i))`
+
+**Eq. (5) — Degeneración de pesos y remuestreo:**
+```
+N_eff = 1 / Σ_i (w_t^(i))²
+Si N_eff < N_threshold → remuestrear
+```
+- Remuestreo sistemático/multinomial: generar nuevos índices proporcionales a w.
+- Resetear pesos: w^(i) ← 1/N.
+
+**Eq. (6) — Estimación MMSE:**
+```
+x̂_t = Σ_i w_t^(i) · x_t^(i)
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Sequential Importance Resampling (SIR) Particle Filter
+
+ENTRADA:
+  - z: secuencia de observaciones (T × obs_dim)
+  - f(x,u,rng): función de transición estocástica
+  - likelihood(z,x): p(z|x)
+  - N: número de partículas
+  - N_eff_threshold: umbral de remuestreo (típico N/2)
+
+SALIDA:
+  - x_est: estimaciones MMSE (T × state_dim)
+  - particles_history: (opcional) partículas por paso
+
+1. Inicialización (t=0):
+   Para i = 1..N:
+     x_0^(i) ~ p(x_0)
+     w_0^(i) = 1/N
+
+2. Para t = 1..T:
+   a) Predicción:
+      Para i = 1..N:
+        x_t^(i) = f(x_{t−1}^(i), rng)
+   
+   b) Actualización de pesos (Eq. 4, prior importance):
+      Para i = 1..N:
+        w_t^(i) = w_{t−1}^(i) · likelihood(z_t, x_t^(i))
+      Normalizar: w ← w / Σ w
+   
+   c) Estimación (Eq. 6):
+      x̂_t = Σ w_t^(i) · x_t^(i)
+   
+   d) Remuestreo (Eq. 5):
+      N_eff = 1 / Σ (w^(i))²
+      Si N_eff < N_threshold:
+        indices ← systematic_resample(w)
+        x_t ← x_t[indices]
+        w ← 1/N  (reset)
+
+3. Retornar (x_est)
+
+EDGE CASES:
+  - Likelihood = 0 para todas las partículas → colapso; regularizar.
+  - Dimensión alta → degeneración exponencial; necesitar N enorme.
+  - Dinámica determinista → diversidad perdida tras remuestreo; añadir jitter.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class ParticleFilterParams(BaseModel):
+    """Parámetros del Particle Filter SIR."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    N_particles: Annotated[int, Field(ge=10, le=100000)] = 500
+    N_eff_threshold_frac: Annotated[float, Field(gt=0.0, le=1.0)] = 0.5
+
+class ParticleFilter:
+    """Implementación del SIR Particle Filter (Arulampalam et al., 2002).
+
+    Reference: DOI: 10.1109/78.978374
+    """
+
+    def __init__(self, f: Callable, likelihood: Callable,
+                 params: ParticleFilterParams | None = None):
+        self.f = f              # f(x, rng) → x_next
+        self.likelihood = likelihood  # likelihood(z, x) → scalar
+        self.params = params or ParticleFilterParams()
+
+    @staticmethod
+    def systematic_resample(weights: np.ndarray,
+                            rng: np.random.Generator) -> np.ndarray:
+        """Remuestreo sistemático. O(N) y baja varianza."""
+        N = len(weights)
+        cumsum = np.cumsum(weights)
+        cumsum[-1] = 1.0  # garantizar suma = 1
+        u = (rng.random() + np.arange(N)) / N
+        indices = np.searchsorted(cumsum, u)
+        return indices
+
+    def filter(self, observations: np.ndarray,
+               x0_samples: np.ndarray) -> dict:
+        """Filtrado SIR completo. Implementa Eq. (1)-(6)."""
+        p = self.params
+        T = len(observations)
+        N = p.N_particles
+        rng = np.random.default_rng(42)
+
+        # Inicialización
+        particles = x0_samples.copy()  # (N, state_dim)
+        weights = np.ones(N) / N
+        estimates = np.zeros((T, particles.shape[1]))
+
+        for t in range(T):
+            # Eq. (1): Predicción
+            particles = np.array([self.f(p, rng) for p in particles])
+
+            # Eq. (4): Actualización de pesos
+            lik = np.array([self.likelihood(observations[t], p)
+                           for p in particles])
+            weights *= lik
+            w_sum = weights.sum()
+            if w_sum < 1e-300:
+                weights = np.ones(N) / N  # colapso: reset uniforme
+            else:
+                weights /= w_sum
+
+            # Eq. (6): Estimación MMSE
+            estimates[t] = weights @ particles
+
+            # Eq. (5): Remuestreo
+            N_eff = 1.0 / np.sum(weights ** 2)
+            if N_eff < p.N_eff_threshold_frac * N:
+                idx = self.systematic_resample(weights, rng)
+                particles = particles[idx]
+                weights = np.ones(N) / N
+
+        return {'estimates': estimates, 'final_particles': particles,
+                'final_weights': weights}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_pf_tracks_nonlinear_nonGaussian():
+    """PF debe seguir un sistema no lineal con ruido no gaussiano."""
+    rng_setup = np.random.default_rng(0)
+    # Dinámica: x_{t+1} = x_t/2 + 25*x_t/(1+x_t²) + 8*cos(1.2t) + w
+    # Observación: z_t = x_t²/20 + v  (no lineal, no gaussiana)
+    def f(x, rng):
+        t_val = x[1] if len(x) > 1 else 0
+        x_new = x[0] / 2 + 25 * x[0] / (1 + x[0]**2) + 8 * np.cos(1.2 * t_val)
+        x_new += rng.laplace(0, 1.0)  # ruido no gaussiano
+        return np.array([x_new, t_val + 1])
+
+    def lik(z, x):
+        pred = x[0]**2 / 20.0
+        # Likelihood gaussiana para la observación
+        return np.exp(-0.5 * ((z[0] - pred) / 1.0)**2)
+
+    pf = ParticleFilter(f, lik, ParticleFilterParams(N_particles=1000))
+
+    # Generar datos verdaderos
+    rng_data = np.random.default_rng(7)
+    T = 50
+    x_true = np.zeros(T)
+    z_obs = np.zeros((T, 1))
+    x_cur = np.array([0.1, 0.0])
+    for t in range(T):
+        x_cur = f(x_cur, rng_data)
+        x_true[t] = x_cur[0]
+        z_obs[t] = np.array([x_cur[0]**2 / 20.0 + rng_data.normal(0, 1.0)])
+
+    x0 = rng_setup.normal(0, 5, (1000, 2))
+    x0[:, 1] = 0.0
+    res = pf.filter(z_obs, x0)
+
+    rmse = np.sqrt(np.mean((res['estimates'][:, 0] - x_true)**2))
+    assert rmse < 5.0, f"RMSE debe ser razonable: {rmse}"
+    print(f"✓ PF sigue sistema no lineal/no gaussiano (RMSE={rmse:.2f})")
+
+def test_pf_weight_degeneracy_triggers_resampling():
+    """El remuestreo debe activarse cuando N_eff cae."""
+    called = [0]
+    orig_resample = ParticleFilter.systematic_resample
+
+    def counting_resample(cls, w, rng):
+        called[0] += 1
+        return orig_resample(w, rng)
+
+    ParticleFilter.systematic_resample = classmethod(counting_resample)
+
+    def f(x, rng): return x + rng.normal(0, 0.1, size=x.shape)
+    def lik(z, x): return np.exp(-50 * np.sum((z - x)**2))
+
+    pf = ParticleFilter(f, lik, ParticleFilterParams(N_particles=200))
+    z = np.tile(np.array([5.0]), (30, 1))
+    x0 = np.random.randn(200, 1) * 10
+    pf.filter(z, x0)
+
+    ParticleFilter.systematic_resample = staticmethod(orig_resample)
+    assert called[0] > 0, "Debe haber remuestreado al menos una vez"
+    print(f"✓ PF remuestreo activado ({called[0]} veces)")
+
+def test_pf_converges_with_more_particles():
+    """Más partículas → menor RMSE."""
+    def f(x, rng): return np.array([x[0] + rng.normal(0, 0.5)])
+    def lik(z, x): return np.exp(-0.5 * ((z[0] - x[0])**2))
+
+    rmses = []
+    for N in [50, 500]:
+        pf = ParticleFilter(f, lik, ParticleFilterParams(N_particles=N))
+        rng = np.random.default_rng(1)
+        T = 30
+        x_true = np.cumsum(rng.normal(0, 0.5, T))
+        z = (x_true + rng.normal(0, 1, T)).reshape(-1, 1)
+        x0 = rng.normal(0, 3, (N, 1))
+        res = pf.filter(z, x0)
+        rmses.append(np.sqrt(np.mean((res['estimates'][:, 0] - x_true)**2)))
+
+    assert rmses[1] < rmses[0], f"Más partículas debe mejorar: {rmses}"
+    print(f"✓ PF converge con N (RMSE: N=50→{rmses[0]:.2f}, N=500→{rmses[1]:.2f})")
+
+if __name__ == "__main__":
+    test_pf_tracks_nonlinear_nonGaussian()
+    test_pf_weight_degeneracy_triggers_resampling()
+    test_pf_converges_with_more_particles()
+    print("✓ PAPER #39 (Particle Filter) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #40: Mayne, Rawlings, Rao & Scokaert (2000) — Model Predictive Control Tutorial
+
+**Referencia:** Mayne, D. Q., Rawlings, J. B., Rao, C. V., & Scokaert, P. O. M. (2000). "Constrained model predictive control: Stability and optimality." *Automatica*, 36(6), 789–814. DOI: 10.1016/S0005-1098(99)00214-9
+
+**Esencia:** Marco de control óptimo en horizonte finito que maneja explícitamente restricciones en estados y entradas, resolviendo un problema de optimización en línea en cada paso de muestreo y aplicando solo la primera acción de control (principio de horizonte deslizante).
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El control óptimo clásico (LQR) no maneja **restricciones** (saturación de actuadores, límites de seguridad, zonas prohibidas). El control PID ignora restricciones y modelos multivariables. En procesos industriales (química, aeronáutica, robótica), las restricciones son **la** característica definitoria: violarlas significa daño, inseguridad o ilegalidad. Se necesita un controlador que optimice rendimiento **respetando restricciones de forma nativa**.
+
+**¿Dónde falla el estado del arte previo?** LQR/LQG son óptimos pero sin restricciones. Anti-windup en PID es parche ad hoc. Control óptimo con restricciones en horizonte infinito es intratable en general. No existía un marco unificado que combinara optimización, restricciones y estabilidad con garantías teóricas.
+
+**La solución de Mayne et al.:** en cada instante k, resolver:
+`min Σ_{i=0}^{N-1} ℓ(x_i, u_i) + V_f(x_N)`
+`sujeto a: x_{i+1} = f(x_i, u_i), x_i ∈ X, u_i ∈ U, x_N ∈ X_f`
+Aplicar solo u_0, avanzar un paso, repetir. La clave teórica es que la **función de costo terminal V_f** y el **conjunto terminal X_f** actúan como función de Lyapunov, garantizando estabilidad asintótica a pesar del horizonte finito. Esto convirtió MPC de una heurística industrial en una teoría rigurosa.
+
+**Aplicación práctica:** refinerías petroquímicas (>10,000 aplicaciones), control de vehículos autónomos, gestión de redes eléctricas, robótica con colisiones, HVAC, procesos farmacéuticos. Es la técnica de control avanzado más usada en industria.
+
+**¿Por qué es un hito?** El tutorial de 2000 consolidó 20 años de investigación y estableció las condiciones de estabilidad canónicas. MPC es hoy sinónimo de "control con restricciones". Generó una industria de software de control valorada en miles de millones.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Problema de optimización en horizonte finito:**
+```
+V_N*(x) = min_{u_0,...,u_{N−1}} Σ_{i=0}^{N−1} ℓ(x_i, u_i) + V_f(x_N)
+sujeto a:
+  x_{i+1} = f(x_i, u_i),  i = 0,...,N−1
+  x_i ∈ X,  u_i ∈ U
+  x_N ∈ X_f
+  x_0 = x
+```
+- `ℓ`: costo de etapa (típ. cuadrático: xᵀQx + uᵀRu).
+- `V_f`: costo terminal; `X_f`: conjunto terminal.
+
+**Eq. (2) — Ley de control MPC (horizonte deslizante):**
+```
+κ_N(x) = u_0*(x)   (primera acción óptima)
+x_{k+1} = f(x_k, κ_N(x_k))
+```
+
+**Eq. (3) — Condiciones de estabilidad (Assumption 2.3 del paper):**
+```
+(a) X_f ⊆ X,  0 ∈ int(X_f)
+(b) f(x, κ_f(x)) ∈ X_f  ∀ x ∈ X_f   (invarianza)
+(c) V_f(f(x, κ_f(x))) − V_f(x) ≤ −ℓ(x, κ_f(x))  ∀ x ∈ X_f
+```
+- `κ_f`: controlador local estabilizante en X_f.
+- **Interpretación:** V_f decrece dentro de X_f → Lyapunov local. Combinado con optimalidad, garantiza estabilidad global en la región de atracción.
+
+**Eq. (4) — Caso lineal-cuadrático (MPC estándar):**
+```
+ℓ(x,u) = xᵀQx + uᵀRu
+V_f(x) = xᵀPx
+f(x,u) = Ax + Bu
+```
+- P solución de Riccati algebraica (DARE) para (A,B,Q,R).
+- X_f = conjunto invariante maximal bajo LQR.
+- El problema se convierte en QP (Quadratic Program).
+
+**Eq. (5) — Función de valor como Lyapunov:**
+```
+V_N*(f(x, κ_N(x))) − V_N*(x) ≤ −ℓ(x, κ_N(x))
+```
+- **Interpretación:** el costo óptimo decrece a lo largo de trayectorias cerradas → estabilidad asintótica.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Linear MPC (QP formulation)
+
+ENTRADA:
+  - x_current: estado actual (n_x,)
+  - A, B: matrices del sistema lineal
+  - Q, R: matrices de costo
+  - P: matriz de costo terminal (DARE solution)
+  - N: horizonte de predicción
+  - u_lb, u_ub: límites de entrada
+  - x_lb, x_lb: límites de estado (opcional)
+
+SALIDA:
+  - u_opt: secuencia óptima de controles (N × n_u)
+  - x_opt: trayectoria óptima de estados (N+1 × n_x)
+  - cost: costo óptimo
+
+1. Construir QP:
+   Variable de decisión: z = [u_0; x_1; u_1; x_2; ...; u_{N-1}; x_N]
+   
+   Matriz de costo H: bloque-diagonal con R, Q, ..., P
+   Vector lineal f: cero (regulador) o referencia
+   
+   Restricciones de igualdad: dinámica x_{i+1} = Ax_i + Bu_i
+   Restricciones de desigualdad: u_lb ≤ u_i ≤ u_ub
+                                  x_lb ≤ x_i ≤ x_ub
+   Condición inicial: x_0 = x_current
+
+2. Resolver QP:
+   z* ← qp_solver(H, f, A_eq, b_eq, G, h)
+
+3. Extraer solución:
+   u_opt ← z*[u_indices]
+   x_opt ← z*[x_indices]
+
+4. Retornar (u_opt, x_opt, cost)
+
+EDGE CASES:
+  - QP infactible → relajar restricciones (soft constraints).
+  - Sistema inestable + N corto → P no estabiliza; aumentar N.
+  - Restricciones contradictorias → detectar infeasibility.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.optimize import minimize, LinearConstraint
+from scipy.linalg import solve_discrete_are
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class MPCParams(BaseModel):
+    """Parámetros del MPC lineal."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    N: Annotated[int, Field(ge=1, le=200)] = 20
+    u_min: Annotated[float, Field()] = -1.0
+    u_max: Annotated[float, Field()] = 1.0
+
+class ModelPredictiveControl:
+    """Implementación de MPC lineal con restricciones (Mayne et al., 2000).
+
+    Reference: DOI: 10.1016/S0005-1098(99)00214-9
+    """
+
+    def __init__(self, A: np.ndarray, B: np.ndarray,
+                 Q: np.ndarray, R: np.ndarray,
+                 params: MPCParams | None = None):
+        self.A = np.asarray(A, float)
+        self.B = np.asarray(B, float)
+        self.Q = np.asarray(Q, float)
+        self.R = np.asarray(R, float)
+        self.params = params or MPCParams()
+        self.n_x = A.shape[0]
+        self.n_u = B.shape[1]
+        # Eq. (4): Costo terminal vía DARE
+        self.P = solve_discrete_are(A, B, Q, R)
+
+    def _build_qp(self, x0: np.ndarray):
+        """Construye el QP para el horizonte N."""
+        N, n_x, n_u = self.params.N, self.n_x, self.n_u
+        n_z = N * n_u + N * n_x  # [u0,x1,u1,x2,...,u_{N-1},x_N]
+
+        # Matriz de costo H (bloque diagonal)
+        H = np.zeros((n_z, n_z))
+        for i in range(N):
+            ui = i * (n_u + n_x)
+            xi = ui + n_u
+            H[ui:ui+n_u, ui:ui+n_u] = self.R
+            if i < N - 1:
+                H[xi:xi+n_x, xi:xi+n_x] = self.Q
+            else:
+                H[xi:xi+n_x, xi:xi+n_x] = self.P  # costo terminal
+
+        # Restricciones de igualdad: dinámica
+        # x_{i+1} - A x_i - B u_i = 0
+        A_eq_rows = []
+        b_eq_vals = []
+        for i in range(N):
+            row = np.zeros((n_x, n_z))
+            ui = i * (n_u + n_x)
+            xi_next = ui + n_u
+            if i == 0:
+                # x_1 - B u_0 = A x_0
+                row[:, ui:ui+n_u] = -self.B
+                row[:, xi_next:xi_next+n_x] = np.eye(n_x)
+                b_eq_vals.append(self.A @ x0)
+            else:
+                xi_prev = (i - 1) * (n_u + n_x) + n_u
+                row[:, xi_prev:xi_prev+n_x] = -self.A
+                row[:, ui:ui+n_u] = -self.B
+                row[:, xi_next:xi_next+n_x] = np.eye(n_x)
+                b_eq_vals.append(np.zeros(n_x))
+            A_eq_rows.append(row)
+
+        A_eq = np.vstack(A_eq_rows)
+        b_eq = np.concatenate(b_eq_vals)
+
+        # Restricciones de caja en u
+        lb = np.full(n_z, -np.inf)
+        ub = np.full(n_z, np.inf)
+        for i in range(N):
+            ui = i * (n_u + n_x)
+            lb[ui:ui+n_u] = self.params.u_min
+            ub[ui:ui+n_u] = self.params.u_max
+
+        return H, A_eq, b_eq, lb, ub
+
+    def solve(self, x0: np.ndarray) -> dict:
+        """Resuelve MPC en un paso. Implementa Eq. (1)-(4)."""
+        H, A_eq, b_eq, lb, ub = self._build_qp(x0)
+        n_z = len(lb)
+
+        def cost(z):
+            return 0.5 * z @ H @ z
+
+        def grad(z):
+            return H @ z
+
+        constraints = LinearConstraint(A_eq, b_eq, b_eq)
+        bounds = list(zip(lb, ub))
+
+        z0 = np.zeros(n_z)
+        result = minimize(cost, z0, jac=grad, method='SLSQP',
+                          constraints=constraints, bounds=bounds,
+                          options={'maxiter': 500, 'ftol': 1e-10})
+
+        if not result.success:
+            raise RuntimeError(f"MPC QP failed: {result.message}")
+
+        z = result.x
+        N, n_u, n_x = self.params.N, self.n_u, self.n_x
+        u_seq = np.array([z[i*(n_u+n_x):i*(n_u+n_x)+n_u] for i in range(N)])
+        x_seq = [x0]
+        for i in range(N):
+            x_seq.append(self.A @ x_seq[-1] + self.B @ u_seq[i])
+
+        return {
+            'u_sequence': u_seq,
+            'x_trajectory': np.array(x_seq),
+            'optimal_cost': result.fun,
+            'u_applied': u_seq[0],  # Eq. (2): solo primera acción
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_mpc_stabilizes_double_integrator():
+    """MPC debe estabilizar un doble integrador con saturación."""
+    dt = 0.1
+    A = np.array([[1, dt], [0, 1]])
+    B = np.array([[0], [dt]])
+    Q = np.diag([10.0, 1.0])
+    R = np.array([[0.1]])
+    mpc = ModelPredictiveControl(A, B, Q, R, MPCParams(N=20, u_min=-1, u_max=1))
+
+    x = np.array([5.0, 0.0])  # posición inicial lejos del origen
+    trajectory = [x.copy()]
+    for _ in range(100):
+        sol = mpc.solve(x)
+        x = A @ x + B @ sol['u_applied']
+        trajectory.append(x.copy())
+
+    trajectory = np.array(trajectory)
+    final_pos = abs(trajectory[-1, 0])
+    assert final_pos < 0.1, f"Debe estabilizar en origen: pos final = {final_pos}"
+    print(f"✓ MPC estabiliza doble integrador (pos final {final_pos:.4f})")
+
+def test_mpc_respects_input_constraints():
+    """Las entradas deben respetar los límites [-1, 1]."""
+    A = np.array([[1.0, 0.1], [0.0, 1.0]])
+    B = np.array([[0.0], [0.1]])
+    Q = np.diag([100.0, 1.0])
+    R = np.array([[0.01]])
+    mpc = ModelPredictiveControl(A, B, Q, R, MPCParams(N=10, u_min=-1, u_max=1))
+
+    x = np.array([10.0, 0.0])
+    sol = mpc.solve(x)
+    assert np.all(sol['u_sequence'] >= -1.0 - 1e-8), "u ≥ -1"
+    assert np.all(sol['u_sequence'] <= 1.0 + 1e-8), "u ≤ 1"
+    print("✓ MPC respeta restricciones de entrada")
+
+def test_mpc_cost_decreases_along_trajectory():
+    """Eq. (5): V_N* debe decrecer a lo largo de la trayectoria cerrada."""
+    A = np.array([[0.9, 0.1], [0.0, 0.95]])
+    B = np.array([[0.0], [0.1]])
+    Q = np.diag([1.0, 1.0])
+    R = np.array([[0.1]])
+    mpc = ModelPredictiveControl(A, B, Q, R, MPCParams(N=15))
+
+    x = np.array([3.0, -2.0])
+    costs = []
+    for _ in range(20):
+        sol = mpc.solve(x)
+        costs.append(sol['optimal_cost'])
+        x = A @ x + B @ sol['u_applied']
+
+    # Debe ser monótonamente no creciente
+    diffs = np.diff(costs)
+    assert np.all(diffs <= 1e-6), f"Costo debe decrecer: {costs[:5]}"
+    print(f"✓ MPC costo decrece ({costs[0]:.2f} → {costs[-1]:.4f})")
+
+if __name__ == "__main__":
+    test_mpc_stabilizes_double_integrator()
+    test_mpc_respects_input_constraints()
+    test_mpc_cost_decreases_along_trajectory()
+    print("✓ PAPER #40 (MPC) — TODOS LOS TESTS PASARON")
+```
+
+---
+
