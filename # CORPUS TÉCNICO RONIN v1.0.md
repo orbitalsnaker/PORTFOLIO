@@ -8687,3 +8687,1430 @@ if __name__ == "__main__":
 ```
 
 ---
+
+### PAPER #56: Åström & Hägglund (1995) — PID Controllers: Theory, Design and Tuning
+
+**Referencia:** Åström, K. J., & Hägglund, T. (1995). *PID Controllers: Theory, Design, and Tuning* (2nd ed.). Instrument Society of America. ISBN: 978-1556175163. DOI: monografía canónica ISA; referencia técnica estándar sin DOI único (se cita como autoridad industrial).
+
+**Esencia:** Formalización moderna del controlador PID con derivada filtrada, acción sobre medición, anti-windup por back-calculation y criterios de sintonía robusta, convirtiendo el control industrial más usado en un objeto matemático diseñable y verificable.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** El PID es el controlador industrial más usado, pero su implementación ingenua sufre tres fallas críticas: **kick de derivada** ante cambios de setpoint, **windup integral** cuando el actuador satura, y **ruido amplificado** por la derivada pura. Además, su sintonía suele hacerse por reglas heurísticas sin garantía de estabilidad. Se necesita una formulación completa que haga al PID robusto, implementable y analizable.
+
+**¿Dónde falla el estado del arte previo?** El PID clásico textbook ignora saturaciones reales. La derivada sobre el error genera impulsos gigantes cuando el setpoint cambia. La integral acumulada durante saturación produce sobreshoot masivo al salir de la saturación. Ziegler-Nichols da sintonías agresivas con márgenes de robustez pobres. No existía un tratamiento unificado de anti-windup, filtrado y derivada sobre medición.
+
+**La solución de Åström & Hägglund:** el libro canoniza varias prácticas esenciales: (1) **derivada sobre la medición** en vez del error, evitando kick; (2) **filtro de primer orden** sobre la derivada para limitar amplificación de ruido; (3) **anti-windup por back-calculation**, donde la integral se corrige con la diferencia entre salida saturada y no saturada; (4) diseño basado en márgenes de sensibilidad y robustez, no solo respuesta nominal. Esto transforma el PID de receta empírica en controlador industrial riguroso.
+
+**Aplicación práctica:** control de temperatura, presión, flujo, nivel, velocidad de motores, procesos químicos, HVAC, robótica industrial, y cualquier lazo SISO donde se requiera simplicidad y robustez.
+
+**¿Por qué es un hito?** El libro de Åström & Hägglund definió el estándar moderno de implementación PID. Sus conceptos de anti-windup y derivada filtrada están presentes en todo controlador industrial serio. Es el complemento práctico de MPC `[→ Paper #40]` y SMC `[→ Paper #41]` en aplicaciones simples.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Ley PID continua ideal:**
+```
+u(t) = K_p e(t) + K_i ∫ e(τ)dτ + K_d de(t)/dt
+```
+- `e = r − y`: error entre referencia y medición.
+
+**Eq. (2) — Derivada sobre medición (anti-kick):**
+```
+u_D(t) = −K_d dy(t)/dt
+```
+- **Interpretación:** la derivada no responde al cambio de setpoint, solo a dinámica de planta.
+
+**Eq. (3) — Filtro de derivada:**
+```
+D_f(s) = K_d s / (1 + s τ_f)
+```
+- **Interpretación:** limita ganancia a alta frecuencia a `K_d/τ_f`.
+
+**Eq. (4) — Discretización de derivada filtrada:**
+```
+α = dt / (τ_f + dt)
+d_k = (1 − α) d_{k−1} + α (y_k − y_{k−1}) / dt
+u_D,k = −K_d d_k
+```
+
+**Eq. (5) — Integral con anti-windup back-calculation:**
+```
+I_{k+1} = I_k + K_i e_k dt + K_aw (u_sat,k − u_unsat,k) dt
+```
+- `u_unsat`: salida antes de saturar; `u_sat`: salida aplicada.
+- **Interpretación:** si el actuador satura, la integral se arrastra hacia un valor compatible con la saturación.
+
+**Eq. (6) — Saturación de actuador:**
+```
+u_sat = clamp(u_unsat, u_min, u_max)
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: PID industrial con anti-windup
+
+ENTRADA:
+  - setpoint r_k
+  - measurement y_k
+  - Kp, Ki, Kd, dt, τ_f, K_aw, u_min, u_max
+
+SALIDA:
+  - u_sat: acción de control aplicable
+
+1. Calcular error:
+   e ← r − y
+
+2. Derivada filtrada sobre medición (Eq. 4):
+   Si primer paso: dy ← 0
+   Sino: dy ← (y − y_prev)/dt
+   α ← dt/(τ_f + dt)
+   d_filt ← (1−α)d_filt + α dy
+   u_D ← −Kd d_filt
+
+3. Salida no saturada:
+   u_unsat ← Kp e + I + u_D
+
+4. Saturación (Eq. 6):
+   u_sat ← clamp(u_unsat, u_min, u_max)
+
+5. Actualizar integral con anti-windup (Eq. 5):
+   I ← I + Ki e dt + K_aw (u_sat − u_unsat) dt
+
+6. Guardar y_prev
+7. Retornar u_sat
+
+EDGE CASES:
+  - Ki = 0 → integral siempre cero.
+  - τ_f = 0 → derivada sin filtro; sensible a ruido.
+  - K_aw muy pequeño → windup persiste.
+  - K_aw muy grande → integral puede oscilar.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class PIDParams(BaseModel):
+    """Parámetros PID industrial con anti-windup."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    Kp: Annotated[float, Field(ge=0.0)] = 2.0
+    Ki: Annotated[float, Field(ge=0.0)] = 2.0
+    Kd: Annotated[float, Field(ge=0.0)] = 0.0
+    dt: Annotated[float, Field(gt=0.0)] = 0.01
+    u_min: float = -10.0
+    u_max: float = 10.0
+    derivative_filter_tau: Annotated[float, Field(ge=0.0)] = 0.05
+    anti_windup_gain: Annotated[float, Field(ge=0.0)] = 10.0
+
+class PIDController:
+    """Implementación de Åström & Hägglund (1995).
+
+    Reference: ISBN 978-1556175163 (autoridad canónica PID)
+    """
+
+    def __init__(self, params: PIDParams | None = None):
+        self.params = params or PIDParams()
+        self.reset()
+
+    def reset(self):
+        self.integral = 0.0
+        self.prev_measurement = None
+        self.derivative_filtered = 0.0
+
+    def step(self, setpoint: float, measurement: float) -> float:
+        """Un paso de control. Implementa Eq. (1)-(6)."""
+        p = self.params
+        error = setpoint - measurement
+
+        # Derivada sobre medición (Eq. 2)
+        if self.prev_measurement is None:
+            derivative_raw = 0.0
+        else:
+            derivative_raw = (measurement - self.prev_measurement) / p.dt
+
+        # Filtro de derivada (Eq. 3-4)
+        if p.derivative_filter_tau > 0.0:
+            alpha = p.dt / (p.derivative_filter_tau + p.dt)
+        else:
+            alpha = 1.0
+        self.derivative_filtered = (
+            (1.0 - alpha) * self.derivative_filtered
+            + alpha * derivative_raw
+        )
+        u_derivative = -p.Kd * self.derivative_filtered
+
+        # Salida no saturada
+        u_unsaturated = p.Kp * error + self.integral + u_derivative
+        u_saturated = float(np.clip(u_unsaturated, p.u_min, p.u_max))
+
+        # Integral con anti-windup (Eq. 5)
+        if p.Ki > 0.0:
+            self.integral += (
+                p.Ki * error * p.dt
+                + p.anti_windup_gain * (u_saturated - u_unsaturated) * p.dt
+            )
+        else:
+            self.integral = 0.0
+
+        self.prev_measurement = measurement
+        return u_saturated
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_pid_tracks_first_order_plant():
+    """PID debe llevar planta de primer orden al setpoint."""
+    pid = PIDController(PIDParams(
+        Kp=2.0, Ki=2.0, Kd=0.0, dt=0.01,
+        u_min=-10.0, u_max=10.0, anti_windup_gain=10.0
+    ))
+    x = 0.0
+    dt = 0.01
+    for _ in range(3000):
+        u = pid.step(1.0, x)
+        dx = (-x + u) / 1.0
+        x += dt * dx
+    assert abs(x - 1.0) < 0.05, f"Debe converger a 1: {x}"
+    print(f"✓ PID sigue setpoint (x={x:.4f})")
+
+def test_pid_antiwindup_bounds_integral():
+    """El anti-windup debe evitar integral explosiva bajo saturación."""
+    pid = PIDController(PIDParams(
+        Kp=0.0, Ki=1.0, Kd=0.0, dt=0.01,
+        u_min=-1.0, u_max=1.0, anti_windup_gain=10.0
+    ))
+    x = 0.0
+    dt = 0.01
+
+    # Fase 1: setpoint imposible, satura actuador
+    for _ in range(1000):
+        u = pid.step(10.0, x)
+        dx = (-x + u)
+        x += dt * dx
+
+    assert abs(pid.integral) < 5.0, f"Integral debe estar acotada: {pid.integral}"
+
+    # Fase 2: setpoint cambia a 0, debe recuperarse
+    for _ in range(2000):
+        u = pid.step(0.0, x)
+        dx = (-x + u)
+        x += dt * dx
+
+    assert abs(x) < 0.5, f"Debe recuperarse tras windup: x={x}"
+    print(f"✓ PID anti-windup efectivo (integral={pid.integral:.3f}, x={x:.3f})")
+
+def test_pid_derivative_filter_reduces_noise_response():
+    """Derivada filtrada debe responder menos a ruido de alta frecuencia."""
+    t = np.arange(0, 1.0, 0.01)
+    measurement = np.sin(2 * np.pi * 30.0 * t)
+
+    pid_unfiltered = PIDController(PIDParams(
+        Kp=0.0, Ki=0.0, Kd=1.0, dt=0.01, derivative_filter_tau=0.0
+    ))
+    pid_filtered = PIDController(PIDParams(
+        Kp=0.0, Ki=0.0, Kd=1.0, dt=0.01, derivative_filter_tau=0.1
+    ))
+
+    out_unfiltered = np.array([pid_unfiltered.step(0.0, y) for y in measurement])
+    out_filtered = np.array([pid_filtered.step(0.0, y) for y in measurement])
+
+    var_u = np.var(out_unfiltered)
+    var_f = np.var(out_filtered)
+    assert var_f < 0.8 * var_u, f"Filtro debe reducir varianza: {var_f} !< {var_u}"
+    print(f"✓ Derivada filtrada reduce ruido (var {var_u:.2f} → {var_f:.2f})")
+
+if __name__ == "__main__":
+    test_pid_tracks_first_order_plant()
+    test_pid_antiwindup_bounds_integral()
+    test_pid_derivative_filter_reduces_noise_response()
+    print("✓ PAPER #56 (PID) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #57: Khalil (2002) — Nonlinear Systems / Lyapunov Stability
+
+**Referencia:** Khalil, H. K. (2002). *Nonlinear Systems* (3rd ed.). Prentice Hall. ISBN: 978-0130673893. DOI: monografía canónica de control no lineal; se cita como autoridad teórica.
+
+**Esencia:** Marco de estabilidad de Lyapunov para sistemas no lineales: funciones de Lyapunov como energía generalizada, ecuación de Lyapunov para sistemas lineales, teoremas de estabilidad asintótica y principio de invariancia de LaSalle.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** En sistemas no lineales, la estabilidad no puede inferirse solo de autovalores lineales globales. Un sistema puede ser estable localmente, inestable globalmente, o tener múltiples equilibrios. Se necesita un método que certifique estabilidad **sin resolver explícitamente las trayectorias**, usando una función escalar de energía.
+
+**¿Dónde falla el estado del arte previo?** La linealización solo garantiza estabilidad local cuando el Jacobiano es Hurwitz. Falla en puntos críticos no hiperbólicos y no da garantías globales. Métodos de simulación muestran trayectorias pero no prueban estabilidad para todas las condiciones iniciales.
+
+**La solución de Khalil:** sistematizar el método directo de Lyapunov: encontrar `V(x)` positiva definida cuya derivada a lo largo de trayectorias `V̇(x)` sea negativa semidefinida o negativa definida. Para sistemas lineales `ẋ = Ax`, la condición se convierte en la **ecuación de Lyapunov**:
+`AᵀP + PA = −Q`
+con `P > 0`. El libro formaliza estabilidad uniforme, asintótica, exponencial, global, y el principio de LaSalle para casos donde `V̇ ≤ 0` pero no negativa definida.
+
+**Aplicación práctica:** certificación de controladores, análisis de robots, sistemas eléctricos de potencia, aeronáutica, sistemas mecánicos, y validación de modelos neuronales estables `[→ Paper #50]`.
+
+**¿Por qué es un hito?** El libro de Khalil es la referencia estándar mundial de sistemas no lineales. Formaliza el lenguaje de estabilidad usado en SMC `[→ Paper #41]`, MPC `[→ Paper #40]`, control adaptativo y robusto.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Función de Lyapunov positiva definida:**
+```
+V(0) = 0
+V(x) > 0 para x ≠ 0
+```
+
+**Eq. (2) — Derivada a lo largo de trayectorias:**
+```
+V̇(x) = ∇V(x)ᵀ f(x)
+```
+
+**Eq. (3) — Estabilidad asintótica local:**
+```
+V(x) positiva definida y V̇(x) negativa definida ⇒ x = 0 asintóticamente estable
+```
+
+**Eq. (4) — Ecuación de Lyapunov para sistemas lineales:**
+```
+AᵀP + PA = −Q,   Q = Qᵀ > 0
+```
+- Si existe `P = Pᵀ > 0`, entonces `A` es Hurwitz.
+
+**Eq. (5) — Energía de péndulo amortiguado (ejemplo físico):**
+```
+V(θ, ω) = ½ m l² ω² + m g l (1 − cos θ)
+```
+
+**Eq. (6) — Derivada de energía con amortiguamiento:**
+```
+V̇ = −b l² ω² ≤ 0
+```
+- **Interpretación:** la energía no crece; con LaSalle, converge al equilibrio inferior.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Análisis de Lyapunov lineal + péndulo no lineal
+
+ENTRADA:
+  - A: matriz del sistema lineal
+  - Q: matriz definida positiva
+  - péndulo: θ0, ω0, b, T, dt
+
+SALIDA:
+  - P: solución de ecuación de Lyapunov
+  - is_stable: P definida positiva
+  - energía final vs inicial
+
+1. Lineal:
+   Resolver AᵀP + PA = −Q
+   Verificar P > 0 mediante eigvalsh
+
+2. Péndulo amortiguado:
+   V(θ, ω) ← ½ m l² ω² + m g l (1 − cos θ)
+   Integrar:
+     θ̇ = ω
+     ω̇ = −(g/l) sin θ − (b/(m l²)) ω
+   Calcular V(t)
+   Verificar V_final < V_inicial
+
+3. Retornar resultados
+
+EDGE CASES:
+  - A inestable → P no positiva definida.
+  - Q mal condicionada → P numéricamente inestable.
+  - Péndulo con b=0 → energía constante, no converge.
+  - dt grande → integración puede violar decrecimiento numérico.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.linalg import solve_continuous_lyapunov, eigvalsh
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class PendulumParams(BaseModel):
+    """Parámetros físicos del péndulo amortiguado."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    m: Annotated[float, Field(gt=0.0)] = 1.0
+    l: Annotated[float, Field(gt=0.0)] = 1.0
+    g: Annotated[float, Field(gt=0.0)] = 9.81
+    b: Annotated[float, Field(ge=0.0)] = 0.5
+    dt: Annotated[float, Field(gt=0.0)] = 0.01
+
+class LyapunovAnalysis:
+    """Implementación de estabilidad según Khalil (2002).
+
+    Reference: ISBN 978-0130673893
+    """
+
+    @staticmethod
+    def linear_continuous(A: np.ndarray, Q: np.ndarray | None = None) -> dict:
+        """Resuelve AᵀP + PA = −Q. Implementa Eq. (4)."""
+        A = np.asarray(A, dtype=float)
+        n = A.shape[0]
+        if Q is None:
+            Q = np.eye(n)
+
+        # SciPy resuelve a X + X aᵀ = q.
+        # Para AᵀP + PA = −Q, usar a = Aᵀ, q = −Q.
+        P = solve_continuous_lyapunov(A.T, -Q)
+        P = 0.5 * (P + P.T)
+        eigvals = eigvalsh(P)
+        residual = np.linalg.norm(A.T @ P + P @ A + Q, ord='fro')
+
+        return {
+            'P': P,
+            'positive_definite': bool(np.all(eigvals > 0)),
+            'residual': float(residual),
+            'eigvals_P': eigvals,
+        }
+
+    @staticmethod
+    def pendulum_energy(theta: float, omega: float,
+                        params: PendulumParams) -> float:
+        """Implementa Eq. (5)."""
+        p = params
+        kinetic = 0.5 * p.m * p.l ** 2 * omega ** 2
+        potential = p.m * p.g * p.l * (1.0 - np.cos(theta))
+        return float(kinetic + potential)
+
+    @staticmethod
+    def pendulum_derivatives(state: np.ndarray,
+                             params: PendulumParams) -> np.ndarray:
+        """Dinámica del péndulo amortiguado."""
+        theta, omega = state
+        p = params
+        dtheta = omega
+        domega = -(p.g / p.l) * np.sin(theta) - (p.b / (p.m * p.l ** 2)) * omega
+        return np.array([dtheta, domega])
+
+    def simulate_pendulum(self, theta0: float, omega0: float,
+                          T: float, params: PendulumParams) -> dict:
+        """Integración RK4 del péndulo."""
+        p = params
+        n_steps = int(round(T / p.dt))
+        state = np.array([theta0, omega0], dtype=float)
+        energies = np.zeros(n_steps + 1)
+        energies[0] = self.pendulum_energy(state[0], state[1], p)
+
+        def f(s):
+            return self.pendulum_derivatives(s, p)
+
+        for k in range(n_steps):
+            k1 = f(state)
+            k2 = f(state + 0.5 * p.dt * k1)
+            k3 = f(state + 0.5 * p.dt * k2)
+            k4 = f(state + p.dt * k3)
+            state = state + (p.dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
+            energies[k + 1] = self.pendulum_energy(state[0], state[1], p)
+
+        return {
+            'final_theta': float(state[0]),
+            'final_omega': float(state[1]),
+            'energies': energies,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_lyapunov_stable_linear_system():
+    """A estable debe dar P positiva definida y residual bajo."""
+    A = np.array([[0.0, 1.0], [-2.0, -3.0]])
+    res = LyapunovAnalysis.linear_continuous(A)
+    assert res['positive_definite'], "P debe ser positiva definida"
+    assert res['residual'] < 1e-8, f"Residual alto: {res['residual']}"
+    print("✓ Lyapunov lineal estable verificado")
+
+def test_lyapunov_unstable_linear_system():
+    """A inestable no debe producir P positiva definida."""
+    A = np.array([[1.0, 0.0], [0.0, 2.0]])
+    res = LyapunovAnalysis.linear_continuous(A)
+    assert not res['positive_definite'], "A inestable no debe certificar estabilidad"
+    print("✓ Lyapunov detecta sistema inestable")
+
+def test_pendulum_energy_decreases_with_damping():
+    """La energía del péndulo amortiguado debe decrecer."""
+    params = PendulumParams(m=1.0, l=1.0, g=9.81, b=0.5, dt=0.01)
+    la = LyapunovAnalysis()
+    res = la.simulate_pendulum(theta0=1.0, omega0=0.0, T=10.0, params=params)
+    E = res['energies']
+    assert E[-1] < E[0] * 0.99, f"Energía debe decrecer: {E[-1]} vs {E[0]}"
+    assert np.all(np.diff(E) <= 1e-9), "Energía debe ser no creciente"
+    print(f"✓ Energía de péndulo decrece ({E[0]:.3f} → {E[-1]:.3f})")
+
+if __name__ == "__main__":
+    test_lyapunov_stable_linear_system()
+    test_lyapunov_unstable_linear_system()
+    test_pendulum_energy_decreases_with_damping()
+    print("✓ PAPER #57 (Khalil/Lyapunov) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #58: Ljung (1999) — System Identification
+
+**Referencia:** Ljung, L. (1999). *System Identification: Theory for the User* (2nd ed.). Prentice Hall. ISBN: 978-0136566953. DOI: monografía canónica; referencia estándar en identificación de sistemas.
+
+**Esencia:** Marco para construir modelos dinámicos desde datos: estructuras ARX/OE, predictor de un paso, minimización de error de predicción, consistencia estadística y validación de modelos.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Para controlar o predecir un sistema, se necesita un modelo dinámico. Muchas veces no se conoce la física completa o es demasiado compleja. Se requiere identificar un modelo desde pares entrada-salida `(u_t, y_t)` de forma sistemática, con garantías estadísticas.
+
+**¿Dónde falla el estado del arte previo?** Ajustar polinomios estáticos ignora dinámica. Simulación y ajuste visual no son reproducibles. Métodos de mínimos cuadrados ingenuos pueden ser sesgados si hay ruido correlacionado con regresores. No había un marco unificado de estructuras, predictores y validación.
+
+**La solución de Ljung:** formular identificación como **optimización de un error de predicción**:
+`V_N(θ) = (1/N) Σ ‖y_t − ŷ_t|t−1(θ)‖²`
+Estructuras como ARX convierten el problema en regresión lineal:
+`A(q)y_t = B(q)u_t + e_t`
+El predictor de un paso se construye con retardos de `y` y `u`. La estimación por mínimos cuadrados es consistente bajo excitación persistente y ruido blanco. El libro sistematiza selección de orden, validación cruzada, análisis de residuos y diagnóstico.
+
+**Aplicación práctica:** identificación de plantas industriales, modelos térmicos, sistemas mecánicos, economía, neurociencia de respuestas estímulo-respuesta `[→ DCM Paper #44]`, y diseño de controladores basados en modelo `[→ MPC Paper #40]`.
+
+**¿Por qué es un hito?** Es el texto definitivo de identificación de sistemas. Unificó métodos estadísticos y control, y define el lenguaje de ARX, OE, PEM, validación residual. Es la base de toolboxes de identificación en MATLAB y Python.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Modelo ARX:**
+```
+A(q) y_t = B(q) u_t + e_t
+A(q) = 1 + a_1 q^{-1} + ... + a_na q^{-na}
+B(q) = b_1 q^{-1} + ... + b_nb q^{-nb}
+```
+
+**Eq. (2) — Regresor lineal:**
+```
+y_t = φ_tᵀ θ + e_t
+φ_t = [ y_{t−1}, ..., y_{t−na}, u_{t−nk}, ..., u_{t−nk−nb+1} ]
+θ = [ a_1, ..., a_na, b_1, ..., b_nb ]ᵀ
+```
+- En la implementación usamos signo positivo directo para `a_i`.
+
+**Eq. (3) — Predictor de un paso:**
+```
+ŷ_t|t−1(θ) = φ_tᵀ θ
+```
+
+**Eq. (4) — Pérdida de error de predicción:**
+```
+V_N(θ) = (1/N) Σ_{t} (y_t − φ_tᵀ θ)²
+```
+
+**Eq. (5) — Estimación por mínimos cuadrados:**
+```
+θ̂ = (ΦᵀΦ)⁻¹ Φᵀ Y
+```
+
+**Eq. (6) — Excitación persistente (condición conceptual):**
+```
+ΦᵀΦ debe ser definida positiva
+```
+- **Interpretación:** la entrada debe contener suficiente riqueza frecuencial para identificar todos los parámetros.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Identificación ARX por mínimos cuadrados
+
+ENTRADA:
+  - y: salida (T,)
+  - u: entrada (T,)
+  - na, nb, nk: órdenes y retardo
+
+SALIDA:
+  - theta_hat: parámetros estimados
+  - y_hat: predicción one-step
+  - mse: error cuadrático medio
+
+1. Determinar instante inicial:
+   t0 = max(na, nk + nb - 1)
+
+2. Construir matriz de regresores Φ y vector Y:
+   Para t = t0..T−1:
+     φ = [ y[t−1], ..., y[t−na], u[t−nk], ..., u[t−nk−nb+1] ]
+     Φ.append(φ); Y.append(y[t])
+
+3. Resolver mínimos cuadrados (Eq. 5):
+   θ̂ ← lstsq(Φ, Y)
+
+4. Predecir:
+   ŷ ← Φ θ̂
+
+5. Calcular MSE:
+   mse ← mean((Y − ŷ)²)
+
+6. Retornar θ̂, ŷ, mse
+
+EDGE CASES:
+  - T demasiado corto → ΦᵀΦ singular.
+  - Entrada constante → no identifica dinámica.
+  - Ruido correlacionado → sesgo potencial; usar estructuras más ricas.
+  - Órdenes muy altas → sobreajuste.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class ARXParams(BaseModel):
+    """Órdenes de un modelo ARX."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    na: Annotated[int, Field(ge=1, le=20)] = 2
+    nb: Annotated[int, Field(ge=1, le=20)] = 1
+    nk: Annotated[int, Field(ge=1, le=20)] = 1
+
+class LjungSystemIdentification:
+    """Implementación ejecutable de identificación ARX (Ljung, 1999).
+
+    Reference: ISBN 978-0136566953
+    """
+
+    def __init__(self, params: ARXParams):
+        self.params = params
+
+    def build_regressors(self, y: np.ndarray, u: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Construye Φ y Y. Implementa Eq. (2)."""
+        p = self.params
+        y = np.asarray(y, dtype=float)
+        u = np.asarray(u, dtype=float)
+        if len(y) != len(u):
+            raise ValueError("y/u deben tener misma longitud.")
+
+        t0 = max(p.na, p.nk + p.nb - 1)
+        Phi = []
+        Y = []
+
+        for t in range(t0, len(y)):
+            phi = []
+            for i in range(1, p.na + 1):
+                phi.append(y[t - i])
+            for j in range(p.nk, p.nk + p.nb):
+                phi.append(u[t - j])
+            Phi.append(phi)
+            Y.append(y[t])
+
+        return np.array(Phi), np.array(Y)
+
+    def estimate(self, y: np.ndarray, u: np.ndarray) -> dict:
+        """Estima θ por mínimos cuadrados. Implementa Eq. (4)-(5)."""
+        Phi, Y = self.build_regressors(y, u)
+        theta_hat, *_ = np.linalg.lstsq(Phi, Y, rcond=None)
+        y_hat = Phi @ theta_hat
+        mse = float(np.mean((Y - y_hat) ** 2))
+
+        return {
+            'theta_hat': theta_hat,
+            'y_hat': y_hat,
+            'mse': mse,
+            'Phi': Phi,
+            'Y': Y,
+        }
+
+    def predict_one_step(self, y: np.ndarray, u: np.ndarray,
+                         theta: np.ndarray) -> np.ndarray:
+        """Implementa Eq. (3)."""
+        Phi, _ = self.build_regressors(y, u)
+        return Phi @ theta
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _simulate_arx(theta_true: np.ndarray, params: ARXParams,
+                  T: int = 2000, noise_std: float = 0.01,
+                  seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(seed)
+    u = rng.normal(0, 1, T)
+    y = np.zeros(T)
+    na, nb, nk = params.na, params.nb, params.nk
+
+    a = theta_true[:na]
+    b = theta_true[na:na + nb]
+
+    for t in range(1, T):
+        val = 0.0
+        for i in range(1, na + 1):
+            if t - i >= 0:
+                val += a[i - 1] * y[t - i]
+        for j in range(nk, nk + nb):
+            if t - j >= 0:
+                val += b[j - nk] * u[t - j]
+        y[t] = val + rng.normal(0, noise_std)
+
+    return y, u
+
+def test_arx_recovers_true_parameters():
+    """ARX debe recuperar parámetros verdaderos con ruido bajo."""
+    params = ARXParams(na=2, nb=1, nk=1)
+    theta_true = np.array([0.6, -0.2, 0.8])
+    y, u = _simulate_arx(theta_true, params, T=3000, noise_std=0.01, seed=1)
+
+    arx = LjungSystemIdentification(params)
+    res = arx.estimate(y, u)
+    theta_hat = res['theta_hat']
+
+    np.testing.assert_allclose(theta_hat, theta_true, atol=0.05)
+    print(f"✓ ARX recupera parámetros: {theta_hat}")
+
+def test_arx_one_step_prediction_mse():
+    """El MSE de predicción debe ser bajo comparado con varianza de y."""
+    params = ARXParams(na=2, nb=1, nk=1)
+    theta_true = np.array([0.6, -0.2, 0.8])
+    y, u = _simulate_arx(theta_true, params, T=2000, noise_std=0.01, seed=2)
+
+    arx = LjungSystemIdentification(params)
+    res = arx.estimate(y, u)
+    var_y = float(np.var(y))
+    assert res['mse'] < 0.05 * var_y, f"MSE alto: {res['mse']}"
+    print(f"✓ ARX predice bien (MSE={res['mse']:.2e}, Var(y)={var_y:.2e})")
+
+def test_arx_singular_without_excitation():
+    """Entrada constante debe producir matriz de regresores mal condicionada."""
+    params = ARXParams(na=2, nb=1, nk=1)
+    T = 200
+    y = np.ones(T)
+    u = np.ones(T) * 0.5
+    arx = LjungSystemIdentification(params)
+    Phi, _ = arx.build_regressors(y, u)
+    cond = np.linalg.cond(Phi)
+    assert cond > 1e6, f"Debe estar mal condicionada: {cond}"
+    print(f"✓ ARX detecta falta de excitación (cond={cond:.2e})")
+
+if __name__ == "__main__":
+    test_arx_recovers_true_parameters()
+    test_arx_one_step_prediction_mse()
+    test_arx_singular_without_excitation()
+    print("✓ PAPER #58 (System Identification) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #59: Coifman & Wickerhauser (1992) — Wavelet Packets / Entropy-Based Best Basis
+
+**Referencia:** Coifman, R. R., & Wickerhauser, M. V. (1992). "Entropy-based algorithms for best basis selection." *IEEE Transactions on Information Theory*, 38(2), 713–718. DOI: 10.1109/18.121632
+
+**Esencia:** Extensión del análisis wavelet a un árbol completo de paquetes, permitiendo seleccionar adaptativamente la mejor base según un costo de entropía para compresión y denoising.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La wavelet estándar `[→ Paper #42]` descompone solo la rama de baja frecuencia, asumiendo que la información útil está en aproximaciones sucesivas. Pero señales reales pueden contener estructura en bandas medias o altas. Se necesita un diccionario más rico que permita seleccionar la base óptima para cada señal.
+
+**¿Dónde falla el estado del arte previo?** La DWT clásica tiene resolución fija: divide solo bajas frecuencias. La STFT tiene resolución fija en todo el plano. Ninguna adapta la base al contenido de la señal. No existía un criterio sistemático para elegir entre múltiples representaciones posibles.
+
+**La solución de Coifman & Wickerhauser:** construir un **árbol de wavelet packets** donde tanto aproximaciones como detalles se siguen descomponiendo. Cada nodo representa una banda. Se define una **función de costo aditiva**, típicamente entropía de Shannon sobre energía normalizada. Mediante programación dinámica se selecciona la base que minimiza el costo global. Esto permite compresión, denoising y clasificación adaptativos.
+
+**Aplicación práctica:** compresión de audio e imágenes, denoising adaptativo `[→ Paper #43]`, reconocimiento de patrones, análisis de vibraciones, y selección de características en señales biomédicas.
+
+**¿Por qué es un hito?** Introdujo la idea de **best basis selection** con costos aditivos, precursora de métodos sparse modernos y compressed sensing `[→ Paper #38]`. Conectó teoría de información, wavelets y aprendizaje de representaciones.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — División wavelet packet Haar:**
+```
+a_k = (x_{2k} + x_{2k+1}) / √2
+d_k = (x_{2k} − x_{2k+1}) / √2
+```
+
+**Eq. (2) — Reconstrucción Haar:**
+```
+x_{2k} = (a_k + d_k) / √2
+x_{2k+1} = (a_k − d_k) / √2
+```
+
+**Eq. (3) — Energía de un nodo:**
+```
+E(x) = Σ_i x_i²
+```
+
+**Eq. (4) — Entropía de Shannon normalizada:**
+```
+p_i = x_i² / E(x)
+H(x) = − Σ_i p_i log p_i
+```
+- **Interpretación:** mide dispersión de energía; señales concentradas tienen menor entropía.
+
+**Eq. (5) — Costo aditivo de base:**
+```
+Cost(B) = Σ_{nodo ∈ B} H(nodo)
+```
+
+**Eq. (6) — Selección de mejor base:**
+```
+Cost_opt(nodo) = min( H(nodo), Cost_opt(izq) + Cost_opt(der) )
+```
+- **Interpretación:** programación dinámica sobre el árbol.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Wavelet Packet Best Basis
+
+ENTRADA:
+  - x: señal
+  - max_depth: profundidad máxima
+  - wavelet: 'haar'
+
+SALIDA:
+  - base seleccionada
+  - señal reconstruida
+
+1. Construir árbol:
+   nodo ← signal
+   Si profundidad < max_depth y len ≥ 2:
+     a, d ← haar_split(x)
+     hijos ← build(a), build(d)
+
+2. Calcular entropía por nodo (Eq. 4).
+
+3. Selección óptima (Eq. 6):
+   Si nodo es hoja: seleccionar nodo.
+   Sino:
+     cost_node ← H(nodo)
+     cost_children ← cost(left)+cost(right)
+     Si cost_node ≤ cost_children:
+       seleccionar nodo y deseleccionar descendencia
+     Sino:
+       no seleccionar nodo; conservar selección de hijos
+
+4. Reconstruir desde base seleccionada:
+   Si nodo seleccionado → devolver nodo.data
+   Sino → haar_join(reconstruct(left), reconstruct(right))
+
+5. Retornar señal reconstruida
+
+EDGE CASES:
+  - Longitud impar → padear o truncar.
+  - Energía cero → entropía cero.
+  - max_depth excesivo → nodos de longitud 1.
+  - Costo aditivo no válido si no es monótono.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class WaveletPacketParams(BaseModel):
+    """Parámetros de wavelet packets."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    max_depth: Annotated[int, Field(ge=1, le=10)] = 3
+    eps: Annotated[float, Field(gt=0.0, le=1e-6)] = 1e-12
+
+class WaveletPacketNode:
+    """Nodo del árbol de wavelet packets."""
+    __slots__ = ('data', 'left', 'right', 'selected')
+
+    def __init__(self, data: np.ndarray):
+        self.data = np.asarray(data, dtype=float)
+        self.left = None
+        self.right = None
+        self.selected = False
+
+class WaveletPackets:
+    """Implementación de Coifman & Wickerhauser (1992).
+
+    Reference: DOI: 10.1109/18.121632
+    """
+
+    def __init__(self, params: WaveletPacketParams | None = None):
+        self.params = params or WaveletPacketParams()
+
+    @staticmethod
+    def haar_split(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Implementa Eq. (1)."""
+        if len(x) % 2 != 0:
+            raise ValueError("Longitud debe ser par para Haar.")
+        sqrt2 = np.sqrt(2.0)
+        a = (x[0::2] + x[1::2]) / sqrt2
+        d = (x[0::2] - x[1::2]) / sqrt2
+        return a, d
+
+    @staticmethod
+    def haar_join(a: np.ndarray, d: np.ndarray) -> np.ndarray:
+        """Implementa Eq. (2)."""
+        sqrt2 = np.sqrt(2.0)
+        out = np.empty(len(a) * 2)
+        out[0::2] = (a + d) / sqrt2
+        out[1::2] = (a - d) / sqrt2
+        return out
+
+    def build_tree(self, x: np.ndarray, depth: int = 0) -> WaveletPacketNode:
+        """Construye árbol completo hasta max_depth."""
+        node = WaveletPacketNode(x)
+        p = self.params
+        if depth >= p.max_depth or len(x) < 2:
+            return node
+        a, d = self.haar_split(x)
+        node.left = self.build_tree(a, depth + 1)
+        node.right = self.build_tree(d, depth + 1)
+        return node
+
+    def entropy(self, x: np.ndarray) -> float:
+        """Implementa Eq. (4)."""
+        energy = float(np.sum(x ** 2))
+        if energy <= self.params.eps:
+            return 0.0
+        p = (x ** 2) / energy
+        p = p[p > self.params.eps]
+        return float(-np.sum(p * np.log(p)))
+
+    def _clear_children_selected(self, node: WaveletPacketNode):
+        if node.left is not None:
+            self._clear_selected_recursive(node.left)
+        if node.right is not None:
+            self._clear_selected_recursive(node.right)
+
+    def _clear_selected_recursive(self, node: WaveletPacketNode):
+        node.selected = False
+        if node.left is not None:
+            self._clear_selected_recursive(node.left)
+        if node.right is not None:
+            self._clear_selected_recursive(node.right)
+
+    def select_best_basis(self, node: WaveletPacketNode) -> float:
+        """Implementa Eq. (6)."""
+        if node.left is None or node.right is None:
+            node.selected = True
+            return self.entropy(node.data)
+
+        left_cost = self.select_best_basis(node.left)
+        right_cost = self.select_best_basis(node.right)
+        child_cost = left_cost + right_cost
+        node_cost = self.entropy(node.data)
+
+        if node_cost <= child_cost + self.params.eps:
+            node.selected = True
+            self._clear_children_selected(node)
+            return node_cost
+        else:
+            node.selected = False
+            return child_cost
+
+    def reconstruct(self, node: WaveletPacketNode) -> np.ndarray:
+        """Reconstruye desde la base seleccionada."""
+        if node.selected or node.left is None or node.right is None:
+            return node.data.copy()
+        left = self.reconstruct(node.left)
+        right = self.reconstruct(node.right)
+        return self.haar_join(left, right)
+
+    def terminal_nodes(self, node: WaveletPacketNode) -> list[WaveletPacketNode]:
+        """Retorna hojas del árbol completo."""
+        if node.left is None or node.right is None:
+            return [node]
+        return self.terminal_nodes(node.left) + self.terminal_nodes(node.right)
+
+    def analyze(self, x: np.ndarray) -> dict:
+        """Pipeline completo: árbol, best basis, reconstrucción."""
+        root = self.build_tree(x)
+        best_cost = self.select_best_basis(root)
+        reconstructed = self.reconstruct(root)
+        root_entropy = self.entropy(x)
+        leaves = self.terminal_nodes(root)
+        leaf_energy = sum(float(np.sum(leaf.data ** 2)) for leaf in leaves)
+        return {
+            'best_cost': best_cost,
+            'root_entropy': root_entropy,
+            'reconstructed': reconstructed,
+            'root_energy': float(np.sum(x ** 2)),
+            'leaf_energy': float(leaf_energy),
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_wavelet_packet_perfect_reconstruction():
+    """La reconstrucción desde la base seleccionada debe ser exacta."""
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(64)
+    wp = WaveletPackets(WaveletPacketParams(max_depth=3))
+    res = wp.analyze(x)
+    np.testing.assert_allclose(res['reconstructed'], x, atol=1e-10)
+    print("✓ Wavelet packets reconstrucción perfecta")
+
+def test_wavelet_packet_best_cost_not_worse_than_root():
+    """La mejor base no debe costar más que usar la raíz completa."""
+    rng = np.random.default_rng(1)
+    x = rng.standard_normal(64)
+    wp = WaveletPackets(WaveletPacketParams(max_depth=3))
+    res = wp.analyze(x)
+    assert res['best_cost'] <= res['root_entropy'] + 1e-12, \
+        f"Best basis debe mejorar o igualar raíz: {res['best_cost']} vs {res['root_entropy']}"
+    print(f"✓ Best basis costo óptimo (root H={res['root_entropy']:.3f}, best={res['best_cost']:.3f})")
+
+def test_wavelet_packet_energy_conservation():
+    """La energía de hojas debe conservar energía total."""
+    rng = np.random.default_rng(2)
+    x = rng.standard_normal(64)
+    wp = WaveletPackets(WaveletPacketParams(max_depth=3))
+    res = wp.analyze(x)
+    np.testing.assert_allclose(res['leaf_energy'], res['root_energy'], rtol=1e-8)
+    print("✓ Wavelet packets conservan energía")
+
+if __name__ == "__main__":
+    test_wavelet_packet_perfect_reconstruction()
+    test_wavelet_packet_best_cost_not_worse_than_root()
+    test_wavelet_packet_energy_conservation()
+    print("✓ PAPER #59 (Wavelet Packets) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #60: Julier & Uhlmann (2004) — The Unscented Transform
+
+**Referencia:** Julier, S. J., & Uhlmann, J. K. (2004). "Unscented filtering and nonlinear estimation." *Proceedings of the IEEE*, 92(3), 401–422. DOI: 10.1109/JPROC.2003.824101
+
+**Esencia:** La Unscented Transform propaga media y covarianza a través de funciones no lineales mediante puntos sigma deterministas, capturando momentos hasta segundo orden sin linealizar y con menor costo que métodos de Monte Carlo.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Para estimación y control, frecuentemente se necesita propagar una distribución gaussiana `x ~ N(μ, P)` a través de una función no lineal `y = f(x)`. La linealización por Jacobiano del EKF introduce errores de primer orden y puede ser inestable. Monte Carlo es preciso pero costoso. Se necesita un método determinista, eficiente y de mayor orden.
+
+**¿Dónde falla el estado del arte previo?** El EKF linealiza y pierde curvatura. Métodos de cuadratura en alta dimensión explotan combinatoriamente. Monte Carlo requiere muchas muestras. No existía una transformada simple que propagara momentos con precisión de segundo orden para gaussianas.
+
+**La solución de Julier & Uhlmann:** la **Unscented Transform (UT)** selecciona `2n+1` puntos sigma alrededor de la media, ponderados para capturar media y covarianza exactas de la gaussiana original. Estos puntos se evalúan en `f`, y se reconstruyen media y covarianza usando pesos. Para funciones lineales la propagación es exacta; para no lineales captura términos de segundo orden para gaussianas. Es la base teórica del UKF `[→ Paper #33]`.
+
+**Aplicación práctica:** navegación, seguimiento, fusión sensorial, robótica, identificación de sistemas no lineales, modelos neurodinámicos con observaciones no lineales `[→ Paper #34]`.
+
+**¿Por qué es un hito?** La UT cambió el enfoque de "aproximar la función" a "aproximar la distribución". Es una herramienta fundamental en estimación no lineal y se usa en filtros, planificación y control.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Parámetro de escala:**
+```
+λ = α²(n + κ) − n
+```
+
+**Eq. (2) — Puntos sigma:**
+```
+χ_0 = μ
+χ_i = μ + (√((n+λ)P))_i,      i=1..n
+χ_{i+n} = μ − (√((n+λ)P))_i,  i=1..n
+```
+
+**Eq. (3) — Pesos de media y covarianza:**
+```
+W_0^m = λ/(n+λ)
+W_0^c = λ/(n+λ) + (1 − α² + β)
+W_i^m = W_i^c = 1/(2(n+λ)), i=1..2n
+```
+
+**Eq. (4) — Transformada de puntos:**
+```
+Y_i = f(χ_i)
+```
+
+**Eq. (5) — Media transformada:**
+```
+μ_y = Σ_i W_i^m Y_i
+```
+
+**Eq. (6) — Covarianza transformada:**
+```
+P_y = Σ_i W_i^c (Y_i − μ_y)(Y_i − μ_y)ᵀ
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Unscented Transform
+
+ENTRADA:
+  - mean μ
+  - covariance P
+  - f: función no lineal
+  - α, β, κ
+
+SALIDA:
+  - mean_y
+  - cov_y
+  - sigma_points
+
+1. Calcular λ (Eq. 1)
+2. Calcular raíz matricial S = cholesky((n+λ)P)
+3. Generar 2n+1 puntos sigma (Eq. 2)
+4. Calcular pesos (Eq. 3)
+5. Evaluar Y_i = f(χ_i) (Eq. 4)
+6. Calcular media (Eq. 5)
+7. Calcular covarianza (Eq. 6)
+8. Retornar mean_y, cov_y
+
+EDGE CASES:
+  - P no definida positiva → regularizar P += εI.
+  - α muy pequeño → puntos muy cercanos; puede ser numéricamente delicado.
+  - f discontinua → UT pierde garantías.
+  - n grande → 2n+1 puntos siguen siendo O(n).
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class UTParams(BaseModel):
+    """Parámetros de la Unscented Transform."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    alpha: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
+    beta: Annotated[float, Field(ge=0.0)] = 2.0
+    kappa: Annotated[float, Field(ge=0.0)] = 0.0
+    jitter: Annotated[float, Field(ge=0.0, le=1e-6)] = 1e-9
+
+class UnscentedTransform:
+    """Implementación de Julier & Uhlmann (2004).
+
+    Reference: DOI: 10.1109/JPROC.2003.824101
+    """
+
+    def __init__(self, params: UTParams | None = None):
+        self.params = params or UTParams()
+
+    def sigma_points(self, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
+        """Implementa Eq. (2)."""
+        mean = np.asarray(mean, dtype=float)
+        cov = np.asarray(cov, dtype=float)
+        n = len(mean)
+        p = self.params
+
+        lam = p.alpha ** 2 * (n + p.kappa) - n
+        scale = n + lam
+        if scale <= 0:
+            raise ValueError("scale n+λ debe ser positivo; ajustar α/κ.")
+        cov_reg = cov + np.eye(n) * p.jitter
+        S = np.linalg.cholesky(scale * cov_reg)
+
+        pts = np.zeros((2 * n + 1, n))
+        pts[0] = mean
+        for i in range(n):
+            pts[i + 1] = mean + S[:, i]
+            pts[n + i + 1] = mean - S[:, i]
+        return pts
+
+    def weights(self, n: int) -> tuple[np.ndarray, np.ndarray]:
+        """Implementa Eq. (3)."""
+        p = self.params
+        lam = p.alpha ** 2 * (n + p.kappa) - n
+        Wm = np.full(2 * n + 1, 1.0 / (2.0 * (n + lam)))
+        Wc = Wm.copy()
+        Wm[0] = lam / (n + lam)
+        Wc[0] = lam / (n + lam) + (1.0 - p.alpha ** 2 + p.beta)
+        return Wm, Wc
+
+    def transform(self, mean: np.ndarray, cov: np.ndarray,
+                  f: Callable[[np.ndarray], np.ndarray]) -> dict:
+        """Unscented Transform completa. Implementa Eq. (4)-(6)."""
+        mean = np.asarray(mean, dtype=float)
+        cov = np.asarray(cov, dtype=float)
+        pts = self.sigma_points(mean, cov)
+        Wm, Wc = self.weights(len(mean))
+
+        transformed = np.array([f(x) for x in pts])
+        out_dim = transformed.shape[1]
+
+        mean_y = np.sum(Wm[:, None] * transformed, axis=0)
+        cov_y = np.zeros((out_dim, out_dim))
+        for i in range(len(transformed)):
+            d = transformed[i] - mean_y
+            cov_y += Wc[i] * np.outer(d, d)
+        cov_y = 0.5 * (cov_y + cov_y.T)
+
+        return {
+            'mean_y': mean_y,
+            'cov_y': cov_y,
+            'sigma_points': pts,
+            'weights_mean': Wm,
+            'weights_cov': Wc,
+            'transformed_points': transformed,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_ut_moment_capture():
+    """Los puntos sigma deben recuperar media y covarianza originales."""
+    ut = UnscentedTransform(UTParams(alpha=1.0, beta=2.0, kappa=0.0))
+    mean = np.array([1.0, -2.0, 0.5])
+    A = np.array([[2.0, 0.3, 0.1], [0.3, 1.0, 0.2], [0.1, 0.2, 1.5]])
+    cov = A @ A.T
+
+    pts = ut.sigma_points(mean, cov)
+    Wm, Wc = ut.weights(len(mean))
+
+    mean_rec = Wm @ pts
+    cov_rec = sum(Wc[i] * np.outer(pts[i] - mean_rec, pts[i] - mean_rec)
+                  for i in range(len(pts)))
+
+    np.testing.assert_allclose(mean_rec, mean, atol=1e-8)
+    np.testing.assert_allclose(cov_rec, cov, atol=1e-6)
+    print("✓ UT captura momentos exactos")
+
+def test_ut_linear_transform_exact():
+    """Para f lineal, la UT debe ser exacta en media y covarianza."""
+    ut = UnscentedTransform(UTParams(alpha=1.0, beta=2.0, kappa=0.0))
+    mean = np.array([0.5, -1.0])
+    cov = np.array([[1.0, 0.2], [0.2, 0.8]])
+    A = np.array([[1.2, -0.4], [0.7, 0.9]])
+    b = np.array([0.3, -0.2])
+
+    res = ut.transform(mean, cov, lambda x: A @ x + b)
+
+    mean_true = A @ mean + b
+    cov_true = A @ cov @ A.T
+
+    np.testing.assert_allclose(res['mean_y'], mean_true, atol=1e-8)
+    np.testing.assert_allclose(res['cov_y'], cov_true, atol=1e-6)
+    print("✓ UT exacta para transformaciones lineales")
+
+def test_ut_covariance_positive_semidefinite():
+    """La covarianza transformada debe ser PSD incluso con no linealidad."""
+    ut = UnscentedTransform(UTParams(alpha=1.0, beta=2.0, kappa=0.0))
+    mean = np.array([0.0, 0.0])
+    cov = np.eye(2) * 0.5
+
+    def f(x):
+        return np.array([np.tanh(x[0]), x[1] ** 2])
+
+    res = ut.transform(mean, cov, f)
+    eigvals = np.linalg.eigvalsh(res['cov_y'])
+    assert np.all(eigvals >= -1e-10), f"Covarianza debe ser PSD: {eigvals}"
+    print("✓ UT covarianza PSD bajo no linealidad")
+
+if __name__ == "__main__":
+    test_ut_moment_capture()
+    test_ut_linear_transform_exact()
+    test_ut_covariance_positive_semidefinite()
+    print("✓ PAPER #60 (Unscented Transform) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+# ⚙ CIERRE DE EJECUCIÓN — ENTREGA 6/6 🦀
+
+```
+✓ PAPER #56 PID .................... 4 capas · 3 tests · ejecutable
+✓ PAPER #57 Khalil/Lyapunov ........ 4 capas · 3 tests · ejecutable
+✓ PAPER #58 Ljung SysID ............ 4 capas · 3 tests · ejecutable
+✓ PAPER #59 Wavelet Packets ........ 4 capas · 3 tests · ejecutable
+✓ PAPER #60 Unscented Transform .... 4 capas · 3 tests · ejecutable
+─────────────────────────────────────────────────────
+EXTENSIÓN COMPLETADA: 30/30 papers nuevos
+TOTAL CORPUS v2.0: 60/60 papers traducidos
+```
+
+---
+
+# SECCIÓN VI: ACTUALIZACIÓN MAESTRA DEL CORPUS v2.0
+
+## 1. ÍNDICE MAESTRO ACTUALIZADO
+
+### SECCIÓN V: EXTENSIÓN — 30 NUEVOS PAPERS TRADUCIDOS
+
+#### V.A Procesamiento de Señales Avanzado (8 papers)
+
+| # | Paper | Año | Núcleo ejecutable |
+|---|-------|-----|-------------------|
+| 31 | Huang et al. — EMD / Hilbert-Huang | 1998 | Tamizado iterativo + reconstrucción exacta |
+| 32 | Stockwell et al. — S-Transform | 1996 | Tiempo-frecuencia con fase absoluta |
+| 36 | Daubechies et al. — Synchrosqueezing | 2011 | Reasignación espectral nítida |
+| 37 | Dragomiretskiy & Zosso — VMD | 2014 | Descomposición variacional ADMM |
+| 38 | Candès et al. — Compressed Sensing | 2006 | Recuperación ℓ₁ desde M ≪ N |
+| 42 | Mallat — Multiresolution Analysis | 1989 | DWT piramidal con reconstrucción perfecta |
+| 43 | Donoho & Johnstone — Wavelet Shrinkage | 1994 | Denoising por umbral universal |
+| 59 | Coifman & Wickerhauser — Wavelet Packets | 1992 | Best basis por entropía |
+
+#### V.B Sistemas Dinámicos y Control (8 papers)
+
+| # | Paper | Año | Núcleo ejecutable |
+|---|-------|-----|-------------------|
+| 33 | Julier & Uhlmann — UKF | 1997 | Filtro no lineal por puntos sigma |
+| 39 | Arulampalam et al. — Particle Filter | 2002 | SIR Monte Carlo secuencial |
+| 40 | Mayne et al. — MPC | 2000 | Control predictivo con restricciones |
+| 41 | Slotine & Li — Sliding Mode Control | 1991 | Superficie de deslizamiento robusta |
+| 56 | Åström & Hägglund — PID Controllers | 1995 | PID con anti-windup y derivada filtrada |
+| 57 | Khalil — Nonlinear Systems / Lyapunov | 2002 | Certificación de estabilidad |
+| 58 | Ljung — System Identification | 1999 | ARX y error de predicción |
+| 60 | Julier & Uhlmann — Unscented Transform | 2004 | Propagación de momentos sin linealizar |
+
+#### V.C Neurociencia Cognitiva y Computacional (8 papers)
+
+| # | Paper | Año | Núcleo ejecutable |
+|---|-------|-----|-------------------|
+| 34 | Friston — Free Energy Principle | 2005 | Minimización variacional de sorpresa |
+| 44 | Friston et al. — Dynamic Causal Modeling | 2003 | Conectividad efectiva bilinear + BOLD |
+| 45 | Rao & Ballard — Predictive Coding | 1999 | Jerarquía de errores predictivos |
+| 46 | Jaeger — Echo State Networks | 2001 | Reservoir training lineal |
+| 47 | Maass et al. — Liquid State Machines | 2002 | Cómputo líquido spiking |
+| 48 | Gerstner & Kistler — Spiking Neuron Models | 2002 | LIF/SRM y kernels |
+| 49 | Knill & Pouget — Bayesian Brain | 2004 | Inferencia neuronal probabilística |
+| 50 | Izhikevich — Dynamical Systems in Neuroscience | 2007 | Bifurcaciones y neurona theta |
+
+#### V.D Optimización y Aprendizaje (6 papers)
+
+| # | Paper | Año | Núcleo ejecutable |
+|---|-------|-----|-------------------|
+| 35 | Kingma & Ba — Adam | 2015 | Momentos adaptativos con corrección de sesgo |
+| 51 | Hansen & Ostermeier — CMA-ES | 2001 | Adaptación completa de covarianza |
+| 52 | Deb et al. — NSGA-II | 2002 | Multiobjetivo por dominancia y crowding |
+| 53 | Zhang & Li — MOEA/D | 2007 | Multiobjetivo por descomposición |
+| 54 | Snoek et al. — Bayesian Optimization | 2012 | GP + Expected Improvement |
+| 55 | Li et al. — Hyperband | 2018 | Asignación adaptativa de recursos |
+
+---
+
+## 2. VERSIÓN Y FECHA
+
+```
+CORPUS TÉCNICO RONIN v2.0 — Edición Extendida con 60 Papers
+Fecha de cierre: 13 de agosto de 2026
+Estado: Extensión completada
+papers_totales: 60
+papers_nuevos: 30
+capas_por_paper: 4
+tests_por_paper: ≥3
+dependencias: Python 3.11+, NumPy, SciPy, Pydantic v2
+```
+
+---
+
+## 3. REFERENCIAS NUEVAS — 30 DOIs / REFERENCIAS COMPLETAS
+
+1. Huang et al. (1998). DOI: 10.1098/rspa.1998.0193  
+2. Stockwell, Mansinha & Lowe (1996). DOI: 10.1109/78.492555  
+3. Julier & Uhlmann (1997). DOI: 10.1117/12.280797  
+4. Friston (2005). DOI: 10.1098/rstb.2005.1622  
+5. Kingma & Ba (2015). DOI: 10.48550/arXiv.1412.6980  
+6. Daubechies, Lu & Wu (2011). DOI: 10.1016/j.acha.2010.08.002  
+7. Dragomiretskiy & Zosso (2014). DOI: 10.1109/TSP.2013.2288675  
+8. Candès, Romberg & Tao (2006). DOI: 10.1109/TIT.2005.862083  
+9. Arulampalam et al. (2002). DOI: 10.1109/78.978374  
+10. Mayne et al. (2000). DOI: 10.1016/S0005-1098(99)00214-9  
+11. Slotine & Li (1991). ISBN: 978-0130408907  
+12. Mallat (1989). DOI: 10.1090/S0002-9947-1989-1008467-5  
+13. Donoho & Johnstone (1994). DOI: 10.1093/biomet/81.3.425  
+14. Friston, Harrison & Penny (2003). DOI: 10.1016/S1053-8119(03)00202-7  
+15. Rao & Ballard (1999). DOI: 10.1038/4580  
+16. Jaeger (2001). GMD Report 148; referencia Scholarpedia DOI: 10.4249/scholarpedia.2330  
+17. Maass, Natschläger & Markram (2002). DOI: 10.1162/089976602760407955  
+18. Gerstner & Kistler (2002). DOI: 10.1017/CBO9780511815706  
+19. Knill & Pouget (2004). DOI: 10.1016/j.tins.2004.10.003  
+20. Izhikevich (2007). DOI: 10.7551/mitpress/2518.001.0001  
+21. Hansen & Ostermeier (2001). DOI: 10.1162/106365601750199389  
+22. Deb et al. (2002). DOI: 10.1109/4235.996017  
+23. Zhang & Li (2007). DOI: 10.1109/TEVC.2007.892759  
+24. Snoek, Larochelle & Adams (2012). DOI: 10.48550/arXiv.1206.2944  
+25. Li et al. (2018). DOI: 10.48550/arXiv.1603.06560  
+26. Åström & Hägglund (1995). ISBN: 978-1556175163  
+27. Khalil (2002). ISBN: 978-0130673893  
+28. Ljung (1999). ISBN: 978-0136566953  
+29. Coifman & Wickerhauser (1992). DOI: 10.1109/18.121632  
+30. Julier & Uhlmann (2004). DOI: 10.1109/JPROC.2003.824101  
+
+---
+
+## 4. GLOSARIO EXTENDIDO v2.0
+
+**IMF (Intrinsic Mode Function):** Componente oscilatoria extraída por EMD; cumple condiciones de simetría local y admite frecuencia instantánea. `[→ Paper #31]`
+
+**Sifting:** Proceso iterativo de EMD que resta la media de envolventes para aislar una IMF. `[→ Paper #31]`
+
+**S-Transform:** Representación tiempo-frecuencia con ventana gaussiana dependiente de frecuencia y fase absoluta. `[→ Paper #32]`
+
+**Synchrosqueezing:** Reasignación de coeficientes wavelet hacia frecuencias instantáneas estimadas para obtener mapas más nítidos y reconstruibles. `[→ Paper #36]`
+
+**VMD:** Descomposición variacional de modos que resuelve un problema de optimización para extraer modos de banda estrecha. `[→ Paper #37]`
+
+**Compressed Sensing:** Recuperación exacta de señales dispersas desde mediciones sub-Nyquist mediante minimización ℓ₁. `[→ Paper #38]`
+
+**RIP (Restricted Isometry Property):** Condición que garantiza que una matriz de sensing preserva distancias de vectores dispersos. `[→ Paper #38]`
+
+**Sigma Point:** Punto determinista usado por UKF/UT para capturar media y covarianza de una distribución gaussiana. `[→ Paper #33, #60]`
+
+**Particle Filter:** Método secuencial Monte Carlo que aproxima la posterior de estados con partículas ponderadas. `[→ Paper #39]`
+
+**Terminal Set / Terminal Cost:** Componentes de MPC que garantizan estabilidad mediante invariancia y función de Lyapunov local. `[→ Paper #40]`
+
+**Sliding Surface:** Variedad donde el error de seguimiento evoluciona con dinámica deseada bajo SMC. `[→ Paper #41]`
+
+**Wavelet Shrinkage:** Denoising por umbralización de coeficientes wavelet; preserva singularidades. `[→ Paper #43]`
+
+**DCM:** Modelo generativo de conectividad efectiva neuronal acoplado a observaciones hemodinámicas. `[→ Paper #44]`
+
+**Predictive Coding:** Arquitectura jerárquica que minimiza errores de predicción propagando solo residuos. `[→ Paper #45]`
+
+**Echo State Property:** Condición por la cual el estado de un reservoir depende asintóticamente de la historia de entrada. `[→ Paper #46]`
+
+**Liquid State Machine:** Red recurrente spiking que transforma entradas temporales en trayectorias de alta dimensión. `[→ Paper #47]`
+
+**Bayesian Brain:** Hipótesis de que el cerebro representa incertidumbre y computa inferencia probabilística. `[→ Paper #49]`
+
+**Theta Neuron:** Modelo canónico de excitabilidad tipo I asociado a bifurcación SNIC. `[→ Paper #50]`
+
+**CMA-ES:** Estrategia evolutiva que adapta la matriz de covarianza completa para optimización sin gradientes. `[→ Paper #51]`
+
+**NSGA-II:** Algoritmo multiobjetivo basado en dominancia de Pareto, elitismo y crowding distance. `[→ Paper #52]`
+
+**MOEA/D:** Algoritmo multiobjetivo que descompone el problema en subproblemas escalares vecinos. `[→ Paper #53]`
+
+**Expected Improvement:** Función de adquisición que mide mejora esperada respecto al mejor valor observado. `[→ Paper #54]`
+
+**Hyperband:** Asignación adaptativa de recursos mediante brackets de Successive Halving. `[→ Paper #55]`
+
+**Anti-Windup:** Mecanismo que evita que la integral de un PID acumule error durante saturación del actuador. `[→ Paper #56]`
+
+**Lyapunov Function:** Función escalar positiva definida cuya derivada decreciente certifica estabilidad. `[→ Paper #57]`
+
+**ARX:** Estructura de identificación con salida autoregresiva y entrada exógena lineal. `[→ Paper #58]`
+
+**Wavelet Packet:** Árbol de descomposición donde tanto bajas como altas frecuencias se subdividen. `[→ Paper #59]`
+
+**Unscented Transform:** Propagación determinista de media y covarianza a través de funciones no lineales usando puntos sigma. `[→ Paper #60]`
+
+---
+
+## 5. CONVERGENCIAS FINALES DEL CORPUS v2.0
+
+### Convergencia IV: Señales ↔ Control ↔ Neurociencia
+
+La extensión v2.0 completa un circuito epistémico:
+- **Señales** extraen estructura tiempo-frecuencia `[→ #31–#38, #42, #43, #59]`.
+- **Control** usa modelos y estimación para actuar sobre sistemas dinámicos `[→ #33, #39–#41, #56–#58, #60]`.
+- **Neurociencia** modela inferencia, predicción y dinámica cerebral `[→ #34, #44–#50]`.
+- **Optimización** cierra el ciclo ajustando hiperparámetros y políticas `[→ #35, #51–#55]`.
+
+### Convergencia V: Inferencia como Principio Unificador
+
+```
+UKF / Particle Filter / Unscented Transform
+        ↓
+Estimación de estados ocultos
+        ↓
+Free Energy / Predictive Coding / Bayesian Brain
+        ↓
+Acción como minimización de sorpresa esperada
+        ↓
+Control predictivo / SMC / PID
+```
+
+### Convergencia VI: Reproducibilidad como Blindaje
+
+Cada paper nuevo incluye:
+- Ecuaciones numeradas.
+- Pseudocódigo con entradas/salidas.
+- Implementación Python con NumPy/SciPy.
+- Tests de regresión y casos límite.
+- Validación de comportamiento esperado.
+
+Esto cumple el Mandamiento 1 del prompt de extensión y el axioma fundacional del corpus:
+
+> La traducción de conocimiento científico a código ejecutable bajo garantías de soberanía, validez y reproducibilidad es el acto de mayor responsabilidad intelectual que puede asumir un ingeniero.
+
+---
+
