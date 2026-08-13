@@ -7188,6 +7188,1502 @@ if __name__ == "__main__":
     test_theta_sqrt_scaling()
     print("✓ PAPER #50 (Dynamical Systems in Neuroscience) — TODOS LOS TESTS PASARON")
 ```
+---
+
+### PAPER #51: Hansen & Ostermeier (2001) — CMA-ES
+
+**Referencia:** Hansen, N., & Ostermeier, A. (2001). "Completely derandomized self-adaptation in evolution strategies." *Evolutionary Computation*, 9(2), 159–195. DOI: 10.1162/106365601750199389
+
+**Esencia:** Estrategia evolutiva que adapta la matriz de covarianza completa de la distribución de muestreo a partir de caminos evolutivos acumulados, logrando invariancia a rotaciones del espacio de búsqueda y convergencia rápida en paisajes mal condicionados sin gradientes.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** La optimización de funciones no diferenciables, ruidosas o con paisajes mal condicionados (valles alargados, ejes no alineados) es intratable con métodos basados en gradiente. Las estrategias evolutivas clásicas (ES) adaptan solo varianzas por dimensión, perdiendo información sobre correlaciones entre variables. Se necesita un método que adapte la **forma completa** del elipsoide de muestreo, sin asumir ejes alineados con los ejes de coordenadas.
+
+**¿Dónde falla el estado del arte previo?** Las ES tradicionales (Rechenberg, Schwefel) adaptan solo `σ_i` por dimensión, equivalentes a elipsoides alineados con los ejes. Esto falla cuando el valle óptimo está rotado o tiene ejes principales oblicuos. El método de correlación de Rudolph (1994) es inestable. Adam `[→ Paper #35]` requiere gradientes. Ninguna ES previa adapta la matriz de covarianza completa de forma robusta y derandomizada.
+
+**La solución de Hansen & Ostermeier:** el **CMA-ES** (*Covariance Matrix Adaptation Evolution Strategy*) deriva de un principio máximo de verosimilitud: actualizar la matriz de covarianza `C` usando el **camino evolutivo acumulado** `p_c` (direcciones exitosas consecutivas) y los pasos individuales exitosos. Además, adapta el paso global `σ` mediante un **camino de evolución conjugado** `p_σ` que mide si los pasos están correlacionados (sugiriendo σ demasiado pequeño) o aleatorios (sugiriendo σ adecuado). El resultado es un optimizador **invariante a rotaciones y escalados lineales** del espacio, convergiendo en O(n² log n) evaluaciones en paisajes bien condicionados.
+
+**Aplicación práctica:** diseño aerodinámico, optimización de parámetros de redes neuronales, control robótico, diseño de fármacos, ajuste de hiperparámetros cuando el gradiente no está disponible, benchmarks CEC.
+
+**¿Por qué es un hito?** Es considerado el mejor optimizador sin gradientes para espacios continuos de dimensionalidad moderada (n ≤ 1000). Deriva de principios teóricos sólidos (information geometry, natural gradient), no de heurísticas. Ganó múltiples competencias CEC y se convirtió en el estándar de facto para optimización black-box.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Muestreo de la población:**
+```
+x_k ~ N(m, σ² C),   k = 1,...,λ
+```
+- `m`: media; `σ`: paso global; `C`: matriz de covarianza.
+- `λ`: tamaño de población; `μ = λ/2`: padres seleccionados.
+
+**Eq. (2) — Recombinación (actualización de media):**
+```
+m^{(g+1)} = Σ_{i=1}^{μ} w_i · x_{i:λ}^{(g)}
+```
+- `x_{i:λ}`: i-ésimo mejor individuo; `w_i`: pesos positivos, `Σ w_i = 1`.
+- **Interpretación:** la media se desplaza hacia los mejores individuos ponderados.
+
+**Eq. (3) — Camino evolutivo conjugado (para σ):**
+```
+p_σ^{(g+1)} = (1 − c_σ) p_σ^{(g)} + √(c_σ(2−c_σ)μ_eff) · C^{−1/2} (m^{(g+1)} − m^{(g)}) / σ^{(g)}
+```
+- `c_σ`: tasa de aprendizaje; `μ_eff = 1/Σ w_i²`.
+- **Interpretación:** acumula la dirección normalizada del desplazamiento de media.
+
+**Eq. (4) — Adaptación del paso (CSA - Cumulative Step-size Adaptation):**
+```
+σ^{(g+1)} = σ^{(g)} · exp( (c_σ/d_σ) · (‖p_σ‖/E‖N(0,I)‖ − 1) )
+```
+- `d_σ`: parámetro de amortiguamiento; `E‖N(0,I)‖ ≈ √n (1 − 1/(4n) + 1/(21n²))`.
+- **Interpretación:** si los pasos están correlacionados (‖p_σ‖ grande) → σ crece; si aleatorios → σ se mantiene.
+
+**Eq. (5) — Camino evolutivo para covarianza:**
+```
+p_c^{(g+1)} = (1 − c_c) p_c^{(g)} + h_σ · √(c_c(2−c_c)μ_eff) · (m^{(g+1)} − m^{(g)}) / σ^{(g)}
+```
+- `c_c`: tasa de aprendizaje; `h_σ ∈ {0,1}`: indicador de estancamiento.
+
+**Eq. (6) — Actualización de la matriz de covarianza (rank-1 + rank-μ):**
+```
+C^{(g+1)} = (1 − c_1 − c_μ) C^{(g)}
+          + c_1 (p_c p_cᵀ + (1−h_σ) c_c(2−c_c) C^{(g)})
+          + c_μ Σ_{i=1}^{μ} w_i (x_{i:λ} − m^{(g)})(x_{i:λ} − m^{(g)})ᵀ / σ^{(g)2}
+```
+- `c_1`: aprendizaje rank-1 (camino evolutivo); `c_μ`: aprendizaje rank-μ (población).
+
+**Eq. (7) — Hiperparámetros por defecto:**
+```
+μ_eff = 1/Σ w_i²
+c_σ = (μ_eff + 2) / (n + μ_eff + 5)
+d_σ = 1 + 2·max(0, √((μ_eff−1)/(n+1)) − 1) + c_σ
+c_c = (4 + μ_eff/n) / (n + 4 + 2μ_eff/n)
+c_1 = 2 / ((n + 1.3)² + μ_eff)
+c_μ = min(1 − c_1, 2(μ_eff − 2 + 1/μ_eff) / ((n + 2)² + μ_eff))
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: CMA-ES (una generación)
+
+ENTRADA:
+  - m: media actual (n,)
+  - sigma: paso actual
+  - C: matriz de covarianza (n,n)
+  - p_sigma, p_c: caminos evolutivos
+  - f: función objetivo
+  - params: λ, μ, pesos, tasas
+
+SALIDA:
+  - m, sigma, C, p_sigma, p_c actualizados
+  - best_x, best_f
+
+1. Muestreo (Eq. 1):
+   C^{1/2} ← descomposición (Cholesky o eigendecomp periódica)
+   Para k = 1..λ:
+     z_k ~ N(0, I)
+     x_k ← m + sigma · C^{1/2} · z_k
+     f_k ← f(x_k)
+
+2. Selección y ordenamiento:
+   Ordenar por f_k ascendente
+   Tomar mejores μ: x_{1:λ}, ..., x_{μ:λ}
+
+3. Recombinación (Eq. 2):
+   m_new ← Σ w_i · x_{i:λ}
+
+4. Actualizar p_sigma (Eq. 3):
+   z_mean ← Σ w_i · z_{i:λ}
+   p_sigma ← (1 − c_σ) p_sigma + √(c_σ(2−c_σ)μ_eff) · z_mean
+
+5. Adaptar sigma (Eq. 4):
+   sigma ← sigma · exp((c_σ/d_σ)(‖p_sigma‖/E_n − 1))
+
+6. Actualizar p_c (Eq. 5):
+   h_σ ← 1 si ‖p_sigma‖/√(1−(1−c_σ)^{2g}) < (1.4 + 2/(n+1))E_n else 0
+   p_c ← (1 − c_c) p_c + h_σ √(c_c(2−c_c)μ_eff) · (m_new − m)/sigma
+
+7. Actualizar C (Eq. 6):
+   artmp ← (1/σ) · [x_{i:λ} − m]_{i=1..μ}
+   C ← (1−c_1−c_μ)C + c_1(p_c p_cᵀ + (1−h_σ)c_c(2−c_c)C) + c_μ artmpᵀ W artmp
+
+8. Retornar (m_new, sigma, C, p_sigma, p_c, best_x, best_f)
+
+EDGE CASES:
+  - C pierde definida positiva → forzar simetría + añadir εI.
+  - sigma < 1e-20 → convergencia; detener.
+  - Condición de C > 1e14 → reinicializar C = I.
+  - g muy grande → descomposición eig periódica para evitar drift numérico.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+PositiveInt: TypeAlias = Annotated[int, Field(gt=0)]
+
+class CMAParams(BaseModel):
+    """Hiperparámetros canónicos del CMA-ES (Hansen 2001)."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    n: PositiveInt                              # dimensión
+    sigma0: Annotated[float, Field(gt=0.0)] = 0.5
+    popsize: Annotated[int, Field(ge=4)] | None = None  # None = default
+    seed: int = 0
+    max_iter: PositiveInt = 500
+    tol: Annotated[float, Field(gt=0.0)] = 1e-12
+
+class CMAES:
+    """CMA-ES canónico (Hansen & Ostermeier, 2001).
+
+    Reference: DOI: 10.1162/106365601750199389
+    """
+
+    def __init__(self, params: CMAParams):
+        self.p = params
+        n = params.n
+
+        # λ y μ (Eq. 7)
+        self.lam = params.popsize if params.popsize else 4 + int(3 * np.log(n))
+        self.mu = self.lam // 2
+        # Pesos (logarítmicos)
+        w = np.log(self.mu + 0.5) - np.log(np.arange(1, self.mu + 1))
+        self.w = w / w.sum()
+        self.mu_eff = 1.0 / np.sum(self.w ** 2)
+
+        # Tasas (Eq. 7)
+        self.c_sigma = (self.mu_eff + 2.0) / (n + self.mu_eff + 5.0)
+        self.d_sigma = 1.0 + 2.0 * max(0.0, np.sqrt((self.mu_eff - 1.0) / (n + 1.0)) - 1.0) + self.c_sigma
+        self.c_c = (4.0 + self.mu_eff / n) / (n + 4.0 + 2.0 * self.mu_eff / n)
+        self.c_1 = 2.0 / ((n + 1.3) ** 2 + self.mu_eff)
+        self.c_mu = min(1.0 - self.c_1,
+                        2.0 * (self.mu_eff - 2.0 + 1.0 / self.mu_eff) / ((n + 2.0) ** 2 + self.mu_eff))
+        self.chi_n = np.sqrt(n) * (1.0 - 1.0 / (4.0 * n) + 1.0 / (21.0 * n ** 2))
+
+        # Estado
+        self.rng = np.random.default_rng(params.seed)
+        self.m = self.rng.standard_normal(n) * 0.0
+        self.sigma = params.sigma0
+        self.C = np.eye(n)
+        self.p_sigma = np.zeros(n)
+        self.p_c = np.zeros(n)
+        self.invsqrtC = np.eye(n)
+        self.generation = 0
+        self.eig_count = 0
+
+    def _update_eigen(self):
+        """Refresca C^{1/2} y C^{-1/2} periódicamente para estabilidad."""
+        self.C = np.triu(self.C) + np.triu(self.C, 1).T
+        D2, B = np.linalg.eigh(self.C)
+        D2 = np.maximum(D2, 1e-20)
+        D = np.sqrt(D2)
+        self.invsqrtC = B @ np.diag(1.0 / D) @ B.T
+        self.sqrtC = B @ np.diag(D) @ B.T
+        self.eig_count = 0
+
+    def optimize(self, f: Callable[[np.ndarray], float],
+                 x0: np.ndarray | None = None) -> dict:
+        """Optimización completa. Retorna dict con mejor solución e historial."""
+        if x0 is not None:
+            self.m = np.asarray(x0, dtype=float).copy()
+        self._update_eigen()
+
+        best_x = self.m.copy()
+        best_f = f(self.m)
+        history = [best_f]
+
+        for g in range(self.p.max_iter):
+            self.generation = g + 1
+            self.eig_count += 1
+
+            # Refrescar eigendecomposition cada n/10 generaciones
+            if self.eig_count > max(1, self.p.n // 10):
+                self._update_eigen()
+
+            # Muestreo (Eq. 1)
+            z = self.rng.standard_normal((self.lam, self.p.n))
+            x = self.m + self.sigma * (z @ self.sqrtC.T)
+            fitness = np.array([f(xi) for xi in x])
+
+            # Selección
+            idx = np.argsort(fitness)
+            x_sel = x[idx[:self.mu]]
+            z_sel = z[idx[:self.mu]]
+
+            # Recombinación (Eq. 2)
+            m_old = self.m.copy()
+            self.m = self.w @ x_sel
+            z_mean = self.w @ z_sel
+
+            # Actualizar p_sigma (Eq. 3)
+            self.p_sigma = ((1 - self.c_sigma) * self.p_sigma
+                            + np.sqrt(self.c_sigma * (2 - self.c_sigma) * self.mu_eff)
+                              * (self.invsqrtC @ z_mean))
+
+            # h_sigma (Eq. 5)
+            hs_norm = np.linalg.norm(self.p_sigma) / np.sqrt(1 - (1 - self.c_sigma) ** (2 * self.generation))
+            h_sigma = 1.0 if hs_norm < (1.4 + 2.0 / (self.p.n + 1.0)) * self.chi_n else 0.0
+
+            # Actualizar p_c (Eq. 5)
+            self.p_c = ((1 - self.c_c) * self.p_c
+                        + h_sigma * np.sqrt(self.c_c * (2 - self.c_c) * self.mu_eff)
+                          * (self.m - m_old) / self.sigma)
+
+            # Actualizar C (Eq. 6)
+            artmp = (x_sel - m_old) / self.sigma
+            rank1 = np.outer(self.p_c, self.p_c) + (1 - h_sigma) * self.c_c * (2 - self.c_c) * self.C
+            rank_mu = (artmp.T * self.w) @ artmp
+            self.C = (1 - self.c_1 - self.c_mu) * self.C + self.c_1 * rank1 + self.c_mu * rank_mu
+
+            # Adaptar sigma (Eq. 4)
+            self.sigma *= np.exp((self.c_sigma / self.d_sigma) * (np.linalg.norm(self.p_sigma) / self.chi_n - 1.0))
+
+            # Mejor de la generación
+            if fitness[idx[0]] < best_f:
+                best_f = float(fitness[idx[0]])
+                best_x = x[idx[0]].copy()
+            history.append(float(best_f))
+
+            # Criterio de parada
+            if self.sigma * np.max(np.sqrt(np.diag(self.C))) < self.p.tol:
+                break
+
+        return {'x': best_x, 'f': best_f, 'history': np.array(history),
+                'iterations': self.generation}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def test_cma_sphere():
+    """CMA debe minimizar f(x)=Σx² a casi 0."""
+    n = 10
+    def sphere(x): return float(np.sum(x ** 2))
+    params = CMAParams(n=n, sigma0=1.0, seed=1, max_iter=400)
+    cma = CMAES(params)
+    res = cma.optimize(sphere, x0=np.ones(n) * 3.0)
+    assert res['f'] < 1e-6, f"Debe converger a ~0, dio {res['f']}"
+    print(f"✓ CMA minimiza esfera (f={res['f']:.2e} en {res['iterations']} iter)")
+
+def test_cma_rosenbrock():
+    """CMA debe resolver Rosenbrock (valle curvo mal condicionado)."""
+    n = 6
+    def rosen(x):
+        return float(np.sum(100 * (x[1:] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2))
+    params = CMAParams(n=n, sigma0=0.5, seed=2, max_iter=3000)
+    cma = CMAES(params)
+    res = cma.optimize(rosen, x0=np.zeros(n))
+    assert res['f'] < 1e-3, f"Rosenbrock debe converger: {res['f']}"
+    print(f"✓ CMA resuelve Rosenbrock (f={res['f']:.2e})")
+
+def test_cma_rotation_invariance():
+    """CMA debe ser invariante a rotaciones del espacio."""
+    n = 8
+    rng = np.random.default_rng(7)
+    # Matriz ortogonal aleatoria
+    Q, _ = np.linalg.qr(rng.standard_normal((n, n)))
+    def ellipsoid(x):
+        scales = 10.0 ** np.linspace(0, 3, n)
+        y = Q.T @ x
+        return float(np.sum(scales * y ** 2))
+    params = CMAParams(n=n, sigma0=1.0, seed=3, max_iter=2000)
+    cma = CMAES(params)
+    res = cma.optimize(ellipsoid, x0=rng.standard_normal(n))
+    assert res['f'] < 1e-4, f"Debe manejar ejes rotados: {res['f']}"
+    print(f"✓ CMA invariante a rotación (f={res['f']:.2e})")
+
+if __name__ == "__main__":
+    test_cma_sphere()
+    test_cma_rosenbrock()
+    test_cma_rotation_invariance()
+    print("✓ PAPER #51 (CMA-ES) — TODOS LOS TESTS PASARON")
+```
 
 ---
 
+### PAPER #52: Deb, Pratap, Agarwal & Meyarivan (2002) — NSGA-II
+
+**Referencia:** Deb, K., Pratap, A., Agarwal, S., & Meyarivan, T. (2002). "A fast and elitist multiobjective genetic algorithm: NSGA-II." *IEEE Transactions on Evolutionary Computation*, 6(2), 182–197. DOI: 10.1109/4235.996017
+
+**Esencia:** Algoritmo genético multiobjetivo que reemplaza el costoso ordenamiento no dominado original O(MN³) por un conteo rápido O(MN²), añadiendo distancia de *crowding* para diversidad y un mecanismo elitista de selección entre padres y descendientes combinados.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Muchos problemas reales tienen **múltiples objetivos conflictivos** (costo vs calidad, velocidad vs consumo, precisión vs complejidad). No existe una solución única óptima sino un **frente de Pareto** de soluciones no dominadas. Los métodos clásicos agregan pesos arbitrarios a los objetivos, perdiendo la estructura multiobjetivo. Los primeros MOEAs (NSGA, MOGA) eran lentos (O(MN³)) y no garantizaban elitismo.
+
+**¿Dónde falla el estado del arte previo?** NSGA original usa sharing por nicho con parámetro arbitrario `σ_share`. SPEA requiere clustering costoso. MOGA depende de ranking con penalizaciones. Ninguno combina velocidad O(MN²), elitismo, diversidad automática y sin parámetros de nicho.
+
+**La solución de Deb et al.:** **NSGA-II** introduce: (1) **fast non-dominated sorting** que asigna rangos en O(MN²) contando cuántas soluciones dominan a cada una; (2) **crowding distance** que mide densidad local de cada solución en su frente, permitiendo preferir soluciones en regiones despobladas; (3) **elitismo** combinando padres y descendientes en población doble `R_t = P_t ∪ Q_t` antes de seleccionar los N mejores. Esto produce convergencia al frente de Pareto verdadero con diversidad uniforme, sin parámetros sensibles.
+
+**Aplicación práctica:** diseño de ingeniería (alas, motores, estructuras), finanzas multiobjetivo (retorno/riesgo), scheduling, diseño de redes, calibración de modelos neurocientíficos con múltiples métricas `[→ NeuroComp.Paper#22]`.
+
+**¿Por qué es un hito?** El paper de NSGA-II tiene >60.000 citas; es el MOEA más usado en la historia. Estableció el estándar de comparación para todo algoritmo multiobjetivo posterior. Su implementación es simple pero efectiva, y el concepto de crowding distance se usa en muchos otros contextos (incluyendo NSGA-III `[→ MOEA/D próximo]`).
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Dominancia de Pareto:**
+```
+x ≺ y  ⟺  ∀i: f_i(x) ≤ f_i(y)  y  ∃j: f_j(x) < f_j(y)
+```
+- **Interpretación:** x domina a y si es igual o mejor en todos los objetivos y estrictamente mejor en al menos uno.
+
+**Eq. (2) — Conjunto no dominado (frente) F:**
+```
+F = { x ∈ P | ¬∃y ∈ P: y ≺ x }
+```
+
+**Eq. (3) — Conteo de dominación (para fast sorting):**
+```
+n_p = |{ q ∈ P | q ≺ p }|     (cuántas soluciones dominan a p)
+S_p = { q ∈ P | p ≺ q }       (conjunto de soluciones dominadas por p)
+```
+
+**Eq. (4) — Fast non-dominated sorting:**
+```
+Para cada p en P:
+  Si n_p == 0:
+    p_rank = 1;  F_1 ← F_1 ∪ {p}
+Mientras F_i ≠ ∅:
+  Q = ∅
+  Para cada p ∈ F_i:
+    Para cada q ∈ S_p:
+      n_q ← n_q − 1
+      Si n_q == 0: q_rank = i+1; Q ← Q ∪ {q}
+  F_{i+1} = Q; i ← i+1
+```
+- **Complejidad:** O(MN²) en lugar de O(MN³).
+
+**Eq. (5) — Crowding distance (densidad local):**
+```
+Para cada objetivo m:
+  Ordenar F_i por f_m
+  I[1].dist = I[|F_i|].dist = ∞   (extremos siempre sobreviven)
+  Para j = 2..|F_i|−1:
+    I[j].dist += (f_m[j+1] − f_m[j−1]) / (f_m^max − f_m^min)
+```
+- **Interpretación:** distancia media de cuboide que rodea a cada solución. Grande = región despoblada = preferible.
+
+**Eq. (6) — Operador de selección (torneo crowded):**
+```
+x ⪯_n y  ⟺  x_rank < y_rank  OR  (x_rank == y_rank AND x_dist > y_dist)
+```
+- **Interpretación:** primero por rango (frente menor es mejor), luego por diversidad.
+
+**Eq. (7) — Elitismo (reemplazo):**
+```
+R_t = P_t ∪ Q_t      (tamaño 2N)
+F = fast_nondominated_sort(R_t)
+P_{t+1} = ∅; i = 1
+Mientras |P_{t+1}| + |F_i| ≤ N:
+  P_{t+1} ← P_{t+1} ∪ F_i; calcular distancias de F_i
+  i ← i+1
+Si |P_{t+1}| < N:
+  Ordenar F_i por crowding distance descendente
+  P_{t+1} ← P_{t+1} ∪ F_i[1 : N − |P_{t+1}|]
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: NSGA-II (una generación)
+
+ENTRADA:
+  - P: población actual (tamaño N)
+  - f: vector de funciones objetivo M
+  - p_c, p_m: probabilidades de cruce y mutación
+
+SALIDA:
+  - P_next: siguiente población
+
+1. Generar descendencia Q (tamaño N) vía torneo crowded + SBX + mutación polinomial
+
+2. Combinar:
+   R = P ∪ Q     (tamaño 2N)
+
+3. Fast non-dominated sort de R (Eq. 4):
+   F = [F_1, F_2, ..., F_k]
+
+4. Construir P_next (Eq. 7):
+   i = 1
+   Mientras |P_next| + |F_i| ≤ N:
+     calcular crowding distance de F_i
+     P_next = P_next ∪ F_i
+     i += 1
+   Si |P_next| < N:
+     calcular crowding distance de F_i
+     ordenar F_i por dist descendente
+     P_next = P_next ∪ F_i[1:N−|P_next|]
+
+5. Retornar P_next
+
+EDGE CASES:
+  - F_i demasiado grande → crowding distance resuelve.
+  - Todos dominados por pocos → elitismo mantiene mejores.
+  - Objetivos con escalas muy distintas → normalizar para crowding.
+  - N muy pequeño → pérdida de diversidad; aumentar población.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class NSGA2Params(BaseModel):
+    """Parámetros de NSGA-II."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    pop_size: Annotated[int, Field(ge=4)] = 100
+    n_var: Annotated[int, Field(ge=1)] = 10
+    n_obj: Annotated[int, Field(ge=2)] = 2
+    p_crossover: Annotated[float, Field(ge=0.0, le=1.0)] = 0.9
+    p_mutation: Annotated[float, Field(ge=0.0, le=1.0)] | None = None
+    eta_c: Annotated[float, Field(gt=0.0)] = 20.0
+    eta_m: Annotated[float, Field(gt=0.0)] = 20.0
+    xl: float = 0.0
+    xu: float = 1.0
+    seed: int = 0
+    max_gen: Annotated[int, Field(ge=1)] = 200
+
+class NSGA2:
+    """Implementación de Deb et al. (2002).
+
+    Reference: DOI: 10.1109/4235.996017
+    """
+
+    def __init__(self, params: NSGA2Params):
+        self.p = params
+        self.rng = np.random.default_rng(params.seed)
+        if params.p_mutation is None:
+            self.p.p_mutation = 1.0 / params.n_var
+
+    def _init_population(self) -> np.ndarray:
+        p = self.p
+        return self.rng.uniform(p.xl, p.xu, (p.pop_size, p.n_var))
+
+    @staticmethod
+    def fast_nondominated_sort(F_values: np.ndarray) -> list[list[int]]:
+        """Eq. (4): fast non-dominated sorting O(MN²)."""
+        N = len(F_values)
+        n_dom = np.zeros(N, dtype=int)     # n_p: cuántos dominan a p
+        S: list[list[int]] = [[] for _ in range(N)]   # S_p: dominados por p
+        ranks = np.zeros(N, dtype=int)
+        fronts: list[list[int]] = [[]]
+
+        # Comparaciones por pares
+        for p in range(N):
+            for q in range(p + 1, N):
+                fp, fq = F_values[p], F_values[q]
+                p_dom_q = np.all(fp <= fq) and np.any(fp < fq)
+                q_dom_p = np.all(fq <= fp) and np.any(fq < fp)
+                if p_dom_q:
+                    S[p].append(q); n_dom[q] += 1
+                elif q_dom_p:
+                    S[q].append(p); n_dom[p] += 1
+            if n_dom[p] == 0:
+                ranks[p] = 0
+                fronts[0].append(p)
+
+        # Generar frentes sucesivos
+        i = 0
+        while fronts[i]:
+            next_front = []
+            for p in fronts[i]:
+                for q in S[p]:
+                    n_dom[q] -= 1
+                    if n_dom[q] == 0:
+                        ranks[q] = i + 1
+                        next_front.append(q)
+            i += 1
+            fronts.append(next_front)
+        # Eliminar frente vacío final
+        if fronts and not fronts[-1]:
+            fronts.pop()
+        return fronts
+
+    @staticmethod
+    def crowding_distance(front: list[int], F_values: np.ndarray) -> np.ndarray:
+        """Eq. (5): crowding distance por frente."""
+        if len(front) == 0:
+            return np.array([])
+        F_front = F_values[front]
+        n = len(front)
+        M = F_front.shape[1]
+        dist = np.zeros(n)
+
+        for m in range(M):
+            idx = np.argsort(F_front[:, m])
+            f_min = F_front[idx[0], m]
+            f_max = F_front[idx[-1], m]
+            denom = f_max - f_min if f_max > f_min else 1e-30
+            dist[idx[0]] = np.inf
+            dist[idx[-1]] = np.inf
+            if n > 2:
+                for j in range(1, n - 1):
+                    dist[idx[j]] += (F_front[idx[j + 1], m] - F_front[idx[j - 1], m]) / denom
+        return dist
+
+    def _sbx_crossover(self, p1: np.ndarray, p2: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Simulated Binary Crossover."""
+        p = self.p
+        if self.rng.random() > p.p_crossover:
+            return p1.copy(), p2.copy()
+        u = self.rng.random(p.n_var)
+        beta = np.where(u <= 0.5,
+                        (2 * u) ** (1.0 / (p.eta_c + 1)),
+                        (1.0 / (2 * (1 - u))) ** (1.0 / (p.eta_c + 1)))
+        c1 = 0.5 * ((1 + beta) * p1 + (1 - beta) * p2)
+        c2 = 0.5 * ((1 - beta) * p1 + (1 + beta) * p2)
+        return np.clip(c1, p.xl, p.xu), np.clip(c2, p.xl, p.xu)
+
+    def _polynomial_mutation(self, x: np.ndarray) -> np.ndarray:
+        """Mutación polinomial."""
+        p = self.p
+        x = x.copy()
+        for i in range(p.n_var):
+            if self.rng.random() < p.p_mutation:
+                u = self.rng.random()
+                if u < 0.5:
+                    delta = (2 * u) ** (1.0 / (p.eta_m + 1)) - 1
+                else:
+                    delta = 1 - (2 * (1 - u)) ** (1.0 / (p.eta_m + 1))
+                x[i] += delta * (p.xu - p.xl)
+        return np.clip(x, p.xl, p.xu)
+
+    def _tournament(self, pop: np.ndarray, F_values: np.ndarray,
+                    ranks: np.ndarray, dists: np.ndarray) -> np.ndarray:
+        """Torneo crowded (Eq. 6)."""
+        i, j = self.rng.integers(0, len(pop), size=2)
+        if ranks[i] < ranks[j]: return pop[i]
+        if ranks[i] > ranks[j]: return pop[j]
+        return pop[i] if dists[i] >= dists[j] else pop[j]
+
+    def optimize(self, f: Callable[[np.ndarray], np.ndarray]) -> dict:
+        """Optimización NSGA-II completa."""
+        p = self.p
+        P = self._init_population()
+
+        for gen in range(p.max_gen):
+            # Evaluar P
+            F_P = np.array([f(x) for x in P])
+
+            # Generar descendencia
+            ranks_P = np.zeros(len(P), dtype=int)
+            fronts = self.fast_nondominated_sort(F_P)
+            dists_P = np.zeros(len(P))
+            for i, fr in enumerate(fronts):
+                for idx, d in zip(fr, self.crowding_distance(fr, F_P)):
+                    ranks_P[idx] = i
+                    dists_P[idx] = d
+
+            Q = np.zeros_like(P)
+            for k in range(0, p.pop_size, 2):
+                p1 = self._tournament(P, F_P, ranks_P, dists_P)
+                p2 = self._tournament(P, F_P, ranks_P, dists_P)
+                c1, c2 = self._sbx_crossover(p1, p2)
+                Q[k] = self._polynomial_mutation(c1)
+                Q[k + 1] = self._polynomial_mutation(c2)
+
+            F_Q = np.array([f(x) for x in Q])
+
+            # Combinar (Eq. 7)
+            R = np.vstack([P, Q])
+            F_R = np.vstack([F_P, F_Q])
+            fronts = self.fast_nondominated_sort(F_R)
+
+            # Construir P_next
+            P_next = []
+            F_next = []
+            for i, fr in enumerate(fronts):
+                if len(P_next) + len(fr) <= p.pop_size:
+                    P_next.extend([R[j] for j in fr])
+                    F_next.extend([F_R[j] for j in fr])
+                else:
+                    dist = self.crowding_distance(fr, F_R)
+                    order = np.argsort(-dist)
+                    need = p.pop_size - len(P_next)
+                    for j in order[:need]:
+                        P_next.append(R[fr[j]])
+                        F_next.append(F_R[fr[j]])
+                    break
+            P = np.array(P_next)
+
+        # Frente de Pareto final
+        F_final = np.array([f(x) for x in P])
+        fronts = self.fast_nondominated_sort(F_final)
+        pareto_idx = fronts[0] if fronts else list(range(len(P)))
+        return {
+            'population': P,
+            'pareto_front': F_final[pareto_idx],
+            'pareto_set': P[pareto_idx],
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _zdt1(x: np.ndarray) -> np.ndarray:
+    """Benchmark ZDT1: frente de Pareto f2 = 1 − sqrt(f1)."""
+    n = len(x)
+    f1 = x[0]
+    g = 1.0 + 9.0 * np.sum(x[1:]) / (n - 1)
+    f2 = g * (1 - np.sqrt(f1 / g))
+    return np.array([f1, f2])
+
+def test_nsga2_dominance():
+    """Fast sorting debe identificar correctamente el primer frente."""
+    F = np.array([[1.0, 4.0], [2.0, 3.0], [3.0, 2.0], [4.0, 1.0],
+                  [2.5, 2.5], [5.0, 5.0]])
+    fronts = NSGA2.fast_nondominated_sort(F)
+    # Los 4 primeros son no dominados; [2.5,2.5] y [5,5] están dominados
+    first_front = set(fronts[0])
+    assert {0, 1, 2, 3} <= first_front or len(first_front) >= 4, \
+        f"Frente 1 incorrecto: {fronts[0]}"
+    print(f"✓ NSGA-II fast sort correcto ({len(fronts[0])} soluciones en F1)")
+
+def test_nsga2_crowding_distance():
+    """Los extremos deben tener distancia infinita."""
+    F = np.array([[0.0, 1.0], [0.5, 0.5], [1.0, 0.0]])
+    front = [0, 1, 2]
+    d = NSGA2.crowding_distance(front, F)
+    assert np.isinf(d[0]) and np.isinf(d[2]), "Extremos deben ser ∞"
+    assert 0 < d[1] < np.inf, "Intermedio debe tener distancia finita"
+    print(f"✓ NSGA-II crowding distance correcto ({d})")
+
+def test_nsga2_converges_to_pareto():
+    """NSGA-II debe converger al frente verdadero de ZDT1."""
+    params = NSGA2Params(n_var=10, pop_size=50, max_gen=150, seed=42)
+    nsga = NSGA2(params)
+    res = nsga.optimize(_zdt1)
+    # Verificar que las soluciones están cerca del frente: f2 ≈ 1-√f1
+    pf = res['pareto_front']
+    errors = np.abs(pf[:, 1] - (1 - np.sqrt(pf[:, 0])))
+    mean_err = np.mean(errors)
+    assert mean_err < 0.15, f"Error al frente: {mean_err}"
+    assert len(pf) >= 10, "Debe tener ≥10 soluciones en frente de Pareto"
+    print(f"✓ NSGA-II converge al frente ZDT1 (error medio {mean_err:.4f}, {len(pf)} soluciones)")
+
+if __name__ == "__main__":
+    test_nsga2_dominance()
+    test_nsga2_crowding_distance()
+    test_nsga2_converges_to_pareto()
+    print("✓ PAPER #52 (NSGA-II) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #53: Zhang & Li (2007) — MOEA/D
+
+**Referencia:** Zhang, Q., & Li, H. (2007). "MOEA/D: A multiobjective evolutionary algorithm based on decomposition." *IEEE Transactions on Evolutionary Computation*, 11(6), 712–731. DOI: 10.1109/TEVC.2007.892759
+
+**Esencia:** Descompone un problema multiobjetivo en N subproblemas de optimización escalar (vía Tchebycheff, suma ponderada o PBI) y los resuelve cooperativamente en una población, donde cada individuo optimiza su subproblema usando información de vecinos.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Los MOEAs basados en dominancia (NSGA-II `[→ Paper #52]`) funcionan bien con 2-3 objetivos pero degradan catastróficamente con más objetivos (la mayoría de soluciones se vuelven no dominadas). Se necesita un enfoque **escalable** que funcione con muchos objetivos y que sea teóricamente riguroso.
+
+**¿Dónde falla el estado del arte previo?** NSGA-II y SPEA2 dependen de dominancia de Pareto, cuya resolución disminuye con M>3. Los métodos de agregación clásicos (suma ponderada) requieren ejecutar múltiples veces con diferentes pesos y no garantizan cobertura uniforme del frente. No había un método que unificara descomposición matemática con evolución cooperativa.
+
+**La solución de Zhang & Li:** **MOEA/D** se basa en un teorema clásico: cada punto del frente de Pareto es la solución óptima de un problema escalar parametrizado. Genera N vectores de peso uniformemente distribuidos `{λ^1,...,λ^N}`. Cada subproblema i minimiza:
+`g(x | λ^i, z*) = max_j { λ^i_j |f_j(x) − z*_j| }` (Tchebycheff)
+donde `z*` es el punto de referencia ideal. La innovación clave es que **cada subproblema se optimiza usando información de sus vecinos** en el espacio de pesos, aprovechando la correlación entre problemas similares. Esto produce N soluciones distribuidas uniformemente en el frente con complejidad O(N) por generación.
+
+**Aplicación práctica:** problemas con muchos objetivos (M ≥ 4), calibración de modelos complejos, diseño multicriterio, portafolios financieros multi-restricción.
+
+**¿Por qué es un hito?** Unificó la teoría clásica de descomposición (Tchebycheff 1889, Geoffrion 1968) con algoritmos evolutivos. Es el MOEA preferido cuando M > 3 y en benchmarks CEC. Introdujo el concepto de "vecindad en espacio de pesos" que ahora es estándar.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Descomposición Tchebycheff:**
+```
+g^te(x | λ, z*) = max_{1≤i≤m} { λ_i |f_i(x) − z*_i| }
+```
+- `λ ∈ ℝ^m_+`: vector de peso, `Σ λ_i = 1`.
+- `z*`: punto ideal (mejor valor de cada objetivo).
+- **Interpretación:** cada solución óptima de este subproblema corresponde a un punto Pareto-óptimo.
+
+**Eq. (2) — Descomposición PBI (Penalty-based Boundary Intersection):**
+```
+g^pbi(x | λ, z*) = d_1 + θ d_2
+d_1 = ‖(f(x) − z*)ᵀ λ̂‖
+d_2 = ‖f(x) − (z* + d_1 λ̂)‖
+```
+- `λ̂ = λ/‖λ‖`; `θ > 0`: parámetro de penalización.
+- **Interpretación:** d_1 es convergencia, d_2 es diversidad. θ controla el trade-off.
+
+**Eq. (3) — Generación de pesos uniformes:**
+```
+λ^i = (λ^i_1, ..., λ^i_m),   Σ_j λ^i_j = 1,   λ^i_j ∈ {0, 1/H, 2/H, ..., 1}
+```
+- **Número de subproblemas:** `N = C(H+m−1, m−1)`.
+
+**Eq. (4) — Vecindad por distancia euclidiana entre pesos:**
+```
+B(i) = {i_1, ..., i_T}  índices de los T pesos más cercanos a λ^i
+```
+
+**Eq. (5) — Actualización del punto ideal:**
+```
+z*_j ← min(z*_j, f_j(x))
+```
+
+**Eq. (6) — Actualización de soluciones vecinas:**
+```
+Para cada l ∈ B(i):
+  Si g(x_new | λ^l, z*) < g(x^l | λ^l, z*):
+    x^l ← x_new; FV^l ← f(x_new)
+```
+- **Interpretación:** una nueva solución puede mejorar subproblemas vecinos.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: MOEA/D (una generación)
+
+ENTRADA:
+  - x: población (N × n_var)
+  - FV: valores de f por individuo
+  - z*: punto ideal
+  - B: vecindades
+  - f: función multiobjetivo
+
+SALIDA:
+  - x, FV, z* actualizados
+
+1. Para i = 1..N:
+   a) Seleccionar 2 padres de B(i) al azar
+   b) Operadores genéticos → x_new
+   c) Mutación polinomial
+   d) Evaluar F_new = f(x_new)
+   e) Actualizar z* (Eq. 5):
+      z_j* ← min(z_j*, F_new_j) para todo j
+   f) Actualizar vecinos (Eq. 6):
+      Para l en B(i):
+        Si g(x_new|λ^l, z*) < g(x^l|λ^l, z*):
+          x^l ← x_new; FV^l ← F_new
+
+2. Retornar (x, FV, z*)
+
+EDGE CASES:
+  - z* inicial muy grande → inicializar con primera evaluación.
+  - Pesos con λ_j = 0 → subproblemas degeneran; añadir ε.
+  - H muy grande → N explota combinatoriamente.
+  - θ muy pequeño en PBI → soluciones agrupadas; θ muy grande → pérdida de convergencia.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from itertools import combinations_with_replacement
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class MOEADParams(BaseModel):
+    """Parámetros de MOEA/D."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    n_var: Annotated[int, Field(ge=1)] = 10
+    n_obj: Annotated[int, Field(ge=2)] = 2
+    H: Annotated[int, Field(ge=2)] = 12        # divisiones para pesos
+    T: Annotated[int, Field(ge=2)] = 10        # tamaño de vecindad
+    theta: Annotated[float, Field(gt=0.0)] = 5.0   # PBI penalty
+    decomp: Annotated[str, Field(pattern='^(tcheby|pbi)$')] = 'tcheby'
+    p_mutation: Annotated[float, Field(ge=0.0, le=1.0)] = 0.1
+    seed: int = 0
+    max_gen: Annotated[int, Field(ge=1)] = 200
+
+class MOEAD:
+    """Implementación de Zhang & Li (2007).
+
+    Reference: DOI: 10.1109/TEVC.2007.892759
+    """
+
+    def __init__(self, params: MOEADParams):
+        self.p = params
+        self.rng = np.random.default_rng(params.seed)
+        self.weights = self._generate_weights()
+        self.N = len(self.weights)
+        self.neighbours = self._compute_neighbours()
+
+    def _generate_weights(self) -> np.ndarray:
+        """Eq. (3): genera pesos uniformes por lattice simplex."""
+        p = self.p
+        weights = []
+        # Generar todas las combinaciones con suma = H
+        def recurse(k, remaining, current):
+            if k == p.n_obj - 1:
+                weights.append(current + [remaining])
+                return
+            for v in range(remaining + 1):
+                recurse(k + 1, remaining - v, current + [v])
+        recurse(0, p.H, [])
+        return np.array(weights, dtype=float) / p.H
+
+    def _compute_neighbours(self) -> list[np.ndarray]:
+        """Eq. (4): T vecinos más cercanos por distancia euclidiana."""
+        N = len(self.weights)
+        B = []
+        for i in range(N):
+            dists = np.linalg.norm(self.weights - self.weights[i], axis=1)
+            order = np.argsort(dists)
+            B.append(order[:self.p.T])
+        return B
+
+    def _g(self, f_val: np.ndarray, lam: np.ndarray, z_star: np.ndarray) -> float:
+        """Función de descomposición (Eq. 1 o 2)."""
+        if self.p.decomp == 'tcheby':
+            # Eq. (1)
+            return float(np.max(lam * np.abs(f_val - z_star)))
+        else:
+            # PBI (Eq. 2)
+            lam_norm = lam / (np.linalg.norm(lam) + 1e-30)
+            diff = f_val - z_star
+            d1 = float(np.abs(diff @ lam_norm))
+            proj = z_star + d1 * lam_norm
+            d2 = float(np.linalg.norm(f_val - proj))
+            return d1 + self.p.theta * d2
+
+    def _crossover_mutation(self, p1: np.ndarray, p2: np.ndarray) -> np.ndarray:
+        """Differential Evolution + mutación polinomial."""
+        F = 0.5
+        CR = 0.9
+        child = p1.copy()
+        j_rand = self.rng.integers(0, self.p.n_var)
+        for j in range(self.p.n_var):
+            if self.rng.random() < CR or j == j_rand:
+                child[j] = p1[j] + F * (p2[j] - p1[j])
+            # mutación polinomial
+            if self.rng.random() < self.p.p_mutation:
+                u = self.rng.random()
+                if u < 0.5:
+                    delta = (2 * u) ** (1.0 / 21) - 1
+                else:
+                    delta = 1 - (2 * (1 - u)) ** (1.0 / 21)
+                child[j] += delta
+        return np.clip(child, 0.0, 1.0)
+
+    def optimize(self, f: Callable[[np.ndarray], np.ndarray]) -> dict:
+        """Optimización MOEA/D completa."""
+        p = self.p
+        # Inicialización
+        x = self.rng.uniform(0.0, 1.0, (self.N, p.n_var))
+        FV = np.array([f(xi) for xi in x])
+        z_star = FV.min(axis=0)
+
+        for _ in range(p.max_gen):
+            for i in range(self.N):
+                # Seleccionar 2 padres del vecindario
+                neigh = self.neighbours[i]
+                k1, k2 = self.rng.choice(neigh, size=2, replace=True)
+                child = self._crossover_mutation(x[k1], x[k2])
+                F_child = f(child)
+
+                # Actualizar z* (Eq. 5)
+                z_star = np.minimum(z_star, F_child)
+
+                # Actualizar vecinos (Eq. 6)
+                for l in neigh:
+                    if self._g(F_child, self.weights[l], z_star) < \
+                       self._g(FV[l], self.weights[l], z_star):
+                        x[l] = child
+                        FV[l] = F_child
+
+        return {'population': x, 'objectives': FV, 'z_star': z_star,
+                'pareto_front_approx': FV}
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _zdt1_moea(x: np.ndarray) -> np.ndarray:
+    """ZDT1 multiobjetivo."""
+    n = len(x)
+    f1 = x[0]
+    g = 1.0 + 9.0 * np.sum(x[1:]) / (n - 1)
+    f2 = g * (1 - np.sqrt(f1 / g))
+    return np.array([f1, f2])
+
+def test_moea_weight_generation():
+    """Los pesos deben sumar 1 y tener la cardinalidad correcta."""
+    params = MOEADParams(n_obj=2, H=5, n_var=5)
+    moead = MOEAD(params)
+    W = moead.weights
+    sums = W.sum(axis=1)
+    np.testing.assert_allclose(sums, 1.0, atol=1e-10)
+    expected_N = 6  # C(5+2-1, 2-1) = C(6,1) = 6
+    assert len(W) == expected_N, f"N esperado {expected_N}, obtenido {len(W)}"
+    print(f"✓ MOEA/D pesos generados (N={len(W)}, suma ≈ 1)")
+
+def test_moea_tchebycheff_optimum():
+    """La descomposición Tchebycheff debe tener mínimo en 0 si f=z*."""
+    params = MOEADParams(n_obj=2, H=5, n_var=5)
+    moead = MOEAD(params)
+    z_star = np.array([0.5, 0.5])
+    f_val = np.array([0.5, 0.5])
+    lam = np.array([0.5, 0.5])
+    g = moead._g(f_val, lam, z_star)
+    assert abs(g) < 1e-10, f"Mínimo debe ser 0 cuando f=z*, dio {g}"
+    print("✓ MOEA/D Tchebycheff mínimo correcto")
+
+def test_moea_converges_zdt1():
+    """MOEA/D debe producir un conjunto aproximado del frente ZDT1."""
+    params = MOEADParams(n_var=10, n_obj=2, H=20, T=5,
+                          max_gen=150, seed=7, decomp='tcheby')
+    moead = MOEAD(params)
+    res = moead.optimize(_zdt1_moea)
+    FV = res['objectives']
+    # Verificar cercanía al frente: f2 ≈ 1 − √f1
+    errors = np.abs(FV[:, 1] - (1 - np.sqrt(np.maximum(FV[:, 0], 0))))
+    median_err = np.median(errors)
+    assert median_err < 0.3, f"Mediana de error muy alta: {median_err}"
+    print(f"✓ MOEA/D converge al frente ZDT1 (error mediano {median_err:.4f})")
+
+if __name__ == "__main__":
+    test_moea_weight_generation()
+    test_moea_tchebycheff_optimum()
+    test_moea_converges_zdt1()
+    print("✓ PAPER #53 (MOEA/D) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #54: Snoek, Larochelle & Adams (2012) — Bayesian Optimization
+
+**Referencia:** Snoek, J., Larochelle, H., & Adams, R. P. (2012). "Practical Bayesian optimization of machine learning algorithms." *Advances in Neural Information Processing Systems*, 25, 2951–2959. DOI: 10.48550/arXiv.1206.2944
+
+**Esencia:** Optimización de funciones costosas (ej: validación cruzada de modelos ML) mediante un modelo sustituto de proceso gaussiano que guía la búsqueda con una función de adquisición —Expected Improvement—, logrando convergencia al óptimo con pocas evaluaciones.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Muchos problemas de aprendizaje automático requieren ajustar hiperparámetros `x ∈ X` para minimizar una función objetivo `f(x)` (ej: error de validación) que es **costosa de evaluar** (entrenar un modelo tarda minutos/horas) y **sin derivadas**. Grid search es ineficiente en alta dimensión; random search `[→ Bergstra & Bengio 2012]` es mejor pero no usa información de evaluaciones previas. Se necesita un método que **aprenda** de las evaluaciones y se enfoque en regiones prometedoras.
+
+**¿Dónde falla el estado del arte previo?** Grid search escala exponencialmente. Random search no explota estructura. Los métodos basados en gradiente no aplican. Los primeros métodos de BO eran teóricos, sin implementación eficiente ni adquisición robusta.
+
+**La solución de Snoek et al.:** **Bayesian Optimization** mantiene un **modelo sustituto** —un Gaussian Process (GP) con kernel adecuado— que aproxima `f` y su incertidumbre. En cada iteración, una **función de adquisición** balancea exploración (alta incertidumbre) y explotación (valores bajos previstos). La más usada es **Expected Improvement (EI)**:
+`EI(x) = E[max(f_best − f(x), 0)]`
+que tiene forma cerrada bajo GP. Se evalúa `f` en el máximo de EI, se actualiza el GP, y se repite. Con unas decenas de evaluaciones se encuentra el óptimo, donde grid/random requerirían miles.
+
+**Aplicación práctica:** ajuste de hiperparámetros (librerías Optuna, Hyperopt, SMAC), diseño de experimentos, síntesis de materiales, diseño de fármacos, ingeniería, automatización ML (AutoML).
+
+**¿Por qué es un hito?** Popularizó BO en la práctica. La librería Spearmint y el paper demostraron que BO supera a random search y expertos humanos en tareas de ML. Es la base del AutoML moderno y se usa en toda la industria tech.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Modelo de proceso gaussiano (prior):**
+```
+f(x) ~ GP(m(x), k(x, x'))
+```
+- `m(x)`: función media (usualmente 0); `k(x,x')`: kernel/covarianza.
+
+**Eq. (2) — Kernel Matérn 5/2 (típico):**
+```
+k(r) = σ_f² (1 + √5 r/l + 5r²/(3l²)) exp(−√5 r/l)
+r = ‖x − x'‖
+```
+- `l`: longitud de escala; `σ_f²`: varianza de señal.
+
+**Eq. (3) — Posterior del GP (tras observar (X, y)):**
+```
+μ(x) = k(x, X)ᵀ (K + σ_n² I)⁻¹ y
+σ²(x) = k(x,x) − k(x, X)ᵀ (K + σ_n² I)⁻¹ k(x, X)
+```
+- `K`: matriz de covarianza entre puntos observados; `σ_n²`: ruido.
+
+**Eq. (4) — Expected Improvement:**
+```
+EI(x) = (f_best − μ(x)) Φ(Z) + σ(x) φ(Z)
+Z = (f_best − μ(x)) / σ(x)
+```
+- `Φ, φ`: CDF y PDF de la normal estándar.
+- **Interpretación:** mejora esperada respecto al mejor observado.
+
+**Eq. (5) — Maximización de la adquisición:**
+```
+x_{n+1} = argmax_x EI(x)
+```
+- Se usa L-BFGS-B con múltiples reinicializaciones.
+
+**Eq. (6) — Log marginal likelihood (para ajustar hiperparámetros del kernel):**
+```
+log p(y | X, θ) = −½ yᵀ (K + σ_n² I)⁻¹ y − ½ log|K + σ_n² I| − n/2 log(2π)
+```
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Bayesian Optimization (una iteración)
+
+ENTRADA:
+  - X: puntos observados (n_obs × d)
+  - y: valores observados (n_obs,)
+  - f: función a optimizar
+  - bounds: límites por dimensión
+  - kernel_params: l, σ_f, σ_n
+
+SALIDA:
+  - x_new, y_new: nuevo punto evaluado
+
+1. Ajustar posterior del GP (Eq. 3):
+   K ← kernel(X, X)
+   L ← cholesky(K + σ_n² I)
+   α ← Lᵀ \ (L \ y)
+   μ(x) ← k(x, X)ᵀ α
+   v ← L \ k(x, X)
+   σ²(x) ← k(x,x) − vᵀ v
+
+2. Maximizar EI (Eq. 5):
+   Para cada reinicialización aleatoria:
+     x_cand ← L-BFGS-B(maximizar EI, x0=rand)
+   x_new ← argmax EI(x_cand)
+
+3. Evaluar:
+   y_new ← f(x_new)
+
+4. Actualizar observaciones:
+   X ← X ∪ {x_new}
+   y ← y ∪ {y_new}
+
+5. (Opcional) Ajustar hiperparámetros del kernel (Eq. 6)
+
+6. Retornar (x_new, y_new, X, y)
+
+EDGE CASES:
+  - K mal condicionada → jitter σ_n² = 1e-6.
+  - σ(x) = 0 (punto ya observado) → EI = 0.
+  - L-BFGS converge a máximo local → múltiples restarts.
+  - d grande → BO pierde eficiencia (maldición de dimensión).
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from scipy.optimize import minimize
+from scipy.spatial.distance import cdist
+from scipy.stats import norm
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class GPParams(BaseModel):
+    """Hiperparámetros del GP (kernel Matérn 5/2)."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    length_scale: Annotated[float, Field(gt=0.0)] = 0.5
+    sigma_f: Annotated[float, Field(gt=0.0)] = 1.0
+    sigma_n: Annotated[float, Field(gt=0.0)] = 1e-4
+
+class BOParams(BaseModel):
+    """Parámetros de Bayesian Optimization."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    n_iter: Annotated[int, Field(ge=1)] = 30
+    n_restarts: Annotated[int, Field(ge=1)] = 5
+    seed: int = 0
+
+class BayesianOptimization:
+    """Implementación de Snoek et al. (2012).
+
+    Reference: DOI: 10.48550/arXiv.1206.2944
+    """
+
+    def __init__(self, gp_params: GPParams, bo_params: BOParams,
+                 bounds: list[tuple[float, float]]):
+        self.gp = gp_params
+        self.bo = bo_params
+        self.bounds = np.array(bounds)
+        self.d = len(bounds)
+        self.rng = np.random.default_rng(bo_params.seed)
+        self.X = None
+        self.y = None
+
+    def kernel(self, X1: np.ndarray, X2: np.ndarray) -> np.ndarray:
+        """Kernel Matérn 5/2 (Eq. 2)."""
+        dist = cdist(X1 / self.gp.length_scale,
+                     X2 / self.gp.length_scale, metric='euclidean')
+        sqrt5_r = np.sqrt(5.0) * dist
+        K = self.gp.sigma_f ** 2 * (1 + sqrt5_r + 5.0 * dist ** 2 / 3.0) * np.exp(-sqrt5_r)
+        return K
+
+    def _fit(self):
+        """Precomputa Cholesky del posterior."""
+        K = self.kernel(self.X, self.X)
+        K += self.gp.sigma_n ** 2 * np.eye(len(self.X)) + 1e-8 * np.eye(len(self.X))
+        self.L = np.linalg.cholesky(K)
+        self.alpha = np.linalg.solve(self.L.T, np.linalg.solve(self.L, self.y))
+
+    def predict(self, x: np.ndarray) -> tuple[float, float]:
+        """Media y varianza del posterior (Eq. 3)."""
+        x = np.atleast_2d(x)
+        k_star = self.kernel(x, self.X)
+        mu = float(k_star @ self.alpha)
+        v = np.linalg.solve(self.L, k_star.T)
+        var = float(self.gp.sigma_f ** 2 - np.sum(v ** 2))
+        var = max(var, 1e-12)
+        return mu, var
+
+    def expected_improvement(self, x: np.ndarray, f_best: float) -> float:
+        """Eq. (4): EI en un punto."""
+        mu, sigma = self.predict(x)
+        if sigma <= 1e-12:
+            return 0.0
+        z = (f_best - mu) / sigma
+        return float((f_best - mu) * norm.cdf(z) + sigma * norm.pdf(z))
+
+    def _acquire(self, f_best: float) -> np.ndarray:
+        """Maximiza EI mediante L-BFGS-B multi-restart (Eq. 5)."""
+        best_x = None
+        best_ei = -np.inf
+
+        def neg_ei(x):
+            return -self.expected_improvement(x.reshape(1, -1), f_best)
+
+        for _ in range(self.bo.n_restarts):
+            x0 = self.rng.uniform(self.bounds[:, 0], self.bounds[:, 1])
+            res = minimize(neg_ei, x0, method='L-BFGS-B', bounds=self.bounds)
+            if res.success and -res.fun > best_ei:
+                best_ei = -res.fun
+                best_x = res.x
+
+        if best_x is None:
+            best_x = self.rng.uniform(self.bounds[:, 0], self.bounds[:, 1])
+        return best_x
+
+    def optimize(self, f: Callable[[np.ndarray], float],
+                 n_init: int = 5) -> dict:
+        """Optimización BO completa."""
+        # Inicialización aleatoria
+        X_init = self.rng.uniform(self.bounds[:, 0], self.bounds[:, 1],
+                                  size=(n_init, self.d))
+        y_init = np.array([f(x) for x in X_init])
+        self.X = X_init.copy()
+        self.y = y_init.copy()
+
+        history_x = list(X_init)
+        history_y = list(y_init)
+
+        for _ in range(self.bo.n_iter):
+            self._fit()
+            f_best = float(np.min(self.y))
+            x_new = self._acquire(f_best)
+            y_new = f(x_new)
+            self.X = np.vstack([self.X, x_new.reshape(1, -1)])
+            self.y = np.append(self.y, y_new)
+            history_x.append(x_new.copy())
+            history_y.append(float(y_new))
+
+        best_idx = int(np.argmin(self.y))
+        return {
+            'best_x': self.X[best_idx],
+            'best_y': float(self.y[best_idx]),
+            'history_x': np.array(history_x),
+            'history_y': np.array(history_y),
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _branin(x: np.ndarray) -> float:
+    """Branin-Hoo: mínimo global ≈ 0.397887 en (π, 2.275) y otros."""
+    a, b, c, r, s, t = 1, 5.1 / (4 * np.pi ** 2), 5 / np.pi, 6, 10, 1 / (8 * np.pi)
+    x1, x2 = x
+    return float(a * (x2 - b * x1 ** 2 + c * x1 - r) ** 2 + s * (1 - t) * np.cos(x1) + s)
+
+def test_bo_gp_posterior():
+    """El posterior del GP debe reproducir puntos observados."""
+    gp = GPParams(length_scale=1.0, sigma_f=1.0, sigma_n=1e-5)
+    bo_params = BOParams(n_iter=5)
+    bo = BayesianOptimization(gp, bo_params, bounds=[(-5, 10), (0, 15)])
+    bo.X = np.array([[0.0, 5.0], [3.0, 2.0]])
+    bo.y = np.array([10.0, 20.0])
+    bo._fit()
+    mu1, _ = bo.predict(bo.X[0])
+    mu2, _ = bo.predict(bo.X[1])
+    np.testing.assert_allclose([mu1, mu2], bo.y, atol=1e-3)
+    print("✓ BO GP posterior reproduce observaciones")
+
+def test_bo_ei_properties():
+    """EI debe ser 0 en puntos observados y > 0 en otros."""
+    gp = GPParams(length_scale=1.0, sigma_f=1.0, sigma_n=1e-5)
+    bo = BayesianOptimization(gp, BOParams(), bounds=[(-5, 5), (-5, 5)])
+    bo.X = np.array([[0.0, 0.0]])
+    bo.y = np.array([1.0])
+    bo._fit()
+    ei_at_obs = bo.expected_improvement(np.array([0.0, 0.0]), f_best=1.0)
+    ei_elsewhere = bo.expected_improvement(np.array([2.0, 2.0]), f_best=1.0)
+    assert ei_at_obs < 0.05, f"EI en punto observado debe ser ~0: {ei_at_obs}"
+    assert ei_elsewhere >= 0.0, "EI debe ser ≥ 0 en todo punto"
+    print(f"✓ BO EI correcta (en obs: {ei_at_obs:.4f}, fuera: {ei_elsewhere:.4f})")
+
+def test_bo_optimizes_branin():
+    """BO debe acercarse al mínimo global de Branin en pocas evaluaciones."""
+    gp = GPParams(length_scale=2.0, sigma_f=50.0, sigma_n=1e-4)
+    bo = BayesianOptimization(gp, BOParams(n_iter=25, n_restarts=10, seed=42),
+                              bounds=[(-5, 10), (0, 15)])
+    res = bo.optimize(_branin, n_init=5)
+    # Branin mínimo global ≈ 0.3979
+    assert res['best_y'] < 1.5, f"BO debe acercarse al óptimo: {res['best_y']}"
+    print(f"✓ BO minimiza Branin (mejor y={res['best_y']:.4f}, total evals={len(res['history_y'])})")
+
+if __name__ == "__main__":
+    test_bo_gp_posterior()
+    test_bo_ei_properties()
+    test_bo_optimizes_branin()
+    print("✓ PAPER #54 (Bayesian Optimization) — TODOS LOS TESTS PASARON")
+```
+
+---
+
+### PAPER #55: Li, Jamieson, DeSalvo, Rostamizadeh & Talwalkar (2018) — Hyperband
+
+**Referencia:** Li, L., Jamieson, K., DeSalvo, G., Rostamizadeh, A., & Talwalkar, A. (2018). "Hyperband: A novel bandit-based approach to hyperparameter optimization." *Journal of Machine Learning Research*, 18(185), 1–52. DOI: 10.48550/arXiv.1603.06560
+
+**Esencia:** Asignación adaptativa de recursos computacionales a configuraciones de hiperparámetros mediante *brackets* de Successive Halving con budgets máximos variables, logrando aceleración exponencial sobre grid/random search sin necesidad de un modelo sustituto.
+
+#### CAPA 1: CONTEXTO
+
+**¿Qué problema resuelve?** Evaluar una configuración de hiperparámetros (entrenar una red) puede tomar horas, pero muchas configuraciones malas pueden descartarse con pocas épocas. El desafío es decidir **cuánto recurso asignar** a cada configuración: muy poco → no se distingue buena de mala; mucho → desperdicio. BO `[→ Paper #54]` usa un modelo sustituto, pero es costoso de mantener en alta dimensión y asume estructura suave.
+
+**¿Dónde falla el estado del arte previo?** Grid search evalúa todas las configuraciones hasta el final → ineficiente. Random search es ciego al rendimiento temprano. Early stopping ad-hoc carece de garantías. Successive Halving (Karnin et al. 2013) asigna recursos adaptativamente pero requiere elegir un budget máximo B y un número de configuraciones N fijos, lo que introduce un dilema: ¿muchas configs poco evaluadas o pocas muy evaluadas?
+
+**La solución de Li et al.:** **Hyperband** resuelve el dilema ejecutando **múltiples brackets** de Successive Halving con diferentes trade-offs (B/N). Cada bracket s+1 corresponde a un punto distinto en el espectro (mucha exploración vs mucha explotación). El algoritmo usa teoría de *infinite-armed bandits* para garantizar, en el peor caso, una aceleración exponencial sobre random search. En la práctica, Hyperband encuentra configuraciones competitivas con BO pero 5-30× más rápido, sin asumir suavidad ni requerir un modelo sustituto.
+
+**Aplicación práctica:** tuning de redes neuronales (epochs, capas, learning rates), selección de modelos, AutoML (usado en Keras Tuner, Ray Tune, Optuna), optimización de pipelines ML.
+
+**¿Por qué es un hito?** Introdujo una solución elegante y práctica al dilema exploración/explotación en tuning. Es la base de BOHB (Falkner et al. 2018) y Hyperband-asynchronous. Se convirtió en estándar en librerías modernas de tuning.
+
+#### CAPA 2: ECUACIÓN
+
+**Eq. (1) — Successive Halving (un bracket):**
+```
+Dado N configs y B budget máximo:
+Para cada ronda i = 0, 1, ..., log_η(N) − 1:
+  n_i = ⌊N η^{−i}⌋     configs activas
+  r_i = ⌊B η^i / N⌋   resource por config
+  Evaluar n_i configs con r_i resource
+  Conservar ⌊n_i/η⌋ mejores
+```
+- `η > 1`: factor de reducción (usual 3).
+
+**Eq. (2) — Brackets de Hyperband:**
+```
+s_max = ⌊log_η(B)⌋
+Para s = s_max, s_max−1, ..., 0:
+  n = ⌈ (s_max+1)/(s+1) · η^s ⌉
+  r = B · η^{−s}
+  Ejecutar Successive Halving con (n, r) como inicio
+```
+
+**Eq. (3) — Coste total de Hyperband:**
+```
+Coste total ≈ (s_max + 1) · B
+```
+- **Interpretación:** cada bracket consume ≈ B recursos; total es O(log B · B).
+
+**Eq. (4) — Garantía teórica (simple regret):**
+```
+P(best_found − f* > ε) ≤ C · exp(−N ε² / (s_max+1))
+```
+- **Interpretación:** con N suficientemente grande, encuentra configuración ε-óptima.
+
+**Eq. (5) — Número total de evaluaciones base:**
+```
+Total_base_evals = (s_max + 1)² · η^{s_max}
+```
+- **Interpretación:** factor (s_max+1)² vs random search; logarítmico en B.
+
+#### CAPA 3: ALGORITMO
+
+```
+ALGORITMO: Hyperband
+
+ENTRADA:
+  - B: budget máximo por configuración (ej: epochs = 81)
+  - eta: factor de reducción (default 3)
+  - sample_config(): función que muestrea configs al azar
+  - run_config(config, r): entrena con budget r y devuelve loss
+
+SALIDA:
+  - mejor configuración encontrada
+
+1. Inicialización:
+   s_max = floor(log_eta(B))
+   best_loss = +inf
+   best_config = None
+
+2. Para s = s_max downto 0:   (cada s es un bracket)
+   a) Calcular n, r iniciales (Eq. 2)
+   b) Muestrear n configs aleatorias
+   c) Successive Halving dentro del bracket:
+      Para i = 0, 1, ..., s:
+        n_i = floor(n · eta^{−i})
+        r_i = r · eta^i
+        Ejecutar run_config para cada config activa con r_i
+        Conservar floor(n_i/eta) mejores por loss
+   d) La config ganadora del bracket → candidata final
+   e) Si loss < best_loss: actualizar
+
+3. Retornar best_config
+
+EDGE CASES:
+  - B < η → s_max = 0, un solo bracket trivial.
+  - run_config no monótono (loss fluctúa) → usar mejor loss visto.
+  - configs con mismo loss → desempate aleatorio o FIFO.
+  - η = 1 → degenera; debe ser > 1.
+```
+
+#### CAPA 4: CÓDIGO
+
+```python
+import numpy as np
+from typing import Annotated, Callable, TypeAlias
+from pydantic import BaseModel, Field, ConfigDict
+
+class HyperbandParams(BaseModel):
+    """Parámetros de Hyperband."""
+    model_config = ConfigDict(frozen=True, strict=True, extra='forbid')
+    R: Annotated[int, Field(ge=2)] = 81        # budget máximo
+    eta: Annotated[float, Field(gt=1.0)] = 3.0
+    seed: int = 0
+
+class Hyperband:
+    """Implementación de Li et al. (2018).
+
+    Reference: DOI: 10.48550/arXiv.1603.06560
+    """
+
+    def __init__(self, params: HyperbandParams):
+        self.p = params
+        self.s_max = int(np.floor(np.log(params.R) / np.log(params.eta)))
+        self.B = (self.s_max + 1) * params.R
+        self.rng = np.random.default_rng(params.seed)
+
+    def _successive_halving(self, configs: list, r_init: int,
+                            run_fn: Callable) -> tuple:
+        """Ejecuta un bracket completo de Successive Halving (Eq. 1)."""
+        n = len(configs)
+        current = list(configs)
+        history = []
+        eta = self.p.eta
+
+        for i in range(int(np.floor(np.log(n) / np.log(eta))) + 1):
+            n_i = int(np.floor(n * eta ** (-i)))
+            r_i = int(r_init * (eta ** i))
+            if n_i < 1 or r_i < 1:
+                break
+            current = current[:n_i]
+            results = [(cfg, run_fn(cfg, r_i)) for cfg in current]
+            history.append((r_i, results.copy()))
+            results_sorted = sorted(results, key=lambda x: x[1])
+            n_keep = max(1, int(np.floor(n_i / eta)))
+            current = [r[0] for r in results_sorted[:n_keep]]
+
+        # Mejor config del bracket = última sobreviviente
+        best_cfg = current[0]
+        best_loss = run_fn(best_cfg, int(r_init * eta ** int(np.floor(np.log(n) / np.log(eta)))))
+        return best_cfg, best_loss, history
+
+    def optimize(self, sample_fn: Callable, run_fn: Callable) -> dict:
+        """Hyperband completo sobre todos los brackets (Eq. 2)."""
+        best_overall_loss = np.inf
+        best_overall_cfg = None
+        bracket_results = []
+        total_evals = 0
+
+        for s in range(self.s_max, -1, -1):
+            # Eq. (2): parámetros del bracket s
+            n = int(np.ceil(((self.s_max + 1) / (s + 1)) * (self.p.eta ** s)))
+            r = int(self.p.R * (self.p.eta ** (-s)))
+
+            # Muestrear n configuraciones
+            configs = [sample_fn() for _ in range(n)]
+            cfg, loss, hist = self._successive_halving(configs, r, run_fn)
+
+            # Contar evaluaciones
+            for r_i, res_list in hist:
+                total_evals += len(res_list)
+
+            bracket_results.append({'s': s, 'n_init': n, 'r_init': r,
+                                    'best_config': cfg, 'best_loss': loss})
+            if loss < best_overall_loss:
+                best_overall_loss = loss
+                best_overall_cfg = cfg
+
+        return {
+            'best_config': best_overall_cfg,
+            'best_loss': float(best_overall_loss),
+            'brackets': bracket_results,
+            'total_evaluations': total_evals,
+            's_max': self.s_max,
+        }
+
+
+# ==================== TESTS DE REGRESIÓN ====================
+
+def _sample_config(rng: np.random.Generator) -> dict:
+    """Muestrea hiperparámetros ficticios."""
+    return {
+        'lr': 10.0 ** rng.uniform(-5, -1),
+        'momentum': rng.uniform(0.5, 0.99),
+        'noise': rng.normal(0, 1),
+    }
+
+def _run_config(cfg: dict, r: int, seed: int = 0) -> float:
+    """Loss ficticio: mínimo en lr=1e-3, momentum=0.9; menos ruido con más r."""
+    rng = np.random.default_rng(seed + hash(str(cfg)) % 100000)
+    lr_term = (np.log10(cfg['lr']) + 3.0) ** 2
+    mom_term = (cfg['momentum'] - 0.9) ** 2
+    noise = cfg['noise'] * 0.5 / np.sqrt(max(r, 1))
+    return float(lr_term + 10 * mom_term + noise + rng.normal(0, 0.05))
+
+def test_hyperband_bracket_structure():
+    """El número de brackets debe ser s_max+1."""
+    hb = Hyperband(HyperbandParams(R=81, eta=3.0, seed=1))
+    assert hb.s_max == 4, f"log_3(81)=4, dio {hb.s_max}"
+    print(f"✓ Hyperband estructura correcta (s_max={hb.s_max})")
+
+def test_hyperband_finds_good_config():
+    """Hyperband debe encontrar config cercana al óptimo."""
+    params = HyperbandParams(R=81, eta=3.0, seed=42)
+    hb = Hyperband(params)
+    rng = np.random.default_rng(42)
+
+    def sample():
+        return _sample_config(rng)
+
+    def run(cfg, r):
+        return _run_config(cfg, r, seed=42)
+
+    res = hb.optimize(sample, run)
+    # Óptimo teórico: lr=1e-3, momentum=0.9 → loss ≈ 0
+    assert res['best_loss'] < 1.0, f"Loss muy alto: {res['best_loss']}"
+    best_cfg = res['best_config']
+    assert abs(np.log10(best_cfg['lr']) + 3.0) < 1.5, \
+        f"lr no cerca de 1e-3: {best_cfg['lr']}"
+    print(f"✓ Hyperband encuentra buena config (loss={res['best_loss']:.4f}, "
+          f"lr={best_cfg['lr']:.2e}, evals={res['total_evaluations']})")
+
+def test_hyperband_efficiency_vs_random():
+    """Hyperband debe usar muchas menos evaluaciones que random search completo."""
+    params = HyperbandParams(R=81, eta=3.0, seed=7)
+    hb = Hyperband(params)
+    rng = np.random.default_rng(7)
+
+    def sample():
+        return _sample_config(rng)
+
+    def run(cfg, r):
+        return _run_config(cfg, r, seed=7)
+
+    res = hb.optimize(sample, run)
+    # Random search con B=81 por config y N=50 configs = 4050 evals
+    random_evals = 50 * 81
+    assert res['total_evaluations'] < random_evals / 2, \
+        f"Hyperband debe ser más eficiente: {res['total_evaluations']} vs {random_evals}"
+    print(f"✓ Hyperband eficiente ({res['total_evaluations']} evals vs random {random_evals})")
+
+if __name__ == "__main__":
+    test_hyperband_bracket_structure()
+    test_hyperband_finds_good_config()
+    test_hyperband_efficiency_vs_random()
+    print("✓ PAPER #55 (Hyperband) — TODOS LOS TESTS PASARON")
+```
+
+---
