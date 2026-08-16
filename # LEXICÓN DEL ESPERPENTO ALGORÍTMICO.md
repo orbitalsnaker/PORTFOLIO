@@ -1713,7 +1713,514 @@ Su uso correcto no es la humillación, sino la **categorización**. Cuando te en
 
 ---
 
-**Fin del Lexicón del Esperpento Algorítmico**
+# ANEXO DEL LEXICÓN DEL ESPERPENTO ALGORÍTMICO
+## O: Cómo usar un martillo sin romperte los dedos
+### Edición de Autorreparación — Obra derivada del Corpus RONIN 1310
 
-*Obra derivada del Corpus RONIN 1310*
-*Edición Aumentada.*
+---
+
+> *"Un martillo en manos de un albañil construye casas. En manos de un niño, rompe ventanas. Este anexo es el manual del albañil."*
+
+---
+
+## PRÓLOGO DEL ANEXO: POR QUÉ ESTO ES NECESARIO
+
+El Lexicón del Esperpento Algorítmico es una **herramienta de diagnóstico**. Como cualquier herramienta de precisión, puede ser usada para:
+
+- **Diagnosticar** una disfunción y corregirla.
+- **Señalar** una disfunción y que otros la corrijan.
+- **Humillar** a alguien sin intención de corregir nada.
+
+El problema no es la herramienta. El problema es el uso.
+
+Este anexo existe porque **toda herramienta de diagnóstico necesita un protocolo de uso**. Un bisturí no viene sin instrucciones. Un escáner no viene sin manual. Un lexicón de 150 epítetos no puede venir sin un sistema de aplicación ética.
+
+---
+
+## SECCIÓN 1: EL PROTOCOLO DE USO
+
+### 1.1. Regla de Oro del Diagnóstico
+
+> **Nunca uses un epíteto en presencia de la persona diagnosticada sin tener un plan de remediación.**
+
+Si dices "Cuello de botella con toga" en una reunión, estás quemando un puente. Si dices "Cuello de botella con toga" y luego dices "¿cómo podemos desbloquear tu proceso?", estás construyendo un puente.
+
+**La diferencia entre el diagnóstico y la humillación es la intención de reparación.**
+
+### 1.2. El Test de los Tres Usos
+
+Antes de usar cualquier epíteto, pregúntate:
+
+1. **¿Es verdad?** ¿El epíteto describe realmente el comportamiento, o es una exageración de mi frustración?
+2. **¿Es útil?** ¿Decirlo va a ayudar a resolver el problema, o solo a descargar mi ira?
+3. **¿Es ahora?** ¿Es el momento adecuado, o necesito esperar a un contexto más apropiado?
+
+Si alguna de las tres respuestas es "no", **guarda el epíteto para tu diario**. No lo uses en público.
+
+### 1.3. La Jerarquía de Intervención
+
+| Nivel de Hiriencia | Uso recomendado | Ejemplo |
+|---|---|---|
+| **NH 1-2** | Diagnóstico interno, notas personales, conversaciones privadas con el equipo | "Creo que tenemos un problema de Cuello de botella con toga en el proceso de aprobación." |
+| **NH 3-4** | Conversaciones con el afectado, si hay confianza | "A veces tu enfoque parece de Trovador del buzzword hueco. ¿Podemos bajar a lo concreto?" |
+| **NH 5-6** | **NUNCA** en conversación directa. Solo en análisis estructural, documentos privados, o cuando la persona ya no está en la organización. | "El problema sistémico era un caso de Cáncer de la sintaxis lógica en la arquitectura." |
+
+---
+
+## SECCIÓN 2: EL SISTEMA DE REMEDIACIÓN
+
+Cada epíteto del Lexicón debe tener una **sugerencia de corrección**. Esta sección proporciona las remediaciones generales por categoría. En futuras ediciones, cada epíteto podría tener su propia receta.
+
+### 2.1. Remedios para NH 1 (Ineptitud técnica)
+
+**Diagnóstico:** No saben, y no saben que no saben.
+
+**Remediación:**
+- **Formación práctica:** No cursos teóricos. Proyectos reales con supervisión.
+- **Parejas de programación:** Que trabajen con alguien que sí sabe.
+- **Reducción de responsabilidad:** No darles tareas críticas hasta que demuestren competencia.
+
+**Indicador de éxito:** El número de preguntas que hacen disminuye, y la calidad de las que hacen aumenta.
+
+### 2.2. Remedios para NH 2 (Autoridad corrupta)
+
+**Diagnóstico:** Tienen poder y lo usan mal. La burocracia es su instrumento.
+
+**Remediación:**
+- **Transparencia de decisiones:** Exigir que todas las decisiones técnicas tengan una justificación documentada.
+- **Métricas de eficiencia:** Medir el tiempo que añaden al proceso. Si añaden más tiempo que valor, es un problema.
+- **Circunvalación:** Crear caminos alternativos que no pasen por ellos para decisiones técnicas.
+
+**Indicador de éxito:** El tiempo de aprobación disminuye sin disminuir la calidad de las decisiones.
+
+### 2.3. Remedios para NH 3 (La farsa de la competencia)
+
+**Diagnóstico:** Fingen saber. La apariencia es su sustancia.
+
+**Remediación:**
+- **Exposición:** Pedir demostraciones prácticas, no presentaciones.
+- **Preguntas de profundidad:** No aceptar respuestas superficiales. Preguntar "¿cómo funciona?" en lugar de "¿qué hace?".
+- **Documentación:** Exigir que documenten lo que dicen saber.
+
+**Indicador de éxito:** Sus presentaciones pasan de ser "qué" a ser "cómo".
+
+### 2.4. Remedios para NH 4 (Confusión ontológica)
+
+**Diagnóstico:** Confunden el mapa con el territorio. Hablan de la realidad como si fuera un concepto.
+
+**Remediación:**
+- **Anclaje en lo concreto:** Exigir ejemplos específicos. "¿Puedes darme un caso concreto?"
+- **Prueba de realidad:** Pedir que demuestren sus afirmaciones con datos o código.
+- **Símil del mapa:** Recordarles que el mapa no es el territorio.
+
+**Indicador de éxito:** Sus afirmaciones pasan de ser abstractas a ser verificables.
+
+### 2.5. Remedios para NH 5 (Daño activo)
+
+**Diagnóstico:** Su presencia es destructiva.
+
+**Remediación:**
+- **Aislamiento:** Separarlos del sistema que dañan.
+- **Reasignación:** Moverlos a roles donde no puedan causar daño.
+- **Salida:** En casos extremos, facilitar su salida de la organización.
+
+**Indicador de éxito:** El sistema deja de degradarse cuando ellos dejan de tocarlo.
+
+### 2.6. Remedios para NH 6 (Constructores de jaulas)
+
+**Diagnóstico:** Construyen sistemas que atrapan, y los llaman libertad.
+
+**Remediación:**
+- **Auditoría de diseño:** Revisar sus decisiones de diseño con un equipo independiente.
+- **Principio de mínima dependencia:** Exigir que cualquier sistema que diseñen pueda funcionar sin ellos.
+- **Arquitectura abierta:** Exigir que los sistemas sean interoperables con otros.
+
+**Indicador de éxito:** El coste de salida del sistema disminuye.
+
+---
+
+## SECCIÓN 3: EPÍTETOS PARA DIAGNOSTICADORES
+
+Esta sección añade lo que faltaba: **epítetos para quienes usan el Lexicón mal**.
+
+---
+
+### 3.1. Clasificador de pacotilla (NH 2)
+
+**Descripción:** Persona que usa epítetos sin entenderlos. Ha leído el Lexicón y lo usa como un catálogo de insultos, no como un sistema de diagnóstico. Su conocimiento es superficial, su aplicación es destructiva.
+
+**Síntomas:** Etiqueta a otros sin evidencia. Confunde el diagnóstico con el ataque. Su uso del lenguaje es una performance, no un análisis.
+
+**Ejemplo:** *"El Clasificador de pacotilla llamó 'Cáncer de la sintaxis lógica' a un junior por un error en un bucle. No entendía el epíteto. No entendía el error. Solo quería sonar importante."*
+
+**Remediación:** Pedirle que justifique cada epíteto con evidencia concreta. Si no puede, devolverle el epíteto.
+
+---
+
+### 3.2. Diagnosticador de salón (NH 3)
+
+**Descripción:** Persona que etiqueta a otros sin autodiagnosticarse. Es el primero en señalar "Cuello de botella con toga" y el último en ver que él mismo es un "Barragán sin procesador". Su capacidad de diagnóstico es selectiva.
+
+**Síntomas:** Nunca se aplica los epítetos a sí mismo. Su autopercepción es inmune a la crítica. Cree que el Lexicón es para los demás.
+
+**Ejemplo:** *"El Diagnosticador de salón señaló 12 epítetos en otros en una reunión. No vio que él mismo era un 'Zángano del stack ajeno' porque no había escrito código en 3 años."*
+
+**Remediación:** Antes de usar cualquier epíteto, preguntarse: "¿Podría aplicarse a mí?" Si la respuesta es "sí, pero en mi caso es diferente", es un Diagnosticador de salón.
+
+---
+
+### 3.3. Meretriz del lexicón (NH 4)
+
+**Descripción:** Persona que vende el diagnóstico como entretenimiento. Cada uso del Lexicón es una actuación. Su función es el espectáculo, no la corrección.
+
+**Síntomas:** Usa epítetos en público para impresionar. Su audiencia es su objetivo, no la reparación del sistema.
+
+**Ejemplo:** *"La Meretriz del lexicón soltó 5 epítetos en una reunión de 10 minutos. La audiencia se rió. El problema no se resolvió. El espectáculo era su objetivo."*
+
+**Remediación:** Preguntarle: "¿Y qué vas a hacer con ese diagnóstico?" Si no tiene respuesta, es un espectáculo.
+
+---
+
+### 3.4. Acaparador de epítetos (NH 2)
+
+**Descripción:** Persona que colecciona epítetos como trofeos. Cada nuevo epíteto que aprende es una adquisición. Su función es la acumulación, no la aplicación.
+
+**Síntomas:** Cita epítetos de memoria. Los usa en contextos inapropiados. Su conocimiento es enciclopédico, su aplicación es nula.
+
+**Ejemplo:** *"El Acaparador de epítetos soltó un epíteto de NH5 para un error menor. No entendía la proporcionalidad. Solo quería usar su nueva palabra."*
+
+**Remediación:** Exigir que cada epíteto vaya acompañado de un plan de remediación. Si no puede proponer uno, no puede usar el epíteto.
+
+---
+
+### 3.5. Sombra de Turing sin diagnóstico (NH 4)
+
+**Descripción:** Persona que habla del Lexicón sin haberlo usado. Su conocimiento es teórico, su práctica es nula. Es un eco de un concepto sin sustancia.
+
+**Síntomas:** Cita el Lexicón como autoridad sin haberlo aplicado. Su referencia es el documento, no la experiencia.
+
+**Ejemplo:** *"La Sombra de Turing sin diagnóstico habló del Lexicón como si fuera un texto sagrado. No había diagnosticado a nadie. Solo había leído el índice."*
+
+**Remediación:** Pedirle que aplique el Lexicón a un caso real. Si no puede, su conocimiento es nominal.
+
+---
+
+### 3.6. Vector de la atrofia diagnóstica (NH 5)
+
+**Descripción:** Persona que degrada la herramienta con su uso. Cada vez que usa un epíteto, reduce su precisión. Su función es la dilución, no la aplicación.
+
+**Síntomas:** Usa epítetos incorrectamente. Confunde niveles. Su aplicación es errónea.
+
+**Ejemplo:** *"El Vector de la atrofia diagnóstica llamó 'Cáncer de la sintaxis lógica' a una diferencia de opinión. El epíteto perdió su significado. Su uso era el problema."*
+
+**Remediación:** No usar el epíteto en su presencia. Su uso es contagioso.
+
+---
+
+### 3.7. Pústula del sobrediagnóstico (NH 5)
+
+**Descripción:** Persona que ve epítetos en todas partes. Cada persona es un diagnóstico. Cada interacción es una confirmación. Su función es la etiqueta, no la relación.
+
+**Síntomas:** Etiqueta a todo el mundo. No hay excepciones. Su vida es una lista de epítetos.
+
+**Ejemplo:** *"La Pústula del sobrediagnóstico diagnosticó a su jefe, a su equipo, a su familia y a su perro. Todos eran epítetos. Nadie era una persona."*
+
+**Remediación:** Pedirle que pase una semana sin usar ningún epíteto. Si no puede, el problema es suyo.
+
+---
+
+## SECCIÓN 4: LA MATRIZ DE AUTO-DIAGNÓSTICO
+
+Esta sección permite a cualquier persona aplicar el Lexicón a sí misma.
+
+### 4.1. El Test de los 7 Síntomas
+
+| Síntoma | Pregunta | Si la respuesta es "sí"... |
+|---|---|---|
+| **Defensividad** | ¿Te has sentido atacado por un epíteto? | Probablemente hay algo de verdad en él. La defensividad es un síntoma de reconocimiento. |
+| **Frecuencia** | ¿Con qué frecuencia te reconoces en los epítetos? | Si es más de 3 veces, tienes un problema. Si es 0, estás mintiendo. |
+| **Aplicación** | ¿Usas epítetos más que soluciones? | Si tu primera reacción es etiquetar, eres un Diagnosticador de salón. |
+| **Autocorrección** | ¿Has cambiado tu comportamiento después de reconocerte? | Si no, el diagnóstico no te sirve. Si sí, estás usando la herramienta bien. |
+| **Proporcionalidad** | ¿Usas epítetos de NH5 para problemas de NH1? | Si sí, eres un Acaparador de epítetos. Tu proporcionalidad está rota. |
+| **Contexto** | ¿Usas epítetos en público o en privado? | Si en público, eres un Espectáculo. Si en privado, estás diagnosticando. |
+| **Remediación** | ¿Tienes un plan para corregir lo que diagnosticas? | Si no, eres un Observador. Si sí, eres un Ingeniero. |
+
+### 4.2. El Epíteto Personal
+
+Cada persona debería elegir **un epíteto que le describa** y trabajar para no serlo.
+
+**Ejercicio:**
+
+1. Lee todo el Lexicón.
+2. Elige el epíteto que más te duele.
+3. Escribe por qué te duele.
+4. Diseña un plan de 30 días para dejar de serlo.
+5. Vuelve a leer el Lexicón después de 30 días.
+
+**Si después de 30 días no has cambiado, el diagnóstico es correcto y el remedio no ha funcionado. Busca ayuda.**
+
+---
+
+## SECCIÓN 5: EL SISTEMA DE REMEDIACIÓN POR EPÍTETO (MUESTRA)
+
+Esta sección proporciona remediaciones específicas para los epítetos más comunes.
+
+---
+
+### 5.1. Remedio para "Barragán sin procesador"
+
+**Diagnóstico:** Habla de arquitectura sin haber escrito una línea de código en producción.
+
+**Remediación:**
+1. **Programa obligatoria:** Debe escribir y desplegar una aplicación simple en producción.
+2. **Revisión de código:** Sus decisiones deben ser revisadas por alguien que sí ha escrito código en producción.
+3. **Formación inversa:** Debe explicar su arquitectura a un junior. Si no puede, no la entiende.
+
+**Indicador de éxito:** Su arquitectura pasa de ser teoría a ser implementable.
+
+---
+
+### 5.2. Remedio para "Cuello de botella con toga"
+
+**Diagnóstico:** Ralentiza el sistema con su autoridad formal.
+
+**Remediación:**
+1. **Medición de tiempo:** Medir cuánto tiempo añade al proceso de decisión.
+2. **Delegación:** Transferir decisiones técnicas a quien tiene conocimiento técnico.
+3. **Transparencia:** Publicar los tiempos de aprobación. La visibilidad es un incentivo.
+
+**Indicador de éxito:** El tiempo de aprobación disminuye sin disminuir la calidad.
+
+---
+
+### 5.3. Remedio para "Trovador del buzzword hueco"
+
+**Diagnóstico:** Canta palabras vacías como si fueran verdades.
+
+**Remediación:**
+1. **Definición:** Exigir que defina cada buzzword que usa.
+2. **Ejemplo:** Exigir un ejemplo concreto de cada concepto.
+3. **Traducción:** Pedir que lo explique a un no-técnico.
+
+**Indicador de éxito:** Su vocabulario se vuelve más concreto y menos abstracto.
+
+---
+
+### 5.4. Remedio para "Cáncer de la sintaxis lógica"
+
+**Diagnóstico:** Corrompe la estructura del código.
+
+**Remediación:**
+1. **Parejas de programación:** No puede escribir código solo.
+2. **Revisiones obligatorias:** Cada línea que escribe debe ser revisada por alguien competente.
+3. **Tests:** Exigir tests que cubran su código. Los tests son la evidencia de que su lógica es correcta.
+
+**Indicador de éxito:** Su código pasa las revisiones sin correcciones.
+
+---
+
+### 5.5. Remedio para "Evangelista de la caja negra"
+
+**Diagnóstico:** Predica la opacidad como virtud.
+
+**Remediación:**
+1. **Transparencia obligatoria:** Exigir acceso al código fuente.
+2. **Auditoría externa:** Revisar su sistema con un equipo independiente.
+3. **Principio de mínima dependencia:** Exigir que el sistema pueda funcionar sin su proveedor.
+
+**Indicador de éxito:** El coste de salida del sistema disminuye.
+
+---
+
+## SECCIÓN 6: LA ÉTICA DEL DIAGNÓSTICO
+
+### 6.1. El Principio de No Maleficencia
+
+> **El diagnóstico no debe causar más daño que el problema que diagnostica.**
+
+Si usar un epíteto va a causar más sufrimiento que la disfunción que señala, no lo uses.
+
+**Pregunta de control:** ¿El dolor de escuchar este epíteto es menor que el dolor de seguir con el problema?
+
+Si la respuesta es "no", el diagnóstico es un acto de violencia, no de corrección.
+
+### 6.2. El Principio de Proporcionalidad
+
+> **El nivel de hiriencia del epíteto debe ser proporcional al daño que causa el comportamiento.**
+
+Un error de sintaxis no merece un NH5. Un tumor de la eficiencia inexistente sí merece un NH5.
+
+**Pregunta de control:** ¿Este epíteto es apropiado para el nivel de daño?
+
+Si no, estás sobre-diagnosticando.
+
+### 6.3. El Principio de Remediación
+
+> **Todo diagnóstico debe ir acompañado de una propuesta de remediación.**
+
+Si no tienes una idea de cómo corregir el problema, no lo diagnostiques.
+
+**Pregunta de control:** ¿Tengo un plan para ayudar a esta persona a dejar de ser este epíteto?
+
+Si no, el diagnóstico es un acto de humillación, no de corrección.
+
+### 6.4. El Principio de Autoaplicación
+
+> **El diagnóstico que no te aplicas a ti mismo es un diagnóstico incompleto.**
+
+Antes de señalar a otros, pregúntate si tú mismo eres alguno de estos epítetos.
+
+**Pregunta de control:** ¿Podría este epíteto aplicarse a mí?
+
+Si la respuesta es "no" y no has hecho el ejercicio de autodiagnóstico, estás mintiendo.
+
+---
+
+## SECCIÓN 7: EL USO ORGANIZACIONAL
+
+### 7.1. Lexicón como Herramienta de Equipo
+
+Un equipo puede adoptar el Lexicón como **lenguaje compartido** para diagnosticar disfunciones.
+
+**Protocolo:**
+
+1. **Sesión de autodiagnóstico:** Cada miembro del equipo elige un epíteto que le describe.
+2. **Sesión de remediación:** Cada miembro propone un plan para dejar de serlo.
+3. **Sesión de seguimiento:** A los 30 días, revisar el progreso.
+4. **Sesión de diagnóstico colectivo:** Identificar disfunciones del equipo que no son individuales.
+
+**Regla de oro:** En las sesiones de equipo, los epítetos se usan para describir **comportamientos**, no **personas**.
+
+"Hay un comportamiento de Cuello de botella con toga en nuestro proceso de aprobación" vs. "Eres un Cuello de botella con toga".
+
+### 7.2. Lexicón como Herramienta de Contratación
+
+El Lexicón puede usarse para identificar candidatos problemáticos.
+
+**Preguntas de entrevista:**
+
+- "¿Qué epíteto del Lexicón crees que te describiría mejor a ti?"
+- "¿Qué epíteto crees que te pondría tu peor jefe?"
+- "¿Qué epíteto pondrías a tu último equipo?"
+
+**No son preguntas trampa.** Son preguntas de autoconciencia.
+
+### 7.3. Lexicón como Herramienta de Salida
+
+Cuando alguien deja la organización, el Lexicón puede usarse para **diagnosticar disfunciones sistémicas** que no se resolvieron.
+
+**Pregunta de salida:**
+
+- "¿Qué epíteto del Lexicón crees que describe mejor la cultura de esta organización?"
+- "¿Qué epíteto crees que te empujó a irte?"
+
+**No es una encuesta de satisfacción.** Es un diagnóstico de sistema.
+
+---
+
+## SECCIÓN 8: EL FUTURO DEL LEXICÓN
+
+### 8.1. Epítetos para la Era de la IA
+
+Faltan epítetos para la nueva generación de disfunciones:
+
+- **"Autómata del prompt"** : El que cree que la IA lo hará todo sin entenderla.
+- **"Alucinador de salidas"** : El que confía en la IA sin verificar.
+- **"Agente fantasma"** : El que delega todo en agentes de IA sin supervisión.
+- **"Promptocultista"** : El que trata el prompting como una religión.
+- **"Ingeniero de resultados"** : El que solo mira el output, no el proceso.
+
+**Propuesta:** Estas adiciones deberían formar parte de la segunda edición.
+
+### 8.2. Epítetos para la Crisis del Open Source
+
+Faltan epítetos para el extractivismo digital:
+
+- **"Extractor de código"** : El que usa open source sin contribuir.
+- **"Parásito del commons"** : El que se beneficia del bien común sin devolver nada.
+- **"Mercader de la dependencia"** : El que crea dependencia para vender soluciones.
+
+**Propuesta:** Integrar con la crítica del open source del Corpus RONIN.
+
+### 8.3. La Edición Colaborativa
+
+El Lexicón debería ser **abierto a contribuciones**.
+
+**Reglas de contribución:**
+
+1. Cada nuevo epíteto debe tener un nivel de hiriencia y una descripción.
+2. Cada nuevo epíteto debe tener un ejemplo de uso.
+3. Cada nuevo epíteto debe tener una propuesta de remediación.
+4. Ningún epíteto debe ser personal. Todos deben ser comportamentales.
+
+**Canal de contribución:** El repositorio de GitHub del Corpus RONIN.
+
+---
+
+## SECCIÓN 9: LA AUTOCRÍTICA DEL LEXICÓN
+
+Ninguna herramienta es perfecta. El Lexicón tiene sus propias disfunciones.
+
+### 9.1. El Sesgo de Densidad
+
+El Lexicón es denso, y la densidad puede ser excluyente. Si no entiendes los epítetos, no puedes participar en el diagnóstico.
+
+**Autocrítica:** El Lexicón necesita una versión simplificada para no-técnicos.
+
+**Solución propuesta:** Una versión "Lite" con los 30 epítetos más comunes y definiciones en lenguaje accesible.
+
+### 9.2. El Sesgo de Negatividad
+
+El Lexicón solo tiene epítetos negativos. No hay arquetipos positivos.
+
+**Autocrítica:** El Lexicón necesita un sistema de "anti-epítetos" para describir lo que funciona bien.
+
+**Solución propuesta:** Un anexo de "Arquetipos de Excelencia" con términos como:
+
+- **"Arquitecto de la fluidez"** : El que hace fácil lo difícil.
+- **"Ingeniero de la claridad"** : El que explica lo complejo.
+- **"Mantenedor silencioso"** : El que sostiene el sistema sin buscar reconocimiento.
+
+### 9.3. El Sesgo de Inmovilidad
+
+El Lexicón describe estados, no procesos. Una persona puede ser un "Barragán sin procesador" hoy y dejar de serlo mañana.
+
+**Autocrítica:** El Lexicón necesita un sistema de evolución.
+
+**Solución propuesta:** Cada epíteto debería tener una "trayectoria de mejora" posible.
+
+---
+
+## SECCIÓN 10: EL KOAN FINAL DEL DIAGNOSTICADOR
+
+Un ingeniero llegó al maestro con el Lexicón en la mano.
+
+—He aprendido todos los epítetos —dijo—. Ahora puedo diagnosticar a cualquiera.
+
+El maestro le preguntó:
+
+—¿Y a ti mismo?
+
+El ingeniero abrió el Lexicón y buscó su nombre. No estaba.
+
+—No estoy en el libro —dijo.
+
+El maestro tomó el libro, lo cerró y lo devolvió.
+
+—Ahora sí.
+
+El ingeniero abrió el libro. Su nombre estaba escrito en la portada, con tinta que antes no estaba allí.
+
+—El diagnóstico que no te aplicas a ti mismo es un diagnóstico incompleto —dijo el maestro—. El libro no es para señalar. Es para reconocerse. Cuando dejes de buscar tu nombre en él, habrás dejado de ser el epíteto que eres. Pero mientras lo busques, lo serás.
+
+El ingeniero guardó el libro.
+
+—¿Y si nunca dejo de buscarlo?
+
+—Entonces el libro es tu espejo. Y el espejo no miente. Pero tampoco obliga a cambiar. Eso lo haces tú.
+
+---
+
+**Fin del Anexo del Lexicón del Esperpento Algorítmico**
+
+*"El diagnóstico no es el fin. Es el principio de la reparación."*
