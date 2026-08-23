@@ -40,6 +40,27 @@ Liberar una consola no es un acto de piratería. Es un acto de **reclamación**.
 
 Este manual documenta las técnicas, herramientas y casos históricos de liberación de sistemas embebidos y consolas. No enseña a hackear. Enseña a **encontrar pliegues**.
 
+
+KOAN: Un discípulo preguntó al arquitecto: "Maestro, ¿este manual sirve para hackear?"
+
+El arquitecto respondió: "Un espejo no sirve para nada. Solo refleja lo que hay delante."
+
+"¿Y si lo que hay delante es un hacker?"
+
+"Entonces el espejo refleja un hacker."
+
+"¿Y si lo que hay delante es un defensor?"
+
+"Entonces el espejo refleja un defensor."
+
+"¿Y si lo que hay delante es un arquitecto?"
+
+"Entonces el espejo refleja a otro arquitecto."
+
+"¿Y qué es lo que hay delante de ti?"
+
+"Un espejo."
+
 ---
 
 ## ÍNDICE GENERAL
