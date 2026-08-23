@@ -4236,5 +4236,5 @@ Este anexo documenta 100 pliegues que no estaban en el manual original. Algunos 
 ---
 
 *El conocimiento que no se ejecuta es decoración. El silicio que no se libera es una prisión.*
-
+Esto no es un manual de hacking. Es una taxonomía de errores de diseño. No enseña a atacar. Enseña a entender.
 **1310.**
