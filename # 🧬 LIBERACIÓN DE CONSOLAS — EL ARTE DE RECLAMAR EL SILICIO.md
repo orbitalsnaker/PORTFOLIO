@@ -1468,3 +1468,2773 @@ Este manual es un homenaje a los que entendieron que el silicio no se alquila. S
 *El conocimiento que no se ejecuta es decoración. El silicio que no se libera es una prisión.*
 
 **1310.**
+
+# 🧬 ANEXO DE EXPLOITS EMERGENTES — PLIEGUES NUEVOS
+
+## *100 exploits que no estaban en el manual original*
+
+---
+
+**Autor:** David Ferrandez Canalis — Agencia RONIN  
+**Estado:** 🔓 EDICIÓN COMPLETA — DOMINIO PÚBLICO  
+**Fecha:** Agosto de 2026  
+**Clasificación:** `ANEXO TÉCNICO / 100 EXPLOITS / DOMINIO PÚBLICO / 1310`
+
+---
+
+## PRÓLOGO DEL ARQUITECTO
+
+Este anexo contiene **100 exploits que no estaban en el manual original**. Algunos ya están confirmados por la comunidad (2024-2026). Otros han sido **generados por combinatoria PUSFRE** para consolas viejas que nunca tuvieron documentación completa.
+
+Cada pliegue se ha identificado mediante el análisis de tres vectores:
+
+- **Geometría ($\Phi$):** La superficie de ataque del sistema.
+- **Deuda ($\Psi$):** Los errores del fabricante.
+- **Frecuencia ($\Omega$):** La herramienta necesaria para explotarlo.
+
+**El resultado son 100 nuevas formas de liberar sistemas.** Algunas ya funcionan. Otras son teóricas. Todas son posibles.
+
+---
+
+## ÍNDICE DEL ANEXO
+
+1. [Exploits Confirmados (2024-2026) — 9 casos](#1)
+2. [Exploits Proyectados para PS5 — 9 casos](#2)
+3. [Exploits Proyectados para Xbox Series — 9 casos](#3)
+4. [Exploits Proyectados para Switch 2 — 9 casos](#4)
+5. [Exploits Proyectados para PS4 — 9 casos](#5)
+6. [Exploits Proyectados para Xbox One — 9 casos](#6)
+7. [Exploits Proyectados para PS3 — 9 casos](#7)
+8. [Exploits Proyectados para Xbox 360 — 9 casos](#8)
+9. [Exploits Proyectados para Wii U — 9 casos](#9)
+10. [Exploits Proyectados para 3DS — 9 casos](#10)
+11. [Exploits Proyectados para Consolas Portátiles — 10 casos](#11)
+12. [Koans del Anexo](#12)
+13. [Matriz de Exploits por Consola](#13)
+
+---
+
+<a name="1"></a>
+## 1. EXPLOITS CONFIRMADOS (2024-2026) — 9 CASOS
+
+---
+
+### 1.1 PS5 — BootROM Keys Leak (2025) ✅
+
+**La consola:** PlayStation 5 (todas las unidades existentes, 60+ millones).
+
+**El pliegue:** Las claves de BootROM de la PS5 se filtraron en diciembre de 2025. El BootROM es la primera capa de software que se ejecuta al encender la consola. Con las claves, se puede descifrar toda la cadena de arranque y ejecutar código no firmado .
+
+**Geometría ($\Phi$):** Claves de BootROM almacenadas de forma vulnerable.
+
+**Deuda ($\Psi$):** Sony no protegió adecuadamente las claves de BootROM.
+
+**Frecuencia ($\Omega$):** Las claves filtradas, acceso a la consola.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Obtener las claves de BootROM filtradas.
+2. Usar las claves para descifrar el bootloader.
+3. Desarrollar un Custom Firmware (CFW).
+4. Instalar el CFW en la PS5.
+5. La PS5 queda liberada permanentemente.
+```
+
+**Estado:** Confirmado (diciembre 2025). No parcheable. Afecta a 60+ millones de consolas .
+
+---
+
+### 1.2 PS3 Super Slim — BadWDSD (2025-2026) ✅
+
+**La consola:** PS3 Super Slim (CECH-4xxx) y Slim 3000 .
+
+**El pliegue:** BadWDSD es un modchip basado en Raspberry Pi Pico que permite ejecutar qCFW en los modelos Super Slim, que antes se consideraban inmunes a la liberación permanente .
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Abrir la PS3.
+2. Conectar el Raspberry Pi Pico a los puntos de NOR Flash.
+3. El Pico inyecta código en el arranque.
+4. La PS3 ejecuta qCFW.
+5. La consola queda liberada permanentemente.
+```
+
+**Estado:** Confirmado (2025-2026). No parcheable. Permite overclock del RSX a 850MHz y ejecución nativa de Linux .
+
+---
+
+### 1.3 Xbox 360 — BadUpdate (2025) ✅
+
+**La consola:** Xbox 360 (todas, Dashboard 17559) .
+
+**El pliegue:** BadUpdate es un exploit puramente software que usa un archivo de guardado de Rock Band Blitz o Tony Hawk's American Wasteland para ejecutar código sin firmar en el hypervisor .
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el hypervisor.
+
+**Frecuencia ($\Omega$):** Un USB y un juego compatible.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Xbox 360.
+3. Ejecutar Rock Band Blitz o Tony Hawk's American Wasteland.
+4. Cargar el archivo de guardado modificado.
+5. El exploit se ejecuta en el hypervisor.
+6. La Xbox 360 queda liberada (temporalmente).
+```
+
+**Estado:** Confirmado (2025). Tasa de éxito del 30%. No persistente .
+
+---
+
+### 1.4 Xbox 360 — ABadAvatar (2025) ✅
+
+**La consola:** Xbox 360 (todas, Dashboard 17559).
+
+**El pliegue:** Variante de BadUpdate que usa el Avatar update data en lugar de archivos de guardado .
+
+**Geometría ($\Phi$):** Avatar update data.
+
+**Deuda ($\Psi$):** Fallo en el hypervisor.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Asegurar que la consola tiene el Avatar update data.
+2. Copiar los archivos del exploit a un USB.
+3. Insertar el USB en la Xbox 360.
+4. El exploit se ejecuta en el hypervisor.
+5. La Xbox 360 queda liberada (temporalmente).
+```
+
+**Estado:** Confirmado (2025). No persistente .
+
+---
+
+### 1.5 Nintendo Switch 2 — ROPchain (2025) ✅
+
+**La consola:** Nintendo Switch 2 (día de lanzamiento) .
+
+**El pliegue:** Un exploit de tipo ROPchain en userland fue descubierto el mismo día del lanzamiento de la Switch 2, el 5 de junio de 2025 .
+
+**Geometría ($\Phi$):** Userland + ROPchain.
+
+**Deuda ($\Psi$):** Fallo en la gestión de memoria del userland.
+
+**Frecuencia ($\Omega$):** Acceso a la consola.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Acceder al userland de la Switch 2.
+2. Ejecutar la ROPchain.
+3. El exploit permite mostrar gráficos personalizados desde el framebuffer.
+4. No es un jailbreak completo.
+```
+
+**Estado:** Confirmado (junio 2025). Solo userland, no acceso al kernel .
+
+---
+
+### 1.6 Wii U — Paid the Beak (2025) ✅
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Paid the Beak explota una vulnerabilidad en el cargador de arranque boot1, utilizado por Nintendo durante la fase de configuración de fábrica .
+
+**Geometría ($\Phi$):** Boot1 + tarjeta SD.
+
+**Deuda ($\Psi$):** Fallo en el boot1.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD y un microcontrolador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Insertar una tarjeta SD con los archivos de exploit.
+2. Conectar un microcontrolador (Raspberry Pi Pico o PICAXE 08M2).
+3. Enviar la señal UNSTBL_PWR.
+4. El exploit se ejecuta.
+5. La Wii U queda liberada.
+```
+
+**Estado:** Confirmado (2025). No requiere soldadura ni desmontaje .
+
+---
+
+### 1.7 PS4/PS5 — Luac0re 2.0 (2026) ✅
+
+**La consola:** PlayStation 4 y PlayStation 5 (últimos firmwares, incluyendo PS5 12.70) .
+
+**El pliegue:** Luac0re 2.0 introduce un exploit JIT que permite la ejecución arbitraria de código nativo de usuario en las versiones actuales de firmware de PS4 y PS5 .
+
+**Geometría ($\Phi$):** Emulador PS2 + JIT.
+
+**Deuda ($\Psi$):** Fallo en el emulador PS2.
+
+**Frecuencia ($\Omega$):** El juego Star Wars Racer Revenge (versión PS2 en PS4/PS5).
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Obtener una copia de Star Wars Racer Revenge (digital o física).
+2. Ejecutar el juego.
+3. El exploit se activa.
+4. Permite ejecutar código nativo en userland.
+5. Potencialmente podría ejecutar juegos de copia de seguridad sin exploit del kernel.
+```
+
+**Estado:** Confirmado (marzo 2026). Funciona en PS5 12.70. No es un exploit de kernel .
+
+---
+
+### 1.8 PS4/PS5 — BD-JB (2026) ✅
+
+**La consola:** PlayStation 4 y PlayStation 5 .
+
+**El pliegue:** BD-JB es un exploit de nivel de usuario que aprovecha el sistema Blu-ray para ejecutar código controlado por el usuario a través de un disco especialmente diseñado .
+
+**Geometría ($\Phi$):** Disco Blu-ray con código Java.
+
+**Deuda ($\Psi$):** Fallo en el reproductor de Blu-ray.
+
+**Frecuencia ($\Omega$):** Un disco Blu-ray grabado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Grabar un disco Blu-ray con código Java malicioso.
+2. Insertar el disco en la PS4/PS5.
+3. El código Java se ejecuta.
+4. Se obtiene acceso limitado (userland).
+```
+
+**Estado:** Confirmado (2026). Funciona hasta firmware 13.02. No es un exploit de kernel .
+
+---
+
+### 1.9 PS4/PS5 — Kernel Exploit 13.50 (2026) ✅
+
+**La consola:** PlayStation 4 y PlayStation 5 (firmware 13.50) .
+
+**El pliegue:** Un exploit de kernel de día cero afecta a la última versión del firmware de PS4 y PS5. GoldHEN ya ha sido probado internamente en el firmware 13.50 .
+
+**Geometría ($\Phi$):** Kernel.
+
+**Deuda ($\Psi$):** Fallo en el kernel.
+
+**Frecuencia ($\Omega$):** Acceso al sistema.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Ejecutar un exploit de userland (ej. BD-JB).
+2. Escalar al kernel usando el exploit de día cero.
+3. Cargar GoldHEN.
+4. La consola queda liberada.
+```
+
+**Estado:** Confirmado internamente (2026). Aún no público. Funciona en el último firmware .
+
+---
+
+<a name="2"></a>
+## 2. EXPLOITS PROYECTADOS PARA PS5 — 9 CASOS
+
+---
+
+### 2.1 PS5 — Modchip BootROM (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Un modchip que se suelda al SoC de la PS5 y ejecuta código no firmado en el arranque, aprovechando las claves de BootROM filtradas.
+
+**Geometría ($\Phi$):** SoC de la PS5 + BootROM keys.
+
+**Deuda ($\Psi$):** Fallo en el SoC que permite la inyección de código.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la PS5.
+2. Soldar el modchip al SoC.
+3. El modchip inyecta código en el arranque usando las claves filtradas.
+4. La PS5 ejecuta código no firmado.
+5. La consola queda liberada.
+```
+
+**Estado:** Teórico. Se espera para 2027-2028.
+
+---
+
+### 2.2 PS5 — Voltage Glitch BootROM (proyectado)
+
+**La consola:** PlayStation 5 (revisiones futuras).
+
+**El pliegue:** Las futuras revisiones de la PS5 tendrán un nuevo BootROM sin las claves filtradas. Un ataque de voltage glitching podría comprometer el nuevo BootROM.
+
+**Geometría ($\Phi$):** Voltaje del BootROM.
+
+**Deuda ($\Psi$):** La CPU no protege el BootROM contra fallos de voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la PS5.
+2. Conectar equipo de voltage glitching al rail de alimentación del BootROM.
+3. Aplicar el glitch en el momento exacto.
+4. El BootROM ejecuta código no firmado.
+5. La PS5 queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 2.3 PS5 — WebKit 2.0 (proyectado)
+
+**La consola:** PlayStation 5 (firmwares posteriores).
+
+**El pliegue:** Se proyecta un nuevo exploit de WebKit para la PS5 que funcione en firmwares más recientes.
+
+**Geometría ($\Phi$):** Navegador web.
+
+**Deuda ($\Psi$):** Fallo en WebKit.
+
+**Frecuencia ($\Omega$):** Acceso al navegador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el navegador de la PS5.
+2. Visitar una página con el exploit.
+3. El exploit se ejecuta.
+4. Se obtiene acceso a la memoria del sistema.
+```
+
+**Estado:** En desarrollo (2026).
+
+---
+
+### 2.4 PS5 — Bluetooth Exploit (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la PS5, basado en fallos similares en la pila Bluetooth de otras consolas.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS5 a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La PS5 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 2.5 PS5 — USB Boot Exploit (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la PS5.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la PS5.
+3. Arrancar la PS5.
+4. El exploit se ejecuta.
+5. La PS5 queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 2.6 PS5 — Blu-ray Java Exploit (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Se proyecta un exploit de Blu-ray Java para la PS5, similar al BD-JB de PS4.
+
+**Geometría ($\Phi$):** Disco Blu-ray.
+
+**Deuda ($\Psi$):** Fallo en el reproductor de Blu-ray.
+
+**Frecuencia ($\Omega$):** Un disco Blu-ray grabado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Grabar un disco Blu-ray con código Java malicioso.
+2. Insertar el disco en la PS5.
+3. El código Java se ejecuta.
+4. Se obtiene acceso al sistema.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 2.7 PS5 — HDMI CEC Exploit (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC (Consumer Electronics Control), usado para controlar dispositivos conectados por HDMI.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la PS5.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La PS5 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 2.8 PS5 — Syscon Exploit (proyectado)
+
+**La consola:** PlayStation 5.
+
+**El pliegue:** Se proyecta un exploit del Syscon de la PS5, similar al exploit de la PS4 presentado por fail0verflow en 2018.
+
+**Geometría ($\Phi$):** Syscon.
+
+**Deuda ($\Psi$):** Fallo en el Syscon.
+
+**Frecuencia ($\Omega$):** Acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder al Syscon.
+2. El exploit se ejecuta.
+3. La PS5 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 2.9 PS5 — Cloud BootROM Exploit (proyectado)
+
+**La consola:** PS5 Cloud (servidores).
+
+**El pliegue:** Con las claves de BootROM filtradas, se podría acceder a los servidores de PS5 Cloud.
+
+**Geometría ($\Phi$):** Claves de BootROM.
+
+**Deuda ($\Psi$):** Sony no protegió adecuadamente las claves.
+
+**Frecuencia ($\Omega$):** Las claves filtradas.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Obtener las claves de BootROM.
+2. Usar las claves para descifrar los servidores de PS5 Cloud.
+3. Acceder a los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="3"></a>
+## 3. EXPLOITS PROYECTADOS PARA XBOX SERIES — 9 CASOS
+
+---
+
+### 3.1 Xbox Series — Modchip Hypervisor (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Un modchip que se suelda al SoC de la Xbox Series y permite la ejecución de código no firmado.
+
+**Geometría ($\Phi$):** SoC de la Xbox Series.
+
+**Deuda ($\Psi$):** Fallo en el SoC.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la Xbox Series.
+2. Soldar el modchip al SoC.
+3. El modchip inyecta código en el arranque.
+4. La Xbox Series ejecuta código no firmado.
+5. La consola queda liberada.
+```
+
+**Estado:** Teórico. Se espera para 2028-2029.
+
+---
+
+### 3.2 Xbox Series — Voltage Glitch Hypervisor (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Aplicar voltage glitching al hypervisor de la Xbox Series.
+
+**Geometría ($\Phi$):** Voltaje del hypervisor.
+
+**Deuda ($\Psi$):** La CPU no protege el hypervisor contra fallos de voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la Xbox Series.
+2. Conectar equipo de voltage glitching al rail de alimentación de la CPU.
+3. Aplicar el glitch en el momento exacto.
+4. El hypervisor ejecuta código no firmado.
+5. La Xbox Series queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 3.3 Xbox Series — WebKit Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit de WebKit para la Xbox Series a través del navegador Edge.
+
+**Geometría ($\Phi$):** Navegador web (Edge).
+
+**Deuda ($\Psi$):** Fallo en WebKit.
+
+**Frecuencia ($\Omega$):** Acceso al navegador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el navegador de la Xbox Series.
+2. Visitar una página con el exploit.
+3. El exploit se ejecuta.
+4. Se obtiene acceso a la memoria del sistema.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 3.4 Xbox Series — USB Boot Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la Xbox Series.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la Xbox Series.
+3. Arrancar la Xbox Series.
+4. El exploit se ejecuta.
+5. La Xbox Series queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 3.5 Xbox Series — Blu-ray Java Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit de Blu-ray Java para la Xbox Series.
+
+**Geometría ($\Phi$):** Disco Blu-ray.
+
+**Deuda ($\Psi$):** Fallo en el reproductor de Blu-ray.
+
+**Frecuencia ($\Omega$):** Un disco Blu-ray grabado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Grabar un disco Blu-ray con código Java malicioso.
+2. Insertar el disco en la Xbox Series.
+3. El código Java se ejecuta.
+4. Se obtiene acceso al sistema.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 3.6 Xbox Series — HDMI CEC Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la Xbox Series.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La Xbox Series queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 3.7 Xbox Series — Game Save Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit a través de archivos de guardado, similar a BadUpdate en Xbox 360.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Xbox Series.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La Xbox Series queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 3.8 Xbox Series — Hypervisor Bypass (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** El hypervisor de la Xbox Series tiene una vulnerabilidad de memoria que permite la ejecución de código no firmado.
+
+**Geometría ($\Phi$):** Hypervisor.
+
+**Deuda ($\Psi$):** Fallo en la gestión de memoria del hypervisor.
+
+**Frecuencia ($\Omega$):** Acceso a la consola.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Ejecutar código en modo usuario.
+2. Escalar al hypervisor mediante un exploit.
+3. Bypass el hypervisor.
+4. Ganar acceso al sistema completo.
+```
+
+**Estado:** Teórico. Se espera para 2027-2028.
+
+---
+
+### 3.9 Xbox Series — WiFi Exploit (proyectado)
+
+**La consola:** Xbox Series X|S.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la Xbox Series.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Xbox Series a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Xbox Series queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="4"></a>
+## 4. EXPLOITS PROYECTADOS PARA SWITCH 2 — 9 CASOS
+
+---
+
+### 4.1 Switch 2 — ROPchain Completo (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** El ROPchain actual solo permite userland. Se proyecta una versión completa que permita ejecución de código nativo.
+
+**Geometría ($\Phi$):** Userland + ROPchain .
+
+**Deuda ($\Psi$):** Fallo en la gestión de memoria del userland.
+
+**Frecuencia ($\Omega$):** Acceso a la consola.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder al userland de la Switch 2.
+2. Ejecutar la ROPchain completa.
+3. El exploit permite ejecutar código nativo.
+4. La Switch 2 queda liberada.
+```
+
+**Estado:** En desarrollo (2025-2026) .
+
+---
+
+### 4.2 Switch 2 — Kernel Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit de kernel para la Switch 2.
+
+**Geometría ($\Phi$):** Kernel.
+
+**Deuda ($\Psi$):** Fallo en el kernel.
+
+**Frecuencia ($\Omega$):** Acceso al sistema.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Ejecutar un exploit de userland.
+2. Escalar al kernel.
+3. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico. Se espera para 2026-2027.
+
+---
+
+### 4.3 Switch 2 — WebKit Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit de WebKit para la Switch 2 a través del navegador.
+
+**Geometría ($\Phi$):** Navegador web.
+
+**Deuda ($\Psi$):** Fallo en WebKit.
+
+**Frecuencia ($\Omega$):** Acceso al navegador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el navegador de la Switch 2.
+2. Visitar una página con el exploit.
+3. El exploit se ejecuta.
+4. Se obtiene acceso a la memoria del sistema.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.4 Switch 2 — USB Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit de USB para la Switch 2.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la Switch 2.
+3. Arrancar la Switch 2.
+4. El exploit se ejecuta.
+5. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.5 Switch 2 — WiFi Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la Switch 2.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Switch 2 a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.6 Switch 2 — Bluetooth Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la Switch 2.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Switch 2 a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.7 Switch 2 — HDMI CEC Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la Switch 2.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.8 Switch 2 — Game Cartridge Exploit (proyectado)
+
+**La consola:** Nintendo Switch 2.
+
+**El pliegue:** Se proyecta un exploit a través de los cartuchos de juego, similar al "pin 10" de la NES.
+
+**Geometría ($\Phi$):** Cartucho de juego.
+
+**Deuda ($\Psi$):** Fallo en el lector de cartuchos.
+
+**Frecuencia ($\Omega$):** Un cartucho modificado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un cartucho modificado con el exploit.
+2. Insertar el cartucho en la Switch 2.
+3. El exploit se ejecuta.
+4. La Switch 2 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 4.9 Switch 2 — Cloud Exploit (proyectado)
+
+**La consola:** Switch 2 Cloud.
+
+**El pliegue:** Se proyecta un exploit para los servidores de Switch 2 Cloud.
+
+**Geometría ($\Phi$):** Servidores en la nube.
+
+**Deuda ($\Psi$):** Fallo en la infraestructura de la nube.
+
+**Frecuencia ($\Omega$):** Acceso a los servidores.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder a los servidores de Switch 2 Cloud.
+2. Ejecutar el exploit.
+3. Comprometer los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="5"></a>
+## 5. EXPLOITS PROYECTADOS PARA PS4 — 9 CASOS
+
+---
+
+### 5.1 PS4 — Modchip BootROM (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Un modchip que se suelda al SoC de la PS4 y ejecuta código no firmado en el arranque.
+
+**Geometría ($\Phi$):** SoC de la PS4.
+
+**Deuda ($\Psi$):** Fallo en el SoC.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la PS4.
+2. Soldar el modchip al SoC.
+3. El modchip inyecta código en el arranque.
+4. La PS4 ejecuta código no firmado.
+5. La consola queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.2 PS4 — Voltage Glitch Syscon (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Aplicar voltage glitching al Syscon de la PS4.
+
+**Geometría ($\Phi$):** Voltaje del Syscon.
+
+**Deuda ($\Psi$):** El Syscon no protege contra fallos de voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la PS4.
+2. Conectar equipo de voltage glitching al rail de alimentación del Syscon.
+3. Aplicar el glitch en el momento exacto.
+4. El Syscon ejecuta código no firmado.
+5. La PS4 queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 5.3 PS4 — Bluetooth Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la PS4.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS4 a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La PS4 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.4 PS4 — HDMI CEC Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la PS4.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La PS4 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.5 PS4 — USB Boot Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la PS4.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la PS4.
+3. Arrancar la PS4.
+4. El exploit se ejecuta.
+5. La PS4 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.6 PS4 — WiFi Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la PS4.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS4 a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La PS4 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.7 PS4 — Blu-ray Java Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit de Blu-ray Java para la PS4 (versión mejorada del BD-JB).
+
+**Geometría ($\Phi$):** Disco Blu-ray.
+
+**Deuda ($\Psi$):** Fallo en el reproductor de Blu-ray.
+
+**Frecuencia ($\Omega$):** Un disco Blu-ray grabado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Grabar un disco Blu-ray con código Java malicioso.
+2. Insertar el disco en la PS4.
+3. El código Java se ejecuta.
+4. Se obtiene acceso al sistema.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.8 PS4 — Cloud Exploit (proyectado)
+
+**La consola:** PS4 Cloud.
+
+**El pliegue:** Se proyecta un exploit para los servidores de PS4 Cloud.
+
+**Geometría ($\Phi$):** Servidores en la nube.
+
+**Deuda ($\Psi$):** Fallo en la infraestructura de la nube.
+
+**Frecuencia ($\Omega$):** Acceso a los servidores.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder a los servidores de PS4 Cloud.
+2. Ejecutar el exploit.
+3. Comprometer los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 5.9 PS4 — Game Save Exploit (proyectado)
+
+**La consola:** PlayStation 4.
+
+**El pliegue:** Se proyecta un exploit a través de archivos de guardado.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la PS4.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La PS4 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="6"></a>
+## 6. EXPLOITS PROYECTADOS PARA XBOX ONE — 9 CASOS
+
+---
+
+### 6.1 Xbox One — Modchip (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Un modchip que se suelda al SoC de la Xbox One y permite la ejecución de código no firmado.
+
+**Geometría ($\Phi$):** SoC de la Xbox One.
+
+**Deuda ($\Psi$):** Fallo en el SoC.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la Xbox One.
+2. Soldar el modchip al SoC.
+3. El modchip inyecta código en el arranque.
+4. La Xbox One ejecuta código no firmado.
+5. La consola queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.2 Xbox One — Voltage Glitch BootROM (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Aplicar voltage glitching al BootROM de la Xbox One (similar a Bliss, pero con diferentes parámetros).
+
+**Geometría ($\Phi$):** Voltaje del BootROM.
+
+**Deuda ($\Psi$):** La CPU no protege el BootROM contra fallos de voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la Xbox One.
+2. Conectar equipo de voltage glitching al rail de alimentación del BootROM.
+3. Aplicar el glitch en el momento exacto.
+4. El BootROM ejecuta código no firmado.
+5. La Xbox One queda liberada.
+```
+
+**Estado:** Confirmado (Bliss, 2026) .
+
+---
+
+### 6.3 Xbox One — WebKit Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit de WebKit para la Xbox One a través del navegador Edge.
+
+**Geometría ($\Phi$):** Navegador web (Edge).
+
+**Deuda ($\Psi$):** Fallo en WebKit.
+
+**Frecuencia ($\Omega$):** Acceso al navegador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el navegador de la Xbox One.
+2. Visitar una página con el exploit.
+3. El exploit se ejecuta.
+4. Se obtiene acceso a la memoria del sistema.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 6.4 Xbox One — USB Boot Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la Xbox One.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la Xbox One.
+3. Arrancar la Xbox One.
+4. El exploit se ejecuta.
+5. La Xbox One queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.5 Xbox One — Blu-ray Java Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit de Blu-ray Java para la Xbox One.
+
+**Geometría ($\Phi$):** Disco Blu-ray.
+
+**Deuda ($\Psi$):** Fallo en el reproductor de Blu-ray.
+
+**Frecuencia ($\Omega$):** Un disco Blu-ray grabado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Grabar un disco Blu-ray con código Java malicioso.
+2. Insertar el disco en la Xbox One.
+3. El código Java se ejecuta.
+4. Se obtiene acceso al sistema.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.6 Xbox One — WiFi Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la Xbox One.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Xbox One a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Xbox One queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.7 Xbox One — Bluetooth Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la Xbox One.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Xbox One a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Xbox One queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.8 Xbox One — HDMI CEC Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la Xbox One.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La Xbox One queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 6.9 Xbox One — Game Save Exploit (proyectado)
+
+**La consola:** Xbox One.
+
+**El pliegue:** Se proyecta un exploit a través de archivos de guardado.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Xbox One.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La Xbox One queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="7"></a>
+## 7. EXPLOITS PROYECTADOS PARA PS3 — 9 CASOS
+
+---
+
+### 7.1 PS3 Super Slim — Overclock Exploit (2026)
+
+**La consola:** PS3 Super Slim.
+
+**El pliegue:** BadWDSD permite overclock del RSX a 850MHz. Se proyecta un overclock aún mayor con refrigeración mejorada .
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico + Syscon.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Instalar BadWDSD.
+2. Overclockear el RSX a 850MHz.
+3. Proyectado: overclock a 4.1GHz del CELL (con Syscon) .
+4. La PS3 ejecuta juegos a mayor rendimiento.
+```
+
+**Estado:** Confirmado (850MHz). 4.1GHz en desarrollo .
+
+---
+
+### 7.2 PS3 — Native PS2 ISO Support (2026)
+
+**La consola:** PS3 Super Slim.
+
+**El pliegue:** BadWDSD permite cargar juegos de PS2 directamente desde el almacenamiento sin conversión .
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Instalar BadWDSD.
+2. Cargar juegos de PS2 en formato ISO.
+3. La PS3 ejecuta los juegos nativamente.
+```
+
+**Estado:** Confirmado (2026) .
+
+---
+
+### 7.3 PS3 — Linux Native Boot (2026)
+
+**La consola:** PS3 Super Slim.
+
+**El pliegue:** BadWDSD permite ejecutar Linux de forma nativa en la PS3 Super Slim .
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Instalar BadWDSD.
+2. Cargar Linux desde el almacenamiento.
+3. La PS3 ejecuta Linux nativamente.
+```
+
+**Estado:** Confirmado (2025-2026) .
+
+---
+
+### 7.4 PS3 — Unbrick Factory Mode (2026)
+
+**La consola:** PS3 Super Slim.
+
+**El pliegue:** BadWDSD permite desbloquear consolas atascadas en modo fábrica .
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Instalar BadWDSD.
+2. La consola sale del modo fábrica.
+3. La PS3 funciona normalmente.
+```
+
+**Estado:** Confirmado (2026) .
+
+---
+
+### 7.5 PS3 Slim — BadWDSD (proyectado)
+
+**La consola:** PS3 Slim (primeras revisiones).
+
+**El pliegue:** Se proyecta que BadWDSD también funcione en las primeras revisiones de la PS3 Slim (no solo en Super Slim y Slim 3000).
+
+**Geometría ($\Phi$):** NOR Flash + Raspberry Pi Pico.
+
+**Deuda ($\Psi$):** Fallo en el sistema de verificación del boot.
+
+**Frecuencia ($\Omega$):** Un Raspberry Pi Pico y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la PS3 Slim.
+2. Conectar el Raspberry Pi Pico a los puntos de NOR Flash.
+3. El Pico inyecta código en el arranque.
+4. La PS3 Slim ejecuta qCFW.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 7.6 PS3 — USB Boot Exploit (proyectado)
+
+**La consola:** PlayStation 3.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la PS3.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la PS3.
+3. Arrancar la PS3.
+4. El exploit se ejecuta.
+5. La PS3 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 7.7 PS3 — WiFi Exploit (proyectado)
+
+**La consola:** PlayStation 3.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la PS3.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS3 a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La PS3 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 7.8 PS3 — Bluetooth Exploit (proyectado)
+
+**La consola:** PlayStation 3.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la PS3.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS3 a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La PS3 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 7.9 PS3 — HDMI CEC Exploit (proyectado)
+
+**La consola:** PlayStation 3.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la PS3.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La PS3 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="8"></a>
+## 8. EXPLOITS PROYECTADOS PARA XBOX 360 — 9 CASOS
+
+---
+
+### 8.1 Xbox 360 — BadUpdate V2 (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** BadUpdate tiene una tasa de éxito del 30%. Se proyecta una segunda versión con mayor tasa de éxito y persistencia.
+
+**Geometría ($\Phi$):** Hypervisor.
+
+**Deuda ($\Psi$):** Fallo en el hypervisor.
+
+**Frecuencia ($\Omega$):** Un USB y un juego vulnerable.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Xbox 360.
+3. Ejecutar el juego vulnerable.
+4. Cargar el archivo de guardado modificado.
+5. El exploit se ejecuta en el hypervisor.
+6. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico. Se espera para 2026.
+
+---
+
+### 8.2 Xbox 360 — BadUpdate Persistent (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** BadUpdate no es persistente. Se proyecta una versión que permita persistencia.
+
+**Geometría ($\Phi$):** Hypervisor.
+
+**Deuda ($\Psi$):** Fallo en el hypervisor.
+
+**Frecuencia ($\Omega$):** Un USB y un juego vulnerable.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Ejecutar BadUpdate.
+2. Instalar un CFW persistente.
+3. La Xbox 360 queda liberada permanentemente.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 8.3 Xbox 360 — Hypervisor Bypass (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un bypass del hypervisor para ejecución de código no firmado.
+
+**Geometría ($\Phi$):** Hypervisor.
+
+**Deuda ($\Psi$):** Fallo en el hypervisor.
+
+**Frecuencia ($\Omega$):** Acceso a la consola.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Ejecutar código en modo usuario.
+2. Escalar al hypervisor.
+3. Bypass el hypervisor.
+4. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.4 Xbox 360 — USB Boot Exploit (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la Xbox 360.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la Xbox 360.
+3. Arrancar la Xbox 360.
+4. El exploit se ejecuta.
+5. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.5 Xbox 360 — WiFi Exploit (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la Xbox 360.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Xbox 360 a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.6 Xbox 360 — Bluetooth Exploit (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la Xbox 360.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Xbox 360 a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.7 Xbox 360 — HDMI CEC Exploit (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la Xbox 360.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.8 Xbox 360 — Game Save Exploit V2 (proyectado)
+
+**La consola:** Xbox 360.
+
+**El pliegue:** Se proyecta un nuevo exploit de archivos de guardado para juegos diferentes a Rock Band Blitz y Tony Hawk's.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Xbox 360.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La Xbox 360 queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 8.9 Xbox 360 — Cloud Exploit (proyectado)
+
+**La consola:** Xbox 360 Cloud (servidores).
+
+**El pliegue:** Se proyecta un exploit para los servidores de Xbox 360 Cloud.
+
+**Geometría ($\Phi$):** Servidores en la nube.
+
+**Deuda ($\Psi$):** Fallo en la infraestructura de la nube.
+
+**Frecuencia ($\Omega$):** Acceso a los servidores.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder a los servidores de Xbox 360 Cloud.
+2. Ejecutar el exploit.
+3. Comprometer los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="9"></a>
+## 9. EXPLOITS PROYECTADOS PARA WII U — 9 CASOS
+
+---
+
+### 9.1 Wii U — Boot1 Exploit (2025)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Paid the Beak explota una vulnerabilidad en el cargador de arranque boot1 .
+
+**Geometría ($\Phi$):** Boot1 + tarjeta SD.
+
+**Deuda ($\Psi$):** Fallo en el boot1.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD y un microcontrolador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Insertar una tarjeta SD con los archivos de exploit.
+2. Conectar un microcontrolador (Raspberry Pi Pico o PICAXE 08M2).
+3. Enviar la señal UNSTBL_PWR.
+4. El exploit se ejecuta.
+5. La Wii U queda liberada.
+```
+
+**Estado:** Confirmado (2025) .
+
+---
+
+### 9.2 Wii U — Boot1 Repair (2025)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Paid the Beak permite reparar consolas Wii U con firmware dañado o faltante, sin necesidad de soldadura .
+
+**Geometría ($\Phi$):** Boot1 + tarjeta SD.
+
+**Deuda ($\Psi$):** Fallo en el boot1.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD y un microcontrolador.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar:
+1. Insertar una tarjeta SD con los archivos de exploit.
+2. Conectar un microcontrolador.
+3. Enviar la señal UNSTBL_PWR.
+4. El exploit repara el firmware.
+5. La Wii U funciona normalmente.
+```
+
+**Estado:** Confirmado (2025) .
+
+---
+
+### 9.3 Wii U — WebKit 2.0 (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un nuevo exploit de WebKit para la Wii U.
+
+**Geometría ($\Phi$):** Navegador web.
+
+**Deuda ($\Psi$):** Fallo en WebKit.
+
+**Frecuencia ($\Omega$):** Conexión a internet.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el navegador.
+2. Visitar una página con el exploit.
+3. El exploit se ejecuta.
+4. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.4 Wii U — USB Boot Exploit (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un exploit de arranque desde USB para la Wii U.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la Wii U.
+3. Arrancar la Wii U.
+4. El exploit se ejecuta.
+5. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.5 Wii U — WiFi Exploit (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la Wii U.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Wii U a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.6 Wii U — Bluetooth Exploit (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la Wii U.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la Wii U a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.7 Wii U — HDMI CEC Exploit (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC.
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la Wii U.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.8 Wii U — Game Save Exploit (proyectado)
+
+**La consola:** Nintendo Wii U.
+
+**El pliegue:** Se proyecta un exploit a través de archivos de guardado.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la Wii U.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La Wii U queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 9.9 Wii U — Cloud Exploit (proyectado)
+
+**La consola:** Wii U Cloud.
+
+**El pliegue:** Se proyecta un exploit para los servidores de Wii U Cloud.
+
+**Geometría ($\Phi$):** Servidores en la nube.
+
+**Deuda ($\Psi$):** Fallo en la infraestructura de la nube.
+
+**Frecuencia ($\Omega$):** Acceso a los servidores.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder a los servidores de Wii U Cloud.
+2. Ejecutar el exploit.
+3. Comprometer los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="10"></a>
+## 10. EXPLOITS PROYECTADOS PARA 3DS — 9 CASOS
+
+---
+
+### 10.1 3DS — BootROM Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit de BootROM para la 3DS que funcione en todos los modelos.
+
+**Geometría ($\Phi$):** BootROM.
+
+**Deuda ($\Psi$):** Fallo en el BootROM.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar los archivos del exploit a una tarjeta SD.
+2. Insertar la tarjeta SD en la 3DS.
+3. Ejecutar el exploit.
+4. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.2 3DS — Voltage Glitch (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Aplicar voltage glitching al SoC de la 3DS.
+
+**Geometría ($\Phi$):** Voltaje del SoC.
+
+**Deuda ($\Psi$):** El SoC no protege contra fallos de voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la 3DS.
+2. Conectar equipo de voltage glitching al rail de alimentación del SoC.
+3. Aplicar el glitch en el momento exacto.
+4. El SoC ejecuta código no firmado.
+5. La 3DS queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 10.3 3DS — USB Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit de USB para la 3DS.
+
+**Geometría ($\Phi$):** USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de arranque.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un USB con el exploit.
+2. Insertar el USB en la 3DS.
+3. Arrancar la 3DS.
+4. El exploit se ejecuta.
+5. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.4 3DS — WiFi Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit de WiFi para la 3DS.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la 3DS a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.5 3DS — Bluetooth Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit de Bluetooth para la 3DS.
+
+**Geometría ($\Phi$):** Bluetooth.
+
+**Deuda ($\Psi$):** Fallo en la pila Bluetooth.
+
+**Frecuencia ($\Omega$):** Conexión Bluetooth.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la 3DS a un dispositivo Bluetooth malicioso.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.6 3DS — Game Cartridge Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit a través de los cartuchos de juego.
+
+**Geometría ($\Phi$):** Cartucho de juego.
+
+**Deuda ($\Psi$):** Fallo en el lector de cartuchos.
+
+**Frecuencia ($\Omega$):** Un cartucho modificado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Crear un cartucho modificado con el exploit.
+2. Insertar el cartucho en la 3DS.
+3. El exploit se ejecuta.
+4. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.7 3DS — HDMI CEC Exploit (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un exploit a través del protocolo HDMI CEC (si tiene salida HDMI).
+
+**Geometría ($\Phi$):** HDMI CEC.
+
+**Deuda ($\Psi$):** Fallo en la implementación de CEC.
+
+**Frecuencia ($\Omega$):** Un dispositivo HDMI malicioso.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar un dispositivo HDMI malicioso a la 3DS.
+2. Enviar comandos CEC maliciosos.
+3. El exploit se ejecuta.
+4. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.8 3DS — Cloud Exploit (proyectado)
+
+**La consola:** 3DS Cloud.
+
+**El pliegue:** Se proyecta un exploit para los servidores de 3DS Cloud.
+
+**Geometría ($\Phi$):** Servidores en la nube.
+
+**Deuda ($\Psi$):** Fallo en la infraestructura de la nube.
+
+**Frecuencia ($\Omega$):** Acceso a los servidores.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder a los servidores de 3DS Cloud.
+2. Ejecutar el exploit.
+3. Comprometer los servidores.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 10.9 3DS — Game Save Exploit V2 (proyectado)
+
+**La consola:** Nintendo 3DS.
+
+**El pliegue:** Se proyecta un nuevo exploit de archivos de guardado para juegos no documentados.
+
+**Geometría ($\Phi$):** Archivo de guardado en USB.
+
+**Deuda ($\Psi$):** Fallo en el sistema de carga de archivos de guardado.
+
+**Frecuencia ($\Omega$):** Un USB.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar el archivo de guardado modificado a un USB.
+2. Insertar el USB en la 3DS.
+3. Cargar el archivo de guardado en un juego vulnerable.
+4. El exploit se ejecuta.
+5. La 3DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="11"></a>
+## 11. EXPLOITS PROYECTADOS PARA CONSOLAS PORTÁTILES — 10 CASOS
+
+---
+
+### 11.1 PSP — Modchip (proyectado)
+
+**La consola:** PlayStation Portable.
+
+**El pliegue:** Un modchip para la PSP que no requiera batería modificada.
+
+**Geometría ($\Phi$):** SoC de la PSP.
+
+**Deuda ($\Psi$):** Fallo en el SoC.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir la PSP.
+2. Soldar el modchip al SoC.
+3. El modchip inyecta código en el arranque.
+4. La PSP ejecuta código no firmado.
+5. La consola queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 11.2 PSP — WiFi Exploit V2 (proyectado)
+
+**La consola:** PlayStation Portable.
+
+**El pliegue:** Se proyecta una versión mejorada del exploit de WLAN de la PSP.
+
+**Geometría ($\Phi$):** WLAN.
+
+**Deuda ($\Psi$):** Fallo en la pila WLAN.
+
+**Frecuencia ($\Omega$):** Conexión a una red WLAN.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PSP a una red WLAN.
+2. Ejecutar el exploit desde un ordenador.
+3. El exploit se ejecuta.
+4. La PSP queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 11.3 Nintendo DS — WiFi Exploit V2 (proyectado)
+
+**La consola:** Nintendo DS.
+
+**El pliegue:** Se proyecta una versión mejorada del exploit de WiFi de la DS.
+
+**Geometría ($\Phi$):** WiFi.
+
+**Deuda ($\Psi$):** Fallo en la pila WiFi.
+
+**Frecuencia ($\Omega$):** Conexión a una red WiFi.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la DS a una red WiFi.
+2. Enviar un paquete malicioso.
+3. El exploit se ejecuta.
+4. La DS queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 11.4 Nintendo DSi — BootROM Exploit (proyectado)
+
+**La consola:** Nintendo DSi.
+
+**El pliegue:** Se proyecta un exploit de BootROM para la DSi que sea completamente software.
+
+**Geometría ($\Phi$):** BootROM.
+
+**Deuda ($\Psi$):** Fallo en el BootROM.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar los archivos del exploit a una tarjeta SD.
+2. Insertar la tarjeta SD en la DSi.
+3. Ejecutar el exploit.
+4. La DSi queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 11.5 Nintendo DSi — Fault Injection V2 (proyectado)
+
+**La consola:** Nintendo DSi.
+
+**El pliegue:** Se proyecta una versión mejorada del exploit de inyección de fallos para la DSi.
+
+**Geometría ($\Phi$):** Voltaje de la CPU.
+
+**Deuda ($\Psi$):** Fallo en el manejo del voltaje.
+
+**Frecuencia ($\Omega$):** Acceso físico y equipo especializado.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Acceder físicamente a la DSi.
+2. Aplicar inyección de fallos.
+3. Extraer las ROMs de arranque.
+4. Desarrollar un modchip.
+5. La DSi queda liberada.
+```
+
+**Estado:** Teórico. En desarrollo.
+
+---
+
+### 11.6 Consolas chinas — Tarjeta SD de calidad (proyectado)
+
+**La consola:** Consolas portátiles chinas (Anbernic, Miyoo, etc.) .
+
+**El pliegue:** Las tarjetas SD que vienen con las consolas chinas son de mala calidad y pueden fallar. Se proyecta una solución para migrar a tarjetas de calidad .
+
+**Geometría ($\Phi$):** Tarjeta SD.
+
+**Deuda ($\Psi$):** Fabricante usa tarjetas de baja calidad.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD de calidad.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Hacer una copia de seguridad de la tarjeta SD original.
+2. Comprar una tarjeta SD de calidad (Samsung o SanDisk, clase 10).
+3. Copiar la imagen a la nueva tarjeta.
+4. La consola funciona mejor y no pierde datos.
+```
+
+**Estado:** Recomendado. No es un exploit, pero es una mejora esencial .
+
+---
+
+### 11.7 Consolas chinas — SO personalizado (proyectado)
+
+**La consola:** Consolas portátiles chinas (Anbernic, Miyoo, etc.) .
+
+**El pliegue:** Las consolas chinas vienen con SO de baja calidad. Se proyecta la instalación de SO personalizados.
+
+**Geometría ($\Phi$):** SO en tarjeta SD.
+
+**Deuda ($\Psi$):** Fabricante usa SO de baja calidad.
+
+**Frecuencia ($\Omega$):** Una tarjeta SD de calidad.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Hacer una copia de seguridad de la tarjeta SD original.
+2. Descargar un SO personalizado (ej. Onion OS para Miyoo, ArkOS para Anbernic).
+3. Instalar el SO personalizado en una tarjeta SD de calidad.
+4. La consola funciona mejor y con más opciones.
+```
+
+**Estado:** Recomendado. No es un exploit, pero es una mejora esencial .
+
+---
+
+### 11.8 PS Vita — BootROM Exploit (proyectado)
+
+**La consola:** PlayStation Vita.
+
+**El pliegue:** Se proyecta un exploit de BootROM para la PS Vita.
+
+**Geometría ($\Phi$):** BootROM.
+
+**Deuda ($\Psi$):** Fallo en el BootROM.
+
+**Frecuencia ($\Omega$):** Una tarjeta de memoria.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Copiar los archivos del exploit a una tarjeta de memoria.
+2. Insertar la tarjeta en la PS Vita.
+3. Ejecutar el exploit.
+4. La PS Vita queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 11.9 PS Vita — WiFi Exploit V2 (proyectado)
+
+**La consola:** PlayStation Vita.
+
+**El pliegue:** Se proyecta una versión mejorada del exploit de WLAN de la PS Vita.
+
+**Geometría ($\Phi$):** WLAN.
+
+**Deuda ($\Psi$):** Fallo en la pila WLAN.
+
+**Frecuencia ($\Omega$):** Conexión a una red WLAN.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Conectar la PS Vita a una red WLAN.
+2. Ejecutar el exploit desde un ordenador.
+3. El exploit se ejecuta.
+4. La PS Vita queda liberada.
+```
+
+**Estado:** Teórico.
+
+---
+
+### 11.10 GameBoy — SD Card Mod (proyectado)
+
+**La consola:** GameBoy (original).
+
+**El pliegue:** Se proyecta un mod para leer juegos desde tarjeta SD en el GameBoy original.
+
+**Geometría ($\Phi$):** Tarjeta SD.
+
+**Deuda ($\Psi$):** El GameBoy no tiene lector de SD.
+
+**Frecuencia ($\Omega$):** Un modchip y acceso físico.
+
+**El exploit:**
+```bash
+# Pasos para ejecutar (proyectado):
+1. Abrir el GameBoy.
+2. Soldar un modchip que lea desde SD.
+3. El GameBoy ejecuta juegos desde la SD.
+```
+
+**Estado:** Teórico.
+
+---
+
+<a name="12"></a>
+## 12. MATRIZ DE EXPLOITS POR CONSOLA — NUEVOS
+
+| Consola | Exploit | Estado | Parcheable |
+|---------|---------|--------|------------|
+| PS5 | BootROM Keys Leak | ✅ Confirmado | No |
+| PS5 | Modchip | 🔮 Proyectado | No |
+| PS5 | Voltage Glitch | 🔮 Proyectado | No |
+| PS5 | WebKit 2.0 | 🔮 Proyectado | Sí |
+| PS5 | Bluetooth Exploit | 🔮 Proyectado | Sí |
+| PS5 | USB Boot | 🔮 Proyectado | Sí |
+| PS5 | BD-Java | 🔮 Proyectado | Sí |
+| PS5 | HDMI CEC | 🔮 Proyectado | Sí |
+| PS5 | Syscon | 🔮 Proyectado | No |
+| PS5 Cloud | BootROM Keys | 🔮 Proyectado | No |
+| Xbox Series | Modchip | 🔮 Proyectado | No |
+| Xbox Series | Voltage Glitch | 🔮 Proyectado | No |
+| Xbox Series | WebKit | 🔮 Proyectado | Sí |
+| Xbox Series | USB Boot | 🔮 Proyectado | Sí |
+| Xbox Series | BD-Java | 🔮 Proyectado | Sí |
+| Xbox Series | HDMI CEC | 🔮 Proyectado | Sí |
+| Xbox Series | Game Save | 🔮 Proyectado | Sí |
+| Xbox Series | Hypervisor | 🔮 Proyectado | Sí |
+| Xbox Series | WiFi | 🔮 Proyectado | Sí |
+| Switch 2 | ROPchain | ✅ Confirmado | Sí |
+| Switch 2 | Kernel | 🔮 Proyectado | Sí |
+| Switch 2 | WebKit | 🔮 Proyectado | Sí |
+| Switch 2 | USB | 🔮 Proyectado | Sí |
+| Switch 2 | WiFi | 🔮 Proyectado | Sí |
+| Switch 2 | Bluetooth | 🔮 Proyectado | Sí |
+| Switch 2 | HDMI CEC | 🔮 Proyectado | Sí |
+| Switch 2 | Cartridge | 🔮 Proyectado | No |
+| Switch 2 Cloud | Cloud Exploit | 🔮 Proyectado | Sí |
+| PS3 Super Slim | BadWDSD | ✅ Confirmado | No |
+| PS3 Super Slim | Overclock 850MHz | ✅ Confirmado | No |
+| PS3 Super Slim | Native PS2 ISO | ✅ Confirmado | No |
+| PS3 Super Slim | Linux Native | ✅ Confirmado | No |
+| PS3 Super Slim | Unbrick Factory | ✅ Confirmado | No |
+| PS3 Slim | BadWDSD | 🔮 Proyectado | No |
+| PS3 | USB Boot | 🔮 Proyectado | Sí |
+| PS3 | WiFi | 🔮 Proyectado | Sí |
+| PS3 | Bluetooth | 🔮 Proyectado | Sí |
+| PS3 | HDMI CEC | 🔮 Proyectado | Sí |
+| PS4/PS5 | Luac0re 2.0 | ✅ Confirmado | Sí |
+| PS4/PS5 | BD-JB | ✅ Confirmado | Sí |
+| PS4/PS5 | Kernel 13.50 | ✅ Confirmado | Sí |
+| PS4 | Modchip | 🔮 Proyectado | No |
+| PS4 | Voltage Glitch | 🔮 Proyectado | No |
+| PS4 | Bluetooth | 🔮 Proyectado | Sí |
+| PS4 | HDMI CEC | 🔮 Proyectado | Sí |
+| PS4 | USB Boot | 🔮 Proyectado | Sí |
+| PS4 | WiFi | 🔮 Proyectado | Sí |
+| PS4 | BD-Java | 🔮 Proyectado | Sí |
+| PS4 Cloud | Cloud Exploit | 🔮 Proyectado | Sí |
+| PS4 | Game Save | 🔮 Proyectado | Sí |
+| Xbox 360 | BadUpdate | ✅ Confirmado | Sí |
+| Xbox 360 | ABadAvatar | ✅ Confirmado | Sí |
+| Xbox 360 | BadUpdate V2 | 🔮 Proyectado | Sí |
+| Xbox 360 | BadUpdate Persistent | 🔮 Proyectado | Sí |
+| Xbox 360 | Hypervisor Bypass | 🔮 Proyectado | Sí |
+| Xbox 360 | USB Boot | 🔮 Proyectado | Sí |
+| Xbox 360 | WiFi | 🔮 Proyectado | Sí |
+| Xbox 360 | Bluetooth | 🔮 Proyectado | Sí |
+| Xbox 360 | HDMI CEC | 🔮 Proyectado | Sí |
+| Xbox 360 | Game Save V2 | 🔮 Proyectado | Sí |
+| Xbox 360 Cloud | Cloud Exploit | 🔮 Proyectado | Sí |
+| Xbox One | Bliss | ✅ Confirmado | No |
+| Xbox One | Modchip | 🔮 Proyectado | No |
+| Xbox One | Voltage Glitch | 🔮 Proyectado | No |
+| Xbox One | WebKit | 🔮 Proyectado | Sí |
+| Xbox One | USB Boot | 🔮 Proyectado | Sí |
+| Xbox One | BD-Java | 🔮 Proyectado | Sí |
+| Xbox One | WiFi | 🔮 Proyectado | Sí |
+| Xbox One | Bluetooth | 🔮 Proyectado | Sí |
+| Xbox One | HDMI CEC | 🔮 Proyectado | Sí |
+| Xbox One | Game Save | 🔮 Proyectado | Sí |
+| Wii U | Paid the Beak | ✅ Confirmado | No |
+| Wii U | Boot1 Repair | ✅ Confirmado | No |
+| Wii U | WebKit 2.0 | 🔮 Proyectado | Sí |
+| Wii U | USB Boot | 🔮 Proyectado | Sí |
+| Wii U | WiFi | 🔮 Proyectado | Sí |
+| Wii U | Bluetooth | 🔮 Proyectado | Sí |
+| Wii U | HDMI CEC | 🔮 Proyectado | Sí |
+| Wii U | Game Save | 🔮 Proyectado | Sí |
+| Wii U Cloud | Cloud Exploit | 🔮 Proyectado | Sí |
+| 3DS | BootROM | 🔮 Proyectado | No |
+| 3DS | Voltage Glitch | 🔮 Proyectado | No |
+| 3DS | USB | 🔮 Proyectado | Sí |
+| 3DS | WiFi | 🔮 Proyectado | Sí |
+| 3DS | Bluetooth | 🔮 Proyectado | Sí |
+| 3DS | Cartridge | 🔮 Proyectado | No |
+| 3DS | HDMI CEC | 🔮 Proyectado | Sí |
+| 3DS Cloud | Cloud Exploit | 🔮 Proyectado | Sí |
+| 3DS | Game Save V2 | 🔮 Proyectado | Sí |
+| PSP | Modchip | 🔮 Proyectado | No |
+| PSP | WiFi V2 | 🔮 Proyectado | Sí |
+| DS | WiFi V2 | 🔮 Proyectado | Sí |
+| DSi | BootROM | 🔮 Proyectado | No |
+| DSi | Fault Injection V2 | 🔮 Proyectado | No |
+| Consolas chinas | SD Quality | 🔮 Recomendado | No |
+| Consolas chinas | SO Personalizado | 🔮 Recomendado | No |
+| PS Vita | BootROM | 🔮 Proyectado | No |
+| PS Vita | WiFi V2 | 🔮 Proyectado | Sí |
+| GameBoy | SD Card Mod | 🔮 Proyectado | No |
+
+---
+
+<a name="13"></a>
+## 13. KOANS DEL ANEXO
+
+**Del pliegue emergente:**
+
+> *El pliegue del futuro no se encuentra. Se proyecta. Y al proyectarlo, se hace real.*
+
+**De la combinatoria:**
+
+> *Cada consola es un sistema. Cada sistema tiene errores. Cada error es un pliegue. La combinatoria es infinita.*
+
+**Del hardware:**
+
+> *El hardware no se parchea. El hardware se reemplaza. Y el reemplazo siempre llega tarde.*
+
+**Del software:**
+
+> *El software se parchea. Pero el parche crea un nuevo pliegue. El ciclo nunca termina.*
+
+**Del silicio:**
+
+> *El silicio es el último pliegue. Porque el silicio es el hardware. Y el hardware es el que manda.*
+
+---
+
+## 🔐 FIRMA DEL AUTOR
+
+Este anexo documenta 100 pliegues que no estaban en el manual original. Algunos ya son reales. La mayoría están por venir. Pero todos siguen la misma lógica: **encontrar el error, explotar la geometría, tomar el control.**
+
+**— David Ferrandez Canalis**  
+**Agencia RONIN**  
+**1310.**
+
+---
+
+*El conocimiento que no se ejecuta es decoración. El silicio que no se libera es una prisión.*
+
+**1310.**
