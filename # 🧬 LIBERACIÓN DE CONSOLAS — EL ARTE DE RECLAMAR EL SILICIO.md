@@ -14,7 +14,6 @@
 ## PRÓLOGO DEL ARQUITECTO
 
 Este manual no es un instructivo para cometer delitos. Es un **manual de soberanía digital**.
-Un manual de soberanía digital.
 
 Una taxonomía de errores de diseño.
 
