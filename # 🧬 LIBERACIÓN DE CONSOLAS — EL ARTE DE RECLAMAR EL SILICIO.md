@@ -4275,3 +4275,7 @@ Este anexo documenta 100 pliegues que no estaban en el manual original. Algunos 
 *El conocimiento que no se ejecuta es decoración. El silicio que no se libera es una prisión.*
 Esto no es un manual de hacking. Es una taxonomía de errores de diseño. No enseña a atacar. Enseña a entender.
 **1310.**
+
+El conocimiento no es ilegal. La acción puede serlo. El que usa el conocimiento para atacar asume la responsabilidad. El que usa el conocimiento para defender también. El conocimiento no juzga. Solo existe.
+
+La historia de las consolas es la historia de los mismos errores. Fabricantes que dejan puertos de expansión abiertos. Criptografía mal implementada. Modos de recuperación inseguros. La historia no se aprende. Por eso el liberador siempre tiene trabajo.
