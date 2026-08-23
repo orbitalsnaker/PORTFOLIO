@@ -14,6 +14,13 @@
 ## PRÓLOGO DEL ARQUITECTO
 
 Este manual no es un instructivo para cometer delitos. Es un **manual de soberanía digital**.
+Un manual de soberanía digital.
+
+Una taxonomía de errores de diseño.
+
+Una documentación de pliegues estructurales.
+
+Un estudio de geometría de sistemas.
 
 Cuando compras un dispositivo, el silicio —el chip, el circuito, la placa— es legalmente tuyo. Pero el fabricante, a menudo, decide qué software puedes ejecutar en él. La consola está bloqueada. El teléfono está cifrado. El router tiene una contraseña que no puedes cambiar.
 
