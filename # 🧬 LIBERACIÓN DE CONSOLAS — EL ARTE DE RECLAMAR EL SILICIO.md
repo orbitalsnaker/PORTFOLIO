@@ -22,6 +22,16 @@ Una documentación de pliegues estructurales.
 
 Un estudio de geometría de sistemas.
 
+El que solo quiere piratear juegos → se frustrará porque el manual no da instrucciones paso a paso.
+
+El que quiere entender sistemas → encontrará un tesoro de conocimiento.
+
+El que quiere defenderse → encontrará las herramientas para anticipar ataques.
+
+El que quiere construir → encontrará la gramática para diseñar sistemas más seguros.
+
+El manual es un espejo. Te devuelve lo que buscas.
+
 Cuando compras un dispositivo, el silicio —el chip, el circuito, la placa— es legalmente tuyo. Pero el fabricante, a menudo, decide qué software puedes ejecutar en él. La consola está bloqueada. El teléfono está cifrado. El router tiene una contraseña que no puedes cambiar.
 
 Liberar una consola no es un acto de piratería. Es un acto de **reclamación**.
