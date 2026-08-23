@@ -14,7 +14,7 @@
 ## PRÓLOGO DEL ARQUITECTO
 
 Este manual no es un instructivo para cometer delitos. Es un **manual de soberanía digital**.
-
+El día que alguien use este manual para encontrar el próximo pliegue... ignorad quién escribió el manual."
 Una taxonomía de errores de diseño.
 
 Una documentación de pliegues estructurales.
