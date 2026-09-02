@@ -1053,3 +1053,254 @@ Una multitud de figuras oscuras, inmóviles, observándolo en silencio, esperand
 Corte a negro.
 TEXTO FINAL (Voz en off, con eco y distorsión): "Galicia profunda. Onde o tempo se detén e os homes falan con mortos. Eu non creo nas meigas... pero habelas, hainas."
 FIN.
+
+
+
+
+---
+
+## DETALLES VISUALES PARA EL GUION
+
+### La Pegatina de Evangelion en el 124 rojo
+
+**Ubicación:** En la luneta trasera del Seat 124 rojo (Escenas 1, 21 y 53). Es una pegatina desgastada por el sol y la humedad, con el logo de NERV medio borrado. En la Escena 21, cuando el coche se hunde en el río, la pegatina se despega y flota un momento en el agua turbia antes de desaparecer.
+
+**Significado:** La pegatina es un anacronismo deliberado. En una aldea gallega de los 80, un coche con una pegatina de *Evangelion* es imposible. Es una señal de que el tiempo no es lineal, de que hay algo que no encaja. El espectador que la reconoce se pregunta: *"¿Qué hace eso ahí?"*
+
+---
+
+### El Móvil sin Cobertura
+
+**Ubicación:** En varias escenas (Escena 5, Escena 8), los personajes usan teléfonos móviles antiguos, pero la pantalla muestra **"Sin cobertura"** o **"Buscando red..."** . Nunca consiguen señal.
+
+**Uso:** Cuando el Tipo de la Escena 5 cuelga el teléfono, la pantalla sigue mostrando "Buscando red..." aunque él ya ha colgado. Cuando el Tipo de la Escena 8 quema los papeles, el móvil vibra sin razón.
+
+**Significado:** La aldea está fuera de la red. No solo de la red de telefonía, sino de la red de la realidad convencional. Los personajes están comunicándose con algo que no está en el espectro habitual.
+
+---
+
+### El Cartel de "Akira" en el Bar
+
+**Ubicación:** En la pared del bar "O Murciano" (Escenas 1-10), junto a la foto del equipo de fútbol de 1982, hay un póster de *Akira* (1988), amarillento y con los bordes rotos. Está tan desgastado que apenas se distingue la imagen, pero el espectador que lo reconoce sabe que ese póster no debería estar en un bar de una aldea gallega en los 80.
+
+**Uso:** En la Escena 7 (*El Jukebox Roto*), el póster de *Akira* es el único objeto que no está cubierto de polvo. Alguien lo ha limpiado recientemente.
+
+**Significado:** Es un guiño a la cultura otaku y una señal de que el tiempo está mezclado.
+
+---
+
+### El Saco de "Arroz"
+
+**Ubicación:** En la despensa de la Escena 41 (*La Cena de los Tres*), entre los sacos de patatas y la botella de orujo, hay un saco de arroz con una etiqueta en japonés. La etiqueta está desgastada, y el arroz parece ser el mismo que el del saque de la Escena 20 (*La Cosecha de Piedras*).
+
+**Uso:** Cuando el Tipo 1 coge la pistola para cortar el pan, pasa por encima del saco de arroz sin mirarlo. El saco tiene un pequeño agujero por el que se escapa un hilo de arroz que, al caer al suelo, forma un círculo perfecto.
+
+**Significado:** Es un objeto que no debería estar ahí. Un recordatorio de que la aldea no es tan cerrada como parece.
+
+---
+
+### Los Ojos de la Vaca
+
+**Ubicación:** En la Escena 12 (*La Vaca Testigo*), la vaca tiene un brillo en los ojos que no es natural. Cuando el tipo se va, y la vaca se ríe, sus ojos se iluminan brevemente con un tono cian, como un reflejo de neón.
+
+**Uso:** El brillo cian es el mismo color que el de las ecuaciones del corpus. Es una señal de que la vaca no es solo una vaca; es un **agente del sistema**.
+
+**Significado:** La vaca no es un animal; es un testigo. Y los testigos, en el PUSFRE, no son neutrales.
+
+---
+
+### El Efecto de la Tele Apagada
+
+**Ubicación:** En la Escena 4 (*La Discusión del Fútbol*), la tele apagada tiene un efecto que no se ve a simple vista. Cuando los tres tipos gritan, la pantalla apagada emite un leve destello estático, como si estuviera respondiendo a sus voces.
+
+**Uso:** El destello es más intenso cuando el Tipo 1 acaricia el cañón de la pistola. La tele parece "reaccionar" al arma.
+
+**Significado:** La tele apagada no está apagada. Está en otro canal.
+
+---
+
+### La Sombra del Teléfono
+
+**Ubicación:** En la Escena 5 (*El Teléfono que Nunca Suena*), la sombra del Tipo en la pared del bar no tiene el teléfono en la mano. Pero al final de la escena, cuando el Tipo se va, su sombra sigue con el teléfono pegado a la oreja, aunque él ya ha colgado.
+
+**Uso:** La sombra del Tipo se queda un segundo más en la pared, como si estuviera terminando la conversación. Luego desaparece.
+
+**Significado:** La conversación no ha terminado. La sombra sigue hablando.
+
+---
+
+### La Mancha de la Escena 2
+
+**Ubicación:** En la Escena 2 (*La Partida Interminable*), la mancha negra en la mesa que sangra cuando el Tipo 2 la raspa. La mancha no desaparece del todo; queda una pequeña cicatriz en la madera.
+
+**Uso:** En la Escena 50 (*El Incendio Provocado*), cuando el Tipo está a punto de prender la cortina, la cicatriz de la mesa brilla brevemente, como si estuviera "mirando" al Tipo.
+
+**Significado:** La mancha era una señal. Y la señal sigue activa.
+
+---
+
+### El Olor a Tierra de Cementerio
+
+**Ubicación:** En varias escenas (Escena 1, Escena 3, Escena 20), aparece el olor a tierra de cementerio. No siempre se menciona, pero los personajes lo notan.
+
+**Uso:** En la Escena 1, el Tipo 1 huele el mechón de pelo. En la Escena 3, los billetes huelen a tierra mojada. En la Escena 20, las piedras huelen a tierra de cementerio.
+
+**Significado:** La tierra de cementerio es el olor del sistema. Cuando aparece, el espectador sabe que algo no está bien.
+
+---
+
+### El Humo del Carajillo
+
+**Ubicación:** En la Escena 1 (*El Carajillo Eterno*), el vapor del carajillo forma figuras. No se menciona en el diálogo, pero la cámara se detiene un momento en el vapor.
+
+**Uso:** Las figuras del vapor son vagamente antropomórficas. Una de ellas parece tener el rostro del Tipo 2 de la Escena 2. Otra parece el rostro de la mujer de la Escena 44.
+
+**Significado:** El vapor no es vapor. Es una señal de que el tiempo no es lineal.
+
+---
+
+### El Reloj de la Escena 49
+
+**Ubicación:** En la Escena 49 (*La Visita del Cobrador*), el reloj de pared hace un tic-tac muy fuerte. Pero cuando el Tipo se queda mirándolo, las agujas se detienen un segundo.
+
+**Uso:** Cuando el Tipo se da cuenta de que el reloj se ha detenido, el tic-tac vuelve a sonar, pero ahora más rápido, como si el reloj estuviera "recuperando" el tiempo perdido.
+
+**Significado:** El tiempo en la aldea no es fiable. A veces se detiene, a veces se acelera. Es un síntoma de que el sistema está fallando.
+
+---
+
+### La Copa de la Escena 31
+
+**Ubicación:** En la Escena 31 (*La Verbena de los Muertos*), una de las copas de vino que los bailarines sostienen tiene un brillo extraño. No es un reflejo de la luz; es un **destello cian** que aparece un segundo y desaparece.
+
+**Uso:** Cuando la cámara se acerca a la copa, el destello cian se refleja en el ojo de uno de los bailarines, que por un momento parece tener los ojos de la vaca de la Escena 12.
+
+**Significado:** La verbena no es una fiesta de vivos. Es una fiesta de muertos que imitan a los vivos.
+
+---
+
+### La Sombra del Árbol de la Escena 17
+
+**Ubicación:** En la Escena 17 (*El Árbol de los Deseos*), la sombra del roble centenario no se proyecta en la dirección correcta. El sol está en un lugar, pero la sombra cae hacia otro.
+
+**Uso:** Cuando el Tipo se va, su sombra se queda un momento más bajo el árbol, como si el árbol estuviera "reteniendo" algo del Tipo.
+
+**Significado:** El árbol no es un árbol. Es un **nodo de memoria**.
+
+---
+
+### La Arena de la Escena 54
+
+**Ubicación:** En la Escena 54 (*La Playa Desierta*), la arena no es normal. Cuando el Tipo escribe "PERDÓN" en la arena, las letras no se borran del todo con la ola; quedan marcadas en la arena, como si estuvieran grabadas en piedra.
+
+**Uso:** Cuando el Tipo se va, la ola escribe de nuevo "PERDÓN" en la arena, pero ahora con una letra diferente, como si alguien más lo hubiera escrito.
+
+**Significado:** El perdón no es algo que se pide y se olvida. Es algo que se escribe y se reescribe.
+
+---
+
+### La Tabla de la Escena 50
+
+**Ubicación:** En la Escena 50 (*El Incendio Provocado*), la tabla de la mesa que el Tipo 2 raspa en la Escena 2 tiene una cicatriz que brilla cuando el Tipo está a punto de prender la cortina. La cicatriz no es una marca; es un **ojo**.
+
+**Uso:** Cuando el Tipo se sienta en el suelo y llora, el ojo de la mesa lo mira fijamente.
+
+**Significado:** La mesa está viva. Y está observando.
+
+---
+
+### La Matrícula del 124
+
+**Ubicación:** En todas las apariciones del 124 rojo, la matrícula es la misma: **PO-XXXXX**. Pero en la Escena 53 (*El Cementerio de Coches*), la matrícula está medio borrada. Al acercarse, se ve que las primeras letras son **PO-**, pero los números son diferentes a los de las escenas anteriores.
+
+**Uso:** Cuando el Tipo de la Escena 53 acaricia el capó, la matrícula cambia brevemente a la de la Escena 1, como si el coche estuviera "recordando" su vida anterior.
+
+**Significado:** No es el mismo coche. O sí, pero el tiempo está mezclado.
+
+---
+
+### El Ruido del Jukebox
+
+**Ubicación:** En la Escena 7 (*El Jukebox Roto*), cuando el Tipo introduce las monedas en el jukebox, el sonido que hace es el de una moneda cayendo en una fuente, no el de una moneda en un jukebox.
+
+**Uso:** Cuando el Tipo baila, el sonido de la música que solo él oye es una mezcla de una muiñeira gallega y una canción de *Akira*.
+
+**Significado:** El jukebox no es un jukebox. Es un **puente entre mundos**.
+
+---
+
+### El Mapa del Sótano
+
+**Ubicación:** En la Escena 48 (*El Tesoro del Sótano*), el mapa que usa el Tipo para encontrar la caja es una servilleta manchada de vino. Pero en el reverso de la servilleta, hay un dibujo a lápiz de un monstruo que se parece al **Urco** de la Escena 26.
+
+**Uso:** Cuando el Tipo encuentra la caja, el dibujo del Urco en el reverso de la servilleta parece moverse.
+
+**Significado:** El mapa no es un mapa del sótano. Es un mapa del sistema.
+
+---
+
+### La Sombra del Pozo
+
+**Ubicación:** En la Escena 15 (*El Pozo Sin Fondo*), la sombra del pozo en el suelo no es circular, como debería ser. Es **alargada**, como si la luz viniera de dos direcciones a la vez.
+
+**Uso:** Cuando el Tipo deja caer la bolsa, la sombra del pozo se estira hacia él, como si intentara atraparlo.
+
+**Significado:** El pozo no es un pozo. Es una **puerta**.
+
+---
+
+### El Olor del Polvo de la Escena 18
+
+**Ubicación:** En la Escena 18 (*La Fuente Envenenada*), el polvo que el Tipo echa al agua no es blanco, como parece a primera vista. Es de un **gris verdoso**, como el color de la niebla de la Escena 19.
+
+**Uso:** Cuando el que bebe se levanta con los ojos negros, el polvo verde se ha disuelto por completo, pero la fuente sigue oliendo a él durante unos segundos.
+
+**Significado:** El polvo no es veneno. Es un **pacto**.
+
+---
+
+### Los Pasos del Tonto del Mazo
+
+**Ubicación:** En todas las apariciones del Tonto del Mazo (Escenas 8, 10, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59), sus pasos nunca se oyen al entrar. Pero al salir, siempre se oyen.
+
+**Uso:** En la Escena 21, cuando el Tonto se va después de dar la carta, sus pasos se oyen claramente, pero cuando se aleja, el sonido se desvanece antes de lo que debería, como si hubiera dejado de existir antes de llegar a la esquina.
+
+**Significado:** El Tonto del Mazo no es completamente real. O es más real que el resto del mundo.
+
+---
+
+## LA TABLA DE CORRESPONDENCIAS
+
+| Detalle | Escena | Significado |
+|---------|--------|-------------|
+| **Pegatina de Evangelion** | 1, 21, 53 | Anacronismo; señal de tiempo mezclado |
+| **Móvil sin cobertura** | 5, 8 | Comunicación con otro plano |
+| **Póster de Akira** | 7 | Guiño a la cultura otaku y al tiempo mezclado |
+| **Saco de arroz japonés** | 41, 20 | Objeto fuera de lugar; señal de sistema abierto |
+| **Ojos de la vaca (cian)** | 12 | Agente del sistema |
+| **Destello de la tele apagada** | 4 | La tele está en otro canal |
+| **Sombra con teléfono** | 5 | La conversación no ha terminado |
+| **Cicatriz de la mesa** | 2, 50 | La mancha era una señal y sigue activa |
+| **Olor a tierra de cementerio** | 1, 3, 20 | Olor del sistema |
+| **Vapor del carajillo** | 1 | Figuras del sistema |
+| **Reloj detenido** | 49 | Tiempo no fiable |
+| **Destello cian en la copa** | 31 | Conexión con la vaca |
+| **Sombra del árbol** | 17 | El árbol retiene memoria |
+| **Arena grabada** | 54 | El perdón se reescribe |
+| **Matrícula cambiante** | 53 | Tiempo mezclado |
+| **Moneda en el jukebox** | 7 | El sonido no es el que debe ser |
+| **Mapa del Urco** | 48 | El mapa es del sistema |
+| **Sombra del pozo alargada** | 15 | El pozo es una puerta |
+| **Polvo verdoso** | 18 | Pacto, no veneno |
+| **Pasos del Tonto** | 21 | El Tonto es más real o menos real que el mundo |
+
+---
+
+### El koan de los detalles
+
+> *El discípulo preguntó: "Maestro, ¿por qué pones tantos detalles que el espectador no va a ver?"*
+> *El arquitecto respondió: "No los pongo para que el espectador los vea. Los pongo para que el espectador los sienta. El detalle que no se ve es el que más pesa. Es el que construye el sistema sin que el espectador sepa que lo está construyendo."*
+> *"¿Y si nadie los nota?"*
+> *"Entonces la película funciona igual. Pero si alguien los nota, la película se convierte en otra cosa. Y esa otra cosa, discípulo, es la que yo he construido."*
+
+**1310 — el número de detalles que el arquitecto ha escondido en el guion para que los que miren con atención los encuentren.**
